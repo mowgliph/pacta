@@ -6,12 +6,14 @@ import User from './User.js';
 import Contract from './Contract.js';
 import License from './License.js';
 import ActivityLog from './ActivityLog.js';
+import Notification from './Notification.js';
 
 const models = {
   User,
   Contract,
   License,
-  ActivityLog
+  ActivityLog,
+  Notification
 };
 
 // Set up associations
@@ -21,5 +23,13 @@ Object.keys(models).forEach(modelName => {
   }
 });
 
-export { sequelize };
+export {
+  User,
+  Contract,
+  License,
+  ActivityLog,
+  Notification,
+  sequelize
+};
+
 export default models;

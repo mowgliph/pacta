@@ -1,0 +1,33 @@
+{
+  "extends": [
+    "@vue/tsconfig/tsconfig.dom.json",
+    "./tsconfig.app.json"
+  ],
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "preserve",
+    "jsxImportSource": "vue",
+    "strict": true,
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "env.d.ts",
+    "src/**/*",
+    "src/**/*.vue",
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.json"
+  ],
+  "references": [
+    {
+      "path": "./tsconfig.node.json"
+    }
+  ]
+}

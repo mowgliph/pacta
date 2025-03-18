@@ -6,6 +6,8 @@ import sequelize from './config/database.js';
 import models from './models/index.js';
 import authRoutes from './routes/auth.js';
 import protectedRoutes from './routes/protected.js';
+import contractRoutes from './routes/contracts.js';
+import scheduler from './services/scheduler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,6 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/contracts', contractRoutes); // Add contract routes
 app.use('/api', protectedRoutes); // Add protected routes
 
 // Database connection test
@@ -27,11 +30,17 @@ async function testConnection() {
     await sequelize.authenticate();
     console.log('Database connection has been established successfully.');
     
-    // After database connection
-    await sequelize.sync({ alter: true });
+    if (process.env.NODE_ENV === 'development') {
+      await sequelize.sync({ force: true });
+      console.log('Database tables recreated successfully');
+    } else {
+      await sequelize.sync();
+    }
     
-    // Create admin user if not exists
     await models.User.createAdminIfNotExists();
+    
+    // Start contract expiration checker
+    console.log('Contract expiration checker started');
   } catch (error) {
     console.error('Unable to connect to the database:', error);
   }

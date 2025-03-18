@@ -55,7 +55,8 @@ router.post('/login', [
         username: user.username,
         email: user.email,
         role: user.role,
-        firstLogin: user.firstLogin
+        firstLogin: user.firstLogin,
+        mustChangePassword: user.firstLogin // Add this field
       }
     });
 
