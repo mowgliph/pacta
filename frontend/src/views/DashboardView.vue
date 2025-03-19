@@ -17,27 +17,28 @@
 </template>
 
 <script setup lang="ts">
-import LicenseStatus from '@/components/modules/dashboard/LicenseStatus.vue';
-import ContractStats from '@/components/modules/dashboard/ContractStats.vue';
-import ActivityFeed from '@/components/modules/dashboard/ActivityFeed.vue';
-import NotificationPanel from '@/components/modules/dashboard/NotificationPanel.vue';
+import LicenseStatus from '../components/modules/dashboard/LicenseStatus.vue';
+import ContractStats from '../components/modules/dashboard/ContractStats.vue';
+import ActivityFeed from '../components/modules/dashboard/ActivityFeed.vue';
+import NotificationPanel from '../components/modules/dashboard/NotificationPanel.vue';
 </script>
 
 <style lang="scss" scoped>
-@import '../assets/main.scss';
+@use '../assets/styles/variables' as v;
+@use '../assets/styles/colors' as c;
 
 .dashboard {
   &__grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: $spacing-unit * 3;
+    gap: v.$spacing-unit * 3;
   }
 
   &__card {
     background: white;
-    border-radius: $border-radius;
-    box-shadow: $shadow-sm;
-    padding: $spacing-unit * 3;
+    border-radius: v.$border-radius;
+    box-shadow: v.$shadow-sm;
+    padding: v.$spacing-unit * 3;
   }
 }
 </style>

@@ -11,29 +11,31 @@ defineProps<{
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@use '../../assets/styles/_variables.scss' as v;
+@use '../../assets/styles/_colors.scss' as c;
+@use '../../assets/styles/_mixins.scss' as m;
 
 .status-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  border-radius: $border-radius;
+  border-radius: v.$border-radius;
   font-size: 0.875rem;
-  font-weight: $font-weight-medium;
+  font-weight: v.$font-weight-medium;
   text-transform: capitalize;
 
   &--active {
-    background-color: rgba($color-success, 0.1);
-    color: $color-success;
+    background-color: rgba(c.$color-success, 0.1);
+    color: c.$color-success;
   }
 
   &--inactive {
-    background-color: rgba($color-warning, 0.1);
-    color: $color-warning;
+    background-color: rgba(c.$color-warning, 0.1);
+    color: c.$color-warning;
   }
 
   &--expired {
-    background-color: rgba($color-error, 0.1);
-    color: $color-error;
+    background-color: rgba(c.$color-error, 0.1);
+    color: c.$color-error;
   }
 }
 </style>

@@ -7,7 +7,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import BaseIcon from '@/components/base/BaseIcon.vue';
+import BaseIcon from '../../components/base/BaseIcon.vue';
 
 const props = defineProps<{
   status: 'active' | 'expired' | 'draft' | 'terminated' | 'renewed';
@@ -26,16 +26,17 @@ const getStatusIcon = computed(() => {
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@use '../../assets/styles/_variables.scss' as v;
+@use '../../assets/styles/_colors.scss' as c;
 
 .status-badge {
   display: inline-flex;
   align-items: center;
-  gap: $spacing-unit;
-  padding: $spacing-unit $spacing-unit * 2;
-  border-radius: $border-radius;
-  font-size: $font-size-sm;
-  font-weight: $font-weight-medium;
+  gap: v.$spacing-unit;
+  padding: v.$spacing-unit v.$spacing-unit * 2;
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-sm;
+  font-weight: v.$font-weight-medium;
   text-transform: capitalize;
 
   &__icon {
@@ -44,28 +45,28 @@ const getStatusIcon = computed(() => {
   }
 
   &--active {
-    background: rgba($color-success, 0.1);
-    color: $color-success;
+    background: rgba(c.$color-success, 0.1);
+    color: c.$color-success;
   }
 
   &--expired {
-    background: rgba($color-error, 0.1);
-    color: $color-error;
+    background: rgba(c.$color-error, 0.1);
+    color: c.$color-error;
   }
 
   &--draft {
-    background: rgba($color-text-secondary, 0.1);
-    color: $color-text-secondary;
+    background: rgba(c.$color-text-secondary, 0.1);
+    color: c.$color-text-secondary;
   }
 
   &--terminated {
-    background: rgba($color-error, 0.1);
-    color: $color-error;
+    background: rgba(c.$color-error, 0.1);
+    color: c.$color-error;
   }
 
   &--renewed {
-    background: rgba($color-info, 0.1);
-    color: $color-info;
+    background: rgba(c.$color-info, 0.1);
+    color: c.$color-info;
   }
 }
 </style>

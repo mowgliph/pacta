@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
 import { Chart, registerables } from 'chart.js';
-import { useContractStore } from '@/stores/contract';
+import { useContractStore } from '../../../stores/contract';
 
 Chart.register(...registerables);
 
@@ -72,20 +72,22 @@ function initChart() {
 </script>
 
 <style lang="scss" scoped>
-@import '../../../assets/main.scss';
+@use '../../../assets/styles/_variables.scss' as v;
+@use '../../../assets/styles/_colors.scss' as c;
+@use '../../../assets/styles/_mixins.scss' as m;
 
 .contract-stats {
   &__title {
-    color: var(--color-text-primary);
-    font-weight: $font-weight-semibold;
-    margin-bottom: $spacing-unit * 4;
+    color: c.$color-text-primary;
+    font-weight: v.$font-weight-semibold;
+    margin-bottom: v.$spacing-unit * 4;
   }
 
   &__grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: $spacing-unit * 4;
-    margin-bottom: $spacing-unit * 6;
+    gap: v.$spacing-unit * 4;
+    margin-bottom: v.$spacing-unit * 6;
   }
 }
 
@@ -93,28 +95,28 @@ function initChart() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: $spacing-unit * 4;
-  background: var(--color-surface);
-  border-radius: $border-radius;
+  padding: v.$spacing-unit * 4;
+  background: c.$color-surface;
+  border-radius: v.$border-radius;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
   &__label {
     font-size: 0.875rem;
-    color: var(--color-text-secondary);
-    margin-bottom: $spacing-unit;
+    color: c.$color-text-secondary;
+    margin-bottom: v.$spacing-unit;
   }
 
   &__value {
     font-size: 1.5rem;
-    font-weight: $font-weight-bold;
-    color: var(--color-primary);
+    font-weight: v.$font-weight-bold;
+    color: c.$color-primary;
 
     &--warning {
-      color: var(--color-warning);
+      color: c.$color-warning;
     }
 
     &--danger {
-      color: var(--color-error);
+      color: c.$color-error;
     }
   }
 }

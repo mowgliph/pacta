@@ -34,7 +34,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
-import { useLicenseStore } from '@/stores/license';
+import { useLicenseStore } from '../../../stores/license';
 import { format } from 'date-fns';
 
 const licenseStore = useLicenseStore();
@@ -90,22 +90,24 @@ function handleRenewal() {
 </script>
 
 <style lang="scss" scoped>
-@import '../../../assets/main.scss';
+@use '../../../assets/styles/_variables.scss' as v;
+@use '../../../assets/styles/_colors.scss' as c;
+@use '../../../assets/styles/_mixins.scss' as m;
 
 .license-status {
   &__title {
     color: var(--color-text-primary);
-    font-weight: $font-weight-semibold;
-    margin-bottom: $spacing-unit * 4;
+    font-weight: v.$font-weight-semibold;
+    margin-bottom: v.$spacing-unit * 4;
   }
 }
 
 .license-info {
   display: flex;
   align-items: flex-start;
-  gap: $spacing-unit * 2;
-  padding: $spacing-unit * 3;
-  border-radius: $border-radius;
+  gap: v.$spacing-unit * 2;
+  padding: v.$spacing-unit * 3;
+  border-radius: v.$border-radius;
   background: var(--color-surface);
   opacity: 0.5;
 
@@ -139,34 +141,34 @@ function handleRenewal() {
   }
 
   &__message {
-    font-weight: $font-weight-medium;
-    margin-bottom: $spacing-unit;
+    font-weight: v.$font-weight-medium;
+    margin-bottom: v.$spacing-unit;
     color: var(--color-text-primary);
   }
 
   &__details {
     display: flex;
     flex-direction: column;
-    gap: $spacing-unit;
+    gap: v.$spacing-unit;
     font-size: 0.875rem;
     color: var(--color-text-secondary);
   }
 }
 
 .license-action {
-  margin-top: $spacing-unit * 3;
+  margin-top: v.$spacing-unit * 3;
   text-align: center;
 }
 
 .btn-renew {
   display: inline-flex;
   align-items: center;
-  gap: $spacing-unit;
-  padding: $spacing-unit * 1.5 $spacing-unit * 3;
+  gap: v.$spacing-unit;
+  padding: v.$spacing-unit * 1.5 v.$spacing-unit * 3;
   background: var(--color-primary);
   color: var(--color-text-light);
   border: none;
-  border-radius: $border-radius;
+  border-radius: v.$border-radius;
   font-size: 0.875rem;
   cursor: pointer;
   transition: opacity 0.2s;

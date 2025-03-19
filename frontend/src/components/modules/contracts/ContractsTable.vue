@@ -79,7 +79,9 @@ function getStatusClass(status: string) {
 </script>
 
 <style lang="scss" scoped>
-@import '../../../assets/main.scss';
+@use '../../../assets/styles/_variables.scss' as v;
+@use '../../../assets/styles/_colors.scss' as c;
+@use '../../../assets/styles/_mixins.scss' as m;
 
 .contracts-table {
   width: 100%;
@@ -89,20 +91,20 @@ function getStatusClass(status: string) {
     width: 100%;
     border-collapse: collapse;
     background: white;
-    border-radius: $border-radius;
-    box-shadow: $shadow-sm;
+    border-radius: v.$border-radius;
+    box-shadow: v.$shadow-sm;
   }
 
   th, td {
-    padding: $spacing-unit * 2;
+    padding: v.$spacing-unit * 2;
     text-align: left;
-    border-bottom: 1px solid $color-surface;
+    border-bottom: 1px solid c.$color-surface;
   }
 
   th {
-    font-weight: $font-weight-bold;
-    color: $color-text-secondary;
-    background: rgba($color-background, 0.5);
+    font-weight: v.$font-weight-bold;
+    color: c.$color-text-secondary;
+    background: rgba(c.$color-background, 0.5);
   }
 }
 
@@ -110,7 +112,7 @@ function getStatusClass(status: string) {
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 0.875rem;
-  font-weight: $font-weight-medium;
+  font-weight: v.$font-weight-medium;
 
   &.status-active {
     background: rgba(#10B981, 0.1);
@@ -135,7 +137,7 @@ function getStatusClass(status: string) {
 
 .actions {
   display: flex;
-  gap: $spacing-unit;
+  gap: v.$spacing-unit;
 }
 
 .btn-icon {
@@ -143,11 +145,11 @@ function getStatusClass(status: string) {
   border: none;
   background: none;
   cursor: pointer;
-  color: $color-text-secondary;
-  border-radius: $border-radius;
+  color: c.$color-text-secondary;
+  border-radius: v.$border-radius;
   
   &:hover {
-    background: rgba($color-background, 0.5);
+    background: rgba(c.$color-background, 0.5);
   }
 
   &.btn-danger {
@@ -161,7 +163,7 @@ function getStatusClass(status: string) {
 
 .loading, .no-data {
   text-align: center;
-  padding: $spacing-unit * 4;
-  color: $color-text-secondary;
+  padding: v.$spacing-unit * 4;
+  color: c.$color-text-secondary;
 }
 </style>

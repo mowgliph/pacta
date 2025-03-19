@@ -32,7 +32,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { formatDistanceToNow } from 'date-fns';
-import { useNotificationStore } from '@/stores/notification';
+import { useNotificationStore } from '../../../stores/notification';
 
 const notificationStore = useNotificationStore();
 const notifications = computed(() => notificationStore.notifications);
@@ -69,49 +69,51 @@ async function markAsRead(id: number) {
 </script>
 
 <style lang="scss" scoped>
-@import '../../../assets/main.scss';
+@use '../../../assets/styles/_variables.scss' as v;
+@use '../../../assets/styles/_colors.scss' as c;
+@use '../../../assets/styles/_mixins.scss' as m;
 
 .notification-panel {
-  background: var(--color-surface);
-  border-radius: $border-radius;
-  padding: $spacing-md;
+  background: c.$color-surface;
+  border-radius: v.$border-radius;
+  padding: v.$spacing-md;
   
   &__title {
-    color: var(--color-text-primary);
-    font-weight: $font-weight-semibold;
-    margin-bottom: $spacing-md;
+    color: c.$color-text-primary;
+    font-weight: v.$font-weight-semibold;
+    margin-bottom: v.$spacing-md;
     display: flex;
     align-items: center;
-    gap: $spacing-xs;
+    gap: v.$spacing-xs;
   }
 }
 
 .notification-badge {
-  background: $color-accent;
+  background: c.$color-accent;
   color: white;
   padding: 2px 8px;
   border-radius: 12px;
-  font-size: $font-size-xs;
+  font-size: v.$font-size-xs;
 }
 
 .notification-list {
   display: flex;
   flex-direction: column;
-  gap: $spacing-sm;
+  gap: v.$spacing-sm;
 }
 
 .notification-item {
   display: flex;
   align-items: flex-start;
-  gap: $spacing-sm;
-  padding: $spacing-sm;
-  border-radius: $border-radius;
-  background: rgba(var(--color-background), 0.5);
+  gap: v.$spacing-sm;
+  padding: v.$spacing-sm;
+  border-radius: v.$border-radius;
+  background: rgba(c.$color-background, 0.5);
   transition: background-color 0.2s;
 
   &--unread {
     background: white;
-    box-shadow: $shadow-sm;
+    box-shadow: v.$shadow-sm;
   }
 
   &__icon {
@@ -121,7 +123,7 @@ async function markAsRead(id: number) {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: $color-accent;
+    background: c.$color-accent;
     color: white;
 
     &--warning {
@@ -142,21 +144,21 @@ async function markAsRead(id: number) {
   }
 
   &__message {
-    color: var(--color-text-primary);
-    margin-bottom: $spacing-xs;
+    color: c.$color-text-primary;
+    margin-bottom: v.$spacing-xs;
   }
 
   &__time {
-    font-size: $font-size-sm;
-    color: var(--color-text-secondary);
+    font-size: v.$font-size-sm;
+    color: c.$color-text-secondary;
   }
 
   &__action {
     padding: 4px 8px;
     border: none;
     background: none;
-    color: $color-accent;
-    font-size: $font-size-sm;
+    color: c.$color-accent;
+    font-size: v.$font-size-sm;
     cursor: pointer;
     transition: opacity 0.2s;
 

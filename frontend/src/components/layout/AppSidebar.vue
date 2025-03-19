@@ -20,33 +20,35 @@
 </template>
 
 <script setup lang="ts">
-import Logo from '@/components/base/Logo.vue';
+import Logo from '../../components/base/Logo.vue';
 
 const menuItems = [
   { path: '/', label: 'Dashboard', icon: 'fas fa-home' },
   { path: '/contracts', label: 'Contracts', icon: 'fas fa-file-contract' },
   { path: '/licenses', label: 'Licenses', icon: 'fas fa-key' },
   { path: '/users', label: 'Users', icon: 'fas fa-users' },
+  { path: '/about', label: 'Sobre PACTA', icon: 'fas fa-info-circle' },
   { path: '/settings', label: 'Settings', icon: 'fas fa-cog' }
 ];
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@use '../../assets/styles/_variables.scss' as v;
+@use '../../assets/styles/_colors.scss' as c;
 
 .app-sidebar {
-  background: var(--color-surface);
-  border-right: 1px solid var(--color-border);
+  background: c.$color-surface;
+  border-right: 1px solid c.$color-border;
   
   &__nav-link {
-    color: var(--color-text-primary);
+    color: c.$color-text-primary;
     
     &:hover {
-      background: var(--color-surface-hover);
+      background: c.$color-surface-hover;
     }
     
     &.active {
-      color: var(--color-primary);
+      color: c.$color-primary;
     }
   }
 }

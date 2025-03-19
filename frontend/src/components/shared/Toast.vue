@@ -22,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { useToastStore } from '@/stores/toast';
+import { useToastStore } from '../../stores/toast';
 import { storeToRefs } from 'pinia';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
@@ -44,27 +44,28 @@ function getIcon(type: ToastType) {
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@use '../../assets/styles/_variables.scss' as v;
+@use '../../assets/styles/_colors.scss' as c;
 
 .toast-container {
   position: fixed;
-  top: $spacing-unit * 4;
-  right: $spacing-unit * 4;
+  top: v.$spacing-unit * 4;
+  right: v.$spacing-unit * 4;
   z-index: 9999;
   display: flex;
   flex-direction: column;
-  gap: $spacing-unit * 2;
+  gap: v.$spacing-unit * 2;
 }
 
 .toast {
   display: flex;
   align-items: center;
-  gap: $spacing-unit * 2;
-  padding: $spacing-unit * 2;
+  gap: v.$spacing-unit * 2;
+  padding: v.$spacing-unit * 2;
   min-width: 300px;
   max-width: 500px;
   background: var(--color-surface);
-  border-radius: $border-radius;
+  border-radius: v.$border-radius;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
   &--success {

@@ -243,7 +243,9 @@ function handleCancel() {
 </script>
 
 <style lang="scss" scoped>
-@import '../../../assets/main.scss';
+@use '../../../assets/styles/_variables.scss' as v;
+@use '../../../assets/styles/_colors.scss' as c;
+@use '../../../assets/styles/_mixins.scss' as m;
 
 .dialog-overlay {
   position: fixed;
@@ -260,8 +262,8 @@ function handleCancel() {
 
 .dialog-content {
   background: white;
-  border-radius: $border-radius;
-  padding: $spacing-unit * 4;
+  border-radius: v.$border-radius;
+  padding: v.$spacing-unit * 4;
   width: 100%;
   max-width: 800px;
   max-height: 90vh;
@@ -271,8 +273,8 @@ function handleCancel() {
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: $spacing-unit * 3;
-  margin: $spacing-unit * 3 0;
+  gap: v.$spacing-unit * 3;
+  margin: v.$spacing-unit * 3 0;
 }
 
 .form-group {
@@ -282,20 +284,20 @@ function handleCancel() {
 
   label {
     display: block;
-    margin-bottom: $spacing-unit;
-    font-weight: $font-weight-medium;
+    margin-bottom: v.$spacing-unit;
+    font-weight: v.$font-weight-medium;
   }
 
   input, select, textarea {
     width: 100%;
-    padding: $spacing-unit * 1.5;
-    border: 1px solid $color-surface;
-    border-radius: $border-radius;
+    padding: v.$spacing-unit * 1.5;
+    border: 1px solid c.$color-surface;
+    border-radius: v.$border-radius;
     font-size: 1rem;
 
     &:focus {
       outline: none;
-      border-color: $color-accent;
+      border-color: c.$color-accent;
     }
 
     &.error {
@@ -311,35 +313,35 @@ function handleCancel() {
 .error-message {
   color: #EF4444;
   font-size: 0.875rem;
-  margin-top: $spacing-unit;
+  margin-top: v.$spacing-unit;
   display: block;
 }
 
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
-  gap: $spacing-unit * 2;
-  margin-top: $spacing-unit * 4;
+  gap: v.$spacing-unit * 2;
+  margin-top: v.$spacing-unit * 4;
 }
 
 .btn-secondary {
-  padding: $spacing-unit * 1.5 $spacing-unit * 3;
-  border: 1px solid $color-surface;
+  padding: v.$spacing-unit * 1.5 v.$spacing-unit * 3;
+  border: 1px solid c.$color-surface;
   background: white;
-  border-radius: $border-radius;
+  border-radius: v.$border-radius;
   cursor: pointer;
   
   &:hover {
-    background: $color-surface;
+    background: c.$color-surface;
   }
 }
 
 .btn-primary {
-  padding: $spacing-unit * 1.5 $spacing-unit * 3;
-  background: $color-accent;
+  padding: v.$spacing-unit * 1.5 v.$spacing-unit * 3;
+  background: c.$color-accent;
   color: white;
   border: none;
-  border-radius: $border-radius;
+  border-radius: v.$border-radius;
   cursor: pointer;
   
   &:hover {

@@ -45,31 +45,33 @@ defineProps<{
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@use '../../assets/styles/variables' as v;
+@use '../../assets/styles/colors' as c;
+@use '../../assets/styles/mixins' as m;
 
 .base-table {
   width: 100%;
   border-collapse: collapse;
-  background: $color-surface;
-  border-radius: $border-radius;
+  background: c.$color-surface;
+  border-radius: v.$border-radius;
   overflow: hidden;
-  box-shadow: $shadow-sm;
+  box-shadow: v.$shadow-sm;
 
   table {
     width: 100%;
   }
 
   th {
-    @include table-header;
-    padding: $spacing-unit * 2;
+    @include m.table-header;
+    padding: v.$spacing-unit * 2;
     text-align: left;
-    border-bottom: 1px solid $color-border;
+    border-bottom: 1px solid c.$color-border;
   }
 
   td {
-    padding: $spacing-unit * 2;
-    border-bottom: 1px solid $color-border;
-    color: $color-text-primary;
+    padding: v.$spacing-unit * 2;
+    border-bottom: 1px solid c.$color-border;
+    color: c.$color-text-primary;
   }
 
   tr:last-child td {
@@ -80,15 +82,15 @@ defineProps<{
     transition: background-color 0.2s ease;
 
     &:hover {
-      background-color: $color-surface-hover;
+      background-color: c.$color-surface-hover;
     }
   }
   
   &__loading,
   &__empty {
-    padding: $spacing-unit * 4;
+    padding: v.$spacing-unit * 4;
     text-align: center;
-    color: $color-text-secondary;
+    color: c.$color-text-secondary;
   }
 }
 </style>

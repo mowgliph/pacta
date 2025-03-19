@@ -5,9 +5,11 @@
   ],
   "compilerOptions": {
     "baseUrl": ".",
+    /* Paths eliminado para usar rutas relativas en lugar del alias @/
     "paths": {
       "@/*": ["./src/*"]
     },
+    */
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "preserve",

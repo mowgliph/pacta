@@ -16,13 +16,14 @@
 </template>
 
 <script setup lang="ts">
-import AppHeader from '@/components/layout/AppHeader.vue';
-import AppSidebar from '@/components/layout/AppSidebar.vue';
-import Toast from '@/components/shared/Toast.vue';
+import AppHeader from '../components/layout/AppHeader.vue';
+import AppSidebar from '../components/layout/AppSidebar.vue';
+import Toast from '../components/shared/Toast.vue';
 </script>
 
 <style lang="scss" scoped>
-@import '../assets/main.scss';
+@use '../assets/styles/_variables.scss' as v;
+@use '../assets/styles/_colors.scss' as c;
 
 .layout {
   display: grid;
@@ -37,7 +38,7 @@ import Toast from '@/components/shared/Toast.vue';
 
   &__content {
     flex: 1;
-    padding: $spacing-unit * 6;
+    padding: v.$spacing-unit * 6;
   }
 }
 </style>

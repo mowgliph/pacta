@@ -9,7 +9,7 @@
 </template>
 
 <script setup lang="ts">
-import { useThemeStore } from '@/stores/theme';
+import { useThemeStore } from '../../stores/theme';
 import { storeToRefs } from 'pinia';
 
 const themeStore = useThemeStore();
@@ -21,10 +21,11 @@ function toggleTheme() {
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@use '../../assets/styles/_variables.scss' as v;
+@use '../../assets/styles/_colors.scss' as c;
 
 .header {
-  padding: $spacing-unit * 4;
+  padding: v.$spacing-unit * 4;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   display: flex;
@@ -34,7 +35,7 @@ function toggleTheme() {
 
   &__actions {
     display: flex;
-    gap: $spacing-unit * 2;
+    gap: v.$spacing-unit * 2;
   }
 }
 
@@ -43,8 +44,8 @@ function toggleTheme() {
   border: none;
   color: var(--color-text-primary);
   cursor: pointer;
-  padding: $spacing-unit * 2;
-  border-radius: $border-radius;
+  padding: v.$spacing-unit * 2;
+  border-radius: v.$border-radius;
   
   &:hover {
     background: var(--color-surface-hover);

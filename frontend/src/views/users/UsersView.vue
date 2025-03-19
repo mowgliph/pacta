@@ -44,10 +44,10 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { useUserStore } from '@/stores/user';
-import type { User } from '@/types/user';
-import UsersTable from '@/components/modules/users/UsersTable.vue';
-import UserDialog from '@/components/modules/users/UserDialog.vue';
+import { useUserStore } from '../../stores/user';
+import type { User } from '../../types/user';
+import UsersTable from '../../components/modules/users/UsersTable.vue';
+import UserDialog from '../../components/modules/users/UserDialog.vue';
 
 const userStore = useUserStore();
 const loading = ref(false);
@@ -141,25 +141,26 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@use '../../assets/styles/_variables.scss' as v;
+@use '../../assets/styles/_colors.scss' as c;
 
 .users {
   &__header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: calc($spacing-unit * 4);
+    margin-bottom: calc(v.$spacing-unit * 4);
 
     h1 {
       color: var(--color-text-primary);
-      font-weight: $font-weight-semibold;
+      font-weight: v.$font-weight-semibold;
     }
   }
 
   &__filters {
     display: flex;
-    gap: calc($spacing-unit * 2);
-    margin-bottom: calc($spacing-unit * 3);
+    gap: calc(v.$spacing-unit * 2);
+    margin-bottom: calc(v.$spacing-unit * 3);
   }
 }
 
@@ -168,10 +169,10 @@ onMounted(async () => {
   
   input {
     width: 100%;
-    padding: calc($spacing-unit * 1.5);
+    padding: calc(v.$spacing-unit * 1.5);
     border: 1px solid var(--color-border);
-    border-radius: $border-radius;
-    font-size: $font-size-base;
+    border-radius: v.$border-radius;
+    font-size: v.$font-size-base;
     background: var(--color-surface);
     color: var(--color-text-primary);
     
@@ -184,12 +185,12 @@ onMounted(async () => {
 
 .filter-group {
   select {
-    padding: calc($spacing-unit * 1.5);
+    padding: calc(v.$spacing-unit * 1.5);
     border: 1px solid var(--color-border);
-    border-radius: $border-radius;
+    border-radius: v.$border-radius;
     background: var(--color-surface);
     color: var(--color-text-primary);
-    font-size: $font-size-base;
+    font-size: v.$font-size-base;
     min-width: 150px;
     
     &:focus {
@@ -202,21 +203,21 @@ onMounted(async () => {
 .btn-primary {
   background: var(--color-primary);
   color: white;
-  padding: calc($spacing-unit * 1.5) calc($spacing-unit * 3);
+  padding: calc(v.$spacing-unit * 1.5) calc(v.$spacing-unit * 3);
   border: none;
-  border-radius: $border-radius;
-  font-size: $font-size-base;
+  border-radius: v.$border-radius;
+  font-size: v.$font-size-base;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: $spacing-unit;
+  gap: v.$spacing-unit;
   
   &:hover {
     opacity: 0.9;
   }
 
   i {
-    font-size: $font-size-base;
+    font-size: v.$font-size-base;
   }
 }
 </style>

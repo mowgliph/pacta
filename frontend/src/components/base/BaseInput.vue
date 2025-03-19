@@ -26,23 +26,25 @@ defineEmits<{
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@use '../../assets/styles/_variables.scss' as v;
+@use '../../assets/styles/_colors.scss' as c;
+@use '../../assets/styles/_mixins.scss' as m;
 
 .base-input {
   &__label {
-    @include form-label;
+    @include m.form-label;
   }
 
   display: flex;
   flex-direction: column;
-  gap: $spacing-unit;
+  gap: v.$spacing-unit;
 
   &__field {
-    @include input-theme;
+    @include m.input-theme;
   }
 
   &__error {
-    color: $color-error;
+    color: c.$color-error;
     font-size: 0.875rem;
   }
 }

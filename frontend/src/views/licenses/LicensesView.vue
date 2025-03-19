@@ -143,29 +143,31 @@ async function fetchLicenseHistory() {
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@use '../../assets/styles/_colors.scss' as c;
+@use '../../assets/styles/_variables.scss' as v;
 
 .licenses {
   &__header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: $spacing-unit * 4;
+    margin-bottom: v.$spacing-unit * 4;
+    border-bottom: 1px solid c.$color-border;
   }
 
   &__content {
     display: grid;
-    gap: $spacing-unit * 4;
+    gap: v.$spacing-unit * 4;
   }
 
   &__history {
     background: white;
-    border-radius: $border-radius;
-    padding: $spacing-unit * 3;
-    box-shadow: $shadow-sm;
+    border-radius: v.$border-radius;
+    padding: v.$spacing-unit * 3;
+    box-shadow: v.$shadow-sm;
 
     h2 {
-      margin-bottom: $spacing-unit * 3;
+      margin-bottom: v.$spacing-unit * 3;
     }
 
     table {
@@ -173,14 +175,14 @@ async function fetchLicenseHistory() {
       border-collapse: collapse;
 
       th, td {
-        padding: $spacing-unit * 2;
+        padding: v.$spacing-unit * 2;
         text-align: left;
-        border-bottom: 1px solid $color-border;
+        border-bottom: 1px solid c.$color-border;
       }
 
       th {
-        font-weight: $font-weight-bold;
-        color: $color-text-secondary;
+        font-weight: c.$font-weight-bold;
+        color: c.$color-text-secondary;
       }
     }
   }
@@ -188,7 +190,7 @@ async function fetchLicenseHistory() {
 
 .no-data {
   text-align: center;
-  color: $color-text-secondary;
-  padding: $spacing-unit * 4;
+  color: c.$color-text-secondary;
+  padding: v.$spacing-unit * 4;
 }
 </style>

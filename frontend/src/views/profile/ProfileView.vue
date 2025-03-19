@@ -92,9 +92,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useUserStore } from '@/stores/user';
+import { useUserStore } from '../../stores/user';
 import { format } from 'date-fns';
-import { useToast } from '@/types/useToast';
+import { useToast } from '../../types/useToast';
 
 const userStore = useUserStore();
 const toast = useToast();
@@ -196,65 +196,67 @@ function formatDate(date: string) {
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@use '../../assets/styles/_variables.scss' as v;
+@use '../../assets/styles/_colors.scss' as c;
+@use '../../assets/styles/_mixins.scss' as m;
 
 .profile {
   max-width: 1200px;
   margin: 0 auto;
-  padding: $spacing-unit * 4;
+  padding: v.$spacing-unit * 4;
 
   h1 {
-    margin-bottom: $spacing-unit * 4;
+    margin-bottom: v.$spacing-unit * 4;
   }
 }
 
 .profile-sections {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: $spacing-unit * 4;
+  gap: v.$spacing-unit * 4;
 }
 
 .form {
   background: white;
-  padding: $spacing-unit * 3;
-  border-radius: $border-radius;
-  box-shadow: $shadow-sm;
+  padding: v.$spacing-unit * 3;
+  border-radius: v.$border-radius;
+  box-shadow: v.$shadow-sm;
 }
 
 .form-group {
-  margin-bottom: $spacing-unit * 2;
+  margin-bottom: v.$spacing-unit * 2;
 
   label {
     display: block;
-    margin-bottom: $spacing-unit;
-    font-weight: $font-weight-medium;
+    margin-bottom: v.$spacing-unit;
+    font-weight: v.$font-weight-medium;
   }
 
   input {
     width: 100%;
-    padding: $spacing-unit * 1.5;
-    border: 1px solid $color-surface;
-    border-radius: $border-radius;
+    padding: v.$spacing-unit * 1.5;
+    border: 1px solid c.$color-surface;
+    border-radius: v.$border-radius;
     font-size: 1rem;
 
     &:focus {
       outline: none;
-      border-color: $color-accent;
+      border-color: c.$color-accent;
     }
   }
 }
 
 .activity-list {
   background: white;
-  border-radius: $border-radius;
-  box-shadow: $shadow-sm;
+  border-radius: v.$border-radius;
+  box-shadow: v.$shadow-sm;
 }
 
 .activity-item {
   display: flex;
   align-items: flex-start;
-  padding: $spacing-unit * 2;
-  border-bottom: 1px solid $color-surface;
+  padding: v.$spacing-unit * 2;
+  border-bottom: 1px solid c.$color-surface;
 
   &:last-child {
     border-bottom: none;
@@ -262,9 +264,9 @@ function formatDate(date: string) {
 }
 
 .activity-icon {
-  color: $color-accent;
+  color: c.$color-accent;
   font-size: 1.25rem;
-  margin-right: $spacing-unit * 2;
+  margin-right: v.$spacing-unit * 2;
 }
 
 .activity-content {
@@ -272,27 +274,27 @@ function formatDate(date: string) {
 }
 
 .activity-details {
-  margin-bottom: $spacing-unit;
+  margin-bottom: v.$spacing-unit;
 }
 
 .activity-time {
   font-size: 0.875rem;
-  color: $color-text-secondary;
+  color: c.$color-text-secondary;
 }
 
 .no-activity {
   text-align: center;
-  padding: $spacing-unit * 3;
-  color: $color-text-secondary;
+  padding: v.$spacing-unit * 3;
+  color: c.$color-text-secondary;
 }
 
 .btn-primary {
   width: 100%;
-  padding: $spacing-unit * 1.5;
-  background: $color-accent;
+  padding: v.$spacing-unit * 1.5;
+  background: c.$color-accent;
   color: white;
   border: none;
-  border-radius: $border-radius;
+  border-radius: v.$border-radius;
   font-size: 1rem;
   cursor: pointer;
 

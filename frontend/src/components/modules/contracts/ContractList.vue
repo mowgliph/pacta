@@ -37,10 +37,10 @@
 </style>
 
 <script setup lang="ts">
-import BaseTable from '@/components/base/BaseTable.vue';
-import BaseButton from '@/components/base/BaseButton.vue';
-import StatusBadge from '@/components/shared/StatusBadge.vue';
-import type { Contract } from '@/types/contract';
+import BaseTable from '../../../components/base/BaseTable.vue';
+import BaseButton from '../../../components/base/BaseButton.vue';
+import StatusBadge from '../../../components/shared/StatusBadge.vue';
+import type { Contract } from '../../../types/contract';
 
 interface Props {
   contracts: Contract[];

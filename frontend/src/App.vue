@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
-import AppHeader from '@/components/layout/AppHeader.vue'
-import { useThemeStore } from '@/stores/theme'
+import AppHeader from './components/layout/AppHeader.vue'
+import { useThemeStore } from './stores/theme'
 
 const themeStore = useThemeStore()
 </script>
@@ -16,7 +16,7 @@ const themeStore = useThemeStore()
 </template>
 
 <style lang="scss">
-@import 'assets/main.scss';
+@use './assets/main.scss';
 
 .app {
   min-height: 100vh;

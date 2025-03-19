@@ -13,26 +13,28 @@
 </template>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@use '../../assets/styles/_variables.scss' as v;
+@use '../../assets/styles/_colors.scss' as c;
+@use '../../assets/styles/_mixins.scss' as m;
 
 .base-card {
-  @include card-theme;
+  @include m.card-theme;
   overflow: hidden;
 
   &__header {
-    padding: $spacing-unit * 3;
-    border-bottom: 1px solid $color-border;
-    background: $color-surface-hover;
+    padding: v.$spacing-unit * 3;
+    border-bottom: 1px solid c.$color-border;
+    background: c.$color-surface-hover;
   }
 
   &__body {
-    padding: $spacing-unit * 3;
+    padding: v.$spacing-unit * 3;
   }
 
   &__footer {
-    padding: $spacing-unit * 3;
-    border-top: 1px solid $color-border;
-    background: $color-surface-hover;
+    padding: v.$spacing-unit * 3;
+    border-top: 1px solid c.$color-border;
+    background: c.$color-surface-hover;
   }
 }
 </style>

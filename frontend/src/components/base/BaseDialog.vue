@@ -36,7 +36,9 @@ function close() {
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@use '../../assets/styles/_variables.scss' as v;
+@use '../../assets/styles/_colors.scss' as c;
+@use '../../assets/styles/_mixins.scss' as m;
 
 .dialog-overlay {
   position: fixed;
@@ -44,15 +46,15 @@ function close() {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba($color-text-primary, 0.5);
+  background: rgba(c.$color-text-primary, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: $z-index-modal;
+  z-index: v.$z-index-modal;
 }
 
 .dialog {
-  @include card-theme;
+  @include m.card-theme;
   width: 90%;
   max-width: 600px;
   max-height: 90vh;
@@ -60,34 +62,34 @@ function close() {
   flex-direction: column;
 
   &__header {
-    padding: $spacing-unit * 3;
-    border-bottom: 1px solid $color-border;
+    padding: v.$spacing-unit * 3;
+    border-bottom: 1px solid c.$color-border;
     display: flex;
     align-items: center;
     justify-content: space-between;
   }
 
   &__body {
-    padding: $spacing-unit * 3;
+    padding: v.$spacing-unit * 3;
     overflow-y: auto;
   }
 
   &__footer {
-    padding: $spacing-unit * 3;
-    border-top: 1px solid $color-border;
-    background: $color-surface-hover;
+    padding: v.$spacing-unit * 3;
+    border-top: 1px solid c.$color-border;
+    background: c.$color-surface-hover;
   }
 
   &__close {
     background: none;
     border: none;
-    color: $color-text-secondary;
+    color: c.$color-text-secondary;
     cursor: pointer;
-    padding: $spacing-unit;
-    border-radius: $border-radius;
+    padding: v.$spacing-unit;
+    border-radius: v.$border-radius;
     
     &:hover {
-      background: $color-surface-hover;
+      background: c.$color-surface-hover;
     }
   }
 }
