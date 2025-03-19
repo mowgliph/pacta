@@ -75,7 +75,7 @@ const handleActivate = () => {
 </script>
 
 <style scoped>
-@import '../../assets/main.scss';
+@import '../../../assets/main.scss';
 
 .dialog-overlay {
   position: fixed;

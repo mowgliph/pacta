@@ -16,7 +16,7 @@ const themeStore = useThemeStore()
 </template>
 
 <style lang="scss">
-@import '../../assets/main.scss';
+@import 'assets/main.scss';
 
 .app {
   min-height: 100vh;

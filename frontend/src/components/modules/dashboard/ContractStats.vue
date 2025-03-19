@@ -72,7 +72,7 @@ function initChart() {
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@import '../../../assets/main.scss';
 
 .contract-stats {
   &__title {

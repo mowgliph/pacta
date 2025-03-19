@@ -98,7 +98,7 @@ function validateForm() {
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@import '../assets/main.scss';
 
 .login {
   min-height: 100vh;

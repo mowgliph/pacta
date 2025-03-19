@@ -79,7 +79,7 @@ function getStatusClass(status: string) {
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@import '../../../assets/main.scss';
 
 .contracts-table {
   width: 100%;

@@ -67,7 +67,7 @@ function formatTime(date: string) {
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@import '../../../assets/main.scss';
 
 .activity-feed {
   &__button {

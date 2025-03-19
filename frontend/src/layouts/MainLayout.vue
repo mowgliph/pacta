@@ -22,7 +22,7 @@ import Toast from '@/components/shared/Toast.vue';
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@import '../assets/main.scss';
 
 .layout {
   display: grid;

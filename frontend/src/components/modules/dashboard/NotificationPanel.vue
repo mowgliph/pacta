@@ -69,7 +69,7 @@ async function markAsRead(id: number) {
 </script>
 
 <style lang="scss" scoped>
-@import '../../assets/main.scss';
+@import '../../../assets/main.scss';
 
 .notification-panel {
   background: var(--color-surface);
@@ -82,36 +82,36 @@ async function markAsRead(id: number) {
     margin-bottom: $spacing-md;
     display: flex;
     align-items: center;
-    gap: v.$spacing-xs;
+    gap: $spacing-xs;
   }
 }
 
 .notification-badge {
-  background: c.$color-accent;
+  background: $color-accent;
   color: white;
   padding: 2px 8px;
   border-radius: 12px;
-  font-size: v.$font-size-xs;
+  font-size: $font-size-xs;
 }
 
 .notification-list {
   display: flex;
   flex-direction: column;
-  gap: v.$spacing-sm;
+  gap: $spacing-sm;
 }
 
 .notification-item {
   display: flex;
   align-items: flex-start;
-  gap: v.$spacing-sm;
-  padding: v.$spacing-sm;
-  border-radius: v.$border-radius;
+  gap: $spacing-sm;
+  padding: $spacing-sm;
+  border-radius: $border-radius;
   background: rgba(var(--color-background), 0.5);
   transition: background-color 0.2s;
 
   &--unread {
     background: white;
-    box-shadow: v.$shadow-sm;
+    box-shadow: $shadow-sm;
   }
 
   &__icon {
@@ -121,7 +121,7 @@ async function markAsRead(id: number) {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: c.$color-accent;
+    background: $color-accent;
     color: white;
 
     &--warning {
@@ -143,11 +143,11 @@ async function markAsRead(id: number) {
 
   &__message {
     color: var(--color-text-primary);
-    margin-bottom: v.$spacing-xs;
+    margin-bottom: $spacing-xs;
   }
 
   &__time {
-    font-size: v.$font-size-sm;
+    font-size: $font-size-sm;
     color: var(--color-text-secondary);
   }
 
@@ -155,8 +155,8 @@ async function markAsRead(id: number) {
     padding: 4px 8px;
     border: none;
     background: none;
-    color: c.$color-accent;
-    font-size: v.$font-size-sm;
+    color: $color-accent;
+    font-size: $font-size-sm;
     cursor: pointer;
     transition: opacity 0.2s;
 
