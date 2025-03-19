@@ -1,7 +1,7 @@
 <template>
   <header class="header">
     <div class="header__actions">
-      <button class="theme-toggle" @click="toggleTheme" :title="isDark ? 'Switch to light mode' : 'Switch to dark mode'">
+      <button class="theme-toggle" @click="toggleTheme" :title="isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
         <i :class="isDark ? 'fas fa-sun' : 'fas fa-moon'"></i>
       </button>
     </div>

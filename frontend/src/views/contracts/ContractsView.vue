@@ -137,9 +137,6 @@ function handleSearch() {
 </script>
 
 <style lang="scss" scoped>
-@use '../../assets/styles/_variables.scss' as v;
-@use '../../assets/styles/_colors.scss' as c;
-@use '../../assets/styles/_mixins.scss' as m;
 
 .contracts {
   &__header {

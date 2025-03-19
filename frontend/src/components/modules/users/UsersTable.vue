@@ -3,12 +3,12 @@
     <table v-if="users.length">
       <thead>
         <tr>
-          <th>Username</th>
+          <th>Usuario</th>
           <th>Email</th>
-          <th>Role</th>
-          <th>Status</th>
-          <th>Last Login</th>
-          <th>Actions</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Último Acceso</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -17,23 +17,23 @@
           <td>{{ user.email }}</td>
           <td>
             <span class="role-badge" :class="`role-${user.role}`">
-              {{ user.role }}
+              {{ user.role === 'admin' ? 'Administrador' : 'Usuario' }}
             </span>
           </td>
           <td>
             <span class="status-badge" :class="{ 'status-active': user.active }">
-              {{ user.active ? 'Active' : 'Inactive' }}
+              {{ user.active ? 'Activo' : 'Inactivo' }}
             </span>
           </td>
           <td>{{ formatDate(user.lastLoginAt) }}</td>
           <td class="actions">
-            <button @click="$emit('edit', user)" class="btn-icon">
+            <button @click="$emit('edit', user)" class="btn-icon" title="Editar">
               <i class="fas fa-edit"></i>
             </button>
             <button 
               @click="$emit('toggle-status', user)" 
               class="btn-icon"
-              :title="user.active ? 'Deactivate' : 'Activate'"
+              :title="user.active ? 'Desactivar' : 'Activar'"
             >
               <i :class="user.active ? 'fas fa-ban' : 'fas fa-check'"></i>
             </button>
@@ -41,6 +41,7 @@
               v-if="!user.isAdmin"
               @click="$emit('delete', user)" 
               class="btn-icon btn-danger"
+              title="Eliminar"
             >
               <i class="fas fa-trash"></i>
             </button>
@@ -49,10 +50,10 @@
       </tbody>
     </table>
     <div v-else-if="loading" class="loading">
-      Loading users...
+      Cargando usuarios...
     </div>
     <div v-else class="no-data">
-      No users found
+      No se encontraron usuarios
     </div>
   </div>
 </template>
@@ -72,15 +73,14 @@ defineEmits<{
 }>();
 
 function formatDate(date: string | null) {
-  if (!date) return 'Never';
-  return format(new Date(date), 'MMM dd, yyyy HH:mm');
+  if (!date) return 'Nunca';
+  return format(new Date(date), 'dd MMM, yyyy HH:mm');
 }
 </script>
 
 <style lang="scss" scoped>
-@use '../../../assets/styles/variables' as v;
-@use '../../../assets/styles/colors' as c;
-@use '../../../assets/styles/mixins' as m;
+@use '../../../assets/styles/_variables.scss' as v;
+@use '../../../assets/styles/_colors.scss' as c;
 
 .users-table {
   width: 100%;

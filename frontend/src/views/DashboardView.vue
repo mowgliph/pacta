@@ -23,10 +23,7 @@ import ActivityFeed from '../components/modules/dashboard/ActivityFeed.vue';
 import NotificationPanel from '../components/modules/dashboard/NotificationPanel.vue';
 </script>
 
-<style lang="scss" scoped>
-@use '../assets/styles/variables' as v;
-@use '../assets/styles/colors' as c;
-
+<style lang="scss">
 .dashboard {
   &__grid {
     display: grid;

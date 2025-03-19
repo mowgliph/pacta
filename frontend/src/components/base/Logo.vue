@@ -32,8 +32,6 @@ defineProps<{
 </script>
 
 <style lang="scss" scoped>
-@use '../../assets/styles/_variables.scss' as v;
-@use '../../assets/styles/_colors.scss' as c;
 
 .logo {
   display: inline-block;

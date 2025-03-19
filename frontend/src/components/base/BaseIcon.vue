@@ -58,8 +58,6 @@ const iconSize = computed(() => sizes[props.size]);
 </script>
 
 <style lang="scss" scoped>
-@use '../../assets/styles/_variables.scss' as v;
-@use '../../assets/styles/_colors.scss' as c;
 
 .base-icon {
   display: inline-block;

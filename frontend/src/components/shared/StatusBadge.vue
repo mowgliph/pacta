@@ -26,8 +26,6 @@ const getStatusIcon = computed(() => {
 </script>
 
 <style lang="scss" scoped>
-@use '../../assets/styles/_variables.scss' as v;
-@use '../../assets/styles/_colors.scss' as c;
 
 .status-badge {
   display: inline-flex;

@@ -79,9 +79,6 @@ function getStatusClass(status: string) {
 </script>
 
 <style lang="scss" scoped>
-@use '../../../assets/styles/_variables.scss' as v;
-@use '../../../assets/styles/_colors.scss' as c;
-@use '../../../assets/styles/_mixins.scss' as m;
 
 .contracts-table {
   width: 100%;
