@@ -58,6 +58,8 @@ const iconSize = computed(() => sizes[props.size]);
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .base-icon {
   display: inline-block;
   vertical-align: middle;

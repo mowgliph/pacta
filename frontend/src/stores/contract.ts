@@ -23,6 +23,12 @@ interface ContractState {
   error: string | null;
 }
 
+interface ContractStats {
+  active: number;
+  expiringSoon: number;
+  expired: number;
+}
+
 export const useContractStore = defineStore('contract', {
   state: (): ContractState => ({
     contracts: [],
@@ -90,6 +96,24 @@ export const useContractStore = defineStore('contract', {
       } catch (error) {
         this.error = 'Error deleting contract';
         throw error;
+      }
+    },
+
+    async getContractStats(): Promise<ContractStats> {
+      try {
+        this.loading = true;
+        // TODO: Replace with actual API call
+        // Temporary mock data
+        return {
+          active: 15,
+          expiringSoon: 3,
+          expired: 2
+        };
+      } catch (error) {
+        this.error = 'Failed to fetch contract statistics';
+        throw error;
+      } finally {
+        this.loading = false;
       }
     }
   }

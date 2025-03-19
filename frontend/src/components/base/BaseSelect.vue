@@ -41,6 +41,8 @@ defineEmits<{
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .base-select {
   display: flex;
   flex-direction: column;

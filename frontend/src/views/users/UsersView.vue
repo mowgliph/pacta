@@ -45,13 +45,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useUserStore } from '@/stores/user';
-import UsersTable from '@/components/users/UsersTable.vue';
-import UserDialog from '@/components/users/UserDialog.vue';
+import type { User } from '@/types/user';
+import UsersTable from '@/components/modules/users/UsersTable.vue';
+import UserDialog from '@/components/modules/users/UserDialog.vue';
 
 const userStore = useUserStore();
 const loading = ref(false);
 const dialogVisible = ref(false);
-const selectedUser = ref(null);
+const selectedUser = ref<User | null>(null);
 
 const filters = ref({
   search: '',
@@ -59,7 +60,7 @@ const filters = ref({
 });
 
 const filteredUsers = computed(() => {
-  let users = userStore.users;
+  let users = userStore.users || [];
   
   if (filters.value.search) {
     const searchTerm = filters.value.search.toLowerCase();
@@ -76,26 +77,17 @@ const filteredUsers = computed(() => {
   return users;
 });
 
-onMounted(async () => {
-  loading.value = true;
-  try {
-    await userStore.fetchUsers();
-  } finally {
-    loading.value = false;
-  }
-});
-
 function showCreateDialog() {
   selectedUser.value = null;
   dialogVisible.value = true;
 }
 
-function handleEdit(user) {
+function handleEdit(user: User) {
   selectedUser.value = user;
   dialogVisible.value = true;
 }
 
-async function handleDelete(user) {
+async function handleDelete(user: User) {
   if (confirm(`Are you sure you want to delete user ${user.username}?`)) {
     try {
       await userStore.deleteUser(user.id);
@@ -105,7 +97,7 @@ async function handleDelete(user) {
   }
 }
 
-async function handleToggleStatus(user) {
+async function handleToggleStatus(user: User) {
   try {
     await userStore.updateUser(user.id, {
       active: !user.active
@@ -115,7 +107,7 @@ async function handleToggleStatus(user) {
   }
 }
 
-async function handleSave(userData) {
+async function handleSave(userData: Partial<User>) {
   try {
     if (selectedUser.value) {
       await userStore.updateUser(selectedUser.value.id, userData);
@@ -128,24 +120,46 @@ async function handleSave(userData) {
   }
 }
 
+let searchTimeout: number;
 function handleSearch() {
-  // Debounce implementation could be added here
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    // The filtering is handled by the computed property
+  }, 300);
 }
+
+onMounted(async () => {
+  loading.value = true;
+  try {
+    await userStore.fetchUsers();
+  } catch (error) {
+    console.error('Error fetching users:', error);
+  } finally {
+    loading.value = false;
+  }
+});
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .users {
   &__header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: $spacing-unit * 4;
+    margin-bottom: calc($spacing-unit * 4);
+
+    h1 {
+      color: var(--color-text-primary);
+      font-weight: $font-weight-semibold;
+    }
   }
 
   &__filters {
     display: flex;
-    gap: $spacing-unit * 2;
-    margin-bottom: $spacing-unit * 3;
+    gap: calc($spacing-unit * 2);
+    margin-bottom: calc($spacing-unit * 3);
   }
 }
 
@@ -154,41 +168,44 @@ function handleSearch() {
   
   input {
     width: 100%;
-    padding: $spacing-unit * 1.5;
-    border: 1px solid $color-surface;
+    padding: calc($spacing-unit * 1.5);
+    border: 1px solid var(--color-border);
     border-radius: $border-radius;
-    font-size: 1rem;
+    font-size: $font-size-base;
+    background: var(--color-surface);
+    color: var(--color-text-primary);
     
     &:focus {
       outline: none;
-      border-color: $color-accent;
+      border-color: var(--color-primary);
     }
   }
 }
 
 .filter-group {
   select {
-    padding: $spacing-unit * 1.5;
-    border: 1px solid $color-surface;
+    padding: calc($spacing-unit * 1.5);
+    border: 1px solid var(--color-border);
     border-radius: $border-radius;
-    background: white;
-    font-size: 1rem;
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+    font-size: $font-size-base;
     min-width: 150px;
     
     &:focus {
       outline: none;
-      border-color: $color-accent;
+      border-color: var(--color-primary);
     }
   }
 }
 
 .btn-primary {
-  background: $color-accent;
+  background: var(--color-primary);
   color: white;
-  padding: $spacing-unit * 1.5 $spacing-unit * 3;
+  padding: calc($spacing-unit * 1.5) calc($spacing-unit * 3);
   border: none;
   border-radius: $border-radius;
-  font-size: 1rem;
+  font-size: $font-size-base;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -196,6 +213,10 @@ function handleSearch() {
   
   &:hover {
     opacity: 0.9;
+  }
+
+  i {
+    font-size: $font-size-base;
   }
 }
 </style>

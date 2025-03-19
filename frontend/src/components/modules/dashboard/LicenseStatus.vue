@@ -7,16 +7,20 @@
         <i :class="statusIcon"></i>
       </div>
       
-      <div class="license-info__content">
-        <p class="license-info__message">{{ licenseStore.currentLicense?.message }}</p>
-        <div class="license-info__details" v-if="licenseStore.currentLicense">
-          <span>Type: {{ licenseStore.currentLicense.type }}</span>
-          <span>Expires: {{ formatDate(licenseStore.currentLicense.expiryDate) }}</span>
-          <span v-if="licenseStore.currentLicense.customerName">
-            Customer: {{ licenseStore.currentLicense.customerName }}
-          </span>
+      <template>
+        <div class="license-info__content">
+          <p class="license-info__message">
+            {{ licenseStore.currentLicense?.message || getLicenseMessage(licenseStore.licenseStatus) }}
+          </p>
+          <div class="license-info__details" v-if="licenseStore.currentLicense">
+            <span>Type: {{ licenseStore.currentLicense.type }}</span>
+            <span>Expires: {{ formatDate(licenseStore.currentLicense.expiryDate) }}</span>
+            <span v-if="licenseStore.currentLicense.customerName">
+              Customer: {{ licenseStore.currentLicense.customerName }}
+            </span>
+          </div>
         </div>
-      </div>
+      </template>
     </div>
 
     <div v-if="isExpiringSoon" class="license-action">
@@ -49,16 +53,27 @@ const statusClass = computed(() => {
 });
 
 const statusIcon = computed(() => {
-  const status = licenseStore.licenseStatus;
+  const status = licenseStore.licenseStatus as 'VALID' | 'EXPIRING_SOON' | 'EXPIRED' | 'NO_LICENSE' | 'ERROR';
   const icons = {
     VALID: 'fas fa-check-circle',
     EXPIRING_SOON: 'fas fa-exclamation-triangle',
     EXPIRED: 'fas fa-times-circle',
     NO_LICENSE: 'fas fa-ban',
     ERROR: 'fas fa-exclamation-circle'
-  };
+  } as const;
   return icons[status] || icons.ERROR;
 });
+
+function getLicenseMessage(status: 'VALID' | 'EXPIRING_SOON' | 'EXPIRED' | 'NO_LICENSE' | 'ERROR') {
+  const messages = {
+    VALID: 'Your license is active and valid.',
+    EXPIRING_SOON: 'Your license will expire soon. Please renew to maintain access.',
+    EXPIRED: 'Your license has expired. Please renew to restore access.',
+    NO_LICENSE: 'No valid license found. Please activate a license to continue.',
+    ERROR: 'There was an error checking your license status.'
+  } as const;
+  return messages[status] || messages.ERROR;
+}
 
 const isExpiringSoon = computed(() => {
   return licenseStore.licenseStatus === 'EXPIRING_SOON';
@@ -75,10 +90,13 @@ function handleRenewal() {
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .license-status {
   &__title {
-    color: $color-text-primary;
-    margin-bottom: $spacing-unit * 3;
+    color: var(--color-text-primary);
+    font-weight: $font-weight-semibold;
+    margin-bottom: $spacing-unit * 4;
   }
 }
 
@@ -88,7 +106,8 @@ function handleRenewal() {
   gap: $spacing-unit * 2;
   padding: $spacing-unit * 3;
   border-radius: $border-radius;
-  background: rgba($color-background, 0.5);
+  background: var(--color-surface);
+  opacity: 0.5;
 
   &--valid {
     background: rgba(#10B981, 0.1);
@@ -122,6 +141,7 @@ function handleRenewal() {
   &__message {
     font-weight: $font-weight-medium;
     margin-bottom: $spacing-unit;
+    color: var(--color-text-primary);
   }
 
   &__details {
@@ -129,7 +149,7 @@ function handleRenewal() {
     flex-direction: column;
     gap: $spacing-unit;
     font-size: 0.875rem;
-    color: $color-text-secondary;
+    color: var(--color-text-secondary);
   }
 }
 
@@ -143,8 +163,8 @@ function handleRenewal() {
   align-items: center;
   gap: $spacing-unit;
   padding: $spacing-unit * 1.5 $spacing-unit * 3;
-  background: $color-accent;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-text-light);
   border: none;
   border-radius: $border-radius;
   font-size: 0.875rem;

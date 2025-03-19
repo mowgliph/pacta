@@ -78,6 +78,8 @@ function formatDate(date: string | null) {
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .users-table {
   width: 100%;
   overflow-x: auto;

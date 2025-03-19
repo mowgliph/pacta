@@ -69,42 +69,49 @@ async function markAsRead(id: number) {
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .notification-panel {
+  background: var(--color-surface);
+  border-radius: $border-radius;
+  padding: $spacing-md;
+  
   &__title {
-    color: $color-text-primary;
-    margin-bottom: $spacing-unit * 3;
+    color: var(--color-text-primary);
+    font-weight: $font-weight-semibold;
+    margin-bottom: $spacing-md;
     display: flex;
     align-items: center;
-    gap: $spacing-unit;
+    gap: v.$spacing-xs;
   }
 }
 
 .notification-badge {
-  background: $color-accent;
+  background: c.$color-accent;
   color: white;
   padding: 2px 8px;
   border-radius: 12px;
-  font-size: 0.75rem;
+  font-size: v.$font-size-xs;
 }
 
 .notification-list {
   display: flex;
   flex-direction: column;
-  gap: $spacing-unit * 2;
+  gap: v.$spacing-sm;
 }
 
 .notification-item {
   display: flex;
   align-items: flex-start;
-  gap: $spacing-unit * 2;
-  padding: $spacing-unit * 2;
-  border-radius: $border-radius;
-  background: rgba($color-background, 0.5);
+  gap: v.$spacing-sm;
+  padding: v.$spacing-sm;
+  border-radius: v.$border-radius;
+  background: rgba(var(--color-background), 0.5);
   transition: background-color 0.2s;
 
   &--unread {
     background: white;
-    box-shadow: $shadow-sm;
+    box-shadow: v.$shadow-sm;
   }
 
   &__icon {
@@ -114,7 +121,7 @@ async function markAsRead(id: number) {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: $color-accent;
+    background: c.$color-accent;
     color: white;
 
     &--warning {
@@ -135,21 +142,21 @@ async function markAsRead(id: number) {
   }
 
   &__message {
-    color: $color-text-primary;
-    margin-bottom: $spacing-unit;
+    color: var(--color-text-primary);
+    margin-bottom: v.$spacing-xs;
   }
 
   &__time {
-    font-size: 0.875rem;
-    color: $color-text-secondary;
+    font-size: v.$font-size-sm;
+    color: var(--color-text-secondary);
   }
 
   &__action {
     padding: 4px 8px;
     border: none;
     background: none;
-    color: $color-accent;
-    font-size: 0.875rem;
+    color: c.$color-accent;
+    font-size: v.$font-size-sm;
     cursor: pointer;
     transition: opacity 0.2s;
 

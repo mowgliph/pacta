@@ -94,7 +94,7 @@
 import { ref, onMounted } from 'vue';
 import { useUserStore } from '@/stores/user';
 import { format } from 'date-fns';
-import { useToast } from '@/composables/useToast';
+import { useToast } from '@/types/useToast';
 
 const userStore = useUserStore();
 const toast = useToast();
@@ -196,6 +196,8 @@ function formatDate(date: string) {
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .profile {
   max-width: 1200px;
   margin: 0 auto;

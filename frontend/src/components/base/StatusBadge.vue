@@ -11,6 +11,8 @@ defineProps<{
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .status-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;

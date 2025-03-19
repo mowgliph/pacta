@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia';
 import axios from 'axios';
 
+type LicenseStatus = 'VALID' | 'EXPIRING_SOON' | 'EXPIRED' | 'NO_LICENSE' | 'ERROR';
+
 interface License {
   id: number;
   licenseKey: string;
@@ -10,25 +12,17 @@ interface License {
   active: boolean;
   maxUsers: number;
   features: Record<string, boolean>;
-  metadata: {
-    customerName: string;
-    renewalDate: string;
-  };
-}
-
-interface LicenseState {
-  currentLicense: License | null;
-  licenseStatus: 'VALID' | 'EXPIRED' | 'EXPIRING_SOON' | 'NO_LICENSE' | 'ERROR' | 'CHECKING';
-  loading: boolean;
-  error: string | null;
+  metadata: Record<string, any>;
+  message?: string;
+  customerName?: string;
 }
 
 export const useLicenseStore = defineStore('license', {
-  state: (): LicenseState => ({
-    currentLicense: null,
-    licenseStatus: 'CHECKING',
+  state: () => ({
+    currentLicense: null as License | null,
+    licenseStatus: 'NO_LICENSE' as LicenseStatus,
     loading: false,
-    error: null
+    error: null as string | null
   }),
 
   getters: {

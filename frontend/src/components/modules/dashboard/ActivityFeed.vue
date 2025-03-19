@@ -67,16 +67,20 @@ function formatTime(date: string) {
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .activity-feed {
-  &__title {
-    color: $color-text-primary;
-    margin-bottom: $spacing-unit * 3;
+  &__button {
+    background: var(--color-primary);
+    color: var(--color-text-light);
+    background: var(--color-surface);
+    border-radius: $border-radius;
+    padding: $spacing-unit * 4;
   }
 
-  &__list {
-    display: flex;
-    flex-direction: column;
-    gap: $spacing-unit * 2;
+  &__title {
+    color: var(--color-text-primary);
+    font-weight: $font-weight-semibold;
   }
 }
 
@@ -92,19 +96,19 @@ function formatTime(date: string) {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: $color-accent;
-    color: white;
+    background: var(--color-primary);
+    color: var(--color-text-light);
 
     &--contract {
-      background: #10B981;
+      background: var(--color-success);
     }
 
     &--user {
-      background: #6366F1;
+      background: var(--color-info);
     }
 
     &--license {
-      background: #F59E0B;
+      background: var(--color-warning);
     }
   }
 
@@ -113,13 +117,13 @@ function formatTime(date: string) {
   }
 
   &__message {
-    color: $color-text-primary;
+    color: var(--color-text-primary);
     margin-bottom: $spacing-unit;
   }
 
   &__time {
     font-size: 0.875rem;
-    color: $color-text-secondary;
+    color: var(--color-text-secondary);
   }
 }
 </style>

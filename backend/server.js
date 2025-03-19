@@ -19,6 +19,12 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files from frontend build directory
+app.use(express.static(path.join(__dirname, '../frontend/dist'), {
+  maxAge: '1y',
+  etag: false
+}));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/contracts', contractRoutes); // Add contract routes
@@ -51,6 +57,11 @@ testConnection();
 // Basic route
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to PACTA API' });
+});
+
+// Serve the frontend SPA for any other route
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
 });
 
 // Start server

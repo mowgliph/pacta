@@ -79,6 +79,8 @@ function getStatusClass(status: string) {
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .contracts-table {
   width: 100%;
   overflow-x: auto;

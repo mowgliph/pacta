@@ -13,6 +13,8 @@
 </template>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .base-card {
   @include card-theme;
   overflow: hidden;

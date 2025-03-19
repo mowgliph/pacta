@@ -98,96 +98,51 @@ function validateForm() {
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .login {
   min-height: 100vh;
+  background: var(--color-background);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: $color-background;
+  padding: $spacing-unit * 4;
 
   &__container {
     width: 100%;
     max-width: 400px;
-    padding: $spacing-unit * 4;
+    background: var(--color-surface);
+    border-radius: $border-radius;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: $spacing-unit * 6;
   }
 
-  &__logo {
-    margin-bottom: $spacing-unit * 4;
+  &__title {
     text-align: center;
+    margin-bottom: $spacing-unit * 6;
+    
+    h1 {
+      font-size: 2rem;
+      font-weight: $font-weight-semibold;
+      color: var(--color-text-primary);
+      margin-bottom: $spacing-unit * 2;
+    }
+
+    p {
+      color: var(--color-text-secondary);
+    }
   }
 
   &__form {
-    background: white;
-    padding: $spacing-unit * 4;
-    border-radius: $border-radius;
-    box-shadow: $shadow-lg;
-
-    h1 {
-      margin-bottom: $spacing-unit * 4;
-      text-align: center;
-      color: $color-text-primary;
-    }
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-unit * 4;
   }
 
   &__error {
     margin-top: $spacing-unit * 2;
-    color: $color-error;
+    color: var(--color-error);
     text-align: center;
-  }
-}
-
-.form-group {
-  margin-bottom: $spacing-unit * 3;
-
-  label {
-    display: block;
-    margin-bottom: $spacing-unit;
-    color: $color-text-secondary;
-  }
-
-  input {
-    width: 100%;
-    padding: $spacing-unit * 1.5;
-    border: 1px solid $color-border;
-    border-radius: $border-radius;
-    transition: border-color 0.2s;
-
-    &:focus {
-      outline: none;
-      border-color: $color-primary;
-    }
-
-    &.error {
-      border-color: $color-error;
-    }
-  }
-}
-
-.error-message {
-  display: block;
-  margin-top: $spacing-unit;
-  color: $color-error;
-  font-size: 0.875rem;
-}
-
-.btn-primary {
-  width: 100%;
-  padding: $spacing-unit * 2;
-  background: $color-primary;
-  color: white;
-  border: none;
-  border-radius: $border-radius;
-  font-weight: $font-weight-medium;
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background: darken($color-primary, 5%);
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
   }
 }
 </style>

@@ -27,6 +27,8 @@ defineProps({
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .base-button {
   @include button-theme;
   @include button-text;

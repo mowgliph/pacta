@@ -56,7 +56,7 @@
 import { ref, onMounted } from 'vue';
 import { format } from 'date-fns';
 import { useLicenseStore } from '../../stores/license';
-import { useToast } from '../../composables/useToast';
+import { useToast } from '../../types/useToast';
 import BaseButton from '../../components/base/BaseButton.vue';
 import StatusBadge from '../../components/base/StatusBadge.vue';
 import LicenseStatus from '../../components/modules/dashboard/LicenseStatus.vue';
@@ -143,6 +143,8 @@ async function fetchLicenseHistory() {
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .licenses {
   &__header {
     display: flex;

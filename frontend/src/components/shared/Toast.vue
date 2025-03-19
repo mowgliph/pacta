@@ -44,6 +44,8 @@ function getIcon(type: ToastType) {
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .toast-container {
   position: fixed;
   top: $spacing-unit * 4;
@@ -61,28 +63,28 @@ function getIcon(type: ToastType) {
   padding: $spacing-unit * 2;
   min-width: 300px;
   max-width: 500px;
-  background: white;
+  background: var(--color-surface);
   border-radius: $border-radius;
-  box-shadow: $shadow-md;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
   &--success {
-    border-left: 4px solid #10B981;
-    .toast__icon { color: #10B981; }
+    border-left: 4px solid var(--color-success);
+    .toast__icon { color: var(--color-success); }
   }
 
   &--error {
-    border-left: 4px solid #EF4444;
-    .toast__icon { color: #EF4444; }
+    border-left: 4px solid var(--color-error);
+    .toast__icon { color: var(--color-error); }
   }
 
   &--warning {
-    border-left: 4px solid #F59E0B;
-    .toast__icon { color: #F59E0B; }
+    border-left: 4px solid var(--color-warning);
+    .toast__icon { color: var(--color-warning); }
   }
 
   &--info {
-    border-left: 4px solid #3B82F6;
-    .toast__icon { color: #3B82F6; }
+    border-left: 4px solid var(--color-info);
+    .toast__icon { color: var(--color-info); }
   }
 
   &__icon {
@@ -95,6 +97,7 @@ function getIcon(type: ToastType) {
 
   &__message {
     margin: 0;
+    color: var(--color-text-secondary);
     font-size: 0.875rem;
   }
 
@@ -102,7 +105,7 @@ function getIcon(type: ToastType) {
     padding: 4px;
     border: none;
     background: none;
-    color: $color-text-secondary;
+    color: var(--color-text-secondary);
     cursor: pointer;
     opacity: 0.5;
     transition: opacity 0.2s;

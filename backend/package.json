@@ -14,8 +14,9 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "prebuild": "node build.js",
-    "build": "pkg . --out-path dist"
+    "prebuild": "node build.js && cd ../frontend && npm run build",
+    "build": "pkg . --out-path dist",
+    "postbuild": "mkdir -p dist/frontend && cp -r ../frontend/dist dist/frontend"
   },
   "devDependencies": {
     "nodemon": "^3.1.9",
@@ -31,7 +32,8 @@
       "models/**/*",
       "config/**/*",
       ".env",
-      "database/**/*"
+      "database/**/*",
+      "../frontend/dist/**/*"
     ]
   }
 }

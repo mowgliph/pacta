@@ -45,6 +45,8 @@ defineProps<{
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .base-table {
   width: 100%;
   border-collapse: collapse;

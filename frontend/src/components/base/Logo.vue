@@ -32,15 +32,17 @@ defineProps<{
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .logo {
   display: inline-block;
   
   &--light {
-    color: $color-text-light;
+    color: var(--color-text-light);
   }
   
   &--dark {
-    color: $color-primary;
+    color: var(--color-primary);
   }
 }
 </style>

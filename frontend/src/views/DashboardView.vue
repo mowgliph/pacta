@@ -24,6 +24,8 @@ import NotificationPanel from '@/components/modules/dashboard/NotificationPanel.
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .dashboard {
   &__grid {
     display: grid;

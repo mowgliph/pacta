@@ -26,6 +26,8 @@ defineEmits<{
 </script>
 
 <style lang="scss" scoped>
+@import '../../assets/main.scss';
+
 .base-input {
   &__label {
     @include form-label;
