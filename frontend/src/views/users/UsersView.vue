@@ -146,7 +146,6 @@ onMounted(async () => {
 @use '../../styles/variables' as v;
 @use '../../styles/colors' as c;
 @use '../../styles/mixins' as m;
-@use '../../styles/typography' as t;
 
 .users {
   &__header {
@@ -154,7 +153,7 @@ onMounted(async () => {
     margin-bottom: v.$spacing-xl;
 
     h1 {
-      @include t.heading-1;
+      @include m.heading-1;
       color: c.$color-text-primary;
     }
   }
@@ -181,6 +180,7 @@ onMounted(async () => {
   }
   
   input {
+    @include m.input;
     width: 100%;
     padding: v.$spacing-md v.$spacing-md v.$spacing-md calc(v.$spacing-xl + v.$spacing-sm);
     border: 1px solid c.$color-border;
@@ -192,13 +192,14 @@ onMounted(async () => {
     &:focus {
       outline: none;
       border-color: c.$color-primary;
-      box-shadow: 0 0 0 2px c.$color-primary-light;
+      box-shadow: 0 0 0 2px rgba(c.$color-primary, 0.2);
     }
   }
 }
 
 .filter-group {
   select {
+    @include m.input;
     padding: v.$spacing-md;
     border: 1px solid c.$color-border;
     border-radius: v.$border-radius-md;
@@ -210,13 +211,16 @@ onMounted(async () => {
     &:focus {
       outline: none;
       border-color: c.$color-primary;
-      box-shadow: 0 0 0 2px c.$color-primary-light;
+      box-shadow: 0 0 0 2px rgba(c.$color-primary, 0.2);
     }
   }
 }
 
 .btn-primary {
-  @include m.button-primary;
+  @include m.button-theme('primary');
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-xs;
   
   i {
     font-size: v.$font-size-base;
@@ -226,8 +230,8 @@ onMounted(async () => {
 @media (max-width: v.$breakpoint-md) {
   .users {
     &__filters {
-      flex-direction: column;
-      align-items: stretch;
+      @include m.flex-column;
+      gap: v.$spacing-md;
     }
   }
 }

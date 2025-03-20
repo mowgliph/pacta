@@ -3,7 +3,7 @@
     <!-- Sidebar -->
     <aside class="dashboard-sidebar" :class="{ 'is-collapsed': isSidebarCollapsed }">
       <div class="sidebar-header">
-        <img src="../assets/contract_icon.png" alt="Logo" class="logo" />
+        <Logo class="logo" :variant="isDark ? 'light' : 'dark'" />
         <h1 v-if="!isSidebarCollapsed">Admin Panel</h1>
       </div>
       
@@ -41,7 +41,7 @@
         
         <div class="header-right">
           <div class="user-menu">
-            <img :src="userAvatar" alt="User" class="user-avatar" />
+            <UserAvatar :name="userName" />
             <span class="user-name">{{ userName }}</span>
             <i class="fas fa-chevron-down"></i>
           </div>
@@ -58,16 +58,18 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import Logo from '../components/base/Logo.vue'
+import UserAvatar from '../components/base/UserAvatar.vue'
 
 const isSidebarCollapsed = ref(false)
 const userName = ref('Admin User')
-const userAvatar = ref('https://via.placeholder.com/40')
+const isDark = ref(false) // Por defecto en modo claro
 
 const menuItems = [
-  { path: '/dashboard', label: 'Dashboard', icon: 'fas fa-home' },
-  { path: '/users', label: 'Users', icon: 'fas fa-users' },
-  { path: '/analytics', label: 'Analytics', icon: 'fas fa-chart-bar' },
-  { path: '/settings', label: 'Settings', icon: 'fas fa-cog' },
+  { path: '/dashboard', label: 'Inicio', icon: 'fas fa-home' },
+  { path: '/analytics', label: 'Estadisticas', icon: 'fas fa-chart-bar' },
+  { path: '/users', label: 'Usuarios', icon: 'fas fa-users' },
+  { path: '/settings', label: 'Ajustes', icon: 'fas fa-cog' },
 ]
 
 const toggleSidebar = () => {

@@ -32,20 +32,17 @@ defineProps<{
 </script>
 
 <style lang="scss" scoped>
-@use '../../styles/variables' as v;
 @use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-@use '../../styles/typography' as t;
 
 .logo {
   display: inline-block;
   
   &--light {
-    color: var(--color-text-light);
+    color: c.$color-text-light;
   }
   
   &--dark {
-    color: var(--color-primary);
+    color: c.$color-primary;
   }
 }
 </style>

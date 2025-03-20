@@ -6,6 +6,7 @@ import { createPinia } from 'pinia';
 import App from './App.vue';
 import router from './router';
 import { useThemeStore } from './stores/theme';
+import { useAuthStore } from './stores/auth';
 
 // PrimeVue components
 import PrimeVue from 'primevue/config';
@@ -26,8 +27,9 @@ import 'primeflex/primeflex.css';
 import 'primeicons/primeicons.css';
 
 const app = createApp(App);
+const pinia = createPinia();
 
-app.use(createPinia());
+app.use(pinia);
 app.use(router);
 app.use(PrimeVue, {
   unstyled: false,                  // Use styled version
@@ -47,8 +49,16 @@ app.component('PrimeDialog', Dialog);
 app.component('PrimeCalendar', Calendar);
 app.component('PrimeTextarea', Textarea);
 
-// Initialize theme
+// Initialize theme and auth
 const themeStore = useThemeStore();
+const authStore = useAuthStore();
+
+// Initialize stores
 themeStore.initTheme();
+authStore.checkAuth().then(isAuthenticated => {
+  if (!isAuthenticated && router.currentRoute.value.meta.requiresAuth) {
+    router.push('/login');
+  }
+});
 
 app.mount('#app');

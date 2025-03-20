@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { body, validationResult } from 'express-validator';
-import { verifyToken, isAdmin } from '../middleware/auth.js';
+import { authenticateToken, isAdmin } from '../middleware/auth.js';
 import { Contract, User, ActivityLog } from '../models/associations.js';
 
 const router = Router();
 
 // Get all contracts (filtered by user role)
-router.get('/', verifyToken, async (req, res) => {
+router.get('/', authenticateToken, async (req, res) => {
   try {
     const contracts = await Contract.findAll({
       where: req.user.role === 'admin' ? {} : { createdBy: req.user.id },
@@ -25,7 +25,7 @@ router.get('/', verifyToken, async (req, res) => {
 });
 
 // Get contract by ID
-router.get('/:id', verifyToken, async (req, res) => {
+router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const contract = await Contract.findOne({
       where: {
@@ -44,7 +44,7 @@ router.get('/:id', verifyToken, async (req, res) => {
 
 // Create new contract
 router.post('/', [
-  verifyToken,
+  authenticateToken,
   body('title')
     .isLength({ min: 3, max: 100 })
     .trim()
@@ -124,7 +124,7 @@ router.post('/', [
 
 // Update contract
 router.put('/:id', [
-  verifyToken,
+  authenticateToken,
   body('title')
     .optional()
     .isLength({ min: 3, max: 100 })
@@ -205,7 +205,7 @@ router.put('/:id', [
 });
 
 // Delete contract
-router.delete('/:id', verifyToken, async (req, res) => {
+router.delete('/:id', authenticateToken, async (req, res) => {
   try {
     const contract = await Contract.findOne({
       where: {

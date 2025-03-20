@@ -1,61 +1,154 @@
 import { defineStore } from 'pinia';
-import axios from 'axios';
+import { ref, computed } from 'vue';
+import { authService } from '@/services/auth.service';
+import type { User, LoginResponse, LicenseResponse } from '@/types/api';
 
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  role: string;
-  firstLogin: boolean;
-}
+export const useAuthStore = defineStore('auth', () => {
+  const user = ref<LoginResponse['user'] | null>(null);
+  const license = ref<LoginResponse['license'] | null>(null);
+  const token = ref<string | null>(null);
+  const errors = ref<string[]>([]);
+  const loading = ref(false);
 
-interface AuthState {
-  token: string | null;
-  user: User | null;
-  isAuthenticated: boolean;
-}
+  const isAuthenticated = computed(() => !!token.value);
+  const isAdmin = computed(() => user.value?.role === 'admin');
+  const hasActiveLicense = computed(() => !!license.value);
+  const isTokenExpired = computed(() => {
+    if (!token.value) return true;
+    try {
+      const payload = JSON.parse(atob(token.value.split('.')[1]));
+      return payload.exp * 1000 < Date.now();
+    } catch {
+      return true;
+    }
+  });
 
-interface Credentials {
-  username: string;
-  password: string;
-}
+  function setAuthData(data: LoginResponse) {
+    user.value = data.user;
+    license.value = data.license;
+    token.value = data.token;
+    errors.value = [];
+  }
 
-export const useAuthStore = defineStore('auth', {
-  state: (): AuthState => ({
-    token: localStorage.getItem('token'),
-    user: null,
-    isAuthenticated: false
-  }),
+  function setLicenseData(data: LicenseResponse) {
+    license.value = data.license;
+    errors.value = [];
+  }
 
-  getters: {
-    isAdmin: (state) => state.user?.role === 'admin',
-    requiresPasswordChange: (state) => state.user?.firstLogin
-  },
+  function clearAuthData() {
+    user.value = null;
+    license.value = null;
+    token.value = null;
+    errors.value = [];
+  }
 
-  actions: {
-    async login(credentials: Credentials) {
-      try {
-        const response = await axios.post('/api/auth/login', credentials);
-
-        this.token = response.data.token;
-        this.user = response.data.user;
-        this.isAuthenticated = true;
-
-        localStorage.setItem('token', response.data.token);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-
-        return response.data;
-      } catch (error) {
-        throw error;
-      }
-    },
-
-    logout() {
-      this.token = null;
-      this.user = null;
-      this.isAuthenticated = false;
-      localStorage.removeItem('token');
-      delete axios.defaults.headers.common['Authorization'];
+  async function login(username: string, password: string) {
+    try {
+      loading.value = true;
+      errors.value = [];
+      const response = await authService.login(username, password);
+      setAuthData(response);
+      return true;
+    } catch (error: any) {
+      errors.value = [error.message];
+      return false;
+    } finally {
+      loading.value = false;
     }
   }
+
+  async function activateLicense(licenseCode: string) {
+    try {
+      loading.value = true;
+      errors.value = [];
+      const response = await authService.activateLicense(licenseCode);
+      setLicenseData(response);
+      return true;
+    } catch (error: any) {
+      errors.value = [error.message];
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function checkLicenseStatus() {
+    try {
+      loading.value = true;
+      errors.value = [];
+      const response = await authService.checkLicenseStatus();
+      setLicenseData(response);
+      return true;
+    } catch (error: any) {
+      errors.value = [error.message];
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function logout() {
+    try {
+      loading.value = true;
+      await authService.logout();
+      clearAuthData();
+      return true;
+    } catch (error: any) {
+      errors.value = [error.message];
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function refreshToken() {
+    try {
+      const response = await authService.refreshToken();
+      if (response.token) {
+        token.value = response.token;
+      }
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  async function checkAuth() {
+    const storedToken = localStorage.getItem('token');
+    if (!storedToken) return false;
+
+    try {
+      const currentUser = await authService.getCurrentUser();
+      if (currentUser) {
+        user.value = {
+          id: currentUser.id,
+          username: currentUser.username,
+          role: currentUser.role
+        };
+        token.value = storedToken;
+      }
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  return {
+    user,
+    license,
+    token,
+    errors,
+    loading,
+    isAuthenticated,
+    isAdmin,
+    hasActiveLicense,
+    isTokenExpired,
+    login,
+    logout,
+    refreshToken,
+    checkAuth,
+    activateLicense,
+    checkLicenseStatus,
+    clearErrors: () => errors.value = []
+  };
 });

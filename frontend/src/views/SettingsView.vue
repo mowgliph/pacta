@@ -169,11 +169,8 @@ const autoLogin = ref(false)
   }
 
   .settings-section {
-    background-color: c.$color-surface;
-    border-radius: v.$border-radius-lg;
-    padding: v.$spacing-lg;
+    @include m.card-style;
     margin-bottom: v.$spacing-xl;
-    box-shadow: v.$shadow-sm;
 
     .section-header {
       @include m.flex-between;
@@ -194,6 +191,8 @@ const autoLogin = ref(false)
   }
 
   .setting-card {
+    @include m.card-style;
+
     h3 {
       @include m.heading-3;
       color: c.$color-text-primary;
@@ -204,7 +203,7 @@ const autoLogin = ref(false)
       margin-bottom: v.$spacing-md;
 
       label {
-        @include m.label;
+        @include m.form-label;
         color: c.$color-text-secondary;
         margin-bottom: v.$spacing-xs;
       }
@@ -226,7 +225,7 @@ const autoLogin = ref(false)
         &:focus {
           outline: none;
           border-color: c.$color-primary;
-          box-shadow: 0 0 0 2px c.$color-primary-light;
+          box-shadow: 0 0 0 2px rgba(c.$color-primary, 0.2);
         }
       }
     }
@@ -248,15 +247,15 @@ const autoLogin = ref(false)
 
         span {
           &.active {
-            color: c.$color-success;
+            @include m.status-color('active');
           }
 
           &.expired {
-            color: c.$color-error;
+            @include m.status-color('expired');
           }
 
           &.pending {
-            color: c.$color-warning;
+            @include m.status-color('pending');
           }
         }
       }
@@ -301,7 +300,7 @@ const autoLogin = ref(false)
         width: 16px;
         left: 4px;
         bottom: 4px;
-        background-color: c.$color-white;
+        background-color: c.$color-surface;
         transition: .4s;
         border-radius: 50%;
       }
@@ -311,11 +310,11 @@ const autoLogin = ref(false)
 
 // Utility Classes
 .btn-primary {
-  @include m.button-primary;
+  @include m.button-theme('primary');
 }
 
 .btn-secondary {
-  @include m.button-secondary;
+  @include m.button-theme('secondary');
 }
 
 @media (max-width: v.$breakpoint-md) {
@@ -325,7 +324,7 @@ const autoLogin = ref(false)
     }
 
     .section-header {
-      @include m.flex-col;
+      @include m.flex-column;
       gap: v.$spacing-md;
       align-items: flex-start;
     }

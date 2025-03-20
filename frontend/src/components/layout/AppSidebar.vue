@@ -23,20 +23,18 @@
 import Logo from '../../components/base/Logo.vue';
 
 const menuItems = [
-  { path: '/', label: 'Dashboard', icon: 'fas fa-home' },
-  { path: '/contracts', label: 'Contracts', icon: 'fas fa-file-contract' },
-  { path: '/licenses', label: 'Licenses', icon: 'fas fa-key' },
-  { path: '/users', label: 'Users', icon: 'fas fa-users' },
-  { path: '/about', label: 'Sobre PACTA', icon: 'fas fa-info-circle' },
-  { path: '/settings', label: 'Settings', icon: 'fas fa-cog' }
+  { path: '/', label: 'Inicio', icon: 'fas fa-home' },
+  { path: '/contracts', label: 'Contratos', icon: 'fas fa-file-contract' },
+  { path: '/licenses', label: 'Licencias', icon: 'fas fa-key' },
+  { path: '/users', label: 'Usuario', icon: 'fas fa-users' },
+  { path: '/settings', label: 'Ajustes', icon: 'fas fa-cog' }
 ];
 </script>
 
 <style lang="scss" scoped>
 @use '../../styles/variables' as v;
 @use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-@use '../../styles/typography' as t;
+
 
 .app-sidebar {
   background: c.$color-surface;

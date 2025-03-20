@@ -1,8 +1,8 @@
 <template>
   <header class="header">
     <div class="header__left">
-      <Logo class="header__logo" />
-      <h1 class="header__title">PACTA</h1>
+      <Logo class="header__logo" :variant="isDark ? 'light' : 'dark'" />
+      
     </div>
     
     <div class="header__right">
@@ -38,8 +38,8 @@ function toggleTheme() {
 
 .header {
   padding: v.$spacing-unit * 4;
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  background: c.$color-surface;
+  border-bottom: 1px solid c.$color-border;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -59,7 +59,7 @@ function toggleTheme() {
   &__title {
     font-size: 1.5rem;
     font-weight: 600;
-    color: var(--color-text-primary);
+    color: c.$color-text-primary;
     margin: 0;
   }
 
@@ -74,14 +74,14 @@ function toggleTheme() {
   display: flex;
   align-items: center;
   gap: v.$spacing-unit;
-  color: var(--color-text-primary);
+  color: c.$color-text-primary;
   text-decoration: none;
   padding: v.$spacing-unit * 2;
   border-radius: v.$border-radius;
   transition: background-color 0.2s;
 
   &:hover {
-    background: var(--color-surface-hover);
+    background: c.$color-surface-hover;
   }
 
   i {
@@ -102,7 +102,7 @@ function toggleTheme() {
   border-radius: v.$border-radius;
   
   &:hover {
-    background: var(--color-surface-hover);
+    background: c.$color-surface-hover;
   }
 }
 </style>

@@ -1,19 +1,9 @@
 <template>
   <div class="login">
-    <div class="login__left">
-      <div class="login__branding">
-        <h2>PACTA</h2>
-        <p>Gestión de Contratos</p>
-        <div class="login__tagline">
-          <p>"Tus contratos, al alcance de un clic."</p>
-        </div>
-      </div>
-    </div>
-    
+        
     <div class="login__right">
       <div class="login__container">
-        <Logo class="login__logo" />
-        
+                
         <form @submit.prevent="handleLogin" class="login__form">
           <h1>Iniciar Sesión</h1>
           <p class="login__subtitle">Ingresa tus credenciales para acceder al sistema</p>
@@ -73,7 +63,6 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import Logo from '../components/base/Logo.vue';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -96,10 +85,50 @@ async function handleLogin() {
   error.value = '';
 
   try {
-    await authStore.login(credentials.value);
-    router.push({ name: 'dashboard' });
-  } catch (err) {
-    error.value = 'Usuario o contraseña incorrectos';
+    console.log('Attempting login with:', credentials.value);
+    const success = await authStore.login(
+      credentials.value.username,
+      credentials.value.password
+    );
+    console.log('Login response:', success);
+    console.log('Auth store errors:', authStore.errors);
+    
+    if (success) {
+      console.log('Login successful, checking license status');
+      // Si el login es exitoso, el router se encargará de redirigir
+      // a la página de licencia si es necesario
+      const redirectPath = router.currentRoute.value.query.redirect as string || '/dashboard';
+      router.push(redirectPath);
+    } else {
+      console.log('Login failed, showing error');
+      error.value = authStore.errors[0] || 'Credenciales inválidas';
+    }
+  } catch (err: any) {
+    console.error('Login error:', err);
+    if (!err.response) {
+      error.value = 'Error de conexión. Por favor, verifica tu conexión a internet e intente nuevamente.';
+    } else {
+      console.log('Error response:', err.response);
+      switch (err.response.status) {
+        case 401:
+          error.value = 'Credenciales inválidas';
+          break;
+        case 403:
+          error.value = 'No tienes permisos para acceder al sistema';
+          break;
+        case 404:
+          error.value = 'El usuario no existe en el sistema';
+          break;
+        case 423:
+          error.value = 'Tu cuenta ha sido bloqueada temporalmente. Por favor, intenta más tarde';
+          break;
+        case 503:
+          error.value = 'El servicio no está disponible en este momento. Por favor, intente más tarde';
+          break;
+        default:
+          error.value = err.response.data?.message || 'Error al iniciar sesión. Por favor, intente nuevamente';
+      }
+    }
   } finally {
     loading.value = false;
   }
@@ -127,6 +156,7 @@ function validateForm() {
 </script>
 
 <style lang="scss" scoped>
+@use 'sass:color';
 @use '../styles/variables' as v;
 @use '../styles/colors' as c;
 @use '../styles/mixins' as m;
@@ -147,32 +177,6 @@ function validateForm() {
   min-height: 100vh;
   background: linear-gradient(135deg, c.$color-surface, c.$color-background);
   position: relative;
-  
-  &__left {
-    flex: 1;
-    background: linear-gradient(135deg, c.$color-primary, c.$color-accent);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: v.$spacing-unit * 8;
-    position: relative;
-    overflow: hidden;
-    animation: fadeIn 0.8s ease-out;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-image: radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                         radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05) 2px, transparent 2px),
-                         radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px);
-      background-size: 40px 40px, 60px 60px, 30px 30px;
-      opacity: 0.4;
-    }
-  }
   
   &__right {
     flex: 1;
@@ -319,7 +323,7 @@ function validateForm() {
     }
     
     &::placeholder {
-      color: lighten(c.$color-text-secondary, 20%);
+      color: color.adjust(c.$color-text-secondary, $lightness: 20%);
     }
   }
 }
@@ -407,7 +411,7 @@ function validateForm() {
   &--error {
     background-color: rgba(c.$color-error, 0.1);
     border-left: 4px solid c.$color-error;
-    color: darken(c.$color-error, 10%);
+    color: color.adjust(c.$color-error, $lightness: -10%);
     
     .notification__icon {
       color: c.$color-error;
@@ -417,7 +421,7 @@ function validateForm() {
   &--warning {
     background-color: rgba(c.$color-warning, 0.1);
     border-left: 4px solid c.$color-warning;
-    color: darken(c.$color-warning, 10%);
+    color: color.adjust(c.$color-warning, $lightness: -10%);
     
     .notification__icon {
       color: c.$color-warning;
@@ -427,7 +431,7 @@ function validateForm() {
   &--info {
     background-color: rgba(c.$color-info, 0.1);
     border-left: 4px solid c.$color-info;
-    color: darken(c.$color-info, 10%);
+    color: color.adjust(c.$color-info, $lightness: -10%);
     
     .notification__icon {
       color: c.$color-info;

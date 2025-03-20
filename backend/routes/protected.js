@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { body, validationResult } from 'express-validator';
-import { verifyToken, isAdmin } from '../middleware/auth.js';
+import { authenticateToken, isAdmin } from '../middleware/auth.js';
 import { User, Contract, License, Notification, ActivityLog } from '../models/associations.js';
 import { Op } from 'sequelize';
 import multer from 'multer';
@@ -9,7 +9,7 @@ import LicenseValidator from '../services/licenseValidator.js';
 const router = Router();
 
 // Protected routes for all authenticated users
-router.get('/profile', verifyToken, async (req, res) => {
+router.get('/profile', authenticateToken, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
       attributes: { exclude: ['password'] }
@@ -21,7 +21,7 @@ router.get('/profile', verifyToken, async (req, res) => {
 });
 
 // Admin only routes
-router.get('/users', verifyToken, isAdmin, async (req, res) => {
+router.get('/users', authenticateToken, isAdmin, async (req, res) => {
   try {
     const users = await User.findAll({
       attributes: { exclude: ['password'] }
@@ -33,7 +33,7 @@ router.get('/users', verifyToken, isAdmin, async (req, res) => {
 });
 
 // Contract management routes
-router.get('/contracts', verifyToken, async (req, res) => {
+router.get('/contracts', authenticateToken, async (req, res) => {
   try {
     const contracts = await Contract.findAll({
       where: req.user.role === 'admin' ? {} : { createdBy: req.user.id }
@@ -45,7 +45,7 @@ router.get('/contracts', verifyToken, async (req, res) => {
 });
 
 // License management routes
-router.get('/licenses', verifyToken, isAdmin, async (req, res) => {
+router.get('/licenses', authenticateToken, isAdmin, async (req, res) => {
   try {
     const licenses = await License.findAll();
     res.json(licenses);
@@ -55,7 +55,7 @@ router.get('/licenses', verifyToken, isAdmin, async (req, res) => {
 });
 
 // Add this new endpoint for password change
-router.post('/change-password', verifyToken, [
+router.post('/change-password', authenticateToken, [
   body('currentPassword').notEmpty(),
   body('newPassword')
     .isLength({ min: 6 })
@@ -91,7 +91,7 @@ router.post('/change-password', verifyToken, [
 });
 
 // Get user notifications
-router.get('/notifications', verifyToken, async (req, res) => {
+router.get('/notifications', authenticateToken, async (req, res) => {
   try {
     const notifications = await Notification.findAll({
       where: { userId: req.user.id },
@@ -108,7 +108,7 @@ router.get('/notifications', verifyToken, async (req, res) => {
 });
 
 // Mark notification as read
-router.put('/notifications/:id/read', verifyToken, async (req, res) => {
+router.put('/notifications/:id/read', authenticateToken, async (req, res) => {
   try {
     const notification = await Notification.findOne({
       where: { 
@@ -129,7 +129,7 @@ router.put('/notifications/:id/read', verifyToken, async (req, res) => {
 });
 
 // License validation endpoint
-router.post('/validate-license', verifyToken, isAdmin, async (req, res) => {
+router.post('/validate-license', authenticateToken, isAdmin, async (req, res) => {
   try {
     const { licenseKey } = req.body;
 
@@ -177,7 +177,7 @@ router.post('/validate-license', verifyToken, isAdmin, async (req, res) => {
 });
 
 // Add utility endpoint to generate test licenses
-router.post('/generate-test-license', verifyToken, isAdmin, [
+router.post('/generate-test-license', authenticateToken, isAdmin, [
   body('type').isIn(['DEMO', 'TRIAL', 'FULL']),
   body('durationDays').isInt({ min: 1, max: 365 })
 ], async (req, res) => {
@@ -237,7 +237,7 @@ const upload = multer({
 });
 
 // Add license upload endpoint
-router.post('/upload-license', verifyToken, isAdmin, upload.single('license'), async (req, res) => {
+router.post('/upload-license', authenticateToken, isAdmin, upload.single('license'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No license file provided' });
@@ -247,24 +247,16 @@ router.post('/upload-license', verifyToken, isAdmin, upload.single('license'), a
     
     res.json({
       message: 'License uploaded and validated successfully',
-      license: {
-        expiryDate: license.expiryDate,
-        customerName: license.metadata.customerName,
-        renewalDate: license.metadata.renewalDate
-      }
+      license
     });
   } catch (error) {
-    res.status(400).json({ message: error.message });
-  } finally {
-    // Clean up uploaded file
-    if (req.file) {
-      fs.unlink(req.file.path).catch(console.error);
-    }
+    console.error('License upload error:', error);
+    res.status(500).json({ message: 'Error uploading license file' });
   }
 });
 
 // Get current license status
-router.get('/license-status', verifyToken, async (req, res) => {
+router.get('/license-status', authenticateToken, async (req, res) => {
   try {
     const status = await LicenseValidator.getCurrentLicenseStatus();
     res.json(status);
@@ -274,7 +266,7 @@ router.get('/license-status', verifyToken, async (req, res) => {
 });
 
 // Add trial code activation endpoint
-router.post('/activate-trial', verifyToken, [
+router.post('/activate-trial', authenticateToken, [
   body('trialCode')
     .notEmpty()
     .trim()
@@ -305,7 +297,7 @@ router.post('/activate-trial', verifyToken, [
 });
 
 // Get trial status endpoint
-router.get('/trial-status', verifyToken, async (req, res) => {
+router.get('/trial-status', authenticateToken, async (req, res) => {
   try {
     const status = await LicenseValidator.checkTrialStatus(req.user.id);
     res.json(status);

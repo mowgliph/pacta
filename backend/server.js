@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import cors from 'cors';
 import sequelize from './config/database.js';
 import models from './models/index.js';
 import authRoutes from './routes/auth.js';
@@ -16,8 +17,18 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ 
+    message: 'Error del servidor',
+    status: 500
+  });
+});
 
 // Serve static files from frontend build directory
 app.use(express.static(path.join(__dirname, '../frontend/dist'), {

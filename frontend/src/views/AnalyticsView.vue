@@ -1,18 +1,18 @@
 <template>
   <div class="analytics-view">
     <div class="page-header">
-      <h1>Analytics Dashboard</h1>
+      <h1>Analíticas de Contratos</h1>
       <div class="date-range">
         <button class="btn-outline">
           <i class="fas fa-calendar"></i>
-          Last 30 days
+          Últimos 30 días
         </button>
       </div>
     </div>
 
-    <!-- Key Metrics -->
+    <!-- Resumen General -->
     <div class="metrics-grid">
-      <div class="metric-card" v-for="metric in keyMetrics" :key="metric.title">
+      <div class="metric-card" v-for="metric in contractMetrics" :key="metric.title">
         <div class="metric-icon" :style="{ backgroundColor: metric.color + '20' }">
           <i :class="metric.icon" :style="{ color: metric.color }"></i>
         </div>
@@ -20,88 +20,53 @@
           <h3>{{ metric.title }}</h3>
           <p class="metric-value">{{ metric.value }}</p>
           <p class="metric-change" :class="{ 'positive': metric.change > 0, 'negative': metric.change < 0 }">
-            {{ Math.abs(metric.change) }}% from last period
+            {{ Math.abs(metric.change) }}% vs mes anterior
             <i :class="metric.change > 0 ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
           </p>
         </div>
       </div>
     </div>
 
-    <!-- Charts Section -->
+    <!-- Eficiencia y Cumplimiento -->
     <div class="charts-grid">
       <div class="chart-card">
         <div class="card-header">
-          <h3>Revenue Trend</h3>
+          <h3>Eficiencia en Gestión</h3>
           <div class="card-actions">
             <button class="btn-icon">
               <i class="fas fa-ellipsis-v"></i>
             </button>
           </div>
         </div>
-        <div class="chart-placeholder">
-          <div class="chart-demo"></div>
+        <div class="efficiency-stats">
+          <div class="stat-item" v-for="stat in efficiencyStats" :key="stat.label">
+            <div class="stat-label">{{ stat.label }}</div>
+            <div class="stat-value">{{ stat.value }}</div>
+            <div class="stat-trend" :class="stat.trend">
+              <i :class="stat.trend === 'up' ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+              {{ stat.percentage }}%
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="chart-card">
         <div class="card-header">
-          <h3>User Growth</h3>
+          <h3>Cumplimiento y Riesgos</h3>
           <div class="card-actions">
             <button class="btn-icon">
               <i class="fas fa-ellipsis-v"></i>
             </button>
           </div>
         </div>
-        <div class="chart-placeholder">
-          <div class="chart-demo"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Detailed Analytics -->
-    <div class="analytics-grid">
-      <div class="analytics-card">
-        <div class="card-header">
-          <h3>Top Products</h3>
-          <button class="btn-text">View All</button>
-        </div>
-        <div class="product-list">
-          <div class="product-item" v-for="product in topProducts" :key="product.id">
-            <div class="product-info">
-              <img :src="product.image" :alt="product.name" class="product-image" />
-              <div>
-                <div class="product-name">{{ product.name }}</div>
-                <div class="product-category">{{ product.category }}</div>
-              </div>
+        <div class="compliance-stats">
+          <div class="stat-item" v-for="stat in complianceStats" :key="stat.label">
+            <div class="stat-label">{{ stat.label }}</div>
+            <div class="stat-value">{{ stat.value }}</div>
+            <div class="stat-trend" :class="stat.trend">
+              <i :class="stat.trend === 'up' ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+              {{ stat.percentage }}%
             </div>
-            <div class="product-stats">
-              <div class="stat">
-                <span class="label">Sales</span>
-                <span class="value">{{ product.sales }}</span>
-              </div>
-              <div class="stat">
-                <span class="label">Revenue</span>
-                <span class="value">{{ product.revenue }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="analytics-card">
-        <div class="card-header">
-          <h3>User Demographics</h3>
-          <button class="btn-text">View All</button>
-        </div>
-        <div class="demographics-list">
-          <div class="demographic-item" v-for="demo in demographics" :key="demo.category">
-            <div class="demographic-info">
-              <span class="category">{{ demo.category }}</span>
-              <div class="progress-bar">
-                <div class="progress" :style="{ width: demo.percentage + '%' }"></div>
-              </div>
-            </div>
-            <span class="percentage">{{ demo.percentage }}%</span>
           </div>
         </div>
       </div>
@@ -111,71 +76,93 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useColors } from '../types/colors'
 
-const keyMetrics = ref([
+const colors = useColors()
+
+const contractMetrics = ref([
   {
-    title: 'Total Revenue',
-    value: '$24,500',
-    change: 12.5,
-    icon: 'fas fa-dollar-sign',
-    color: '#4CAF50'
-  },
-  {
-    title: 'Active Users',
-    value: '2,450',
+    title: 'Contratos Activos',
+    value: '156',
     change: 8.2,
-    icon: 'fas fa-users',
-    color: '#2196F3'
+    icon: 'fas fa-file-contract',
+    color: colors.primary
   },
   {
-    title: 'Conversion Rate',
-    value: '24.5%',
-    change: 4.3,
-    icon: 'fas fa-chart-line',
-    color: '#9C27B0'
+    title: 'Firmados este Mes',
+    value: '24',
+    change: 12.5,
+    icon: 'fas fa-check-circle',
+    color: colors.success
   },
   {
-    title: 'Avg. Order Value',
-    value: '$156',
+    title: 'En Riesgo',
+    value: '8',
     change: -2.1,
-    icon: 'fas fa-shopping-cart',
-    color: '#FF9800'
+    icon: 'fas fa-exclamation-triangle',
+    color: colors.warning
+  },
+  {
+    title: 'Por Vencer',
+    value: '15',
+    change: 4.3,
+    icon: 'fas fa-clock',
+    color: colors.info
   }
 ])
 
-const topProducts = ref([
+const efficiencyStats = ref([
   {
-    id: 1,
-    name: 'Product A',
-    category: 'Electronics',
-    image: 'https://via.placeholder.com/40',
-    sales: 245,
-    revenue: '$12,250'
+    label: 'Tiempo Promedio de Negociación',
+    value: '5.2 días',
+    trend: 'down',
+    percentage: 12
   },
   {
-    id: 2,
-    name: 'Product B',
-    category: 'Clothing',
-    image: 'https://via.placeholder.com/40',
-    sales: 189,
-    revenue: '$9,450'
+    label: 'Tiempo hasta Firma',
+    value: '8.5 días',
+    trend: 'down',
+    percentage: 8
   },
   {
-    id: 3,
-    name: 'Product C',
-    category: 'Home & Living',
-    image: 'https://via.placeholder.com/40',
-    sales: 156,
-    revenue: '$7,800'
+    label: 'Tiempo de Aprobación',
+    value: '2.3 días',
+    trend: 'up',
+    percentage: 5
+  },
+  {
+    label: 'Tasa de Finalización',
+    value: '92%',
+    trend: 'up',
+    percentage: 3
   }
 ])
 
-const demographics = ref([
-  { category: '18-24', percentage: 25 },
-  { category: '25-34', percentage: 35 },
-  { category: '35-44', percentage: 20 },
-  { category: '45-54', percentage: 15 },
-  { category: '55+', percentage: 5 }
+const complianceStats = ref([
+  {
+    label: 'Cláusulas Críticas',
+    value: '45',
+    trend: 'up',
+    percentage: 15
+  },
+  {
+    label: 'Alertas Pendientes',
+    value: '12',
+    trend: 'down',
+    percentage: 25
+  },
+  {
+    label: 'Incumplimientos',
+    value: '3%',
+    trend: 'down',
+    percentage: 40
+  },
+  {
+    label: 'En Litigio',
+    value: '2',
+    trend: 'down',
+    percentage: 50
+  }
 ])
 </script>
 
@@ -183,79 +170,75 @@ const demographics = ref([
 @use '../styles/variables' as v;
 @use '../styles/colors' as c;
 @use '../styles/mixins' as m;
-@use '../styles/typography' as t;
 
 .analytics-view {
   .page-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
+    @include m.flex-between;
+    margin-bottom: v.$spacing-xl;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: c.$color-surface;
+    padding: v.$spacing-lg 0;
+    border-bottom: 1px solid c.$color-border;
 
     h1 {
-      font-size: 1.75rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin: 0;
+      @include m.heading-1;
+      color: c.$color-text-primary;
     }
   }
 
   .metrics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+    gap: v.$spacing-lg;
+    margin-bottom: v.$spacing-xl;
   }
 
   .metric-card {
-    background-color: var(--surface-color);
-    border-radius: 12px;
-    padding: 1.5rem;
+    @include m.card-style;
     display: flex;
     align-items: flex-start;
-    gap: 1rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    gap: v.$spacing-md;
 
     .metric-icon {
       width: 48px;
       height: 48px;
-      border-radius: 12px;
+      border-radius: v.$border-radius-md;
       display: flex;
       align-items: center;
       justify-content: center;
 
       i {
-        font-size: 1.5rem;
+        font-size: v.$font-size-xl;
       }
     }
 
     .metric-content {
       h3 {
-        font-size: 0.875rem;
-        color: var(--text-secondary);
-        margin: 0 0 0.5rem;
+        @include m.text-secondary;
+        margin: 0 0 v.$spacing-xs;
       }
 
       .metric-value {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin: 0 0 0.25rem;
+        @include m.heading-2;
+        color: c.$color-text-primary;
+        margin: 0 0 v.$spacing-xs;
       }
 
       .metric-change {
-        font-size: 0.875rem;
-        margin: 0;
+        @include m.text-small;
         display: flex;
         align-items: center;
-        gap: 0.25rem;
+        gap: v.$spacing-xs;
+        margin: 0;
 
         &.positive {
-          color: #4CAF50;
+          color: c.$color-success;
         }
 
         &.negative {
-          color: #F44336;
+          color: c.$color-error;
         }
       }
     }
@@ -264,176 +247,59 @@ const demographics = ref([
   .charts-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+    gap: v.$spacing-lg;
+    margin-bottom: v.$spacing-xl;
   }
 
   .chart-card {
-    background-color: var(--surface-color);
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    @include m.card-style;
 
     .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
+      @include m.flex-between;
+      margin-bottom: v.$spacing-lg;
 
       h3 {
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin: 0;
-      }
-    }
-
-    .chart-placeholder {
-      height: 300px;
-      background-color: var(--background-color);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      .chart-demo {
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(45deg, var(--primary-color-light) 25%, transparent 25%),
-                    linear-gradient(-45deg, var(--primary-color-light) 25%, transparent 25%),
-                    linear-gradient(45deg, transparent 75%, var(--primary-color-light) 75%),
-                    linear-gradient(-45deg, transparent 75%, var(--primary-color-light) 75%);
-        background-size: 20px 20px;
-        opacity: 0.1;
-      }
-    }
-  }
-
-  .analytics-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 1.5rem;
-  }
-
-  .analytics-card {
-    background-color: var(--surface-color);
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-
-    .card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-
-      h3 {
-        font-size: 1.125rem;
-        font-weight: 600;
-        color: var(--text-primary);
+        @include m.heading-3;
+        color: c.$color-text-primary;
         margin: 0;
       }
     }
   }
 
-  .product-list {
-    .product-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 0;
-      border-bottom: 1px solid var(--border-color);
+  .efficiency-stats,
+  .compliance-stats {
+    .stat-item {
+      padding: v.$spacing-md 0;
+      border-bottom: 1px solid c.$color-border;
 
       &:last-child {
         border-bottom: none;
       }
 
-      .product-info {
+      .stat-label {
+        @include m.text-secondary;
+        margin-bottom: v.$spacing-xs;
+      }
+
+      .stat-value {
+        @include m.text-base;
+        font-weight: v.$font-weight-medium;
+        margin-bottom: v.$spacing-xs;
+      }
+
+      .stat-trend {
+        @include m.text-small;
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: v.$spacing-xs;
 
-        .product-image {
-          width: 40px;
-          height: 40px;
-          border-radius: 8px;
+        &.up {
+          color: c.$color-success;
         }
 
-        .product-name {
-          font-weight: 500;
-          color: var(--text-primary);
+        &.down {
+          color: c.$color-error;
         }
-
-        .product-category {
-          font-size: 0.875rem;
-          color: var(--text-secondary);
-        }
-      }
-
-      .product-stats {
-        display: flex;
-        gap: 1.5rem;
-
-        .stat {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-
-          .label {
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-          }
-
-          .value {
-            font-weight: 500;
-            color: var(--text-primary);
-          }
-        }
-      }
-    }
-  }
-
-  .demographics-list {
-    .demographic-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.75rem 0;
-      border-bottom: 1px solid var(--border-color);
-
-      &:last-child {
-        border-bottom: none;
-      }
-
-      .demographic-info {
-        flex: 1;
-        margin-right: 1rem;
-
-        .category {
-          display: block;
-          font-size: 0.875rem;
-          color: var(--text-primary);
-          margin-bottom: 0.5rem;
-        }
-
-        .progress-bar {
-          height: 6px;
-          background-color: var(--background-color);
-          border-radius: 3px;
-          overflow: hidden;
-
-          .progress {
-            height: 100%;
-            background-color: var(--primary-color);
-            border-radius: 3px;
-            transition: width 0.3s ease;
-          }
-        }
-      }
-
-      .percentage {
-        font-weight: 500;
-        color: var(--text-primary);
       }
     }
   }
@@ -441,57 +307,20 @@ const demographics = ref([
 
 // Utility Classes
 .btn-outline {
-  padding: 0.5rem 1rem;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: none;
-  color: var(--text-primary);
-  font-size: 0.875rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: var(--hover-color);
-  }
+  @include m.button-outline;
 }
 
 .btn-icon {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: none;
-  color: var(--text-secondary);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: var(--hover-color);
-    color: var(--text-primary);
-  }
+  @include m.button-icon;
 }
 
 .btn-text {
-  padding: 0.5rem 1rem;
-  border: none;
-  background: none;
-  color: var(--primary-color);
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    opacity: 0.8;
-  }
+  @include m.button-text;
 }
 
-@media (max-width: 768px) {
+@media (max-width: v.$breakpoint-md) {
   .analytics-view {
-    .charts-grid,
-    .analytics-grid {
+    .charts-grid {
       grid-template-columns: 1fr;
     }
   }

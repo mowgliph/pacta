@@ -18,4 +18,15 @@ Notification.belongsTo(User, { foreignKey: 'userId' });
 Contract.hasMany(Notification, { foreignKey: 'contractId' });
 Notification.belongsTo(Contract, { foreignKey: 'contractId' });
 
+// User - License associations
+User.belongsTo(License, {
+  foreignKey: 'licenseId',
+  as: 'license'
+});
+
+License.hasMany(User, {
+  foreignKey: 'licenseId',
+  as: 'users'
+});
+
 export { User, Contract, License, ActivityLog, Notification };
