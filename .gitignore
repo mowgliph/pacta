@@ -48,6 +48,5 @@ coverage/
 
 # Documentation and assets
 *.docx
-assets/
 diagrama de arquitectura.json
 diagrama de arquitectura.png

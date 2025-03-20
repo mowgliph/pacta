@@ -1,0 +1,151 @@
+@use './styles/_variables.scss' as v;
+@use './styles/_colors.scss' as c;
+@use './styles/_mixins.scss' as m;
+@use './base.scss';
+
+// Global styles
+:root {
+  font-family: var(--font-family);
+  color: var(--color-text-primary);
+  background-color: var(--color-background);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+// Utility classes
+.container {
+  width: 100%;
+  max-width: v.$container-max-width;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: v.$spacing-md;
+  padding-right: v.$spacing-md;
+}
+
+// Responsive container padding
+@media (max-width: v.$breakpoint-sm) {
+  .container {
+    padding-left: v.$spacing-sm;
+    padding-right: v.$spacing-sm;
+  }
+}
+
+// Box sizing
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+// Link styles
+a {
+  color: c.$color-primary;
+  text-decoration: none;
+  transition: color 0.2s;
+  
+  &:hover {
+    color: c.$color-primary-dark;
+  }
+}
+
+// List reset
+ul, ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+// Flex utilities
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+// Spacing utilities
+.m-0 {
+  margin: 0;
+}
+
+.mt-0 {
+  margin-top: 0;
+}
+
+.mb-0 {
+  margin-bottom: 0;
+}
+
+// Text alignment
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+// Display utilities
+.d-none {
+  display: none;
+}
+
+.d-block {
+  display: block;
+}
+
+.d-inline-block {
+  display: inline-block;
+}
+
+// Width utilities
+.w-100 {
+  width: 100%;
+}
+
+.w-auto {
+  width: auto;
+}
+
+// Responsive utilities
+@media (max-width: v.$breakpoint-sm) {
+  .hide-sm {
+    display: none;
+  }
+}
+
+@media (max-width: v.$breakpoint-md) {
+  .hide-md {
+    display: none;
+  }
+}
+
+// Print styles
+@media print {
+  .no-print {
+    display: none !important;
+  }
+} 

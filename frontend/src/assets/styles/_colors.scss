@@ -1,0 +1,84 @@
+@use 'sass:color';
+@use 'sass:map';
+
+// Color palette
+$color-primary: #1976d2;
+$color-primary-light: #4791db;
+$color-primary-dark: #115293;
+
+$color-secondary: #424242;
+$color-secondary-light: #6d6d6d;
+$color-secondary-dark: #1b1b1b;
+
+$color-accent: #ff9800;
+$color-accent-light: #ffb74d;
+$color-accent-dark: #f57c00;
+
+$color-success: #4caf50;
+$color-warning: #ff9800;
+$color-error: #f44336;
+$color-info: #2196f3;
+
+$color-text-primary: rgba(0, 0, 0, 0.87);
+$color-text-secondary: rgba(0, 0, 0, 0.60);
+$color-text-disabled: rgba(0, 0, 0, 0.38);
+
+$color-background: #f5f5f5;
+$color-surface: #ffffff;
+$color-divider: rgba(0, 0, 0, 0.12);
+$color-border: #e2e8f0;
+
+// Dark mode colors
+$color-dark-background: #121212;
+$color-dark-surface: #1e1e1e;
+$color-dark-text-primary: rgba(255, 255, 255, 0.87);
+$color-dark-text-secondary: rgba(255, 255, 255, 0.60);
+$color-dark-text-disabled: rgba(255, 255, 255, 0.38);
+$color-dark-border: #404040;
+
+// Map to be accessed by functions
+$colors: (
+  "primary": $color-primary,
+  "primary-light": $color-primary-light,
+  "primary-dark": $color-primary-dark,
+  "secondary": $color-secondary,
+  "secondary-light": $color-secondary-light,
+  "secondary-dark": $color-secondary-dark,
+  "accent": $color-accent,
+  "accent-light": $color-accent-light,
+  "accent-dark": $color-accent-dark,
+  "success": $color-success,
+  "warning": $color-warning,
+  "error": $color-error,
+  "info": $color-info,
+  "text-primary": $color-text-primary,
+  "text-secondary": $color-text-secondary,
+  "text-disabled": $color-text-disabled,
+  "background": $color-background,
+  "surface": $color-surface,
+  "divider": $color-divider,
+  "border": $color-border,
+);
+
+// CSS Custom Properties
+:root {
+  --color-primary: #{map.get($colors, 'primary')};
+  --color-text: #{$color-text-primary};
+  --color-text-secondary: #{$color-text-secondary};
+  --color-background: #{$color-background};
+  --color-surface: #{$color-surface};
+  --color-text-primary: #{$color-text-primary};
+  --color-text-light: #ffffff;
+  --color-surface-hover: #{color.adjust($color-surface, $lightness: -5%)};
+  --color-border: #{$color-border};
+}
+
+// Dark theme overrides
+.dark-theme {
+  --color-background: #{$color-dark-background};
+  --color-surface: #{$color-dark-surface};
+  --color-surface-hover: #363636;
+  --color-text-primary: #{$color-dark-text-primary};
+  --color-text-secondary: #{$color-dark-text-secondary};
+  --color-border: #{$color-dark-border};
+}
