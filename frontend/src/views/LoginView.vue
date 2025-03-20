@@ -53,14 +53,18 @@
           <button type="submit" class="btn-primary" :disabled="loading">
             {{ loading ? 'Iniciando sesión...' : 'Iniciar Sesión' }}
           </button>
-
-          <p v-if="error" class="login__error">{{ error }}</p>
         </form>
         
         <div class="login__copyright">
-          © 2024 PACTA. Desarrollado por mowDev. Todos los derechos reservados.
+          © 2024 PACTA. Todos los derechos reservados.
         </div>
       </div>
+    </div>
+    
+    <!-- Nuevo contenedor para mensajes de error/advertencia -->
+    <div v-if="error" class="notification notification--error">
+      <i class="fas fa-exclamation-circle notification__icon"></i>
+      <p class="notification__message">{{ error }}</p>
     </div>
   </div>
 </template>
@@ -123,9 +127,10 @@ function validateForm() {
 </script>
 
 <style lang="scss" scoped>
-@use '../assets/styles/_variables.scss' as v;
-@use '../assets/styles/_colors.scss' as c;
-@use '../assets/styles/_mixins.scss' as m;
+@use '../styles/variables' as v;
+@use '../styles/colors' as c;
+@use '../styles/mixins' as m;
+@use '../styles/typography' as t;
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(20px); }
@@ -141,6 +146,7 @@ function validateForm() {
   display: flex;
   min-height: 100vh;
   background: linear-gradient(135deg, c.$color-surface, c.$color-background);
+  position: relative;
   
   &__left {
     flex: 1;
@@ -370,6 +376,73 @@ function validateForm() {
     &__container {
       padding: v.$spacing-unit * 6;
     }
+  }
+}
+
+// Nuevos estilos para notificaciones
+.notification {
+  position: fixed;
+  bottom: v.$spacing-unit * 6;
+  left: v.$spacing-unit * 6;
+  display: flex;
+  align-items: center;
+  padding: v.$spacing-unit * 3 v.$spacing-unit * 4;
+  border-radius: v.$border-radius-md;
+  box-shadow: v.$shadow-md;
+  max-width: 350px;
+  animation: slideInUp 0.3s ease-out forwards;
+  z-index: 1000;
+  
+  &__icon {
+    font-size: 1.25rem;
+    margin-right: v.$spacing-unit * 3;
+  }
+  
+  &__message {
+    font-size: v.$font-size-sm;
+    font-weight: v.$font-weight-medium;
+    margin: 0;
+  }
+  
+  &--error {
+    background-color: rgba(c.$color-error, 0.1);
+    border-left: 4px solid c.$color-error;
+    color: darken(c.$color-error, 10%);
+    
+    .notification__icon {
+      color: c.$color-error;
+    }
+  }
+  
+  &--warning {
+    background-color: rgba(c.$color-warning, 0.1);
+    border-left: 4px solid c.$color-warning;
+    color: darken(c.$color-warning, 10%);
+    
+    .notification__icon {
+      color: c.$color-warning;
+    }
+  }
+  
+  &--info {
+    background-color: rgba(c.$color-info, 0.1);
+    border-left: 4px solid c.$color-info;
+    color: darken(c.$color-info, 10%);
+    
+    .notification__icon {
+      color: c.$color-info;
+    }
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 </style>

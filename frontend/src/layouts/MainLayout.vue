@@ -22,12 +22,15 @@ import Toast from '../components/shared/Toast.vue';
 </script>
 
 <style lang="scss" scoped>
+@use '../styles/variables' as v;
+@use '../styles/colors' as c;
+@use '../styles/mixins' as m;
 
 .layout {
   display: grid;
   grid-template-columns: 250px 1fr;
   min-height: 100vh;
-  background-color: var(--color-background);
+  background-color: c.$color-background;
 
   &__main {
     display: flex;

@@ -79,8 +79,10 @@ function formatDate(date: string | null) {
 </script>
 
 <style lang="scss" scoped>
-@use '../../../assets/styles/_variables.scss' as v;
-@use '../../../assets/styles/_colors.scss' as c;
+@use '../../../styles/variables' as v;
+@use '../../../styles/colors' as c;
+@use '../../../styles/mixins' as m;
+@use '../../../styles/typography' as t;
 
 .users-table {
   width: 100%;

@@ -1,27 +1,29 @@
 <template>
   <div class="users">
     <header class="users__header">
-      <h1>User Management</h1>
+      <h1>Gestión de Usuarios</h1>
       <button @click="showCreateDialog" class="btn-primary">
-        <i class="fas fa-user-plus"></i> New User
+        <i class="fas fa-user-plus"></i> Nuevo Usuario
       </button>
     </header>
 
     <div class="users__filters">
       <div class="search-box">
+        <i class="fas fa-search"></i>
         <input 
           v-model="filters.search"
           type="text"
-          placeholder="Search users..."
+          placeholder="Buscar usuarios..."
           @input="handleSearch"
         />
       </div>
       
       <div class="filter-group">
         <select v-model="filters.role">
-          <option value="">All Roles</option>
-          <option value="admin">Admin</option>
-          <option value="user">User</option>
+          <option value="">Todos los Roles</option>
+          <option value="admin">Administrador</option>
+          <option value="user">Usuario</option>
+          <option value="editor">Editor</option>
         </select>
       </div>
     </div>
@@ -88,11 +90,11 @@ function handleEdit(user: User) {
 }
 
 async function handleDelete(user: User) {
-  if (confirm(`Are you sure you want to delete user ${user.username}?`)) {
+  if (confirm(`¿Está seguro que desea eliminar al usuario ${user.username}?`)) {
     try {
       await userStore.deleteUser(user.id);
     } catch (error) {
-      console.error('Error deleting user:', error);
+      console.error('Error al eliminar usuario:', error);
     }
   }
 }
@@ -103,7 +105,7 @@ async function handleToggleStatus(user: User) {
       active: !user.active
     });
   } catch (error) {
-    console.error('Error toggling user status:', error);
+    console.error('Error al cambiar el estado del usuario:', error);
   }
 }
 
@@ -116,7 +118,7 @@ async function handleSave(userData: Partial<User>) {
     }
     dialogVisible.value = false;
   } catch (error) {
-    console.error('Error saving user:', error);
+    console.error('Error al guardar usuario:', error);
   }
 }
 
@@ -124,7 +126,7 @@ let searchTimeout: number;
 function handleSearch() {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
-    // The filtering is handled by the computed property
+    // El filtrado se maneja a través de la propiedad computada
   }, 300);
 }
 
@@ -133,7 +135,7 @@ onMounted(async () => {
   try {
     await userStore.fetchUsers();
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error('Error al cargar usuarios:', error);
   } finally {
     loading.value = false;
   }
@@ -141,81 +143,92 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
+@use '../../styles/variables' as v;
+@use '../../styles/colors' as c;
+@use '../../styles/mixins' as m;
+@use '../../styles/typography' as t;
 
 .users {
   &__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: calc(v.$spacing-unit * 4);
+    @include m.flex-between;
+    margin-bottom: v.$spacing-xl;
 
     h1 {
-      color: var(--color-text-primary);
-      font-weight: v.$font-weight-semibold;
+      @include t.heading-1;
+      color: c.$color-text-primary;
     }
   }
 
   &__filters {
-    display: flex;
-    gap: calc(v.$spacing-unit * 2);
-    margin-bottom: calc(v.$spacing-unit * 3);
+    @include m.flex-between;
+    gap: v.$spacing-md;
+    margin-bottom: v.$spacing-lg;
+    flex-wrap: wrap;
   }
 }
 
 .search-box {
   flex: 1;
+  min-width: 200px;
+  position: relative;
+
+  i {
+    position: absolute;
+    left: v.$spacing-md;
+    top: 50%;
+    transform: translateY(-50%);
+    color: c.$color-text-secondary;
+  }
   
   input {
     width: 100%;
-    padding: calc(v.$spacing-unit * 1.5);
-    border: 1px solid var(--color-border);
-    border-radius: v.$border-radius;
+    padding: v.$spacing-md v.$spacing-md v.$spacing-md calc(v.$spacing-xl + v.$spacing-sm);
+    border: 1px solid c.$color-border;
+    border-radius: v.$border-radius-md;
     font-size: v.$font-size-base;
-    background: var(--color-surface);
-    color: var(--color-text-primary);
+    background: c.$color-surface;
+    color: c.$color-text-primary;
     
     &:focus {
       outline: none;
-      border-color: var(--color-primary);
+      border-color: c.$color-primary;
+      box-shadow: 0 0 0 2px c.$color-primary-light;
     }
   }
 }
 
 .filter-group {
   select {
-    padding: calc(v.$spacing-unit * 1.5);
-    border: 1px solid var(--color-border);
-    border-radius: v.$border-radius;
-    background: var(--color-surface);
-    color: var(--color-text-primary);
+    padding: v.$spacing-md;
+    border: 1px solid c.$color-border;
+    border-radius: v.$border-radius-md;
+    background: c.$color-surface;
+    color: c.$color-text-primary;
     font-size: v.$font-size-base;
     min-width: 150px;
     
     &:focus {
       outline: none;
-      border-color: var(--color-primary);
+      border-color: c.$color-primary;
+      box-shadow: 0 0 0 2px c.$color-primary-light;
     }
   }
 }
 
 .btn-primary {
-  background: var(--color-primary);
-  color: white;
-  padding: calc(v.$spacing-unit * 1.5) calc(v.$spacing-unit * 3);
-  border: none;
-  border-radius: v.$border-radius;
-  font-size: v.$font-size-base;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: v.$spacing-unit;
+  @include m.button-primary;
   
-  &:hover {
-    opacity: 0.9;
-  }
-
   i {
     font-size: v.$font-size-base;
+  }
+}
+
+@media (max-width: v.$breakpoint-md) {
+  .users {
+    &__filters {
+      flex-direction: column;
+      align-items: stretch;
+    }
   }
 }
 </style>

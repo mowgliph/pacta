@@ -174,6 +174,11 @@ function handleCancel() {
 </script>
 
 <style lang="scss" scoped>
+@use '../../../styles/variables' as v;
+@use '../../../styles/colors' as c;
+@use '../../../styles/mixins' as m;
+@use '../../../styles/typography' as t;
+
 .dialog-overlay {
   position: fixed;
   top: 0;

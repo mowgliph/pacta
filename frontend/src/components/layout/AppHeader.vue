@@ -1,6 +1,15 @@
 <template>
   <header class="header">
-    <div class="header__actions">
+    <div class="header__left">
+      <Logo class="header__logo" />
+      <h1 class="header__title">PACTA</h1>
+    </div>
+    
+    <div class="header__right">
+      <a href="/docs" class="help-link" title="Documentación">
+        <i class="fas fa-book"></i>
+        <span>Ayuda</span>
+      </a>
       <button class="theme-toggle" @click="toggleTheme" :title="isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'">
         <i :class="isDark ? 'fas fa-sun' : 'fas fa-moon'"></i>
       </button>
@@ -11,6 +20,7 @@
 <script setup lang="ts">
 import { useThemeStore } from '../../stores/theme';
 import { storeToRefs } from 'pinia';
+import Logo from '../base/Logo.vue';
 
 const themeStore = useThemeStore();
 const { isDark } = storeToRefs(themeStore);
@@ -21,21 +31,65 @@ function toggleTheme() {
 </script>
 
 <style lang="scss" scoped>
-@use '../../assets/styles/_variables.scss' as v;
-@use '../../assets/styles/_colors.scss' as c;
+@use '../../styles/variables' as v;
+@use '../../styles/colors' as c;
+@use '../../styles/mixins' as m;
+@use '../../styles/typography' as t;
 
 .header {
   padding: v.$spacing-unit * 4;
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   height: 64px;
 
-  &__actions {
+  &__left {
     display: flex;
+    align-items: center;
     gap: v.$spacing-unit * 2;
+  }
+
+  &__logo {
+    height: 40px;
+    width: auto;
+  }
+
+  &__title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+    gap: v.$spacing-unit * 2;
+  }
+}
+
+.help-link {
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-unit;
+  color: var(--color-text-primary);
+  text-decoration: none;
+  padding: v.$spacing-unit * 2;
+  border-radius: v.$border-radius;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background: var(--color-surface-hover);
+  }
+
+  i {
+    font-size: 1.2rem;
+  }
+
+  span {
+    font-size: 0.9rem;
   }
 }
 

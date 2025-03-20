@@ -1,7 +1,7 @@
-@use './styles/_variables.scss' as v;
-@use './styles/_colors.scss' as c;
-@use './styles/_mixins.scss' as m;
-@use './base.scss';
+@use './variables.scss' as v;
+@use './colors.scss' as c;
+@use './mixins.scss' as m;
+@use './typography.scss' as t;
 
 // Global styles
 :root {

@@ -1,40 +1,37 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import DashboardLayout from '@/layouts/DashboardLayout.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      component: () => import('../layouts/MainLayout.vue'),
-      meta: { requiresAuth: true },
+      component: DashboardLayout,
       children: [
         {
           path: '',
-          name: 'dashboard',
-          component: () => import('../views/DashboardView.vue')
+          redirect: '/dashboard'
         },
         {
-          path: 'contracts',
-          name: 'contracts',
-          component: () => import('../views/contracts/ContractsView.vue')
+          path: 'dashboard',
+          name: 'dashboard',
+          component: () => import('@/views/DashboardView.vue')
         },
         {
           path: 'users',
           name: 'users',
-          meta: { requiresAdmin: true },
-          component: () => import('../views/users/UsersView.vue')
+          component: () => import('@/views/users/UsersView.vue')  // Corregir la ruta
         },
         {
-          path: 'licenses',
-          name: 'licenses',
-          meta: { requiresAdmin: true },
-          component: () => import('../views/licenses/LicensesView.vue')
+          path: 'analytics',
+          name: 'analytics',
+          component: () => import('@/views/AnalyticsView.vue')
         },
         {
-          path: 'about',
-          name: 'about',
-          component: () => import('../views/about/AboutView.vue')
+          path: 'settings',
+          name: 'settings',
+          component: () => import('@/views/SettingsView.vue')
         }
       ]
     },
