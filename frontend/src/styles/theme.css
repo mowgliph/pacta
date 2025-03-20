@@ -1,10 +1,15 @@
 /* PrimeVue 4.x Theme */
 :root {
   /* Colors */
-  --primary-color: #1976d2;
-  --primary-color-text: #ffffff;
-  --text-color: #1a1a1a;
-  --text-color-secondary: #6c757d;
+  --primary-color: #3B82F6;
+  --primary-color-light: #93C5FD;
+  --primary-color-dark: #1D4ED8;
+  --surface-color: #FFFFFF;
+  --background-color: #F8FAFC;
+  --text-primary: #1E293B;
+  --text-secondary: #64748B;
+  --border-color: #E2E8F0;
+  --hover-color: rgba(59, 130, 246, 0.1);
 
   /* Surface Colors */
   --surface-ground: #f8f9fa;
@@ -42,4 +47,20 @@
 
   /* Transitions */
   --transition-duration: 0.2s;
+
+  /* Shadows */
+  --shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 } 
+
+/* Dark Theme Variables */
+.dark-theme {
+  --primary-color: #60A5FA;
+  --primary-color-light: #93C5FD;
+  --primary-color-dark: #2563EB;
+  --surface-color: #1E293B;
+  --background-color: #0F172A;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --border-color: #334155;
+  --hover-color: rgba(96, 165, 250, 0.2);
+}

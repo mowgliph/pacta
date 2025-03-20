@@ -1,7 +1,7 @@
 @use './variables.scss' as v;
 @use './colors.scss' as c;
 @use './mixins.scss' as m;
-@use './typography.scss' as t;
+@use './typography.scss' as ty;
 
 // Global styles
 :root {
@@ -15,8 +15,11 @@
 }
 
 html, body {
+  font-family: ty.$font-family-sans-serif;
   margin: 0;
   padding: 0;
+  background-color: c.$color-background;
+  color: c.$color-text-primary;
   height: 100%;
 }
 

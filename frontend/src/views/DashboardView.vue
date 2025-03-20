@@ -157,7 +157,7 @@ const recentActivity = ref([
     margin-bottom: v.$spacing-xl;
 
     h1 {
-      @include t.heading-1;
+      @include m.heading-1;
       color: c.$color-text-primary;
       margin: 0;
     }
@@ -191,18 +191,18 @@ const recentActivity = ref([
 
     .stat-content {
       h3 {
-        @include t.text-secondary;
+        @include m.text-secondary;
         margin-bottom: v.$spacing-xs;
       }
 
       .stat-value {
-        @include t.heading-2;
+        @include m.heading-2;
         color: c.$color-text-primary;
         margin-bottom: v.$spacing-xs;
       }
 
       .stat-change {
-        @include t.text-small;
+        @include m.text-small;
         display: flex;
         align-items: center;
         gap: v.$spacing-xs;
@@ -233,7 +233,7 @@ const recentActivity = ref([
       margin-bottom: v.$spacing-lg;
 
       h3 {
-        @include t.heading-3;
+        @include m.heading-3;
         color: c.$color-text-primary;
         margin: 0;
       }
@@ -268,7 +268,7 @@ const recentActivity = ref([
       margin-bottom: v.$spacing-lg;
 
       h3 {
-        @include t.heading-3;
+        @include m.heading-3;
         color: c.$color-text-primary;
         margin: 0;
       }
@@ -303,13 +303,13 @@ const recentActivity = ref([
           flex: 1;
 
           .activity-title {
-            @include t.text-base;
+            @include m.text-base;
             color: c.$color-text-primary;
             margin-bottom: v.$spacing-xs;
           }
 
           .activity-time {
-            @include t.text-small;
+            @include m.text-small;
             color: c.$color-text-secondary;
           }
         }

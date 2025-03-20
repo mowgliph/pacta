@@ -21,7 +21,6 @@ const themeStore = useThemeStore()
 @use 'styles/colors' as c;
 @use 'styles/mixins' as m;
 @use 'styles/typography' as ty;
-@use 'styles/theme' as th;
 
 :root {
   --primary-color: #{c.$color-primary};
@@ -36,10 +35,10 @@ const themeStore = useThemeStore()
 }
 
 body {
-  @include ty.body-text;
+  @include m.body-text;
   background-color: c.$color-background;
   color: c.$color-text-primary;
-  line-height: v.$line-height-base;
+  line-height: ty.$line-height-base;
 }
 
 #app {

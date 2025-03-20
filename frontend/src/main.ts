@@ -21,9 +21,9 @@ import Calendar from 'primevue/calendar';
 import Textarea from 'primevue/textarea';
 
 // PrimeVue styles
-import './assets/styles/theme.css';        // Custom theme
-import 'primeflex/primeflex.css';          // PrimeFlex CSS utilities
-import 'primeicons/primeicons.css';        // PrimeIcons
+import './styles/theme.css';
+import 'primeflex/primeflex.css';
+import 'primeicons/primeicons.css';
 
 const app = createApp(App);
 
