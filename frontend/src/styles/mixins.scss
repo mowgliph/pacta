@@ -1,6 +1,12 @@
 @use 'variables' as v;
 @use 'colors' as c;
 @use 'typography' as ty;
+@use 'sass:color';
+
+// Helper function to replace darken()
+@function darken-compat($color, $amount) {
+  @return color.scale($color, $lightness: -$amount);
+}
 
 // Copyright mixin
 @mixin copyright {
@@ -83,7 +89,7 @@
 @mixin input {
   width: 100%;
   padding: v.$spacing-unit * 2;
-  border: 1px solid var(--color-border);
+  border: 1px solid c.$color-border;
   border-radius: v.$border-radius;
 
   &:focus {
@@ -157,24 +163,29 @@
 
 // Button text mixin
 @mixin button-text {
-  font-family: inherit;
+  font-family: v.$font-sans;
   font-size: v.$font-size-sm;
   font-weight: v.$font-weight-medium;
   line-height: 1.5;
   text-align: center;
   text-decoration: none;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.01em;
   background: transparent;
   border: none;
   color: c.$color-primary;
   cursor: pointer;
   padding: v.$spacing-xs v.$spacing-sm;
-  transition: color v.$transition-fast;
+  transition: all v.$transition-fast;
+  border-radius: v.$border-radius-sm;
   
   &:hover {
-    color: c.$color-primary-dark;
-    text-decoration: underline;
+    background-color: rgba(c.$color-secondary, 0.05);
+    color: c.$color-primary-light;
+  }
+  
+  &:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(c.$color-primary, 0.1);
   }
 }
 
@@ -189,7 +200,7 @@
 @mixin input-theme {
   width: 100%;
   padding: v.$spacing-unit * 2;
-  border: 1px solid var(--color-border);
+  border: 1px solid c.$color-border;
   border-radius: v.$border-radius;
   
   &:focus {
@@ -200,19 +211,33 @@
 
 @mixin form-label {
   font-weight: v.$font-weight-medium;
-  color: var(--color-text-primary);
+  color: c.$color-text-primary;
   margin-bottom: v.$spacing-unit;
 }
 
 @mixin button-base {
-  padding: v.$spacing-unit * 2 v.$spacing-unit * 4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: v.$spacing-xs;
+  padding: v.$spacing-sm v.$spacing-lg;
+  border: none;
   border-radius: v.$border-radius;
+  font-family: v.$font-sans;
+  font-size: v.$font-size-sm;
   font-weight: v.$font-weight-medium;
+  line-height: 1.5;
+  text-align: center;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all v.$transition-fast;
   
-  &:hover {
-    opacity: 0.9;
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+  
+  i, svg {
+    font-size: inherit;
   }
 }
 
@@ -242,7 +267,7 @@
   
   @if $variant == 'primary' {
     background: c.$color-primary;
-    color: c.$color-text-primary;
+    color: c.$color-text-light;
     border: none;
     
     &:hover:not(:disabled) {
@@ -251,10 +276,10 @@
   } @else if $variant == 'secondary' {
     background: c.$color-surface;
     color: c.$color-text-primary;
-    border: 1px solid var(--color-border);
+    border: 1px solid c.$color-border;
     
     &:hover:not(:disabled) {
-      background: var(--color-surface-hover);
+      background: c.$color-surface-hover;
     }
   } @else if $variant == 'danger' {
     background: c.$color-error;
@@ -262,7 +287,7 @@
     border: none;
     
     &:hover:not(:disabled) {
-      background: darken(c.$color-error, 10%);
+      background: color.adjust(c.$color-error, $lightness: -10%);
     }
   }
   
@@ -278,11 +303,11 @@
   border-collapse: collapse;
   background: c.$color-surface;
   border-radius: v.$border-radius;
-  box-shadow: 0 1px 3px var(--color-shadow);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   
   th {
-    background: var(--color-surface-hover);
-    color: var(--color-text-secondary);
+    background: c.$color-surface-hover;
+    color: c.$color-text-secondary;
     font-weight: v.$font-weight-medium;
     text-align: left;
     padding: v.$spacing-unit * 2;
@@ -290,8 +315,8 @@
   
   td {
     padding: v.$spacing-unit * 2;
-    border-top: 1px solid var(--color-border);
-    color: var(--color-text-primary);
+    border-top: 1px solid c.$color-border;
+    color: c.$color-text-primary;
   }
 }
 
@@ -380,7 +405,7 @@
   transition: background-color v.$transition-fast;
   
   &:hover {
-    background-color: darken($bg-color, 10%);
+    background-color: color.adjust($bg-color, $lightness: -10%);
   }
 }
 
@@ -429,4 +454,35 @@
   font-size: v.$font-size-xs;
   color: c.$color-text-secondary;
   font-weight: ty.$font-weight-regular;
+}
+
+// Status badge mixin
+@mixin status-badge {
+  display: inline-block;
+  padding: v.$spacing-xs v.$spacing-sm;
+  border-radius: v.$border-radius-sm;
+  font-size: v.$font-size-xs;
+  font-weight: v.$font-weight-medium;
+  text-align: center;
+  text-transform: capitalize;
+  
+  &.active {
+    color: c.$color-success;
+    background-color: rgba(c.$color-success, 0.1);
+  }
+  
+  &.inactive, &.expired {
+    color: c.$color-error;
+    background-color: rgba(c.$color-error, 0.1);
+  }
+  
+  &.pending {
+    color: c.$color-warning;
+    background-color: rgba(c.$color-warning, 0.1);
+  }
+  
+  &.draft {
+    color: c.$color-text-secondary;
+    background-color: rgba(c.$color-text-secondary, 0.1);
+  }
 }

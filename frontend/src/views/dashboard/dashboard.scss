@@ -1,0 +1,351 @@
+@use '../../styles/variables' as v;
+@use '../../styles/colors' as c;
+@use '../../styles/mixins' as m;
+
+.dashboard-container {
+  padding: v.$spacing-unit * 4;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.page-header {
+  margin-bottom: v.$spacing-unit * 4;
+  
+  h1 {
+    @include m.heading-1;
+    color: c.$color-text-primary;
+    margin: 0;
+  }
+
+  p {
+    color: c.$color-text-secondary;
+    margin-top: v.$spacing-unit;
+    max-width: 600px;
+  }
+}
+
+.dashboard-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: v.$spacing-unit * 3;
+  margin-bottom: v.$spacing-unit * 4;
+}
+
+.summary-card {
+  background-color: c.$color-surface;
+  border-radius: v.$border-radius;
+  padding: v.$spacing-unit * 3;
+  box-shadow: v.$shadow-sm;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: v.$shadow-md;
+  }
+  
+  .card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: v.$border-radius;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: v.$spacing-unit * 2;
+    
+    i {
+      font-size: 24px;
+    }
+  }
+  
+  .card-icon-contracts {
+    background-color: rgba(c.$color-primary, 0.1);
+    color: c.$color-primary;
+  }
+  
+  .card-icon-expiring {
+    background-color: rgba(c.$color-warning, 0.1);
+    color: c.$color-warning;
+  }
+  
+  .card-icon-users {
+    background-color: rgba(c.$color-success, 0.1);
+    color: c.$color-success;
+  }
+  
+  .card-icon-revenue {
+    background-color: rgba(c.$color-info, 0.1);
+    color: c.$color-info;
+  }
+  
+  .card-title {
+    font-size: 0.95rem;
+    color: c.$color-text-secondary;
+    margin-bottom: v.$spacing-unit;
+  }
+  
+  .card-value {
+    font-size: 1.75rem;
+    font-weight: v.$font-weight-bold;
+    color: c.$color-text-primary;
+  }
+  
+  .trend {
+    display: flex;
+    align-items: center;
+    margin-top: v.$spacing-unit;
+    font-size: 0.9rem;
+    
+    &.positive {
+      color: c.$color-success;
+    }
+    
+    &.negative {
+      color: c.$color-error;
+    }
+    
+    i {
+      margin-right: v.$spacing-unit;
+    }
+  }
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: v.$spacing-unit * 3;
+  margin-bottom: v.$spacing-unit * 4;
+  
+  @media (max-width: v.$breakpoint-lg) {
+    grid-template-columns: 1fr;
+  }
+  
+  .card {
+    background-color: c.$color-surface;
+    border-radius: v.$border-radius;
+    padding: v.$spacing-unit * 3;
+    box-shadow: v.$shadow-sm;
+    height: 100%;
+    
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: v.$spacing-unit * 3;
+      
+      h2 {
+        @include m.heading-3;
+        margin: 0;
+      }
+      
+      .card-actions {
+        display: flex;
+        gap: v.$spacing-unit;
+      }
+    }
+  }
+}
+
+.contract-list {
+  .contract-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: v.$spacing-unit * 2 0;
+    border-bottom: 1px solid c.$color-border;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    .contract-info {
+      h3 {
+        font-size: 1rem;
+        margin: 0 0 v.$spacing-unit 0;
+        font-weight: v.$font-weight-medium;
+        color: c.$color-text-primary;
+      }
+      
+      .contract-meta {
+        display: flex;
+        align-items: center;
+        gap: v.$spacing-unit * 2;
+        color: c.$color-text-secondary;
+        font-size: 0.9rem;
+        
+        span {
+          display: flex;
+          align-items: center;
+          
+          i {
+            margin-right: v.$spacing-unit;
+            font-size: 0.9rem;
+          }
+        }
+      }
+    }
+    
+    .contract-status {
+      @include m.status-badge;
+    }
+  }
+}
+
+.activity-list {
+  .activity-item {
+    display: flex;
+    gap: v.$spacing-unit * 2;
+    padding: v.$spacing-unit * 2 0;
+    border-bottom: 1px solid c.$color-border;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    .activity-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      
+      &.activity-icon-contract {
+        background-color: rgba(c.$color-primary, 0.1);
+        color: c.$color-primary;
+      }
+      
+      &.activity-icon-user {
+        background-color: rgba(c.$color-success, 0.1);
+        color: c.$color-success;
+      }
+      
+      &.activity-icon-system {
+        background-color: rgba(c.$color-info, 0.1);
+        color: c.$color-info;
+      }
+      
+      i {
+        font-size: 1rem;
+      }
+    }
+    
+    .activity-content {
+      flex: 1;
+      
+      .activity-text {
+        color: c.$color-text-primary;
+        margin: 0 0 v.$spacing-unit 0;
+        
+        a {
+          color: c.$color-primary;
+          text-decoration: none;
+          font-weight: v.$font-weight-medium;
+          
+          &:hover {
+            text-decoration: underline;
+          }
+        }
+      }
+      
+      .activity-time {
+        color: c.$color-text-secondary;
+        font-size: 0.85rem;
+      }
+    }
+  }
+}
+
+.chart-container {
+  margin-top: v.$spacing-unit * 3;
+  height: 300px;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: v.$spacing-unit;
+  margin-bottom: v.$spacing-unit * 3;
+  
+  .filter-tab {
+    background: none;
+    border: none;
+    padding: v.$spacing-unit v.$spacing-unit * 2;
+    border-radius: v.$border-radius-pill;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease;
+    color: c.$color-text-secondary;
+    
+    &:hover {
+      background-color: rgba(c.$color-primary, 0.05);
+    }
+    
+    &.active {
+      background-color: rgba(c.$color-primary, 0.1);
+      color: c.$color-primary;
+    }
+  }
+}
+
+/* Estilos para el loader */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  text-align: center;
+  
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(c.$color-primary, 0.1);
+    border-radius: 50%;
+    border-top-color: c.$color-primary;
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 20px;
+  }
+  
+  p {
+    color: c.$color-text-secondary;
+    font-size: 16px;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Estilos para el mensaje de error */
+.error-message {
+  background-color: rgba(c.$color-error, 0.1);
+  border-left: 4px solid c.$color-error;
+  color: c.$color-error;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  i {
+    font-size: 20px;
+  }
+}
+
+/* Estilos para el estado vacío */
+.empty-state {
+  text-align: center;
+  padding: 40px 0;
+  color: c.$color-text-secondary;
+  
+  i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    opacity: 0.5;
+  }
+  
+  p {
+    font-size: 16px;
+  }
+} 

@@ -26,49 +26,5 @@ const getStatusIcon = computed(() => {
 </script>
 
 <style lang="scss" scoped>
-@use '../../styles/variables' as v;
-@use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-@use '../../styles/typography' as t;
-
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: v.$spacing-unit;
-  padding: v.$spacing-unit v.$spacing-unit * 2;
-  border-radius: v.$border-radius;
-  font-size: v.$font-size-sm;
-  font-weight: v.$font-weight-medium;
-  text-transform: capitalize;
-
-  &__icon {
-    width: 16px;
-    height: 16px;
-  }
-
-  &--active {
-    background: rgba(c.$color-success, 0.1);
-    color: c.$color-success;
-  }
-
-  &--expired {
-    background: rgba(c.$color-error, 0.1);
-    color: c.$color-error;
-  }
-
-  &--draft {
-    background: rgba(c.$color-text-secondary, 0.1);
-    color: c.$color-text-secondary;
-  }
-
-  &--terminated {
-    background: rgba(c.$color-error, 0.1);
-    color: c.$color-error;
-  }
-
-  &--renewed {
-    background: rgba(c.$color-info, 0.1);
-    color: c.$color-info;
-  }
-}
+@use './statusBadge.scss';
 </style>

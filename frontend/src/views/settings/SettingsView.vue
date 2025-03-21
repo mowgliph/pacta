@@ -44,13 +44,13 @@
           
           <!-- Estado actual de la licencia -->
           <div class="license-info" v-if="license">
-            <div class="license-status" :class="license.status === 'Licencia Activa' ? 'active' : 'warning'">
+            <div class="license-status" :class="license.type === 'Licencia Activa' ? 'active' : 'warning'">
               <i class="fas fa-shield-alt"></i>
-              {{ license.status }}
+              {{ license.type }}
             </div>
             <p><strong>Tipo:</strong> {{ license.type }}</p>
-            <p><strong>Vencimiento:</strong> {{ license.expiryDate }}</p>
-            <p><strong>Días restantes:</strong> {{ license.remainingDays }}</p>
+            <p><strong>Vencimiento:</strong> {{ license.expiration_date }}</p>
+            <p><strong>Días restantes:</strong> {{ calculateRemainingDays(license.expiration_date) }}</p>
           </div>
           
           <div class="license-info" v-else>
@@ -87,7 +87,7 @@
                  @drop.prevent="handleFileDrop"
                  @dragover.prevent
                  @dragenter.prevent
-                 @click="$refs.fileInput.click()">
+                 @click="handleOpenFileInput">
               <input 
                 type="file" 
                 ref="fileInput"
@@ -188,8 +188,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { authService } from '@/services/auth.service'
+import { useAuthStore } from '../../stores/auth'
+import { authService } from '../../services/auth.service'
 
 // Configuración General
 const companyName = ref('')
@@ -297,6 +297,19 @@ const uploadLicenseFile = async () => {
   }
 }
 
+const handleOpenFileInput = () => {
+  if (fileInput.value) {
+    fileInput.value.click()
+  }
+}
+
+const calculateRemainingDays = (expirationDate: string): number => {
+  const expiry = new Date(expirationDate);
+  const today = new Date();
+  const diffTime = expiry.getTime() - today.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
 // Cargar datos iniciales
 onMounted(async () => {
   // Actualizar información de licencia
@@ -312,264 +325,5 @@ onMounted(async () => {
 </script>
 
 <style lang="scss" scoped>
-@use '../styles/variables' as v;
-@use '../styles/colors' as c;
-@use '../styles/mixins' as m;
-
-.settings-view {
-  .page-header {
-    margin-bottom: v.$spacing-xl;
-
-    h1 {
-      @include m.heading-1;
-      color: c.$color-text-primary;
-      margin: 0;
-    }
-  }
-
-  .settings-section {
-    @include m.card-style;
-    margin-bottom: v.$spacing-xl;
-
-    .section-header {
-      @include m.flex-between;
-      margin-bottom: v.$spacing-lg;
-
-      h2 {
-        @include m.heading-2;
-        color: c.$color-text-primary;
-        margin: 0;
-      }
-    }
-  }
-
-  .settings-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: v.$spacing-lg;
-  }
-
-  .setting-card {
-    @include m.card-style;
-
-    h3 {
-      @include m.heading-3;
-      color: c.$color-text-primary;
-      margin: 0 0 v.$spacing-md;
-    }
-
-    .form-group {
-      margin-bottom: v.$spacing-md;
-
-      label {
-        @include m.form-label;
-        color: c.$color-text-secondary;
-        margin-bottom: v.$spacing-xs;
-      }
-
-      input[type="text"],
-      input[type="email"],
-      input[type="password"],
-      input[type="number"],
-      select {
-        @include m.input;
-        width: 100%;
-        padding: v.$spacing-sm;
-        border: 1px solid c.$color-border;
-        border-radius: v.$border-radius-md;
-        background-color: c.$color-surface;
-        color: c.$color-text-primary;
-        transition: all 0.2s ease;
-
-        &:focus {
-          outline: none;
-          border-color: c.$color-primary;
-          box-shadow: 0 0 0 2px rgba(c.$color-primary, 0.2);
-        }
-      }
-    }
-
-    .license-info {
-      margin-top: v.$spacing-md;
-      padding: v.$spacing-md;
-      background-color: c.$color-background;
-      border-radius: v.$border-radius-md;
-
-      p {
-        margin: v.$spacing-xs 0;
-        @include m.body-text;
-        color: c.$color-text-primary;
-
-        strong {
-          color: c.$color-text-secondary;
-        }
-
-        span {
-          &.active {
-            @include m.status-color('active');
-          }
-        }
-      }
-      
-      .license-status {
-        display: inline-flex;
-        align-items: center;
-        gap: v.$spacing-xs;
-        padding: v.$spacing-xs v.$spacing-sm;
-        border-radius: v.$border-radius-sm;
-        margin-bottom: v.$spacing-md;
-        
-        &.active {
-          background-color: rgba(c.$color-success, 0.1);
-          color: c.$color-success;
-        }
-        
-        &.warning {
-          background-color: rgba(c.$color-warning, 0.1);
-          color: c.$color-warning;
-        }
-        
-        i {
-          font-size: v.$font-size-base;
-        }
-      }
-    }
-  }
-
-  .toggle-switch {
-    position: relative;
-    display: inline-block;
-    width: 50px;
-    height: 24px;
-
-    input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-
-      &:checked + .toggle-slider {
-        background-color: c.$color-primary;
-      }
-
-      &:checked + .toggle-slider:before {
-        transform: translateX(26px);
-      }
-    }
-
-    .toggle-slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: c.$color-border;
-      transition: .4s;
-      border-radius: 24px;
-
-      &:before {
-        position: absolute;
-        content: "";
-        height: 16px;
-        width: 16px;
-        left: 4px;
-        bottom: 4px;
-        background-color: c.$color-surface;
-        transition: .4s;
-        border-radius: 50%;
-      }
-    }
-  }
-}
-
-.error-message {
-  margin: v.$spacing-md 0;
-  padding: v.$spacing-sm v.$spacing-md;
-  background-color: rgba(c.$color-error, 0.1);
-  color: c.$color-error;
-  border-radius: v.$border-radius-md;
-  font-size: v.$font-size-sm;
-}
-
-.input-group {
-  display: flex;
-  gap: v.$spacing-xs;
-  
-  input {
-    flex: 1;
-  }
-}
-
-.mt-2 {
-  margin-top: v.$spacing-sm;
-}
-
-.mt-4 {
-  margin-top: v.$spacing-md;
-}
-
-.file-upload {
-  border: 2px dashed c.$color-border;
-  border-radius: v.$border-radius-md;
-  padding: v.$spacing-md;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    border-color: c.$color-primary;
-    background-color: rgba(c.$color-primary, 0.05);
-  }
-  
-  .upload-content {
-    text-align: center;
-    
-    i {
-      font-size: 2rem;
-      color: c.$color-text-secondary;
-      margin-bottom: v.$spacing-sm;
-    }
-    
-    p {
-      margin: v.$spacing-xs 0;
-      color: c.$color-text-secondary;
-    }
-  }
-}
-
-.selected-file {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: v.$spacing-xs v.$spacing-sm;
-  background-color: rgba(c.$color-primary, 0.1);
-  border-radius: v.$border-radius-sm;
-  
-  span {
-    @include m.text-small;
-    color: c.$color-text-primary;
-  }
-}
-
-// Utility Classes
-.btn-primary {
-  @include m.button-theme('primary');
-}
-
-.btn-secondary {
-  @include m.button-theme('secondary');
-}
-
-@media (max-width: v.$breakpoint-md) {
-  .settings-view {
-    .settings-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .section-header {
-      @include m.flex-column;
-      gap: v.$spacing-md;
-      align-items: flex-start;
-    }
-  }
-}
+@import './settings.scss';
 </style> 

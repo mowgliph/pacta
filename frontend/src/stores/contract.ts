@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { contractService } from '@/services/contract.service';
+import type { ContractFilter } from '@/services/contract.service';
 
 export interface Contract {
   id: number;
@@ -19,6 +20,7 @@ export interface Contract {
 
 interface ContractState {
   contracts: Contract[];
+  filteredContracts: Contract[];
   loading: boolean;
   error: string | null;
 }
@@ -32,6 +34,7 @@ interface ContractStats {
 export const useContractStore = defineStore('contract', {
   state: (): ContractState => ({
     contracts: [],
+    filteredContracts: [],
     loading: false,
     error: null
   }),
@@ -50,13 +53,35 @@ export const useContractStore = defineStore('contract', {
   },
 
   actions: {
+    setLoading(value: boolean) {
+      this.loading = value;
+    },
+    
     async fetchContracts() {
       this.loading = true;
       this.error = null;
       try {
-        this.contracts = await contractService.getContracts();
+        const contracts = await contractService.getContracts();
+        this.contracts = contracts;
+        this.filteredContracts = [...contracts];
+        return contracts;
       } catch (error: any) {
         this.error = error.message || 'Error fetching contracts';
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async fetchContractsWithFilters(filters: ContractFilter) {
+      this.loading = true;
+      this.error = null;
+      try {
+        const contracts = await contractService.getContracts(filters);
+        this.filteredContracts = contracts;
+        return contracts;
+      } catch (error: any) {
+        this.error = error.message || 'Error fetching filtered contracts';
         throw error;
       } finally {
         this.loading = false;
@@ -67,6 +92,7 @@ export const useContractStore = defineStore('contract', {
       try {
         const newContract = await contractService.createContract(contractData);
         this.contracts.push(newContract);
+        this.filteredContracts.push(newContract);
         return newContract;
       } catch (error: any) {
         this.error = error.message || 'Error creating contract';
@@ -77,10 +103,19 @@ export const useContractStore = defineStore('contract', {
     async updateContract(id: number, contractData: Partial<Contract>) {
       try {
         const updatedContract = await contractService.updateContract(id, contractData);
+        
+        // Actualizar en la lista principal
         const index = this.contracts.findIndex(c => c.id === id);
         if (index !== -1) {
           this.contracts[index] = updatedContract;
         }
+        
+        // Actualizar en la lista filtrada
+        const filteredIndex = this.filteredContracts.findIndex(c => c.id === id);
+        if (filteredIndex !== -1) {
+          this.filteredContracts[filteredIndex] = updatedContract;
+        }
+        
         return updatedContract;
       } catch (error: any) {
         this.error = error.message || 'Error updating contract';
@@ -92,6 +127,7 @@ export const useContractStore = defineStore('contract', {
       try {
         await contractService.deleteContract(id);
         this.contracts = this.contracts.filter(c => c.id !== id);
+        this.filteredContracts = this.filteredContracts.filter(c => c.id !== id);
       } catch (error: any) {
         this.error = error.message || 'Error deleting contract';
         throw error;

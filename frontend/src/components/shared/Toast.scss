@@ -1,0 +1,89 @@
+@use '../../styles/variables' as v;
+@use '../../styles/colors' as c;
+@use '../../styles/mixins' as m;
+@use '../../styles/typography' as t;
+
+.toast-container {
+  position: fixed;
+  top: v.$spacing-unit * 4;
+  right: v.$spacing-unit * 4;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: v.$spacing-unit * 2;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-unit * 2;
+  padding: v.$spacing-unit * 2;
+  min-width: 300px;
+  max-width: 500px;
+  background: c.$color-surface;
+  border-radius: v.$border-radius;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  &--success {
+    border-left: 4px solid c.$color-success;
+    .toast__icon { color: c.$color-success; }
+  }
+
+  &--error {
+    border-left: 4px solid c.$color-error;
+    .toast__icon { color: c.$color-error; }
+  }
+
+  &--warning {
+    border-left: 4px solid c.$color-warning;
+    .toast__icon { color: c.$color-warning; }
+  }
+
+  &--info {
+    border-left: 4px solid c.$color-info;
+    .toast__icon { color: c.$color-info; }
+  }
+
+  &__icon {
+    font-size: 1.25rem;
+  }
+
+  &__content {
+    flex: 1;
+  }
+
+  &__message {
+    margin: 0;
+    color: c.$color-text-secondary;
+    font-size: 0.875rem;
+  }
+
+  &__close {
+    padding: 4px;
+    border: none;
+    background: none;
+    color: c.$color-text-secondary;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s ease;
+}
+
+.toast-enter-from {
+  opacity: 0;
+  transform: translateX(30px);
+}
+
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(30px);
+}

@@ -50,6 +50,8 @@
 
   /* Shadows */
   --shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 } 
 
 /* Dark Theme Variables */
@@ -57,10 +59,28 @@
   --primary-color: #60A5FA;
   --primary-color-light: #93C5FD;
   --primary-color-dark: #2563EB;
-  --surface-color: #1E293B;
-  --background-color: #0F172A;
+  --surface-color: #1E1E1E;
+  --background-color: #121212;
   --text-primary: #F1F5F9;
   --text-secondary: #94A3B8;
-  --border-color: #334155;
-  --hover-color: rgba(96, 165, 250, 0.2);
+  --border-color: #333333;
+  --hover-color: rgba(96, 165, 250, 0.15);
+  
+  /* Surface Colors */
+  --surface-ground: #121212;
+  --surface-section: #1E1E1E;
+  --surface-card: #252525;
+  --surface-overlay: #2A2A2A;
+  --surface-border: #333333;
+  --surface-hover: rgba(255, 255, 255, 0.03);
+  
+  /* Shadows for dark theme */
+  --shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  
+  /* Action Colors */
+  --focus-ring: 0 0 0 2px rgba(96, 165, 250, 0.4);
+  --highlight-bg: rgba(96, 165, 250, 0.1);
+  --highlight-text-color: var(--primary-color);
 }

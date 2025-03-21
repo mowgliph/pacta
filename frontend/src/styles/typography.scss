@@ -2,14 +2,18 @@
 @use 'colors' as c;
 
 // Typography defaults
-$font-family-sans-serif: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-$font-family-monospace: 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-$font-size-base: 1rem;
-$font-weight-regular: 400;
-$font-weight-medium: 500;
-$font-weight-semibold: 600;
-$font-weight-bold: 700;
+$font-family-sans-serif: v.$font-sans;
+$font-family-monospace: v.$font-mono;
+$font-size-base: v.$font-size-base;
+$font-weight-light: v.$font-weight-light;
+$font-weight-regular: v.$font-weight-regular;
+$font-weight-medium: v.$font-weight-medium;
+$font-weight-semibold: v.$font-weight-semibold;
+$font-weight-bold: v.$font-weight-bold;
 $line-height-base: 1.5;
+$letter-spacing-tight: -0.01em;
+$letter-spacing-normal: 0;
+$letter-spacing-wide: 0.01em;
 
 body {
   font-family: $font-family-sans-serif;
@@ -17,6 +21,8 @@ body {
   line-height: $line-height-base;
   color: var(--color-text-primary);
   margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -24,10 +30,13 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: v.$spacing-md;
   font-weight: $font-weight-semibold;
   line-height: 1.2;
+  letter-spacing: $letter-spacing-tight;
+  color: c.$color-primary-dark;
 }
 
 h1 {
   font-size: 2.25rem;
+  font-weight: $font-weight-bold;
 }
 
 h2 {
@@ -53,26 +62,34 @@ h6 {
 p {
   margin-top: 0;
   margin-bottom: v.$spacing-md;
+  line-height: 1.6;
 }
 
 a {
   color: c.$color-primary;
   text-decoration: none;
+  transition: color v.$transition-fast;
   
   &:hover {
-    text-decoration: underline;
+    color: c.$color-primary-light;
   }
 }
 
 small {
-  font-size: 80%;
+  font-size: 85%;
+  letter-spacing: $letter-spacing-wide;
 }
 
+// Clases de utilidad para texto
 .text-primary {
   color: c.$color-primary;
 }
 
 .text-secondary {
+  color: c.$color-secondary;
+}
+
+.text-light {
   color: c.$color-text-secondary;
 }
 
@@ -100,12 +117,25 @@ small {
   text-align: right;
 }
 
+.text-light {
+  font-weight: $font-weight-light;
+}
+
+.text-regular {
+  font-weight: $font-weight-regular;
+}
+
+.text-medium {
+  font-weight: $font-weight-medium;
+}
+
 .text-bold {
   font-weight: $font-weight-bold;
 }
 
 .text-uppercase {
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .text-capitalize {
@@ -116,4 +146,21 @@ small {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.text-mono {
+  font-family: $font-family-monospace;
+}
+
+// Tamaños de texto responsive
+@media (max-width: v.$breakpoint-md) {
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.625rem; }
+  h3 { font-size: 1.375rem; }
+}
+
+@media (max-width: v.$breakpoint-sm) {
+  h1 { font-size: 1.75rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
 }

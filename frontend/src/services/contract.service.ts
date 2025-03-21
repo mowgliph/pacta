@@ -9,6 +9,10 @@ export interface ContractFilter {
   startDateTo?: string;
   endDateFrom?: string;
   endDateTo?: string;
+  searchQuery?: string;
+  currency?: string;
+  minAmount?: number;
+  maxAmount?: number;
 }
 
 interface ContractStatistics {

@@ -1,0 +1,98 @@
+@use '../../../styles/variables' as v;
+@use '../../../styles/colors' as c;
+@use '../../../styles/mixins' as m;
+@use '../../../styles/typography' as t;
+
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog-content {
+  background: white;
+  border-radius: v.$border-radius;
+  padding: v.$spacing-unit * 4;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: v.$spacing-unit * 3;
+  margin: v.$spacing-unit * 3 0;
+}
+
+.form-group {
+  label {
+    display: block;
+    margin-bottom: v.$spacing-unit;
+    font-weight: v.$font-weight-medium;
+  }
+
+  input, select {
+    width: 100%;
+    padding: v.$spacing-unit * 1.5;
+    border: 1px solid c.$color-surface;
+    border-radius: v.$border-radius;
+    font-size: 1rem;
+
+    &:focus {
+      outline: none;
+      border-color: c.$color-accent;
+    }
+
+    &.error {
+      border-color: #EF4444;
+    }
+  }
+}
+
+.error-message {
+  color: #EF4444;
+  font-size: 0.875rem;
+  margin-top: v.$spacing-unit;
+  display: block;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: v.$spacing-unit * 2;
+  margin-top: v.$spacing-unit * 4;
+}
+
+.btn-secondary {
+  padding: v.$spacing-unit * 1.5 v.$spacing-unit * 3;
+  border: 1px solid c.$color-surface;
+  background: white;
+  border-radius: v.$border-radius;
+  cursor: pointer;
+  
+  &:hover {
+    background: c.$color-surface;
+  }
+}
+
+.btn-primary {
+  padding: v.$spacing-unit * 1.5 v.$spacing-unit * 3;
+  background: c.$color-accent;
+  color: white;
+  border: none;
+  border-radius: v.$border-radius;
+  cursor: pointer;
+  
+  &:hover {
+    opacity: 0.9;
+  }
+}

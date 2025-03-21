@@ -4,13 +4,19 @@ import { authService } from '@/services/auth.service';
 import type { User, LoginResponse, LicenseResponse } from '@/types/api';
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref<LoginResponse['user'] | null>(null);
-  const license = ref<LoginResponse['license'] | null>(null);
-  const token = ref<string | null>(null);
+  const user = ref<LoginResponse['user'] | null>(
+    JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || 'null')
+  );
+  const license = ref<LoginResponse['license'] | null>(
+    JSON.parse(localStorage.getItem('license') || sessionStorage.getItem('license') || 'null')
+  );
+  const token = ref<string | null>(
+    localStorage.getItem('token') || sessionStorage.getItem('token')
+  );
   const errors = ref<string[]>([]);
   const loading = ref(false);
 
-  const isAuthenticated = computed(() => !!token.value);
+  const isAuthenticated = computed(() => !!token.value && !isTokenExpired.value);
   const isAdmin = computed(() => user.value?.role === 'admin');
   const hasActiveLicense = computed(() => !!license.value);
   const isTokenExpired = computed(() => {
@@ -28,11 +34,17 @@ export const useAuthStore = defineStore('auth', () => {
     license.value = data.license;
     token.value = data.token;
     errors.value = [];
+    
+    localStorage.setItem('user', JSON.stringify(data.user));
+    localStorage.setItem('license', JSON.stringify(data.license));
+    localStorage.setItem('token', data.token);
   }
 
   function setLicenseData(data: LicenseResponse) {
     license.value = data.license;
     errors.value = [];
+    
+    localStorage.setItem('license', JSON.stringify(data.license));
   }
 
   function clearAuthData() {
@@ -40,21 +52,41 @@ export const useAuthStore = defineStore('auth', () => {
     license.value = null;
     token.value = null;
     errors.value = [];
+    
+    // Limpiar localStorage
+    localStorage.removeItem('user');
+    localStorage.removeItem('license');
+    localStorage.removeItem('token');
+    
+    // Limpiar sessionStorage
+    sessionStorage.removeItem('user');
+    sessionStorage.removeItem('license');
+    sessionStorage.removeItem('token');
   }
 
-  async function login(username: string, password: string): Promise<boolean> {
+  async function login(username: string, password: string, remember: boolean = false): Promise<boolean> {
     loading.value = true;
     errors.value = [];
     
     try {
       const data = await authService.login(username, password);
       setAuthData(data);
+      
+      if (!remember) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('license');
+        localStorage.removeItem('token');
+        
+        sessionStorage.setItem('user', JSON.stringify(data.user));
+        sessionStorage.setItem('license', JSON.stringify(data.license));
+        sessionStorage.setItem('token', data.token);
+      }
+      
       return true;
     } catch (error: any) {
       const errorMessage = error.message || 'Error al iniciar sesión';
       errors.value = [errorMessage];
       
-      // Propagar el error para que el componente pueda manejarlo específicamente
       throw error;
     } finally {
       loading.value = false;
@@ -118,8 +150,15 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function checkAuth() {
-    const storedToken = localStorage.getItem('token');
-    if (!storedToken) return false;
+    if (!token.value) return false;
+    
+    if (isTokenExpired.value) {
+      const success = await refreshToken();
+      if (!success) {
+        clearAuthData();
+        return false;
+      }
+    }
 
     try {
       const currentUser = await authService.getCurrentUser();
@@ -129,10 +168,11 @@ export const useAuthStore = defineStore('auth', () => {
           username: currentUser.username,
           role: currentUser.role
         };
-        token.value = storedToken;
+        localStorage.setItem('user', JSON.stringify(user.value));
       }
       return true;
     } catch (error) {
+      clearAuthData();
       return false;
     }
   }

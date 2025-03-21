@@ -28,7 +28,7 @@ const router = createRouter({
         {
           path: 'dashboard',
           name: 'dashboard',
-          component: () => import('@/views/DashboardView.vue'),
+          component: () => import('@/views/dashboard/DashboardView.vue'),
           meta: {
             requiresAuth: true,
             requiresLicense: false,
@@ -49,7 +49,7 @@ const router = createRouter({
         {
           path: 'analytics',
           name: 'analytics',
-          component: () => import('@/views/AnalyticsView.vue'),
+          component: () => import('@/views/analytics/AnalyticsView.vue'),
           meta: {
             requiresAuth: true,
             requiresLicense: false,
@@ -69,7 +69,7 @@ const router = createRouter({
         {
           path: 'settings',
           name: 'settings',
-          component: () => import('@/views/SettingsView.vue'),
+          component: () => import('@/views/settings/SettingsView.vue'),
           meta: {
             requiresAuth: true,
             requiresAdmin: true,
@@ -82,7 +82,7 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: () => import('@/views/LoginView.vue'),
+      component: () => import('@/views/login/LoginView.vue'),
       meta: {
         requiresAuth: false,
         title: 'Iniciar Sesión'
@@ -91,7 +91,7 @@ const router = createRouter({
     {
       path: '/license-required',
       name: 'license-required',
-      component: () => import('@/views/LicenseRequiredView.vue'),
+      component: () => import('@/views/licenses/LicenseRequiredView.vue'),
       meta: {
         requiresAuth: true,
         requiresLicense: false,

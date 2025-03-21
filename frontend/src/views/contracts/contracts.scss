@@ -1,0 +1,398 @@
+@use 'sass:color';
+@use '../../styles/variables' as v;
+@use '../../styles/colors' as c;
+@use '../../styles/mixins' as m;
+
+.contracts-view {
+  .page-header {
+    margin-bottom: v.$spacing-xl;
+
+    h1 {
+      @include m.heading-1;
+      color: c.$color-text-primary;
+      margin: 0;
+    }
+  }
+}
+
+.contracts-header {
+  @include m.flex-between;
+  margin-bottom: v.$spacing-lg;
+}
+
+.contracts-content {
+  @include m.card-style;
+  padding: 0;
+  overflow: hidden;
+}
+
+.filters-container {
+  background-color: c.$color-surface-hover;
+  padding: v.$spacing-unit * 3;
+  border-bottom: 1px solid c.$color-border;
+}
+
+.search-filters {
+  display: flex;
+  gap: v.$spacing-unit * 2;
+  align-items: center;
+  margin-bottom: v.$spacing-unit * 2;
+  
+  .search-input {
+    flex: 1;
+    position: relative;
+    
+    input {
+      width: 100%;
+      padding: v.$spacing-unit * 1.5 v.$spacing-unit * 1.5 v.$spacing-unit * 1.5 v.$spacing-unit * 5;
+      border: 1px solid c.$color-border;
+      border-radius: v.$border-radius;
+      background-color: c.$color-surface;
+      color: c.$color-text-primary;
+      
+      &:focus {
+        outline: none;
+        border-color: c.$color-primary;
+        box-shadow: 0 0 0 2px rgba(c.$color-primary, 0.2);
+      }
+    }
+    
+    i {
+      position: absolute;
+      left: v.$spacing-unit * 2;
+      top: 50%;
+      transform: translateY(-50%);
+      color: c.$color-text-secondary;
+    }
+  }
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: v.$spacing-unit * 2;
+  
+  .filter-select {
+    position: relative;
+    
+    select {
+      width: 100%;
+      padding: v.$spacing-unit * 1.5;
+      border: 1px solid c.$color-border;
+      border-radius: v.$border-radius;
+      background-color: c.$color-surface;
+      color: c.$color-text-primary;
+      appearance: none;
+      
+      &:focus {
+        outline: none;
+        border-color: c.$color-primary;
+      }
+    }
+    
+    &::after {
+      content: "\f078";
+      font-family: "Font Awesome 5 Free";
+      font-weight: 900;
+      position: absolute;
+      right: v.$spacing-unit * 2;
+      top: 50%;
+      transform: translateY(-50%);
+      color: c.$color-text-secondary;
+      pointer-events: none;
+    }
+  }
+}
+
+.status-filters {
+  display: flex;
+  gap: v.$spacing-unit;
+  margin-top: v.$spacing-unit * 3;
+  
+  .status-filter {
+    padding: v.$spacing-unit v.$spacing-unit * 2;
+    border-radius: v.$border-radius;
+    background-color: c.$color-surface;
+    color: c.$color-text-secondary;
+    cursor: pointer;
+    transition: all v.$transition-normal;
+    
+    &:hover {
+      background-color: c.$color-surface-hover;
+    }
+    
+    &.active {
+      background-color: c.$color-primary;
+      color: white;
+    }
+  }
+}
+
+.contracts-table {
+  width: 100%;
+  border-collapse: collapse;
+  
+  th, td {
+    text-align: left;
+    padding: v.$spacing-unit * 2;
+    border-bottom: 1px solid c.$color-border;
+  }
+  
+  th {
+    background-color: c.$color-surface-hover;
+    font-weight: v.$font-weight-medium;
+    color: c.$color-text-primary;
+    position: relative;
+    cursor: pointer;
+    
+    &:hover {
+      background-color: c.$color-hover;
+    }
+    
+    .sort-icon {
+      margin-left: v.$spacing-unit;
+      font-size: 0.7rem;
+    }
+  }
+  
+  tbody tr {
+    transition: background-color v.$transition-normal;
+    
+    &:hover {
+      background-color: c.$color-surface-hover;
+    }
+  }
+  
+  td {
+    color: c.$color-text-primary;
+    
+    .contract-number {
+      font-weight: v.$font-weight-medium;
+      color: c.$color-primary;
+      cursor: pointer;
+      
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+.status-badge {
+  display: inline-block;
+  padding: v.$spacing-unit * 0.75 v.$spacing-unit * 1.5;
+  border-radius: v.$border-radius-pill;
+  font-size: 0.85rem;
+  font-weight: v.$font-weight-medium;
+  
+  &.active {
+    background-color: rgba(c.$color-success, 0.15);
+    color: c.$color-success;
+  }
+  
+  &.expired {
+    background-color: rgba(c.$color-error, 0.15);
+    color: c.$color-error;
+  }
+  
+  &.pending {
+    background-color: rgba(c.$color-warning, 0.15);
+    color: c.$color-warning;
+  }
+  
+  &.draft {
+    background-color: rgba(c.$color-info, 0.15);
+    color: c.$color-info;
+  }
+}
+
+.actions-cell {
+  text-align: right;
+  white-space: nowrap;
+  
+  .action-btn {
+    background: none;
+    border: none;
+    color: c.$color-text-secondary;
+    cursor: pointer;
+    padding: v.$spacing-unit;
+    border-radius: v.$border-radius;
+    transition: all v.$transition-normal;
+    
+    &:hover {
+      color: c.$color-primary;
+      background-color: rgba(c.$color-primary, 0.1);
+    }
+  }
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: v.$spacing-unit * 2 v.$spacing-unit * 3;
+  background-color: c.$color-surface-hover;
+  border-top: 1px solid c.$color-border;
+  
+  .page-info {
+    color: c.$color-text-secondary;
+  }
+  
+  .page-controls {
+    display: flex;
+    gap: v.$spacing-unit;
+    
+    .page-btn {
+      background: none;
+      border: 1px solid c.$color-border;
+      color: c.$color-text-secondary;
+      cursor: pointer;
+      padding: v.$spacing-unit v.$spacing-unit * 2;
+      border-radius: v.$border-radius;
+      transition: all v.$transition-normal;
+      
+      &:hover:not(:disabled) {
+        background-color: c.$color-surface-hover;
+        border-color: c.$color-text-secondary;
+      }
+      
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      
+      &.current {
+        background-color: c.$color-primary;
+        color: c.$color-text-light;
+        border-color: c.$color-primary;
+      }
+    }
+  }
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-unit;
+  
+  i {
+    font-size: 0.9rem;
+  }
+}
+
+.btn-secondary {
+  @include m.button-outline;
+}
+
+.btn-danger {
+  background-color: v.$color-danger;
+  color: white;
+  border: none;
+  padding: v.$spacing-unit * 1.5 v.$spacing-unit * 3;
+  border-radius: v.$border-radius;
+  cursor: pointer;
+  transition: all v.$transition-normal;
+  font-weight: v.$font-weight-medium;
+  
+  &:hover {
+    background-color: color.adjust(v.$color-danger, $lightness: -10%);
+  }
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: c.$color-primary;
+  cursor: pointer;
+  padding: v.$spacing-unit v.$spacing-unit * 2;
+  transition: color v.$transition-fast;
+  font-weight: v.$font-weight-medium;
+  
+  &:hover {
+    text-decoration: none;
+    color: c.$color-primary-dark;
+  }
+  
+  i {
+    margin-right: v.$spacing-unit;
+  }
+}
+
+// Responsive
+@media (max-width: v.$breakpoint-md) {
+  .contracts-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: v.$spacing-unit * 2;
+  }
+  
+  .filters-container {
+    padding: v.$spacing-unit * 2;
+  }
+  
+  .search-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .status-filters {
+    overflow-x: auto;
+    padding-bottom: v.$spacing-unit;
+    
+    .status-filter {
+      white-space: nowrap;
+    }
+  }
+}
+
+.no-data-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: v.$spacing-unit * 6;
+  text-align: center;
+  background-color: c.$color-surface;
+  border-radius: v.$border-radius-md;
+  min-height: 300px;
+  
+  i {
+    font-size: 3rem;
+    color: c.$color-text-secondary;
+    margin-bottom: v.$spacing-unit * 2;
+  }
+  
+  p {
+    color: c.$color-text-secondary;
+    font-size: 1.1rem;
+    margin-bottom: v.$spacing-unit * 3;
+  }
+  
+  .btn-primary {
+    @include m.button-primary;
+  }
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: v.$spacing-unit * 6;
+  text-align: center;
+  min-height: 300px;
+  
+  i {
+    font-size: 2rem;
+    color: c.$color-primary;
+    margin-bottom: v.$spacing-unit * 2;
+  }
+  
+  p {
+    color: c.$color-text-secondary;
+  }
+} 

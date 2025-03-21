@@ -66,6 +66,7 @@ defineEmits(['click']);
 </script>
 
 <style lang="scss" scoped>
+@use 'sass:color';
 @use '../../styles/variables' as v;
 @use '../../styles/colors' as c;
 @use '../../styles/mixins' as m;
@@ -77,14 +78,17 @@ defineEmits(['click']);
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: v.$spacing-xs;
   border: none;
-  border-radius: v.$border-radius;
+  border-radius: v.$border-radius-md;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all v.$transition-normal;
   outline: none;
+  overflow: hidden;
+  font-weight: v.$font-weight-medium;
   
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.65;
     cursor: not-allowed;
     pointer-events: none;
   }
@@ -92,49 +96,66 @@ defineEmits(['click']);
   // Variants
   &--primary {
     background-color: c.$color-primary;
-    color: white;
+    color: c.$color-text-light;
+    box-shadow: 0 2px 4px rgba(c.$color-primary-dark, 0.15);
     
     &:hover:not(:disabled) {
       background-color: c.$color-primary-dark;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(c.$color-primary-dark, 0.2);
+    }
+    
+    &:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 1px 2px rgba(c.$color-primary-dark, 0.2);
     }
   }
   
   &--secondary {
-    background-color: white;
+    background-color: c.$color-surface;
     color: c.$color-text-primary;
-    border: 1px solid var(--color-border);
+    border: 1px solid c.$color-border;
     
     &:hover:not(:disabled) {
-      background-color: #f5f5f5;
+      background-color: c.$color-hover;
+      border-color: c.$color-primary;
     }
   }
   
   &--tertiary {
-    background-color: rgba(c.$color-primary, 0.1);
+    background-color: rgba(c.$color-primary, 0.08);
     color: c.$color-primary;
     
     &:hover:not(:disabled) {
-      background-color: rgba(c.$color-primary, 0.2);
+      background-color: rgba(c.$color-primary, 0.15);
     }
   }
   
   &--danger {
     background-color: c.$color-error;
-    color: white;
+    color: c.$color-text-light;
+    box-shadow: 0 2px 4px rgba(c.$color-error, 0.15);
     
     &:hover:not(:disabled) {
-      background-color: darken(c.$color-error, 10%);
+      background-color: color.adjust(c.$color-error, $lightness: -8%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(c.$color-error, 0.2);
+    }
+    
+    &:active:not(:disabled) {
+      transform: translateY(0);
+      box-shadow: 0 1px 2px rgba(c.$color-error, 0.2);
     }
   }
   
   &--text {
     background-color: transparent;
     color: c.$color-primary;
-    padding: 0;
+    padding: v.$spacing-xs;
     
     &:hover:not(:disabled) {
       color: c.$color-primary-dark;
-      background-color: transparent;
+      background-color: rgba(c.$color-primary, 0.05);
     }
   }
   

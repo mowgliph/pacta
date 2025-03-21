@@ -1,44 +1,41 @@
 @use 'sass:color';
 @use 'sass:map';
 
-// Color palette
-$color-primary: #1976d2;
-$color-primary-light: #4791db;
-$color-primary-dark: #115293;
+// Nueva paleta de colores basada en la imagen
+$color-primary-dark: #0F1A2E;    // Azul muy oscuro (casi negro)
+$color-primary: #1E2B47;         // Azul oscuro
+$color-primary-light: #3F5376;   // Azul medio
+$color-secondary: #6D83A9;       // Azul claro (grisáceo)
+$color-background: #EEE9DD;      // Beige claro
 
-$color-secondary: #424242;
-$color-secondary-light: #6d6d6d;
-$color-secondary-dark: #1b1b1b;
+// Colores derivados
+$color-secondary-light: color.adjust($color-secondary, $lightness: 15%);
+$color-secondary-dark: color.adjust($color-secondary, $lightness: -15%);
 
-$color-accent: #ff9800;
-$color-accent-light: #ffb74d;
-$color-accent-dark: #f57c00;
+// Mantener el color de acento pero actualizar para que combine mejor
+$color-accent: $color-secondary;
+$color-accent-light: $color-secondary-light;
+$color-accent-dark: $color-secondary-dark;
 
 $color-success: #4caf50;
-$color-warning: #ff9800;
+$color-warning: #FFC107;
 $color-error: #f44336;
-$color-info: #2196f3;
+$color-info: $color-secondary;
 
-$color-text-primary: rgba(0, 0, 0, 0.87);
-$color-text-secondary: rgba(0, 0, 0, 0.60);
-$color-text-disabled: rgba(0, 0, 0, 0.38);
+// Colores de texto actualizados
+$color-text-primary: rgba(15, 26, 46, 0.87);   // Basado en color-primary-dark
+$color-text-secondary: rgba(15, 26, 46, 0.60);
+$color-text-disabled: rgba(15, 26, 46, 0.38);
+$color-text-muted: rgba(15, 26, 46, 0.50);     // Nuevo color para texto muted
 $color-text-light: #ffffff;
 
-$color-background: #f5f5f5;
+// Colores de superficie
 $color-surface: #ffffff;
 $color-surface-hover: color.adjust($color-surface, $lightness: -5%);
-$color-divider: rgba(0, 0, 0, 0.12);
-$color-border: #e2e8f0;
+$color-divider: rgba(15, 26, 46, 0.08);
+$color-border: color.adjust($color-secondary, $lightness: 25%);
 
-$color-hover: rgba($color-primary, 0.1);
-
-// Dark mode colors
-$color-dark-background: #121212;
-$color-dark-surface: #1e1e1e;
-$color-dark-text-primary: rgba(255, 255, 255, 0.87);
-$color-dark-text-secondary: rgba(255, 255, 255, 0.60);
-$color-dark-text-disabled: rgba(255, 255, 255, 0.38);
-$color-dark-border: #404040;
+$color-hover: rgba($color-primary, 0.08);
 
 // Map to be accessed by functions
 $colors: (
@@ -58,6 +55,7 @@ $colors: (
   "text-primary": $color-text-primary,
   "text-secondary": $color-text-secondary,
   "text-disabled": $color-text-disabled,
+  "text-muted": $color-text-muted,
   "text-light": $color-text-light,
   "background": $color-background,
   "surface": $color-surface,
@@ -68,23 +66,43 @@ $colors: (
 
 // CSS Custom Properties
 :root {
-  --color-primary: #{map.get($colors, 'primary')};
-  --color-text: #{$color-text-primary};
+  --color-primary-dark: #{$color-primary-dark};
+  --color-primary: #{$color-primary};
+  --color-primary-light: #{$color-primary-light};
+  --color-secondary: #{$color-secondary};
+  --color-secondary-light: #{$color-secondary-light};
+  --color-secondary-dark: #{$color-secondary-dark};
+  --color-accent: #{$color-accent};
+  --color-accent-light: #{$color-accent-light};
+  --color-accent-dark: #{$color-accent-dark};
+  --color-success: #{$color-success};
+  --color-warning: #{$color-warning};
+  --color-error: #{$color-error};
+  --color-info: #{$color-info};
+  --color-text-primary: #{$color-text-primary};
   --color-text-secondary: #{$color-text-secondary};
+  --color-text-disabled: #{$color-text-disabled};
+  --color-text-tertiary: #{$color-text-disabled};
+  --color-text-muted: #{$color-text-muted};
+  --color-text-light: #{$color-text-light};
   --color-background: #{$color-background};
   --color-surface: #{$color-surface};
-  --color-text-primary: #{$color-text-primary};
-  --color-text-light: #{$color-text-light};
-  --color-surface-hover: #{color.adjust($color-surface, $lightness: -5%)};
+  --color-surface-hover: #{$color-surface-hover};
+  --color-divider: #{$color-divider};
   --color-border: #{$color-border};
-}
-
-// Dark theme overrides
-.dark-theme {
-  --color-background: #{$color-dark-background};
-  --color-surface: #{$color-dark-surface};
-  --color-surface-hover: #363636;
-  --color-text-primary: #{$color-dark-text-primary};
-  --color-text-secondary: #{$color-dark-text-secondary};
-  --color-border: #{$color-dark-border};
+  --color-hover: #{$color-hover};
+  
+  // RGB values for transparency
+  --color-primary-rgb: #{color.channel($color-primary, "red", $space: rgb)}, 
+                       #{color.channel($color-primary, "green", $space: rgb)}, 
+                       #{color.channel($color-primary, "blue", $space: rgb)};
+  --color-primary-light-rgb: #{color.channel($color-primary-light, "red", $space: rgb)}, 
+                            #{color.channel($color-primary-light, "green", $space: rgb)}, 
+                            #{color.channel($color-primary-light, "blue", $space: rgb)};
+  --color-accent-rgb: #{color.channel($color-accent, "red", $space: rgb)}, 
+                     #{color.channel($color-accent, "green", $space: rgb)}, 
+                     #{color.channel($color-accent, "blue", $space: rgb)};
+  --color-success-rgb: 76, 175, 80;
+  --color-warning-rgb: 255, 193, 7;
+  --color-error-rgb: 244, 67, 54;
 }

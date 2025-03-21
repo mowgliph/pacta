@@ -143,56 +143,5 @@ async function fetchLicenseHistory() {
 </script>
 
 <style lang="scss" scoped>
-@use '../../styles/variables' as v;
-@use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-@use '../../styles/typography' as t;
-
-.licenses {
-  &__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: v.$spacing-unit * 4;
-    border-bottom: 1px solid c.$color-border;
-  }
-
-  &__content {
-    display: grid;
-    gap: v.$spacing-unit * 4;
-  }
-
-  &__history {
-    background: white;
-    border-radius: v.$border-radius;
-    padding: v.$spacing-unit * 3;
-    box-shadow: v.$shadow-sm;
-
-    h2 {
-      margin-bottom: v.$spacing-unit * 3;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-
-      th, td {
-        padding: v.$spacing-unit * 2;
-        text-align: left;
-        border-bottom: 1px solid c.$color-border;
-      }
-
-      th {
-        font-weight: c.$font-weight-bold;
-        color: c.$color-text-secondary;
-      }
-    }
-  }
-}
-
-.no-data {
-  text-align: center;
-  color: c.$color-text-secondary;
-  padding: v.$spacing-unit * 4;
-}
+@use './licenseView.scss';
 </style>

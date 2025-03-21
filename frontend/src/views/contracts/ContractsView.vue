@@ -178,11 +178,23 @@
     <!-- Tabla de contratos -->
     <div class="contracts-table-container">
       <contracts-table 
+        v-if="filteredContracts.length > 0"
         :contracts="filteredContracts" 
         :loading="contractStore.loading"
         @edit="editContract"
         @delete="confirmDelete"
       />
+      <div v-else-if="!contractStore.loading" class="no-data-message">
+        <i class="fas fa-folder-open"></i>
+        <p>No se encontraron contratos con los filtros aplicados</p>
+        <button @click="clearAllFilters" class="btn-primary">
+          <i class="fas fa-sync"></i> Limpiar filtros
+        </button>
+      </div>
+      <div v-else class="loading-container">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Cargando contratos...</p>
+      </div>
     </div>
 
     <!-- Modal para crear/editar contratos -->
@@ -215,10 +227,12 @@ import ContractDialog from '@/components/modules/contracts/ContractDialog.vue';
 import { contractService } from '@/services/contract.service';
 import type { Contract } from '@/stores/contract';
 import type { ContractFilter } from '@/services/contract.service';
+import { useToast } from '@/types/useToast';
 
 const contractStore = useContractStore();
+const toast = useToast();
 const isDialogVisible = ref(false);
-const selectedContract = ref(null);
+const selectedContract = ref<Contract | null>(null);
 const searchQuery = ref('');
 const showAdvancedFilters = ref(false);
 const selectedStatuses = ref<string[]>([]);
@@ -254,80 +268,16 @@ const hasActiveFilters = computed(() => {
 
 // Computed para filtrar contratos
 const filteredContracts = computed(() => {
-  let contracts = contractStore.contracts;
-  
-  // Filtros de texto
-  if (searchQuery.value.trim()) {
-    const query = searchQuery.value.toLowerCase();
-    contracts = contracts.filter(contract => 
-      contract.title.toLowerCase().includes(query) || 
-      contract.contractNumber.toLowerCase().includes(query) ||
-      contract.description?.toLowerCase().includes(query)
-    );
-  }
-  
-  // Filtros de estado
-  if (selectedStatuses.value.length > 0) {
-    contracts = contracts.filter(contract => 
-      selectedStatuses.value.includes(contract.status)
-    );
-  }
-  
-  // Filtros de fecha
-  if (dateFilters.startDateFrom) {
-    contracts = contracts.filter(contract => 
-      new Date(contract.startDate) >= new Date(dateFilters.startDateFrom)
-    );
-  }
-  
-  if (dateFilters.startDateTo) {
-    contracts = contracts.filter(contract => 
-      new Date(contract.startDate) <= new Date(dateFilters.startDateTo)
-    );
-  }
-  
-  if (dateFilters.endDateFrom) {
-    contracts = contracts.filter(contract => 
-      new Date(contract.endDate) >= new Date(dateFilters.endDateFrom)
-    );
-  }
-  
-  if (dateFilters.endDateTo) {
-    contracts = contracts.filter(contract => 
-      new Date(contract.endDate) <= new Date(dateFilters.endDateTo)
-    );
-  }
-  
-  // Filtro de moneda
-  if (currencyFilter.value) {
-    contracts = contracts.filter(contract => 
-      contract.currency === currencyFilter.value
-    );
-  }
-  
-  // Filtros de importe
-  if (amountFilter.min !== null) {
-    contracts = contracts.filter(contract => 
-      contract.amount >= amountFilter.min!
-    );
-  }
-  
-  if (amountFilter.max !== null) {
-    contracts = contracts.filter(contract => 
-      contract.amount <= amountFilter.max!
-    );
-  }
-  
-  return contracts;
+  return contractStore.filteredContracts;
 });
 
 // Cargar contratos al montar el componente
 onMounted(async () => {
   try {
-    await contractStore.fetchContracts();
+    await applyFilters();
   } catch (error) {
     console.error('Error al cargar contratos:', error);
-    // Aquí se podría mostrar una notificación al usuario
+    toast.error('No se pudieron cargar los contratos. Por favor, intente de nuevo.');
   }
 });
 
@@ -361,11 +311,67 @@ function clearAllFilters() {
   currencyFilter.value = '';
   amountFilter.min = null;
   amountFilter.max = null;
+  
+  // Volver a cargar todos los contratos sin filtros
+  contractStore.fetchContracts();
 }
 
-function applyFilters() {
-  // Esta función puede usarse en el futuro para aplicar filtros al servidor
-  // Por ahora usamos computed para filtrar localmente
+async function applyFilters() {
+  contractStore.setLoading(true);
+  
+  try {
+    // Construir objeto de filtros para enviar al servidor
+    const filters: ContractFilter = {};
+    
+    // Filtro de texto
+    if (searchQuery.value.trim()) {
+      filters.searchQuery = searchQuery.value.trim();
+    }
+    
+    // Filtros de estado
+    if (selectedStatuses.value.length > 0) {
+      filters.status = selectedStatuses.value;
+    }
+    
+    // Filtros de fecha
+    if (dateFilters.startDateFrom) {
+      filters.startDateFrom = dateFilters.startDateFrom;
+    }
+    
+    if (dateFilters.startDateTo) {
+      filters.startDateTo = dateFilters.startDateTo;
+    }
+    
+    if (dateFilters.endDateFrom) {
+      filters.endDateFrom = dateFilters.endDateFrom;
+    }
+    
+    if (dateFilters.endDateTo) {
+      filters.endDateTo = dateFilters.endDateTo;
+    }
+    
+    // Filtro de moneda
+    if (currencyFilter.value) {
+      filters.currency = currencyFilter.value;
+    }
+    
+    // Filtros de importe
+    if (amountFilter.min !== null) {
+      filters.minAmount = amountFilter.min;
+    }
+    
+    if (amountFilter.max !== null) {
+      filters.maxAmount = amountFilter.max;
+    }
+    
+    // Enviar solicitud al servidor con los filtros
+    await contractStore.fetchContractsWithFilters(filters);
+  } catch (error) {
+    console.error('Error al aplicar filtros:', error);
+    toast.error('Error al aplicar los filtros. Por favor, intente de nuevo.');
+  } finally {
+    contractStore.setLoading(false);
+  }
 }
 
 // Métodos para manejar contratos
@@ -384,14 +390,16 @@ async function saveContract(contractData: Partial<Contract>) {
     if (selectedContract.value) {
       // Actualizar contrato existente
       await contractStore.updateContract(selectedContract.value.id, contractData);
+      toast.success('Contrato actualizado correctamente');
     } else {
       // Crear nuevo contrato
       await contractStore.createContract(contractData);
+      toast.success('Contrato creado correctamente');
     }
     isDialogVisible.value = false;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error al guardar contrato:', error);
-    // Aquí se podría mostrar una notificación al usuario
+    toast.error(error.message || 'Error al guardar el contrato. Por favor, verifique los datos.');
   }
 }
 
@@ -405,364 +413,16 @@ async function deleteContract() {
   
   try {
     await contractStore.deleteContract(contractToDelete.value.id);
+    toast.success('Contrato eliminado correctamente');
     showDeleteConfirm.value = false;
     contractToDelete.value = null;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error al eliminar contrato:', error);
-    // Aquí se podría mostrar una notificación al usuario
+    toast.error(error.message || 'Error al eliminar el contrato. Por favor, intente de nuevo.');
   }
 }
 </script>
 
 <style lang="scss" scoped>
-@use '../../styles/variables' as v;
-@use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-@use '../../styles/typography' as t;
-
-.contracts-container {
-  padding: v.$spacing-unit * 4;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.contracts-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: v.$spacing-unit * 4;
-
-  h1 {
-    @include t.heading-1;
-    margin: 0;
-  }
-}
-
-.filters-container {
-  background-color: var(--color-surface);
-  border-radius: v.$border-radius-md;
-  padding: v.$spacing-unit * 3;
-  margin-bottom: v.$spacing-unit * 3;
-  box-shadow: v.$shadow-sm;
-}
-
-.search-filters {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: v.$spacing-unit * 3;
-  flex-wrap: wrap;
-  gap: v.$spacing-unit * 2;
-  
-  .search-box {
-    flex: 1;
-    position: relative;
-    min-width: 250px;
-    
-    .search-icon {
-      position: absolute;
-      left: v.$spacing-unit * 2;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--color-text-secondary);
-    }
-    
-    input {
-      @include m.input;
-      padding-left: v.$spacing-unit * 8;
-      padding-right: v.$spacing-unit * 6;
-    }
-    
-    .clear-search {
-      position: absolute;
-      right: v.$spacing-unit * 2;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: var(--color-text-secondary);
-      cursor: pointer;
-      
-      &:hover {
-        color: v.$color-danger;
-      }
-    }
-  }
-  
-  .filter-toggles {
-    display: flex;
-    gap: v.$spacing-unit * 2;
-  }
-}
-
-.status-filters {
-  display: flex;
-  gap: v.$spacing-unit;
-  flex-wrap: wrap;
-  margin-bottom: v.$spacing-unit * 3;
-  
-  .status-filter {
-    background: transparent;
-    border: 1px solid var(--color-border);
-    padding: v.$spacing-unit v.$spacing-unit * 2;
-    border-radius: v.$border-radius-pill;
-    cursor: pointer;
-    transition: all v.$transition-normal;
-    font-size: 0.9rem;
-    
-    &:hover {
-      background-color: v.$color-bg-hover;
-    }
-    
-    &.active {
-      background-color: var(--color-primary-light);
-      border-color: var(--color-primary);
-      color: var(--color-primary-dark);
-    }
-    
-    &.status-active.active {
-      background-color: rgba(c.$color-success, 0.1);
-      border-color: c.$color-success;
-      color: c.$color-success;
-    }
-    
-    &.status-draft.active {
-      background-color: rgba(c.$color-warning, 0.1);
-      border-color: c.$color-warning;
-      color: c.$color-warning;
-    }
-    
-    &.status-expired.active {
-      background-color: rgba(v.$color-danger, 0.1);
-      border-color: v.$color-danger;
-      color: v.$color-danger;
-    }
-    
-    &.status-terminated.active {
-      background-color: rgba(c.$color-secondary, 0.1);
-      border-color: c.$color-secondary;
-      color: c.$color-secondary;
-    }
-    
-    &.status-renewed.active {
-      background-color: rgba(c.$color-info, 0.1);
-      border-color: c.$color-info;
-      color: c.$color-info;
-    }
-  }
-}
-
-.advanced-filters {
-  background-color: v.$color-bg-light;
-  padding: v.$spacing-unit * 3;
-  border-radius: v.$border-radius;
-  margin-top: v.$spacing-unit * 2;
-  
-  .filter-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: v.$spacing-unit * 3;
-  }
-  
-  .filter-group {
-    label {
-      display: block;
-      margin-bottom: v.$spacing-unit;
-      font-weight: 500;
-    }
-    
-    input, select {
-      @include m.input;
-    }
-    
-    .date-range {
-      display: flex;
-      align-items: center;
-      gap: v.$spacing-unit;
-      
-      input {
-        flex: 1;
-        min-width: 0;
-      }
-      
-      span {
-        color: v.$color-text-light;
-      }
-    }
-  }
-}
-
-.stats-summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: v.$spacing-unit * 3;
-  margin-bottom: v.$spacing-unit * 3;
-  
-  .stat-item {
-    background-color: var(--color-surface);
-    padding: v.$spacing-unit * 2 v.$spacing-unit * 3;
-    border-radius: v.$border-radius-md;
-    box-shadow: v.$shadow-sm;
-    transition: transform v.$transition-normal, box-shadow v.$transition-normal;
-    
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: v.$shadow-md;
-    }
-    
-    .stat-label {
-      color: var(--color-text-secondary);
-      margin-right: v.$spacing-unit;
-    }
-    
-    .stat-value {
-      font-weight: v.$font-weight-semibold;
-      font-size: 1.1rem;
-      color: var(--color-text-primary);
-    }
-  }
-}
-
-.contracts-table-container {
-  background-color: var(--color-surface);
-  border-radius: v.$border-radius-md;
-  flex: 1;
-  box-shadow: v.$shadow-sm;
-  overflow: hidden;
-}
-
-.delete-confirm-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  animation: fadeIn 0.2s ease;
-  backdrop-filter: blur(2px);
-  
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  
-  .delete-confirm-dialog {
-    background-color: var(--color-surface);
-    border-radius: v.$border-radius-md;
-    padding: v.$spacing-unit * 4;
-    width: 100%;
-    max-width: 400px;
-    box-shadow: v.$shadow-lg;
-    animation: slideUp 0.3s ease;
-    
-    @keyframes slideUp {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-    
-    h3 {
-      margin-top: 0;
-      margin-bottom: v.$spacing-unit * 2;
-      color: var(--color-text-primary);
-      font-weight: v.$font-weight-semibold;
-    }
-    
-    .warning {
-      color: v.$color-danger;
-      font-weight: v.$font-weight-medium;
-      margin-bottom: v.$spacing-unit * 3;
-    }
-    
-    .dialog-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: v.$spacing-unit * 2;
-    }
-  }
-}
-
-.btn-primary {
-  @include m.button-primary;
-  display: flex;
-  align-items: center;
-  gap: v.$spacing-unit;
-  
-  i {
-    font-size: 0.9rem;
-  }
-}
-
-.btn-secondary {
-  @include m.button-outline;
-}
-
-.btn-danger {
-  background-color: v.$color-danger;
-  color: white;
-  border: none;
-  padding: v.$spacing-unit * 1.5 v.$spacing-unit * 3;
-  border-radius: v.$border-radius;
-  cursor: pointer;
-  transition: all v.$transition-normal;
-  font-weight: v.$font-weight-medium;
-  
-  &:hover {
-    background-color: darken(v.$color-danger, 10%);
-  }
-}
-
-.btn-text {
-  background: none;
-  border: none;
-  color: var(--color-primary);
-  cursor: pointer;
-  padding: v.$spacing-unit v.$spacing-unit * 2;
-  transition: color v.$transition-fast;
-  font-weight: v.$font-weight-medium;
-  
-  &:hover {
-    text-decoration: none;
-    color: c.$color-primary-dark;
-  }
-  
-  i {
-    margin-right: v.$spacing-unit;
-  }
-}
-
-// Responsive
-@media (max-width: v.$breakpoint-md) {
-  .contracts-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: v.$spacing-unit * 2;
-  }
-  
-  .filters-container {
-    padding: v.$spacing-unit * 2;
-  }
-  
-  .search-filters {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .filter-grid {
-    grid-template-columns: 1fr !important;
-  }
-  
-  .status-filters {
-    overflow-x: auto;
-    padding-bottom: v.$spacing-unit;
-    
-    .status-filter {
-      white-space: nowrap;
-    }
-  }
-}
+@import './contracts.scss';
 </style>

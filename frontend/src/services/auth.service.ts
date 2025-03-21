@@ -83,19 +83,6 @@ class AuthService {
     await api.post('/auth/change-password', { oldPassword, newPassword })
   }
 
-  async resetPassword(email: string): Promise<void> {
-    await api.post('/auth/reset-password', { email })
-  }
-
-  async verifyResetToken(token: string): Promise<boolean> {
-    try {
-      await api.post('/auth/verify-reset-token', { token })
-      return true
-    } catch (error) {
-      return false
-    }
-  }
-
   async validatePromoCode(code: string): Promise<{ valid: boolean; message?: string }> {
     try {
       const response = await api.post<{ valid: boolean; message?: string }>('/auth/validate-promo', { code })

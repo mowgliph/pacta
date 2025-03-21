@@ -5,6 +5,9 @@ import { authenticateToken, loginLimiter, validateLogin, isAdmin } from '../midd
 import { db } from '../config/database.js';
 import { User, License } from '../models/index.js';
 import { Op } from 'sequelize';
+import { body, validationResult } from 'express-validator';
+import crypto from 'crypto';
+import nodemailer from 'nodemailer';
 
 const router = express.Router();
 
@@ -70,6 +73,146 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
       message: 'Error interno del servidor',
       status: 500
     });
+  }
+});
+
+// Endpoint para solicitar restablecimiento de contraseña
+router.post('/forgot-password', [
+  body('email')
+    .isEmail()
+    .withMessage('Debe proporcionar un correo electrónico válido')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { email } = req.body;
+    
+    // Buscar usuario por email
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      // No indicamos si el email existe o no por razones de seguridad
+      return res.status(200).json({ 
+        message: 'Si el correo existe, recibirás instrucciones para restablecer tu contraseña.' 
+      });
+    }
+
+    // Generar token aleatorio
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hora de validez
+    
+    // Guardar token y su expiración en la base de datos
+    await user.update({
+      resetToken,
+      resetTokenExpiry
+    });
+
+    // Configurar el transporte de correo
+    const transporter = nodemailer.createTransport({
+      host: process.env.MAIL_HOST || 'smtp.example.com',
+      port: process.env.MAIL_PORT || 587,
+      secure: process.env.MAIL_SECURE === 'true',
+      auth: {
+        user: process.env.MAIL_USER || 'user@example.com',
+        pass: process.env.MAIL_PASSWORD || 'password'
+      }
+    });
+
+    // URL para restablecer contraseña (frontend)
+    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
+    
+    // Configurar el email
+    const mailOptions = {
+      from: process.env.MAIL_FROM || '"PACTA System" <noreply@example.com>',
+      to: user.email,
+      subject: 'Restablecimiento de contraseña - PACTA',
+      html: `
+        <p>Has solicitado restablecer tu contraseña.</p>
+        <p>Haz clic en el siguiente enlace para establecer una nueva contraseña:</p>
+        <a href="${resetUrl}">Restablecer contraseña</a>
+        <p>Este enlace es válido por 1 hora.</p>
+        <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
+      `
+    };
+    
+    // Enviar el email
+    await transporter.sendMail(mailOptions);
+    
+    res.status(200).json({ 
+      message: 'Si el correo existe, recibirás instrucciones para restablecer tu contraseña.' 
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Verificar token de restablecimiento de contraseña
+router.post('/verify-reset-token', async (req, res) => {
+  try {
+    const { token } = req.body;
+    
+    // Buscar usuario con el token y que no haya expirado
+    const user = await User.findOne({ 
+      where: { 
+        resetToken: token,
+        resetTokenExpiry: { [Op.gt]: new Date() }
+      } 
+    });
+    
+    if (!user) {
+      return res.status(400).json({ message: 'Token inválido o expirado' });
+    }
+    
+    res.status(200).json({ valid: true });
+  } catch (error) {
+    console.error('Token verification error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Establecer nueva contraseña
+router.post('/reset-password', [
+  body('token').notEmpty().withMessage('El token es requerido'),
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('La contraseña debe tener al menos 6 caracteres')
+    .matches(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]/)
+    .withMessage('La contraseña debe contener al menos una letra y un número')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { token, password } = req.body;
+    
+    // Buscar usuario con el token y que no haya expirado
+    const user = await User.findOne({ 
+      where: { 
+        resetToken: token,
+        resetTokenExpiry: { [Op.gt]: new Date() }
+      } 
+    });
+    
+    if (!user) {
+      return res.status(400).json({ message: 'Token inválido o expirado' });
+    }
+    
+    // Actualizar contraseña y limpiar tokens
+    await user.update({
+      password: password,
+      resetToken: null,
+      resetTokenExpiry: null
+    });
+    
+    res.status(200).json({ message: 'Contraseña restablecida correctamente' });
+  } catch (error) {
+    console.error('Password reset error:', error);
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
 

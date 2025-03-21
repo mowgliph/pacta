@@ -5,7 +5,7 @@
 
 // Global styles
 :root {
-  font-family: var(--font-family);
+  font-family: v.$font-sans;
   color: var(--color-text-primary);
   background-color: var(--color-background);
   font-synthesis: none;
@@ -23,7 +23,12 @@ html, body {
   height: 100%;
 }
 
-// Utility classes
+// Box sizing
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+// Container
 .container {
   width: 100%;
   max-width: v.$container-max-width;
@@ -41,114 +46,135 @@ html, body {
   }
 }
 
-// Box sizing
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
-// Link styles
-a {
-  color: c.$color-primary;
-  text-decoration: none;
-  transition: color 0.2s;
+// Card - Estilo actualizado
+.card {
+  background-color: c.$color-surface;
+  border-radius: v.$border-radius;
+  box-shadow: v.$shadow-sm;
+  padding: v.$spacing-lg;
+  transition: box-shadow v.$transition-fast, transform v.$transition-fast;
+  overflow: hidden;
   
   &:hover {
-    color: c.$color-primary-dark;
+    box-shadow: v.$shadow-md;
+    transform: translateY(-2px);
+  }
+  
+  &-header {
+    margin-bottom: v.$spacing-md;
+    border-bottom: 1px solid c.$color-border;
+    padding-bottom: v.$spacing-md;
+    
+    h1, h2, h3, h4, h5, h6 {
+      margin-bottom: 0;
+    }
+  }
+  
+  &-footer {
+    margin-top: v.$spacing-md;
+    border-top: 1px solid c.$color-border;
+    padding-top: v.$spacing-md;
   }
 }
 
-// List reset
-ul, ol {
-  margin: 0;
-  padding: 0;
-  list-style: none;
+// Buttons
+.btn {
+  @include m.button-base;
+  font-weight: v.$font-weight-medium;
+  letter-spacing: ty.$letter-spacing-wide;
+  border-radius: v.$border-radius;
+  transition: all v.$transition-fast;
+  
+  &-primary {
+    background-color: c.$color-primary;
+    color: white;
+    
+    &:hover, &:focus {
+      background-color: c.$color-primary-light;
+    }
+  }
+  
+  &-secondary {
+    background-color: c.$color-secondary;
+    color: white;
+    
+    &:hover, &:focus {
+      background-color: c.$color-secondary-light;
+    }
+  }
+  
+  &-outline {
+    background-color: transparent;
+    border: 1px solid c.$color-border;
+    color: c.$color-text-primary;
+    
+    &:hover, &:focus {
+      border-color: c.$color-primary;
+      color: c.$color-primary;
+    }
+  }
 }
 
-// Flex utilities
-.flex {
-  display: flex;
+// Form elements
+input, select, textarea {
+  border: 1px solid c.$color-border;
+  border-radius: v.$border-radius-sm;
+  padding: v.$spacing-sm v.$spacing-md;
+  font-family: ty.$font-family-sans-serif;
+  font-size: v.$font-size-sm;
+  transition: border-color v.$transition-fast, box-shadow v.$transition-fast;
+  
+  &:focus {
+    outline: none;
+    border-color: c.$color-primary;
+    box-shadow: 0 0 0 3px rgba(c.$color-primary, 0.1);
+  }
 }
 
-.flex-col {
-  flex-direction: column;
-}
+// Utilidades
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.gap-sm { gap: v.$spacing-sm; }
+.gap-md { gap: v.$spacing-md; }
+.gap-lg { gap: v.$spacing-lg; }
 
-.items-center {
-  align-items: center;
-}
+// Márgenes y rellenos
+.m-0 { margin: 0; }
+.mt-0 { margin-top: 0; }
+.mb-0 { margin-bottom: 0; }
+.p-0 { padding: 0; }
+.pt-0 { padding-top: 0; }
+.pb-0 { padding-bottom: 0; }
 
-.justify-between {
-  justify-content: space-between;
-}
+// Bordes
+.border { border: 1px solid c.$color-border; }
+.border-t { border-top: 1px solid c.$color-border; }
+.border-b { border-bottom: 1px solid c.$color-border; }
+.rounded { border-radius: v.$border-radius; }
+.rounded-sm { border-radius: v.$border-radius-sm; }
+.rounded-md { border-radius: v.$border-radius-md; }
+.rounded-lg { border-radius: v.$border-radius-lg; }
+.rounded-full { border-radius: v.$border-radius-pill; }
 
-.justify-center {
-  justify-content: center;
-}
+// Sombras
+.shadow-sm { box-shadow: v.$shadow-sm; }
+.shadow-md { box-shadow: v.$shadow-md; }
+.shadow-lg { box-shadow: v.$shadow-lg; }
+.shadow-none { box-shadow: none; }
 
-// Spacing utilities
-.m-0 {
-  margin: 0;
-}
-
-.mt-0 {
-  margin-top: 0;
-}
-
-.mb-0 {
-  margin-bottom: 0;
-}
-
-// Text alignment
-.text-center {
-  text-align: center;
-}
-
-.text-left {
-  text-align: left;
-}
-
-.text-right {
-  text-align: right;
-}
-
-// Display utilities
-.d-none {
-  display: none;
-}
-
-.d-block {
-  display: block;
-}
-
-.d-inline-block {
-  display: inline-block;
-}
-
-// Width utilities
-.w-100 {
-  width: 100%;
-}
-
-.w-auto {
-  width: auto;
-}
-
-// Responsive utilities
+// Responssivo
 @media (max-width: v.$breakpoint-sm) {
-  .hide-sm {
-    display: none;
-  }
+  .hide-sm { display: none; }
 }
 
 @media (max-width: v.$breakpoint-md) {
-  .hide-md {
-    display: none;
-  }
+  .hide-md { display: none; }
 }
 
 // Print styles
 @media print {
-  .no-print {
-    display: none !important;
-  }
+  .no-print { display: none !important; }
 } 
