@@ -68,3 +68,14 @@ $z-index-toast: 100;
 $copyright-text: "© 2024 PACTA. Todos los derechos reservados.";
 $copyright-year: "2024";
 $copyright-dev: "pacta";
+
+// Font families
+$font-mono: 'SF Mono', SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+// Colors específicamente para la tabla de contratos y componentes
+$color-text: c.$color-text-primary;
+$color-text-light: c.$color-text-secondary;
+$color-bg-light: #f9fafb;
+$color-bg-hover: #f5f7fa;
+$color-shadow: rgba(0, 0, 0, 0.05);
+$color-danger: c.$color-error; // Alias para compatibilidad

@@ -415,10 +415,10 @@ async function deleteContract() {
 </script>
 
 <style lang="scss" scoped>
-@use '../../../styles/variables' as v;
-@use '../../../styles/colors' as c;
-@use '../../../styles/mixins' as m;
-@use '../../../styles/typography' as t;
+@use '../../styles/variables' as v;
+@use '../../styles/colors' as c;
+@use '../../styles/mixins' as m;
+@use '../../styles/typography' as t;
 
 .contracts-container {
   padding: v.$spacing-unit * 4;
@@ -440,8 +440,8 @@ async function deleteContract() {
 }
 
 .filters-container {
-  background-color: white;
-  border-radius: v.$border-radius;
+  background-color: var(--color-surface);
+  border-radius: v.$border-radius-md;
   padding: v.$spacing-unit * 3;
   margin-bottom: v.$spacing-unit * 3;
   box-shadow: v.$shadow-sm;
@@ -465,7 +465,7 @@ async function deleteContract() {
       left: v.$spacing-unit * 2;
       top: 50%;
       transform: translateY(-50%);
-      color: v.$color-text-light;
+      color: var(--color-text-secondary);
     }
     
     input {
@@ -481,11 +481,11 @@ async function deleteContract() {
       transform: translateY(-50%);
       background: none;
       border: none;
-      color: v.$color-text-light;
+      color: var(--color-text-secondary);
       cursor: pointer;
       
       &:hover {
-        color: c.$color-danger;
+        color: v.$color-danger;
       }
     }
   }
@@ -504,11 +504,11 @@ async function deleteContract() {
   
   .status-filter {
     background: transparent;
-    border: 1px solid v.$color-border;
+    border: 1px solid var(--color-border);
     padding: v.$spacing-unit v.$spacing-unit * 2;
-    border-radius: v.$border-radius;
+    border-radius: v.$border-radius-pill;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all v.$transition-normal;
     font-size: 0.9rem;
     
     &:hover {
@@ -516,9 +516,9 @@ async function deleteContract() {
     }
     
     &.active {
-      background-color: c.$color-primary-light;
-      border-color: c.$color-primary;
-      color: c.$color-primary-dark;
+      background-color: var(--color-primary-light);
+      border-color: var(--color-primary);
+      color: var(--color-primary-dark);
     }
     
     &.status-active.active {
@@ -534,15 +534,15 @@ async function deleteContract() {
     }
     
     &.status-expired.active {
-      background-color: rgba(c.$color-danger, 0.1);
-      border-color: c.$color-danger;
-      color: c.$color-danger;
+      background-color: rgba(v.$color-danger, 0.1);
+      border-color: v.$color-danger;
+      color: v.$color-danger;
     }
     
     &.status-terminated.active {
-      background-color: rgba(#6c757d, 0.1);
-      border-color: #6c757d;
-      color: #6c757d;
+      background-color: rgba(c.$color-secondary, 0.1);
+      border-color: c.$color-secondary;
+      color: c.$color-secondary;
     }
     
     &.status-renewed.active {
@@ -595,30 +595,38 @@ async function deleteContract() {
 
 .stats-summary {
   display: flex;
-  gap: v.$spacing-unit * 4;
+  flex-wrap: wrap;
+  gap: v.$spacing-unit * 3;
   margin-bottom: v.$spacing-unit * 3;
   
   .stat-item {
-    background-color: white;
+    background-color: var(--color-surface);
     padding: v.$spacing-unit * 2 v.$spacing-unit * 3;
-    border-radius: v.$border-radius;
+    border-radius: v.$border-radius-md;
     box-shadow: v.$shadow-sm;
+    transition: transform v.$transition-normal, box-shadow v.$transition-normal;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: v.$shadow-md;
+    }
     
     .stat-label {
-      color: v.$color-text-light;
+      color: var(--color-text-secondary);
       margin-right: v.$spacing-unit;
     }
     
     .stat-value {
-      font-weight: 600;
+      font-weight: v.$font-weight-semibold;
       font-size: 1.1rem;
+      color: var(--color-text-primary);
     }
   }
 }
 
 .contracts-table-container {
-  background-color: white;
-  border-radius: v.$border-radius;
+  background-color: var(--color-surface);
+  border-radius: v.$border-radius-md;
   flex: 1;
   box-shadow: v.$shadow-sm;
   overflow: hidden;
@@ -635,23 +643,38 @@ async function deleteContract() {
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  animation: fadeIn 0.2s ease;
+  backdrop-filter: blur(2px);
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
   
   .delete-confirm-dialog {
-    background-color: white;
-    border-radius: v.$border-radius;
+    background-color: var(--color-surface);
+    border-radius: v.$border-radius-md;
     padding: v.$spacing-unit * 4;
     width: 100%;
     max-width: 400px;
     box-shadow: v.$shadow-lg;
+    animation: slideUp 0.3s ease;
+    
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
     
     h3 {
       margin-top: 0;
       margin-bottom: v.$spacing-unit * 2;
+      color: var(--color-text-primary);
+      font-weight: v.$font-weight-semibold;
     }
     
     .warning {
-      color: c.$color-danger;
-      font-weight: 500;
+      color: v.$color-danger;
+      font-weight: v.$font-weight-medium;
       margin-bottom: v.$spacing-unit * 3;
     }
     
@@ -665,6 +688,13 @@ async function deleteContract() {
 
 .btn-primary {
   @include m.button-primary;
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-unit;
+  
+  i {
+    font-size: 0.9rem;
+  }
 }
 
 .btn-secondary {
@@ -672,32 +702,67 @@ async function deleteContract() {
 }
 
 .btn-danger {
-  background-color: c.$color-danger;
+  background-color: v.$color-danger;
   color: white;
   border: none;
   padding: v.$spacing-unit * 1.5 v.$spacing-unit * 3;
   border-radius: v.$border-radius;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all v.$transition-normal;
+  font-weight: v.$font-weight-medium;
   
   &:hover {
-    background-color: darken(c.$color-danger, 10%);
+    background-color: darken(v.$color-danger, 10%);
   }
 }
 
 .btn-text {
   background: none;
   border: none;
-  color: c.$color-primary;
+  color: var(--color-primary);
   cursor: pointer;
   padding: v.$spacing-unit v.$spacing-unit * 2;
+  transition: color v.$transition-fast;
+  font-weight: v.$font-weight-medium;
   
   &:hover {
-    text-decoration: underline;
+    text-decoration: none;
+    color: c.$color-primary-dark;
   }
   
   i {
     margin-right: v.$spacing-unit;
+  }
+}
+
+// Responsive
+@media (max-width: v.$breakpoint-md) {
+  .contracts-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: v.$spacing-unit * 2;
+  }
+  
+  .filters-container {
+    padding: v.$spacing-unit * 2;
+  }
+  
+  .search-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .status-filters {
+    overflow-x: auto;
+    padding-bottom: v.$spacing-unit;
+    
+    .status-filter {
+      white-space: nowrap;
+    }
   }
 }
 </style>

@@ -389,9 +389,13 @@ function showContractDetails(contract: Contract) {
   table {
     width: 100%;
     border-collapse: collapse;
+    background-color: var(--color-surface);
+    border-radius: v.$border-radius-md;
+    box-shadow: 0 1px 3px var(--color-border);
+    margin-bottom: v.$spacing-lg;
     
     th, td {
-      padding: v.$spacing-unit * 2;
+      padding: v.$spacing-unit * 3;
       text-align: left;
       
       &:last-child {
@@ -401,70 +405,135 @@ function showContractDetails(contract: Contract) {
     
     th {
       background-color: v.$color-bg-light;
-      color: v.$color-text;
-      font-weight: 600;
-      transition: background-color 0.2s;
+      color: var(--color-text-secondary);
+      font-weight: v.$font-weight-semibold;
+      transition: background-color v.$transition-fast;
       cursor: pointer;
       white-space: nowrap;
+      border-bottom: 1px solid var(--color-border);
+      position: relative;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        width: 0;
+        height: 2px;
+        background-color: var(--color-primary);
+        transition: width 0.2s ease, left 0.2s ease;
+      }
       
       &:hover {
-        background-color: darken(v.$color-bg-light, 5%);
+        background-color: darken(v.$color-bg-light, 2%);
+        
+        &::after {
+          width: 100%;
+          left: 0;
+        }
       }
       
       &.active {
-        color: c.$color-primary;
+        color: var(--color-primary);
+        
+        &::after {
+          width: 100%;
+          left: 0;
+        }
+      }
+      
+      i {
+        font-size: 0.8rem;
+        margin-left: v.$spacing-unit;
+        opacity: 0.7;
       }
     }
     
     tbody tr {
-      border-bottom: 1px solid v.$color-border;
-      transition: background-color 0.2s;
+      border-bottom: 1px solid var(--color-border);
+      transition: background-color v.$transition-fast;
       
       &:hover {
         background-color: v.$color-bg-hover;
+      }
+      
+      &:last-child {
+        border-bottom: none;
       }
     }
     
     .contract-number {
       font-family: v.$font-mono;
-      color: c.$color-primary;
-      font-weight: 500;
+      color: var(--color-primary);
+      font-weight: v.$font-weight-medium;
     }
     
     .contract-title {
-      font-weight: 500;
+      font-weight: v.$font-weight-medium;
+      color: var(--color-text-primary);
     }
     
     .status-badge {
-      display: inline-block;
+      display: inline-flex;
+      align-items: center;
       padding: v.$spacing-unit v.$spacing-unit * 2;
-      border-radius: v.$border-radius;
+      border-radius: v.$border-radius-pill;
       font-size: 0.85rem;
-      font-weight: 500;
+      font-weight: v.$font-weight-medium;
+      line-height: 1;
+      
+      &::before {
+        content: '';
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        margin-right: v.$spacing-unit;
+      }
       
       &.status-active {
         background-color: rgba(c.$color-success, 0.1);
         color: c.$color-success;
+        
+        &::before {
+          background-color: c.$color-success;
+        }
       }
       
       &.status-expired {
-        background-color: rgba(c.$color-danger, 0.1);
-        color: c.$color-danger;
+        background-color: rgba(v.$color-danger, 0.1);
+        color: v.$color-danger;
+        
+        &::before {
+          background-color: v.$color-danger;
+        }
       }
       
       &.status-draft {
         background-color: rgba(c.$color-warning, 0.1);
         color: c.$color-warning;
+        
+        &::before {
+          background-color: c.$color-warning;
+        }
       }
       
       &.status-terminated {
-        background-color: rgba(#6c757d, 0.1);
-        color: #6c757d;
+        background-color: rgba(c.$color-secondary, 0.1);
+        color: c.$color-secondary;
+        
+        &::before {
+          background-color: c.$color-secondary;
+        }
       }
       
       &.status-renewed {
         background-color: rgba(c.$color-info, 0.1);
         color: c.$color-info;
+        
+        &::before {
+          background-color: c.$color-info;
+        }
       }
     }
     
@@ -479,28 +548,53 @@ function showContractDetails(contract: Contract) {
 .btn-icon {
   background: none;
   border: none;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all v.$transition-fast;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: transparent;
+    border-radius: 50%;
+    transform: scale(0);
+    transition: transform 0.2s ease, background-color 0.2s ease;
+  }
   
   &.edit-btn {
-    color: c.$color-primary;
+    color: var(--color-primary);
     
     &:hover {
-      background-color: rgba(c.$color-primary, 0.1);
+      color: darken(c.$color-primary, 10%);
+      
+      &::before {
+        background-color: rgba(c.$color-primary, 0.1);
+        transform: scale(1);
+      }
     }
   }
   
   &.delete-btn {
-    color: c.$color-danger;
+    color: v.$color-danger;
     
     &:hover {
-      background-color: rgba(c.$color-danger, 0.1);
+      color: darken(v.$color-danger, 10%);
+      
+      &::before {
+        background-color: rgba(v.$color-danger, 0.1);
+        transform: scale(1);
+      }
     }
   }
   
@@ -508,8 +602,18 @@ function showContractDetails(contract: Contract) {
     color: c.$color-info;
     
     &:hover {
-      background-color: rgba(c.$color-info, 0.1);
+      color: darken(c.$color-info, 10%);
+      
+      &::before {
+        background-color: rgba(c.$color-info, 0.1);
+        transform: scale(1);
+      }
     }
+  }
+  
+  i {
+    position: relative;
+    z-index: 1;
   }
 }
 
@@ -519,28 +623,36 @@ function showContractDetails(contract: Contract) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: v.$color-text-light;
+  color: var(--color-text-secondary);
   
   i {
     font-size: 2rem;
     margin-bottom: v.$spacing-unit * 2;
+    color: var(--color-primary);
+    animation: spin 1.5s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
   }
 }
 
 .no-data {
   padding: v.$spacing-unit * 10;
   text-align: center;
-  color: v.$color-text-light;
+  color: var(--color-text-secondary);
   
   .no-data-icon {
     font-size: 3rem;
     margin-bottom: v.$spacing-unit * 3;
     opacity: 0.5;
+    color: var(--color-primary);
   }
   
   h3 {
     margin-bottom: v.$spacing-unit;
-    color: v.$color-text;
+    color: var(--color-text-primary);
   }
 }
 
@@ -548,11 +660,13 @@ function showContractDetails(contract: Contract) {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: v.$spacing-unit * 2;
-  border-top: 1px solid v.$color-border;
+  padding: v.$spacing-unit * 3;
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-surface);
+  border-radius: 0 0 v.$border-radius-md v.$border-radius-md;
   
   .page-info {
-    color: v.$color-text-light;
+    color: var(--color-text-secondary);
     font-size: 0.9rem;
   }
   
@@ -568,19 +682,22 @@ function showContractDetails(contract: Contract) {
   }
   
   .page-btn, .page-number {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: v.$border-radius;
-    border: 1px solid v.$color-border;
+    border: 1px solid var(--color-border);
     background: transparent;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all v.$transition-fast;
+    font-size: 0.9rem;
     
     &:hover:not(:disabled) {
       background-color: v.$color-bg-hover;
+      border-color: var(--color-primary);
+      color: var(--color-primary);
     }
     
     &:disabled {
@@ -589,19 +706,33 @@ function showContractDetails(contract: Contract) {
     }
     
     &.active {
-      background-color: c.$color-primary;
+      background-color: var(--color-primary);
       color: white;
-      border-color: c.$color-primary;
+      border-color: var(--color-primary);
+      font-weight: v.$font-weight-medium;
     }
   }
   
   .items-per-page {
     select {
-      padding: v.$spacing-unit v.$spacing-unit * 2;
-      border: 1px solid v.$color-border;
+      padding: v.$spacing-unit * 1.5 v.$spacing-unit * 2;
+      border: 1px solid var(--color-border);
       border-radius: v.$border-radius;
-      background: white;
+      background: var(--color-surface);
       font-size: 0.9rem;
+      color: var(--color-text-primary);
+      cursor: pointer;
+      transition: border-color v.$transition-fast;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6' fill='none'%3E%3Cpath stroke='%23666' d='M7 1.5 4 4.5 1 1.5'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      padding-right: 30px;
+      
+      &:hover, &:focus {
+        border-color: var(--color-primary);
+        outline: none;
+      }
     }
   }
 }
@@ -618,11 +749,18 @@ function showContractDetails(contract: Contract) {
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  animation: fadeIn 0.2s ease;
+  backdrop-filter: blur(2px);
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 }
 
 .contract-details-modal {
-  background-color: white;
-  border-radius: v.$border-radius;
+  background-color: var(--color-surface);
+  border-radius: v.$border-radius-md;
   width: 90%;
   max-width: 800px;
   max-height: 90vh;
@@ -630,107 +768,132 @@ function showContractDetails(contract: Contract) {
   flex-direction: column;
   overflow: hidden;
   box-shadow: v.$shadow-lg;
+  animation: slideIn 0.3s ease;
+  
+  @keyframes slideIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
   
   .details-header {
-    padding: v.$spacing-unit * 3;
+    padding: v.$spacing-unit * 4;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid v.$color-border;
+    border-bottom: 1px solid var(--color-border);
     
     h2 {
       margin: 0;
+      color: var(--color-text-primary);
+      font-weight: v.$font-weight-semibold;
     }
     
     .close-btn {
       background: none;
       border: none;
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
+      transition: background-color v.$transition-fast;
       
       &:hover {
         background-color: v.$color-bg-hover;
+        color: var(--color-primary);
       }
     }
   }
   
   .details-content {
-    padding: v.$spacing-unit * 3;
+    padding: v.$spacing-unit * 4;
     overflow-y: auto;
-    max-height: calc(90vh - 150px);
+    max-height: calc(90vh - 200px);
     
     .detail-section {
       margin-bottom: v.$spacing-unit * 4;
       
       h3 {
         margin-top: 0;
-        margin-bottom: v.$spacing-unit * 2;
-        padding-bottom: v.$spacing-unit;
-        border-bottom: 1px solid v.$color-border;
-        color: c.$color-primary;
+        margin-bottom: v.$spacing-unit * 3;
+        padding-bottom: v.$spacing-unit * 2;
+        border-bottom: 1px solid var(--color-border);
+        color: var(--color-primary);
+        font-weight: v.$font-weight-medium;
       }
     }
     
     .detail-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: v.$spacing-unit * 3;
+      gap: v.$spacing-unit * 4;
     }
     
     .detail-item {
       .detail-label {
         display: block;
-        color: v.$color-text-light;
+        color: var(--color-text-secondary);
         margin-bottom: v.$spacing-unit;
         font-size: 0.9rem;
       }
       
       .detail-value {
-        font-weight: 500;
+        font-weight: v.$font-weight-medium;
+        color: var(--color-text-primary);
       }
     }
     
     .contract-description {
       white-space: pre-line;
-      line-height: 1.5;
+      line-height: 1.6;
+      color: var(--color-text-primary);
     }
     
     .document-link {
       display: flex;
       align-items: center;
       gap: v.$spacing-unit * 2;
+      margin-top: v.$spacing-unit * 2;
       
       i {
-        color: c.$color-danger;
+        color: v.$color-danger;
+        font-size: 1.2rem;
       }
       
       a {
-        color: c.$color-primary;
+        color: var(--color-primary);
         text-decoration: none;
+        transition: color v.$transition-fast;
         
         &:hover {
           text-decoration: underline;
+          color: c.$color-primary-dark;
         }
       }
     }
   }
   
   .details-actions {
-    padding: v.$spacing-unit * 3;
+    padding: v.$spacing-unit * 4;
     display: flex;
     justify-content: flex-end;
     gap: v.$spacing-unit * 2;
-    border-top: 1px solid v.$color-border;
+    border-top: 1px solid var(--color-border);
+    background-color: v.$color-bg-light;
   }
 }
 
 .btn-primary {
   @include m.button-primary;
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-unit;
+  
+  i {
+    font-size: 0.9rem;
+  }
 }
 
 .btn-secondary {
@@ -738,16 +901,84 @@ function showContractDetails(contract: Contract) {
 }
 
 .btn-danger {
-  background-color: c.$color-danger;
+  background-color: v.$color-danger;
   color: white;
   border: none;
   padding: v.$spacing-unit * 1.5 v.$spacing-unit * 3;
   border-radius: v.$border-radius;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all v.$transition-normal;
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-unit;
+  font-weight: v.$font-weight-medium;
+  
+  i {
+    font-size: 0.9rem;
+  }
   
   &:hover {
-    background-color: darken(c.$color-danger, 10%);
+    background-color: darken(v.$color-danger, 10%);
+  }
+}
+
+// Responsive
+@media (max-width: v.$breakpoint-md) {
+  table {
+    thead {
+      display: none;
+    }
+    
+    tbody tr {
+      display: block;
+      margin-bottom: v.$spacing-unit * 3;
+      border: 1px solid var(--color-border);
+      border-radius: v.$border-radius;
+      padding: v.$spacing-unit * 2;
+      
+      td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: v.$spacing-unit * 1.5;
+        text-align: right;
+        border-bottom: 1px dashed var(--color-border);
+        
+        &:last-child {
+          border-bottom: none;
+          justify-content: flex-end;
+        }
+        
+        &::before {
+          content: attr(data-label);
+          font-weight: v.$font-weight-medium;
+          text-align: left;
+          color: var(--color-text-secondary);
+        }
+      }
+    }
+  }
+  
+  .pagination {
+    flex-direction: column;
+    gap: v.$spacing-unit * 2;
+    
+    .page-info, .items-per-page {
+      order: 3;
+    }
+    
+    .page-controls {
+      order: 2;
+    }
+  }
+  
+  .contract-details-modal {
+    width: 95%;
+    max-height: 95vh;
+    
+    .detail-grid {
+      grid-template-columns: 1fr;
+    }
   }
 }
 </style>
