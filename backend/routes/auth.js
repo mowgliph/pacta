@@ -2,7 +2,9 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { authenticateToken, loginLimiter, validateLogin, isAdmin } from '../middleware/auth.js';
-import { db } from '../database/index.js';
+import { db } from '../config/database.js';
+import { User, License } from '../models/index.js';
+import { Op } from 'sequelize';
 
 const router = express.Router();
 
@@ -11,43 +13,35 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // Buscar usuario
-    const user = await db.query(
-      'SELECT * FROM users WHERE username = $1',
-      [username]
-    );
+    // Buscar usuario usando Sequelize
+    const foundUser = await User.findOne({ 
+      where: { username },
+      include: [
+        { 
+          model: License, 
+          as: 'license',
+          required: false
+        }
+      ]
+    });
 
-    if (user.rows.length === 0) {
+    if (!foundUser) {
       return res.status(401).json({
-        message: 'Credenciales inválidas',
+        message: 'Usuario no encontrado',
         status: 401
       });
     }
 
-    const foundUser = user.rows[0];
-
-    // Verificar contraseña
-    const validPassword = await bcrypt.compare(password, foundUser.password);
+    // Verificar contraseña usando el método del modelo
+    const validPassword = await foundUser.validatePassword(password);
     if (!validPassword) {
       return res.status(401).json({
-        message: 'Credenciales inválidas',
+        message: 'Contraseña incorrecta',
         status: 401
       });
     }
 
-    // Verificar si el usuario tiene licencia activa
-    const license = await db.query(
-      'SELECT * FROM licenses WHERE user_id = $1 AND expiration_date > NOW()',
-      [foundUser.id]
-    );
-
-    if (license.rows.length === 0) {
-      return res.status(403).json({
-        message: 'Se requiere una licencia activa para acceder',
-        status: 403
-      });
-    }
-
+    
     // Generar token JWT
     const token = jwt.sign(
       { 
@@ -67,7 +61,7 @@ router.post('/login', loginLimiter, validateLogin, async (req, res) => {
         username: foundUser.username,
         role: foundUser.role
       },
-      license: license.rows[0],
+      license: foundUser.license,
       token
     });
   } catch (error) {
@@ -93,35 +87,58 @@ router.post('/activate-license', authenticateToken, async (req, res) => {
       });
     }
 
+    // Buscar usuario
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({
+        message: 'Usuario no encontrado',
+        status: 404
+      });
+    }
+
     // Calcular fecha de expiración
     const expirationDate = new Date();
     expirationDate.setDate(expirationDate.getDate() + (licenseCode === 'DEMOPACTA' ? 30 : 7));
 
     // Crear o actualizar licencia
-    const result = await db.query(
-      `INSERT INTO licenses (user_id, type, expiration_date, features)
-       VALUES ($1, $2, $3, $4)
-       ON CONFLICT (user_id) 
-       DO UPDATE SET 
-         type = $2,
-         expiration_date = $3,
-         features = $4
-       RETURNING *`,
-      [
-        userId,
-        licenseCode,
-        expirationDate,
-        JSON.stringify({
-          maxUsers: licenseCode === 'DEMOPACTA' ? 10 : 3,
+    const licenseType = licenseCode === 'DEMOPACTA' ? 'DEMO' : 'TRIAL';
+    
+    const [license, created] = await License.findOrCreate({
+      where: { licenseKey: licenseCode },
+      defaults: {
+        licenseKey: licenseCode,
+        type: licenseType,
+        startDate: new Date(),
+        expiryDate: expirationDate,
+        active: true,
+        maxUsers: licenseCode === 'DEMOPACTA' ? 10 : 3,
+        features: {
           maxContracts: licenseCode === 'DEMOPACTA' ? 100 : 20,
-          features: ['contracts', 'reports', 'analytics']
-        })
-      ]
-    );
+          supportedFeatures: ['contracts', 'reports', 'analytics']
+        }
+      }
+    });
+
+    if (!created) {
+      // Actualizar licencia existente
+      license.type = licenseType;
+      license.expiryDate = expirationDate;
+      license.active = true;
+      license.maxUsers = licenseCode === 'DEMOPACTA' ? 10 : 3;
+      license.features = {
+        maxContracts: licenseCode === 'DEMOPACTA' ? 100 : 20,
+        supportedFeatures: ['contracts', 'reports', 'analytics']
+      };
+      await license.save();
+    }
+
+    // Asignar licencia al usuario
+    user.licenseId = license.id;
+    await user.save();
 
     res.json({
       message: 'Licencia activada exitosamente',
-      license: result.rows[0]
+      license: license
     });
   } catch (error) {
     console.error('License activation error:', error);
@@ -137,12 +154,17 @@ router.get('/license-status', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    const license = await db.query(
-      'SELECT * FROM licenses WHERE user_id = $1 AND expiration_date > NOW()',
-      [userId]
-    );
+    const user = await User.findByPk(userId, {
+      include: [
+        { 
+          model: License, 
+          as: 'license',
+          required: false
+        }
+      ]
+    });
 
-    if (license.rows.length === 0) {
+    if (!user || !user.license || !user.license.isValid()) {
       return res.status(404).json({
         message: 'No se encontró una licencia activa',
         status: 404
@@ -150,7 +172,7 @@ router.get('/license-status', authenticateToken, async (req, res) => {
     }
 
     res.json({
-      license: license.rows[0]
+      license: user.license
     });
   } catch (error) {
     console.error('License status check error:', error);

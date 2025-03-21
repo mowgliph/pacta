@@ -1,209 +1,703 @@
 <template>
-  <div class="contracts">
-    <header class="contracts__header">
-      <h1>Contract Management</h1>
-      <BaseButton 
-        variant="primary"
-        icon="fas fa-plus"
-        @click="showCreateDialog"
-      >
-        New Contract
-      </BaseButton>
-    </header>
+  <div class="contracts-container">
+    <div class="contracts-header">
+      <h1>Gestión de Contratos</h1>
+      <button @click="openContractDialog" class="btn-primary">
+        <i class="fas fa-plus"></i> Nuevo Contrato
+      </button>
+    </div>
 
-    <div class="contracts__filters">
-      <BaseInput
-        v-model="filters.search"
-        placeholder="Search contracts..."
-        @input="handleSearch"
-        class="search-box"
-        id="contract-search"
-      />
-      
-      <BaseSelect
-        v-model="filters.status"
-        :options="statusOptions"
-        class="filter-group"
-        id="status-filter"
+    <!-- Filtros avanzados -->
+    <div class="filters-container">
+      <div class="search-filters">
+        <div class="search-box">
+          <i class="fas fa-search search-icon"></i>
+          <input
+            v-model="searchQuery"
+            placeholder="Buscar por título o número de contrato..."
+            @input="applyFilters"
+          />
+          <button 
+            v-if="searchQuery" 
+            @click="clearSearch" 
+            class="clear-search"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="filter-toggles">
+          <button 
+            @click="showAdvancedFilters = !showAdvancedFilters" 
+            class="btn-text"
+          >
+            <i :class="showAdvancedFilters ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+            Filtros avanzados
+          </button>
+          
+          <button 
+            v-if="hasActiveFilters" 
+            @click="clearAllFilters" 
+            class="btn-text"
+          >
+            <i class="fas fa-times"></i> Limpiar filtros
+          </button>
+        </div>
+      </div>
+
+      <!-- Estado de contratos -->
+      <div class="status-filters">
+        <button 
+          @click="toggleStatusFilter('all')" 
+          :class="['status-filter', { active: selectedStatuses.length === 0 }]"
+        >
+          Todos
+        </button>
+        <button 
+          @click="toggleStatusFilter('active')" 
+          :class="['status-filter', 'status-active', { active: selectedStatuses.includes('active') }]"
+        >
+          Activos
+        </button>
+        <button 
+          @click="toggleStatusFilter('draft')" 
+          :class="['status-filter', 'status-draft', { active: selectedStatuses.includes('draft') }]"
+        >
+          Borradores
+        </button>
+        <button 
+          @click="toggleStatusFilter('expired')" 
+          :class="['status-filter', 'status-expired', { active: selectedStatuses.includes('expired') }]"
+        >
+          Vencidos
+        </button>
+        <button 
+          @click="toggleStatusFilter('terminated')" 
+          :class="['status-filter', 'status-terminated', { active: selectedStatuses.includes('terminated') }]"
+        >
+          Terminados
+        </button>
+        <button 
+          @click="toggleStatusFilter('renewed')" 
+          :class="['status-filter', 'status-renewed', { active: selectedStatuses.includes('renewed') }]"
+        >
+          Renovados
+        </button>
+      </div>
+
+      <!-- Filtros avanzados -->
+      <div v-if="showAdvancedFilters" class="advanced-filters">
+        <div class="filter-grid">
+          <div class="filter-group">
+            <label>Fecha de inicio</label>
+            <div class="date-range">
+              <input 
+                type="date" 
+                v-model="dateFilters.startDateFrom" 
+                placeholder="Desde" 
+                @change="applyFilters"
+              />
+              <span>-</span>
+              <input 
+                type="date" 
+                v-model="dateFilters.startDateTo" 
+                placeholder="Hasta" 
+                @change="applyFilters"
+              />
+            </div>
+          </div>
+          
+          <div class="filter-group">
+            <label>Fecha de fin</label>
+            <div class="date-range">
+              <input 
+                type="date" 
+                v-model="dateFilters.endDateFrom" 
+                placeholder="Desde" 
+                @change="applyFilters"
+              />
+              <span>-</span>
+              <input 
+                type="date" 
+                v-model="dateFilters.endDateTo" 
+                placeholder="Hasta" 
+                @change="applyFilters"
+              />
+            </div>
+          </div>
+          
+          <div class="filter-group">
+            <label>Moneda</label>
+            <select v-model="currencyFilter" @change="applyFilters">
+              <option value="">Todas</option>
+              <option value="CUP">CUP</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label>Importe mínimo</label>
+            <input 
+              type="number" 
+              v-model.number="amountFilter.min" 
+              placeholder="Mínimo" 
+              @input="applyFilters"
+            />
+          </div>
+          
+          <div class="filter-group">
+            <label>Importe máximo</label>
+            <input 
+              type="number" 
+              v-model.number="amountFilter.max" 
+              placeholder="Máximo" 
+              @input="applyFilters"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estadísticas rápidas -->
+    <div class="stats-summary" v-if="contractStore.contracts.length > 0">
+      <div class="stat-item">
+        <span class="stat-label">Total:</span>
+        <span class="stat-value">{{ contractStore.contracts.length }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Activos:</span>
+        <span class="stat-value">{{ contractStore.activeContracts.length }}</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-label">Próximos a vencer:</span>
+        <span class="stat-value">{{ contractStore.expiringContracts.length }}</span>
+      </div>
+    </div>
+
+    <!-- Tabla de contratos -->
+    <div class="contracts-table-container">
+      <contracts-table 
+        :contracts="filteredContracts" 
+        :loading="contractStore.loading"
+        @edit="editContract"
+        @delete="confirmDelete"
       />
     </div>
 
-    <ContractsTable 
-      :contracts="filteredContracts"
-      :loading="loading"
-      @edit="handleEdit"
-      @delete="handleDelete"
+    <!-- Modal para crear/editar contratos -->
+    <contract-dialog
+      v-model:visible="isDialogVisible"
+      :contract="selectedContract"
+      @save="saveContract"
     />
 
-    <ContractDialog
-      v-model:visible="dialogVisible"
-      :contract="selectedContract"
-      @save="handleSave"
-    />
+    <!-- Modal de confirmación de eliminación -->
+    <div v-if="showDeleteConfirm" class="delete-confirm-overlay">
+      <div class="delete-confirm-dialog">
+        <h3>Confirmar eliminación</h3>
+        <p>¿Estás seguro de que deseas eliminar el contrato <strong>{{ contractToDelete?.title }}</strong>?</p>
+        <p class="warning">Esta acción no se puede deshacer.</p>
+        <div class="dialog-actions">
+          <button @click="showDeleteConfirm = false" class="btn-secondary">Cancelar</button>
+          <button @click="deleteContract" class="btn-danger">Eliminar</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useContractStore } from '../../stores/contract';
-import BaseButton from '../../components/base/BaseButton.vue';
-import BaseInput from '../../components/base/BaseInput.vue';
-import BaseSelect from '../../components/base/BaseSelect.vue';
-import ContractsTable from '../../components/modules/contracts/ContractsTable.vue';
-import ContractDialog from '../../components/modules/contracts/ContractDialog.vue';
-import type { Contract } from '../../stores/contract';
+import { ref, computed, onMounted, reactive } from 'vue';
+import { useContractStore } from '@/stores/contract';
+import ContractsTable from '@/components/modules/contracts/ContractsTable.vue';
+import ContractDialog from '@/components/modules/contracts/ContractDialog.vue';
+import { contractService } from '@/services/contract.service';
+import type { Contract } from '@/stores/contract';
+import type { ContractFilter } from '@/services/contract.service';
 
 const contractStore = useContractStore();
-const loading = ref(false);
-const dialogVisible = ref(false);
-const selectedContract = ref<Contract | null>(null);
+const isDialogVisible = ref(false);
+const selectedContract = ref(null);
+const searchQuery = ref('');
+const showAdvancedFilters = ref(false);
+const selectedStatuses = ref<string[]>([]);
+const showDeleteConfirm = ref(false);
+const contractToDelete = ref<Contract | null>(null);
 
-// Add status options
-const statusOptions = [
-  { value: '', label: 'All Statuses' },
-  { value: 'active', label: 'Active' },
-  { value: 'expired', label: 'Expired' },
-  { value: 'draft', label: 'Draft' },
-  { value: 'terminated', label: 'Terminated' },
-  { value: 'renewed', label: 'Renewed' }
-];
-
-const filters = ref({
-  search: '',
-  status: ''
+// Filtros avanzados
+const dateFilters = reactive({
+  startDateFrom: '',
+  startDateTo: '',
+  endDateFrom: '',
+  endDateTo: ''
 });
 
+const currencyFilter = ref('');
+const amountFilter = reactive({
+  min: null as number | null,
+  max: null as number | null
+});
+
+// Computed para verificar si hay filtros activos
+const hasActiveFilters = computed(() => {
+  return searchQuery.value !== '' || 
+    selectedStatuses.value.length > 0 || 
+    dateFilters.startDateFrom !== '' ||
+    dateFilters.startDateTo !== '' ||
+    dateFilters.endDateFrom !== '' ||
+    dateFilters.endDateTo !== '' ||
+    currencyFilter.value !== '' ||
+    amountFilter.min !== null ||
+    amountFilter.max !== null;
+});
+
+// Computed para filtrar contratos
 const filteredContracts = computed(() => {
   let contracts = contractStore.contracts;
   
-  if (filters.value.search) {
-    const searchTerm = filters.value.search.toLowerCase();
+  // Filtros de texto
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase();
     contracts = contracts.filter(contract => 
-      contract.title.toLowerCase().includes(searchTerm) ||
-      contract.contractNumber.toLowerCase().includes(searchTerm)
+      contract.title.toLowerCase().includes(query) || 
+      contract.contractNumber.toLowerCase().includes(query) ||
+      contract.description?.toLowerCase().includes(query)
     );
   }
-
-  if (filters.value.status) {
+  
+  // Filtros de estado
+  if (selectedStatuses.value.length > 0) {
     contracts = contracts.filter(contract => 
-      contract.status === filters.value.status
+      selectedStatuses.value.includes(contract.status)
     );
   }
-
+  
+  // Filtros de fecha
+  if (dateFilters.startDateFrom) {
+    contracts = contracts.filter(contract => 
+      new Date(contract.startDate) >= new Date(dateFilters.startDateFrom)
+    );
+  }
+  
+  if (dateFilters.startDateTo) {
+    contracts = contracts.filter(contract => 
+      new Date(contract.startDate) <= new Date(dateFilters.startDateTo)
+    );
+  }
+  
+  if (dateFilters.endDateFrom) {
+    contracts = contracts.filter(contract => 
+      new Date(contract.endDate) >= new Date(dateFilters.endDateFrom)
+    );
+  }
+  
+  if (dateFilters.endDateTo) {
+    contracts = contracts.filter(contract => 
+      new Date(contract.endDate) <= new Date(dateFilters.endDateTo)
+    );
+  }
+  
+  // Filtro de moneda
+  if (currencyFilter.value) {
+    contracts = contracts.filter(contract => 
+      contract.currency === currencyFilter.value
+    );
+  }
+  
+  // Filtros de importe
+  if (amountFilter.min !== null) {
+    contracts = contracts.filter(contract => 
+      contract.amount >= amountFilter.min!
+    );
+  }
+  
+  if (amountFilter.max !== null) {
+    contracts = contracts.filter(contract => 
+      contract.amount <= amountFilter.max!
+    );
+  }
+  
   return contracts;
 });
 
+// Cargar contratos al montar el componente
 onMounted(async () => {
-  loading.value = true;
   try {
     await contractStore.fetchContracts();
-  } finally {
-    loading.value = false;
+  } catch (error) {
+    console.error('Error al cargar contratos:', error);
+    // Aquí se podría mostrar una notificación al usuario
   }
 });
 
-function showCreateDialog() {
-  selectedContract.value = null;
-  dialogVisible.value = true;
-}
-
-function handleEdit(contract: Contract) {
-  selectedContract.value = contract;
-  dialogVisible.value = true;
-}
-
-async function handleDelete(contract: Contract) {
-  if (confirm('Are you sure you want to delete this contract?')) {
-    await contractStore.deleteContract(contract.id);
+// Métodos para manejar filtros
+function toggleStatusFilter(status: string) {
+  if (status === 'all') {
+    selectedStatuses.value = [];
+    return;
+  }
+  
+  const index = selectedStatuses.value.indexOf(status);
+  if (index === -1) {
+    selectedStatuses.value.push(status);
+  } else {
+    selectedStatuses.value.splice(index, 1);
   }
 }
 
-async function handleSave(contractData: Partial<Contract>) {
+function clearSearch() {
+  searchQuery.value = '';
+  applyFilters();
+}
+
+function clearAllFilters() {
+  searchQuery.value = '';
+  selectedStatuses.value = [];
+  dateFilters.startDateFrom = '';
+  dateFilters.startDateTo = '';
+  dateFilters.endDateFrom = '';
+  dateFilters.endDateTo = '';
+  currencyFilter.value = '';
+  amountFilter.min = null;
+  amountFilter.max = null;
+}
+
+function applyFilters() {
+  // Esta función puede usarse en el futuro para aplicar filtros al servidor
+  // Por ahora usamos computed para filtrar localmente
+}
+
+// Métodos para manejar contratos
+function openContractDialog() {
+  selectedContract.value = null;
+  isDialogVisible.value = true;
+}
+
+function editContract(contract: Contract) {
+  selectedContract.value = contract;
+  isDialogVisible.value = true;
+}
+
+async function saveContract(contractData: Partial<Contract>) {
   try {
     if (selectedContract.value) {
+      // Actualizar contrato existente
       await contractStore.updateContract(selectedContract.value.id, contractData);
     } else {
+      // Crear nuevo contrato
       await contractStore.createContract(contractData);
     }
-    dialogVisible.value = false;
+    isDialogVisible.value = false;
   } catch (error) {
-    console.error('Error saving contract:', error);
+    console.error('Error al guardar contrato:', error);
+    // Aquí se podría mostrar una notificación al usuario
   }
 }
 
-function handleSearch() {
-  // Debounce implementation could be added here
+function confirmDelete(contract: Contract) {
+  contractToDelete.value = contract;
+  showDeleteConfirm.value = true;
+}
+
+async function deleteContract() {
+  if (!contractToDelete.value) return;
+  
+  try {
+    await contractStore.deleteContract(contractToDelete.value.id);
+    showDeleteConfirm.value = false;
+    contractToDelete.value = null;
+  } catch (error) {
+    console.error('Error al eliminar contrato:', error);
+    // Aquí se podría mostrar una notificación al usuario
+  }
 }
 </script>
 
 <style lang="scss" scoped>
-@use '../../styles/variables' as v;
-@use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-@use '../../styles/typography' as t;
+@use '../../../styles/variables' as v;
+@use '../../../styles/colors' as c;
+@use '../../../styles/mixins' as m;
+@use '../../../styles/typography' as t;
 
-.contracts {
-  &__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: v.$spacing-unit * 4;
-  }
+.contracts-container {
+  padding: v.$spacing-unit * 4;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
 
-  &__filters {
-    display: flex;
-    gap: v.$spacing-unit * 2;
-    margin-bottom: v.$spacing-unit * 3;
+.contracts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: v.$spacing-unit * 4;
+
+  h1 {
+    @include t.heading-1;
+    margin: 0;
   }
 }
 
-.search-box {
-  flex: 1;
+.filters-container {
+  background-color: white;
+  border-radius: v.$border-radius;
+  padding: v.$spacing-unit * 3;
+  margin-bottom: v.$spacing-unit * 3;
+  box-shadow: v.$shadow-sm;
+}
+
+.search-filters {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: v.$spacing-unit * 3;
+  flex-wrap: wrap;
+  gap: v.$spacing-unit * 2;
   
-  input {
-    width: 100%;
-    padding: v.$spacing-unit * 1.5;
-    border: 1px solid c.$color-surface;
-    border-radius: v.$border-radius;
-    font-size: 1rem;
+  .search-box {
+    flex: 1;
+    position: relative;
+    min-width: 250px;
     
-    &:focus {
-      outline: none;
-      border-color: c.$color-accent;
+    .search-icon {
+      position: absolute;
+      left: v.$spacing-unit * 2;
+      top: 50%;
+      transform: translateY(-50%);
+      color: v.$color-text-light;
+    }
+    
+    input {
+      @include m.input;
+      padding-left: v.$spacing-unit * 8;
+      padding-right: v.$spacing-unit * 6;
+    }
+    
+    .clear-search {
+      position: absolute;
+      right: v.$spacing-unit * 2;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: v.$color-text-light;
+      cursor: pointer;
+      
+      &:hover {
+        color: c.$color-danger;
+      }
+    }
+  }
+  
+  .filter-toggles {
+    display: flex;
+    gap: v.$spacing-unit * 2;
+  }
+}
+
+.status-filters {
+  display: flex;
+  gap: v.$spacing-unit;
+  flex-wrap: wrap;
+  margin-bottom: v.$spacing-unit * 3;
+  
+  .status-filter {
+    background: transparent;
+    border: 1px solid v.$color-border;
+    padding: v.$spacing-unit v.$spacing-unit * 2;
+    border-radius: v.$border-radius;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 0.9rem;
+    
+    &:hover {
+      background-color: v.$color-bg-hover;
+    }
+    
+    &.active {
+      background-color: c.$color-primary-light;
+      border-color: c.$color-primary;
+      color: c.$color-primary-dark;
+    }
+    
+    &.status-active.active {
+      background-color: rgba(c.$color-success, 0.1);
+      border-color: c.$color-success;
+      color: c.$color-success;
+    }
+    
+    &.status-draft.active {
+      background-color: rgba(c.$color-warning, 0.1);
+      border-color: c.$color-warning;
+      color: c.$color-warning;
+    }
+    
+    &.status-expired.active {
+      background-color: rgba(c.$color-danger, 0.1);
+      border-color: c.$color-danger;
+      color: c.$color-danger;
+    }
+    
+    &.status-terminated.active {
+      background-color: rgba(#6c757d, 0.1);
+      border-color: #6c757d;
+      color: #6c757d;
+    }
+    
+    &.status-renewed.active {
+      background-color: rgba(c.$color-info, 0.1);
+      border-color: c.$color-info;
+      color: c.$color-info;
     }
   }
 }
 
-.filter-group {
-  select {
-    padding: v.$spacing-unit * 1.5;
-    border: 1px solid c.$color-surface;
-    border-radius: v.$border-radius;
-    background: white;
-    font-size: 1rem;
-    min-width: 150px;
+.advanced-filters {
+  background-color: v.$color-bg-light;
+  padding: v.$spacing-unit * 3;
+  border-radius: v.$border-radius;
+  margin-top: v.$spacing-unit * 2;
+  
+  .filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: v.$spacing-unit * 3;
+  }
+  
+  .filter-group {
+    label {
+      display: block;
+      margin-bottom: v.$spacing-unit;
+      font-weight: 500;
+    }
     
-    &:focus {
-      outline: none;
-      border-color: c.$color-accent;
+    input, select {
+      @include m.input;
+    }
+    
+    .date-range {
+      display: flex;
+      align-items: center;
+      gap: v.$spacing-unit;
+      
+      input {
+        flex: 1;
+        min-width: 0;
+      }
+      
+      span {
+        color: v.$color-text-light;
+      }
+    }
+  }
+}
+
+.stats-summary {
+  display: flex;
+  gap: v.$spacing-unit * 4;
+  margin-bottom: v.$spacing-unit * 3;
+  
+  .stat-item {
+    background-color: white;
+    padding: v.$spacing-unit * 2 v.$spacing-unit * 3;
+    border-radius: v.$border-radius;
+    box-shadow: v.$shadow-sm;
+    
+    .stat-label {
+      color: v.$color-text-light;
+      margin-right: v.$spacing-unit;
+    }
+    
+    .stat-value {
+      font-weight: 600;
+      font-size: 1.1rem;
+    }
+  }
+}
+
+.contracts-table-container {
+  background-color: white;
+  border-radius: v.$border-radius;
+  flex: 1;
+  box-shadow: v.$shadow-sm;
+  overflow: hidden;
+}
+
+.delete-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  
+  .delete-confirm-dialog {
+    background-color: white;
+    border-radius: v.$border-radius;
+    padding: v.$spacing-unit * 4;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: v.$shadow-lg;
+    
+    h3 {
+      margin-top: 0;
+      margin-bottom: v.$spacing-unit * 2;
+    }
+    
+    .warning {
+      color: c.$color-danger;
+      font-weight: 500;
+      margin-bottom: v.$spacing-unit * 3;
+    }
+    
+    .dialog-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: v.$spacing-unit * 2;
     }
   }
 }
 
 .btn-primary {
-  background: c.$color-accent;
+  @include m.button-primary;
+}
+
+.btn-secondary {
+  @include m.button-outline;
+}
+
+.btn-danger {
+  background-color: c.$color-danger;
   color: white;
-  padding: v.$spacing-unit * 1.5 v.$spacing-unit * 3;
   border: none;
+  padding: v.$spacing-unit * 1.5 v.$spacing-unit * 3;
   border-radius: v.$border-radius;
-  font-size: 1rem;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: v.$spacing-unit;
+  transition: all 0.2s ease;
   
   &:hover {
-    opacity: 0.9;
+    background-color: darken(c.$color-danger, 10%);
+  }
+}
+
+.btn-text {
+  background: none;
+  border: none;
+  color: c.$color-primary;
+  cursor: pointer;
+  padding: v.$spacing-unit v.$spacing-unit * 2;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+  
+  i {
+    margin-right: v.$spacing-unit;
   }
 }
 </style>

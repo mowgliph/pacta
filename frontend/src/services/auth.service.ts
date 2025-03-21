@@ -7,14 +7,21 @@ class AuthService {
       const response = await api.post<LoginResponse>('/auth/login', { username, password })
       return response.data
     } catch (error: any) {
-      console.error('Login error:', error)
-      if (error.response?.status === 401) {
-        throw new Error('Credenciales inválidas')
-      }
-      if (error.response?.status === 403) {
+      if (error.status === 401) {
+        if (error.message === 'Usuario no encontrado') {
+          throw new Error('El usuario ingresado no existe en el sistema')
+        } else if (error.message === 'Contraseña incorrecta') {
+          throw new Error('La contraseña ingresada es incorrecta')
+        } else {
+          throw new Error('Credenciales inválidas')
+        }
+      } else if (error.status === 403) {
         throw new Error('Se requiere una licencia activa para acceder')
+      } else if (error.status === 429) {
+        throw new Error('Demasiados intentos fallidos. Por favor, inténtelo más tarde.')
+      } else {
+        throw new Error('Error de conexión con el servidor')
       }
-      throw new Error('Error al iniciar sesión')
     }
   }
 
@@ -96,6 +103,25 @@ class AuthService {
     } catch (error: any) {
       console.error('Promo code validation error:', error)
       throw { response: { data: { message: 'Error al validar el código de promoción' } } }
+    }
+  }
+
+  async uploadLicenseFile(formData: FormData): Promise<{ license: License; message: string }> {
+    try {
+      const response = await api.post('/api/upload-license', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+      return response.data
+    } catch (error: any) {
+      console.error('License file upload error:', error)
+      if (error.response?.status === 400) {
+        throw new Error('Archivo de licencia inválido o corrupto')
+      } else if (error.response?.status === 415) {
+        throw new Error('El tipo de archivo no es válido. Solo se permiten archivos .lic')
+      }
+      throw new Error('Error al procesar el archivo de licencia')
     }
   }
 }

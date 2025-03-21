@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import axios from 'axios';
+import { contractService } from '@/services/contract.service';
 
 export interface Contract {
   id: number;
@@ -54,10 +54,9 @@ export const useContractStore = defineStore('contract', {
       this.loading = true;
       this.error = null;
       try {
-        const response = await axios.get('/api/contracts');
-        this.contracts = response.data;
-      } catch (error) {
-        this.error = 'Error fetching contracts';
+        this.contracts = await contractService.getContracts();
+      } catch (error: any) {
+        this.error = error.message || 'Error fetching contracts';
         throw error;
       } finally {
         this.loading = false;
@@ -66,35 +65,35 @@ export const useContractStore = defineStore('contract', {
 
     async createContract(contractData: Partial<Contract>) {
       try {
-        const response = await axios.post('/api/contracts', contractData);
-        this.contracts.push(response.data);
-        return response.data;
-      } catch (error) {
-        this.error = 'Error creating contract';
+        const newContract = await contractService.createContract(contractData);
+        this.contracts.push(newContract);
+        return newContract;
+      } catch (error: any) {
+        this.error = error.message || 'Error creating contract';
         throw error;
       }
     },
 
     async updateContract(id: number, contractData: Partial<Contract>) {
       try {
-        const response = await axios.put(`/api/contracts/${id}`, contractData);
+        const updatedContract = await contractService.updateContract(id, contractData);
         const index = this.contracts.findIndex(c => c.id === id);
         if (index !== -1) {
-          this.contracts[index] = response.data;
+          this.contracts[index] = updatedContract;
         }
-        return response.data;
-      } catch (error) {
-        this.error = 'Error updating contract';
+        return updatedContract;
+      } catch (error: any) {
+        this.error = error.message || 'Error updating contract';
         throw error;
       }
     },
 
     async deleteContract(id: number) {
       try {
-        await axios.delete(`/api/contracts/${id}`);
+        await contractService.deleteContract(id);
         this.contracts = this.contracts.filter(c => c.id !== id);
-      } catch (error) {
-        this.error = 'Error deleting contract';
+      } catch (error: any) {
+        this.error = error.message || 'Error deleting contract';
         throw error;
       }
     },
@@ -102,15 +101,15 @@ export const useContractStore = defineStore('contract', {
     async getContractStats(): Promise<ContractStats> {
       try {
         this.loading = true;
-        // TODO: Replace with actual API call
-        // Temporary mock data
+        // Usamos los datos del store para calcular estadísticas
+        // En el futuro podríamos obtener estas estadísticas directamente desde el backend
         return {
-          active: 15,
-          expiringSoon: 3,
-          expired: 2
+          active: this.activeContracts.length,
+          expiringSoon: this.expiringContracts.length,
+          expired: this.contracts.filter(c => c.status === 'expired').length
         };
-      } catch (error) {
-        this.error = 'Failed to fetch contract statistics';
+      } catch (error: any) {
+        this.error = error.message || 'Failed to fetch contract statistics';
         throw error;
       } finally {
         this.loading = false;

@@ -8,6 +8,12 @@
           <h1>Iniciar Sesión</h1>
           <p class="login__subtitle">Ingresa tus credenciales para acceder al sistema</p>
           
+          <!-- Error general -->
+          <div v-if="error" class="error-alert">
+            <i class="fas fa-exclamation-circle"></i>
+            {{ error }}
+          </div>
+          
           <div class="form-group">
             <label for="username">Usuario</label>
             <div class="input-wrapper">
@@ -79,55 +85,51 @@ const errors = ref({
 });
 
 async function handleLogin() {
-  if (!validateForm()) return;
-
-  loading.value = true;
+  if (loading.value) return;
+  
+  // Reset errors
+  errors.value.username = '';
+  errors.value.password = '';
   error.value = '';
-
+  
+  // Validate form
+  let isValid = true;
+  
+  if (!credentials.value.username) {
+    errors.value.username = 'El nombre de usuario es obligatorio';
+    isValid = false;
+  }
+  
+  if (!credentials.value.password) {
+    errors.value.password = 'La contraseña es obligatoria';
+    isValid = false;
+  }
+  
+  if (!isValid) return;
+  
+  // Submit form
+  loading.value = true;
+  
   try {
-    console.log('Attempting login with:', credentials.value);
-    const success = await authStore.login(
-      credentials.value.username,
-      credentials.value.password
-    );
-    console.log('Login response:', success);
-    console.log('Auth store errors:', authStore.errors);
+    await authStore.login(credentials.value.username, credentials.value.password);
     
-    if (success) {
-      console.log('Login successful, checking license status');
-      // Si el login es exitoso, el router se encargará de redirigir
-      // a la página de licencia si es necesario
+    if (authStore.isAuthenticated) {
+      // Si el inicio de sesión es exitoso, redirigir a la página principal
       const redirectPath = router.currentRoute.value.query.redirect as string || '/dashboard';
       router.push(redirectPath);
-    } else {
-      console.log('Login failed, showing error');
-      error.value = authStore.errors[0] || 'Credenciales inválidas';
     }
-  } catch (err: any) {
-    console.error('Login error:', err);
-    if (!err.response) {
-      error.value = 'Error de conexión. Por favor, verifica tu conexión a internet e intente nuevamente.';
+  } catch (error: any) {
+    // Manejo específico de errores
+    const errorMessage = error.message || 'Error al iniciar sesión';
+    
+    // Determinar si el error está relacionado con un campo específico
+    if (errorMessage.includes('usuario') || errorMessage.includes('existe')) {
+      errors.value.username = errorMessage;
+    } else if (errorMessage.includes('contraseña') || errorMessage.includes('incorrecta')) {
+      errors.value.password = errorMessage;
     } else {
-      console.log('Error response:', err.response);
-      switch (err.response.status) {
-        case 401:
-          error.value = 'Credenciales inválidas';
-          break;
-        case 403:
-          error.value = 'No tienes permisos para acceder al sistema';
-          break;
-        case 404:
-          error.value = 'El usuario no existe en el sistema';
-          break;
-        case 423:
-          error.value = 'Tu cuenta ha sido bloqueada temporalmente. Por favor, intenta más tarde';
-          break;
-        case 503:
-          error.value = 'El servicio no está disponible en este momento. Por favor, intente más tarde';
-          break;
-        default:
-          error.value = err.response.data?.message || 'Error al iniciar sesión. Por favor, intente nuevamente';
-      }
+      // Error general
+      error.value = errorMessage;
     }
   } finally {
     loading.value = false;
@@ -332,6 +334,24 @@ function validateForm() {
   color: c.$color-error;
   font-size: v.$font-size-xs;
   margin-top: v.$spacing-unit;
+}
+
+.error-alert {
+  background-color: rgba(c.$color-error, 0.08);
+  border-left: 4px solid c.$color-error;
+  color: c.$color-error;
+  padding: v.$spacing-unit * 3;
+  margin-bottom: v.$spacing-unit * 3;
+  border-radius: v.$border-radius-sm;
+  font-size: v.$font-size-sm;
+  display: flex;
+  align-items: center;
+  gap: v.$spacing-unit * 2;
+  animation: fadeIn 0.3s ease-out;
+  
+  i {
+    font-size: v.$font-size-md;
+  }
 }
 
 .btn-primary {

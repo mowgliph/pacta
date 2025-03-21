@@ -3,11 +3,13 @@ import express from 'express';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import cors from 'cors';
+import fs from 'fs';
 import sequelize from './config/database.js';
 import models from './models/index.js';
 import authRoutes from './routes/auth.js';
 import protectedRoutes from './routes/protected.js';
 import contractRoutes from './routes/contracts.js';
+import dashboardRoutes from './routes/dashboard.js';
 import scheduler from './services/scheduler.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -39,27 +41,76 @@ app.use(express.static(path.join(__dirname, '../frontend/dist'), {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/contracts', contractRoutes); // Add contract routes
+app.use('/api/dashboard', dashboardRoutes); // Add dashboard routes
 app.use('/api', protectedRoutes); // Add protected routes
+
+// Verificar permisos del directorio de la base de datos
+const dbDir = path.join(__dirname, 'database');
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+  console.log('Directorio de base de datos creado:', dbDir);
+}
+
+// Crear directorio para archivos de licencia
+const uploadsDir = path.join(__dirname, 'uploads/licenses');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log('Directorio para licencias creado:', uploadsDir);
+}
 
 // Database connection test
 async function testConnection() {
   try {
+    console.log('Intentando conectar a la base de datos en:', path.resolve(dbDir));
     await sequelize.authenticate();
     console.log('Database connection has been established successfully.');
     
-    if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync({ force: true });
+    try {
+      console.log('Iniciando sincronización de la base de datos...');
+      
+      // Forzar la recreación de las tablas con logging detallado
+      console.log('Opciones de sincronización: { force: true }');
+      await sequelize.sync({ 
+        force: true, // Recrear las tablas
+        logging: console.log // Mostrar queries SQL para debug
+      });
       console.log('Database tables recreated successfully');
-    } else {
-      await sequelize.sync();
+      
+      console.log('Intentando crear usuario admin...');
+      await models.User.createAdminIfNotExists();
+      console.log('Admin user checked/created successfully');
+      
+      // Iniciar servicios adicionales
+      if (scheduler && typeof scheduler.start === 'function') {
+        scheduler.start();
+        console.log('Contract expiration checker started');
+      }
+      
+    } catch (syncError) {
+      console.error('Error during database synchronization:', syncError);
+      console.error('Details:', syncError.message);
+      if (syncError.parent) {
+        console.error('Cause:', syncError.parent.message);
+      }
+      console.error('Stack:', syncError.stack);
     }
-    
-    await models.User.createAdminIfNotExists();
-    
-    // Start contract expiration checker
-    console.log('Contract expiration checker started');
   } catch (error) {
-    console.error('Unable to connect to the database:', error);
+    console.error('Database connection error:', error);
+    console.error('Error details:', error.message);
+    if (error.parent) {
+      console.error('Cause:', error.parent.message);
+    }
+    console.error('Please check that the database directory exists and has write permissions');
+    
+    // Verificar permisos de escritura
+    try {
+      const testFile = path.join(dbDir, 'test-write.tmp');
+      fs.writeFileSync(testFile, 'test');
+      fs.unlinkSync(testFile);
+      console.log('Database directory has write permissions');
+    } catch (fsError) {
+      console.error('Cannot write to database directory. Permission issue:', fsError.message);
+    }
   }
 }
 

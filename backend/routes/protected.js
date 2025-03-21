@@ -1,12 +1,13 @@
-import { Router } from 'express';
+import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { authenticateToken, isAdmin } from '../middleware/auth.js';
-import { User, Contract, License, Notification, ActivityLog } from '../models/associations.js';
+import { User, Contract, License, Notification, ActivityLog } from '../models/index.js';
 import { Op } from 'sequelize';
 import multer from 'multer';
 import LicenseValidator from '../services/licenseValidator.js';
+import { db } from '../config/database.js';
 
-const router = Router();
+const router = express.Router();
 
 // Protected routes for all authenticated users
 router.get('/profile', authenticateToken, async (req, res) => {

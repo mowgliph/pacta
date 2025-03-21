@@ -23,112 +23,208 @@
       </div>
     </div>
 
-    <!-- Resumen General de Contratos -->
-    <div class="stats-grid">
-      <div class="stat-card" v-for="stat in contractStats" :key="stat.title">
-        <div class="stat-icon" :style="{ backgroundColor: stat.color + '20' }">
-          <i :class="stat.icon" :style="{ color: stat.color }"></i>
-        </div>
-        <div class="stat-content">
-          <h3>{{ stat.title }}</h3>
-          <p class="stat-value">{{ stat.value }}</p>
-          <p class="stat-description">{{ stat.description }}</p>
-        </div>
-      </div>
+    <!-- Mensaje de error si existe -->
+    <div v-if="error" class="error-message">
+      <i class="fas fa-exclamation-triangle"></i>
+      {{ error }}
     </div>
 
-    <!-- Estado de Licencia -->
-    <div class="license-card">
-      <div class="card-header">
-        <h3>Estado de la Licencia PACTA</h3>
-        <div class="license-status" :class="{ 'warning': licenseDays < 30 }">
-          <i class="fas fa-shield-alt"></i>
-          {{ licenseStatus }}
-        </div>
-      </div>
-      <div class="license-info">
-        <div class="info-item">
-          <span class="label">Vencimiento:</span>
-          <span class="value">{{ licenseExpiry }}</span>
-        </div>
-        <div class="info-item">
-          <span class="label">Días restantes:</span>
-          <span class="value">{{ licenseDays }} días</span>
-        </div>
-        <div class="info-item">
-          <span class="label">Empresas registradas:</span>
-          <span class="value">{{ registeredCompanies }}</span>
-        </div>
-        <div class="info-item">
-          <span class="label">Usuarios activos:</span>
-          <span class="value">{{ activeUsers }}</span>
-        </div>
-      </div>
+    <!-- Indicador de carga -->
+    <div v-if="loading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Cargando información del panel...</p>
     </div>
 
-    <!-- Tendencias y Reportes -->
-    <div class="charts-grid">
-      <div class="chart-card">
-        <div class="card-header">
-          <h3>Tendencias de Contratos</h3>
-          <div class="card-actions">
-            <button class="btn-icon">
-              <i class="fas fa-ellipsis-v"></i>
-            </button>
+    <div v-else>
+      <!-- Resumen General de Contratos -->
+      <div v-if="contractStats" class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" :style="{ backgroundColor: colors.primary + '20' }">
+            <i class="fas fa-file-contract" :style="{ color: colors.primary }"></i>
+          </div>
+          <div class="stat-content">
+            <h3>Total de Contratos</h3>
+            <p class="stat-value">{{ contractStats.total }}</p>
+            <p class="stat-description">Cantidad total de contratos registrados</p>
           </div>
         </div>
-        <div class="trends-stats">
-          <div class="trend-item" v-for="trend in contractTrends" :key="trend.label">
-            <div class="trend-icon" :style="{ backgroundColor: trend.color + '20' }">
-              <i :class="trend.icon" :style="{ color: trend.color }"></i>
-            </div>
-            <div class="trend-content">
-              <div class="trend-label">{{ trend.label }}</div>
-              <div class="trend-value">{{ trend.value }}</div>
-            </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon" :style="{ backgroundColor: colors.success + '20' }">
+            <i class="fas fa-check-circle" :style="{ color: colors.success }"></i>
+          </div>
+          <div class="stat-content">
+            <h3>Contratos Activos</h3>
+            <p class="stat-value">{{ contractStats.active }}</p>
+            <p class="stat-description">Contratos en curso que aún no han expirado</p>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon" :style="{ backgroundColor: colors.error + '20' }">
+            <i class="fas fa-times-circle" :style="{ color: colors.error }"></i>
+          </div>
+          <div class="stat-content">
+            <h3>Contratos Vencidos</h3>
+            <p class="stat-value">{{ contractStats.expired }}</p>
+            <p class="stat-description">Contratos cuyo plazo ya expiró</p>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon" :style="{ backgroundColor: colors.warning + '20' }">
+            <i class="fas fa-clock" :style="{ color: colors.warning }"></i>
+          </div>
+          <div class="stat-content">
+            <h3>Próximos a Vencer</h3>
+            <p class="stat-value">{{ contractStats.expiringSoon }}</p>
+            <p class="stat-description">Contratos que vencen en los próximos 30 días</p>
           </div>
         </div>
       </div>
 
-      <div class="chart-card">
+      <!-- Estado de Licencia -->
+      <div class="license-card">
         <div class="card-header">
-          <h3>Contratos por Categoría</h3>
-          <div class="card-actions">
-            <button class="btn-icon">
-              <i class="fas fa-ellipsis-v"></i>
-            </button>
+          <h3>Estado de la Licencia PACTA</h3>
+          <div class="license-status" :class="{ 'warning': !license || licenseDays < 30 }">
+            <i class="fas" :class="license ? 'fa-shield-alt' : 'fa-exclamation-triangle'"></i>
+            {{ license ? licenseStatus : 'Sin Licencia Activa' }}
           </div>
         </div>
-        <div class="category-stats">
-          <div class="category-item" v-for="category in contractCategories" :key="category.name">
-            <div class="category-info">
-              <span class="category-name">{{ category.name }}</span>
-              <div class="progress-bar">
-                <div class="progress" :style="{ width: category.percentage + '%' }"></div>
+        <div v-if="license" class="license-info">
+          <div class="info-item">
+            <span class="label">Vencimiento:</span>
+            <span class="value">{{ licenseExpiry }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Días restantes:</span>
+            <span class="value">{{ licenseDays }} días</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Empresas registradas:</span>
+            <span class="value">{{ registeredCompanies }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Usuarios activos:</span>
+            <span class="value">{{ activeUsers }}</span>
+          </div>
+        </div>
+        
+        <!-- Mostrar cuando no hay licencia -->
+        <div v-else class="license-warning">
+          <p>El sistema está funcionando sin una licencia activa. Algunas funcionalidades están limitadas.</p>
+          <p class="limitations">Funcionalidades limitadas: <span>Gestión de usuarios, creación y edición de contratos</span></p>
+          <router-link to="/settings" class="btn-primary" v-if="authStore.isAdmin">
+            <i class="fas fa-key"></i>
+            Activar Licencia
+          </router-link>
+          <p class="contact-info" v-else>
+            Para activar una licencia, contacte al administrador del sistema.
+          </p>
+        </div>
+      </div>
+
+      <!-- Tendencias y Reportes -->
+      <div class="charts-grid" v-if="contractTrends">
+        <div class="chart-card">
+          <div class="card-header">
+            <h3>Tendencias de Contratos</h3>
+            <div class="card-actions">
+              <button class="btn-icon">
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+            </div>
+          </div>
+          <div class="trends-stats">
+            <div class="trend-item">
+              <div class="trend-icon" :style="{ backgroundColor: colors.success + '20' }">
+                <i class="fas fa-calendar-check" :style="{ color: colors.success }"></i>
+              </div>
+              <div class="trend-content">
+                <div class="trend-label">Nuevos hoy</div>
+                <div class="trend-value">{{ contractTrends.newToday }}</div>
               </div>
             </div>
-            <span class="category-value">{{ category.count }} contratos</span>
+            
+            <div class="trend-item">
+              <div class="trend-icon" :style="{ backgroundColor: colors.info + '20' }">
+                <i class="fas fa-sync" :style="{ color: colors.info }"></i>
+              </div>
+              <div class="trend-content">
+                <div class="trend-label">Nuevos esta semana</div>
+                <div class="trend-value">{{ contractTrends.newThisWeek }}</div>
+              </div>
+            </div>
+            
+            <div class="trend-item">
+              <div class="trend-icon" :style="{ backgroundColor: colors.warning + '20' }">
+                <i class="fas fa-search" :style="{ color: colors.warning }"></i>
+              </div>
+              <div class="trend-content">
+                <div class="trend-label">Pendientes de revisión</div>
+                <div class="trend-value">{{ contractTrends.reviewPending }}</div>
+              </div>
+            </div>
+            
+            <div class="trend-item">
+              <div class="trend-icon" :style="{ backgroundColor: colors.primary + '20' }">
+                <i class="fas fa-redo" :style="{ color: colors.primary }"></i>
+              </div>
+              <div class="trend-content">
+                <div class="trend-label">Pendientes de renovación</div>
+                <div class="trend-value">{{ contractTrends.renewalsPending }}</div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Actividades Recientes -->
-    <div class="activity-card">
-      <div class="card-header">
-        <h3>Actividades Recientes</h3>
-        <button class="btn-text">Ver Todo</button>
-      </div>
-      <div class="activity-list">
-        <div class="activity-item" v-for="activity in recentActivities" :key="activity.id">
-          <div class="activity-icon" :style="{ backgroundColor: activity.color + '20' }">
-            <i :class="activity.icon" :style="{ color: activity.color }"></i>
+        <div class="chart-card">
+          <div class="card-header">
+            <h3>Contratos por Categoría</h3>
+            <div class="card-actions">
+              <button class="btn-icon">
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+            </div>
           </div>
-          <div class="activity-content">
-            <p class="activity-title">{{ activity.title }}</p>
-            <p class="activity-time">{{ activity.time }}</p>
+          <div class="category-stats">
+            <div class="category-item" v-for="category in contractCategories" :key="category.name">
+              <div class="category-info">
+                <span class="category-name">{{ category.name }}</span>
+                <div class="progress-bar">
+                  <div class="progress" :style="{ width: category.percentage + '%' }"></div>
+                </div>
+              </div>
+              <span class="category-value">{{ category.count }} contratos</span>
+            </div>
           </div>
         </div>
+      </div>
+
+      <!-- Actividades Recientes -->
+      <div class="activity-card" v-if="recentActivities.length > 0">
+        <div class="card-header">
+          <h3>Actividades Recientes</h3>
+          <button class="btn-text">Ver Todo</button>
+        </div>
+        <div class="activity-list">
+          <div class="activity-item" v-for="activity in recentActivities" :key="activity.id">
+            <div class="activity-icon" :style="{ backgroundColor: activity.color + '20' }">
+              <i :class="activity.icon" :style="{ color: activity.color }"></i>
+            </div>
+            <div class="activity-content">
+              <p class="activity-title">{{ activity.title }}</p>
+              <p class="activity-time">{{ activity.time }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mensaje si no hay actividades -->
+      <div v-else class="empty-state">
+        <i class="fas fa-calendar-day"></i>
+        <p>No hay actividades recientes para mostrar</p>
       </div>
     </div>
   </div>
@@ -137,8 +233,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useColors } from '../types/colors'
+import { dashboardService } from '@/services/dashboard.service'
+import type { DashboardResponse } from '@/services/dashboard.service'
+import { useAuthStore } from '@/stores/auth'
 
 const colors = useColors()
+const authStore = useAuthStore()
 const showDateMenu = ref(false)
 const selectedRange = ref({
   label: 'Últimos 30 días',
@@ -155,6 +255,19 @@ const dateRanges = [
   { label: 'Último año', value: '365', days: 365 }
 ]
 
+// Datos reactivos para el dashboard
+const contractStats = ref<DashboardResponse['contractStats'] | null>(null);
+const licenseStatus = ref<string>('Verificando...');
+const licenseExpiry = ref<string>('');
+const licenseDays = ref<number>(0);
+const registeredCompanies = ref<number>(0);
+const activeUsers = ref<number>(0);
+const contractTrends = ref<DashboardResponse['contractTrends'] | null>(null);
+const contractCategories = ref<DashboardResponse['contractCategories']>([]);
+const recentActivities = ref<DashboardResponse['recentActivities']>([]);
+const loading = ref<boolean>(true);
+const error = ref<string>('');
+
 const toggleDateMenu = () => {
   showDateMenu.value = !showDateMenu.value
 }
@@ -163,36 +276,48 @@ const selectDateRange = async (range: typeof dateRanges[0]) => {
   selectedRange.value = range
   showDateMenu.value = false
   
-  // Aquí se llamaría a la función para actualizar los datos
-  await fetchDashboardData(range.days)
+  // Llamar al servicio para actualizar los datos
+  loading.value = true;
+  try {
+    await fetchDashboardData(range.days);
+  } catch (err) {
+    error.value = 'Error al cargar los datos del dashboard';
+  } finally {
+    loading.value = false;
+  }
 }
 
 const fetchDashboardData = async (days: number) => {
   try {
-    // Aquí se implementaría la llamada al backend
-    // const response = await fetch(`/api/dashboard/stats?days=${days}`)
-    // const data = await response.json()
+    const data = await dashboardService.getDashboardData(days);
     
-    // Por ahora usamos datos de ejemplo
-    // Actualizar los datos con la respuesta del backend
-    contractStats.value = [
-      {
-        title: 'Total de Contratos',
-        value: '245',
-        description: 'Cantidad total de contratos registrados en el sistema',
-        icon: 'fas fa-file-contract',
-        color: colors.primary
-      },
-      // ... resto de las estadísticas
-    ]
+    // Actualizar los datos con la respuesta del servicio
+    contractStats.value = data.contractStats;
     
-    // Actualizar otras secciones con los nuevos datos
-    // contractTrends.value = data.trends
-    // contractCategories.value = data.categories
-    // recentActivities.value = data.activities
-  } catch (error) {
-    console.error('Error fetching dashboard data:', error)
-    // Aquí se podría implementar un manejo de errores más robusto
+    // Manejar cuando license es null
+    if (data.license) {
+      licenseStatus.value = data.license.status;
+      licenseExpiry.value = data.license.expiryDate;
+      licenseDays.value = data.license.remainingDays;
+      registeredCompanies.value = data.license.registeredCompanies;
+      activeUsers.value = data.license.activeUsers;
+    } else {
+      licenseStatus.value = 'Sin Licencia';
+      licenseExpiry.value = 'N/A';
+      licenseDays.value = 0;
+      registeredCompanies.value = 0;
+      activeUsers.value = 0;
+    }
+    
+    contractTrends.value = data.contractTrends;
+    contractCategories.value = data.contractCategories;
+    recentActivities.value = data.recentActivities;
+    
+    error.value = '';
+  } catch (err) {
+    console.error('Error fetching dashboard data:', err);
+    error.value = 'Error al cargar los datos del dashboard';
+    throw err;
   }
 }
 
@@ -204,114 +329,19 @@ const closeDateMenu = (event: MouseEvent) => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   document.addEventListener('click', closeDateMenu)
+  
   // Cargar datos iniciales
-  fetchDashboardData(selectedRange.value.days)
+  loading.value = true;
+  try {
+    await fetchDashboardData(selectedRange.value.days);
+  } catch (err) {
+    error.value = 'Error al cargar los datos iniciales del dashboard';
+  } finally {
+    loading.value = false;
+  }
 })
-
-const contractStats = ref([
-  {
-    title: 'Total de Contratos',
-    value: '245',
-    description: 'Cantidad total de contratos registrados en el sistema',
-    icon: 'fas fa-file-contract',
-    color: colors.primary
-  },
-  {
-    title: 'Contratos Activos',
-    value: '180',
-    description: 'Contratos en curso que aún no han expirado',
-    icon: 'fas fa-check-circle',
-    color: colors.success
-  },
-  {
-    title: 'Contratos Vencidos',
-    value: '45',
-    description: 'Contratos cuyo plazo ya expiró',
-    icon: 'fas fa-times-circle',
-    color: colors.error
-  },
-  {
-    title: 'Próximos a Vencer',
-    value: '20',
-    description: 'Contratos que vencen en los próximos 30 días',
-    icon: 'fas fa-clock',
-    color: colors.warning
-  }
-])
-
-const licenseStatus = ref('Licencia Activa')
-const licenseExpiry = ref('12/12/2025')
-const licenseDays = ref(365)
-const registeredCompanies = ref('15')
-const activeUsers = ref('45')
-
-const contractTrends = ref([
-  {
-    label: 'Firmados este mes',
-    value: '24',
-    icon: 'fas fa-calendar-check',
-    color: colors.success
-  },
-  {
-    label: 'Renovados este mes',
-    value: '12',
-    icon: 'fas fa-sync',
-    color: colors.info
-  },
-  {
-    label: 'Cancelados este mes',
-    value: '3',
-    icon: 'fas fa-ban',
-    color: colors.error
-  },
-  {
-    label: 'Tiempo promedio de firma',
-    value: '5.2 días',
-    icon: 'fas fa-clock',
-    color: colors.warning
-  }
-])
-
-const contractCategories = ref([
-  { name: 'Servicios', count: 35, percentage: 35 },
-  { name: 'Alquileres', count: 10, percentage: 10 },
-  { name: 'Contratos laborales', count: 15, percentage: 15 },
-  { name: 'Proveedores', count: 25, percentage: 25 },
-  { name: 'Otros', count: 15, percentage: 15 }
-])
-
-const recentActivities = ref([
-  {
-    id: 1,
-    title: 'Usuario modificó el contrato "Acuerdo de servicio"',
-    time: 'Hace 3 horas',
-    icon: 'fas fa-edit',
-    color: colors.primary
-  },
-  {
-    id: 2,
-    title: 'Se firmó el contrato "Acuerdo de confidencialidad"',
-    time: 'Ayer',
-    icon: 'fas fa-signature',
-    color: colors.success
-  },
-  {
-    id: 3,
-    title: 'El contrato "Proveedor IT" está a 5 días de vencer',
-    time: 'Hace 2 días',
-    icon: 'fas fa-exclamation-triangle',
-    color: colors.warning
-  },
-  {
-    id: 4,
-    title: 'Se agregó un nuevo contrato "Licencia de software"',
-    time: 'Hace 3 días',
-    icon: 'fas fa-plus-circle',
-    color: colors.info
-  }
-])
 </script>
 
 <style lang="scss" scoped>
@@ -667,6 +697,69 @@ const recentActivities = ref([
         color: c.$color-primary;
       }
     }
+  }
+}
+
+/* Estilos para el loader */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  text-align: center;
+  
+  .spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(var(--color-primary-rgb), 0.1);
+    border-radius: 50%;
+    border-top-color: var(--color-primary);
+    animation: spin 1s ease-in-out infinite;
+    margin-bottom: 20px;
+  }
+  
+  p {
+    color: var(--color-text-secondary);
+    font-size: 16px;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Estilos para el mensaje de error */
+.error-message {
+  background-color: rgba(var(--color-error-rgb), 0.1);
+  border-left: 4px solid var(--color-error);
+  color: var(--color-error);
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  
+  i {
+    font-size: 20px;
+  }
+}
+
+/* Estilos para el estado vacío */
+.empty-state {
+  text-align: center;
+  padding: 40px 0;
+  color: var(--color-text-secondary);
+  
+  i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    opacity: 0.5;
+  }
+  
+  p {
+    font-size: 16px;
   }
 }
 </style>

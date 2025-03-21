@@ -42,16 +42,20 @@ export const useAuthStore = defineStore('auth', () => {
     errors.value = [];
   }
 
-  async function login(username: string, password: string) {
+  async function login(username: string, password: string): Promise<boolean> {
+    loading.value = true;
+    errors.value = [];
+    
     try {
-      loading.value = true;
-      errors.value = [];
-      const response = await authService.login(username, password);
-      setAuthData(response);
+      const data = await authService.login(username, password);
+      setAuthData(data);
       return true;
     } catch (error: any) {
-      errors.value = [error.message];
-      return false;
+      const errorMessage = error.message || 'Error al iniciar sesión';
+      errors.value = [errorMessage];
+      
+      // Propagar el error para que el componente pueda manejarlo específicamente
+      throw error;
     } finally {
       loading.value = false;
     }

@@ -18,7 +18,7 @@ const router = createRouter({
       component: DashboardLayout,
       meta: {
         requiresAuth: true,
-        requiresLicense: true
+        requiresLicense: false
       } as RouteMeta,
       children: [
         {
@@ -31,7 +31,7 @@ const router = createRouter({
           component: () => import('@/views/DashboardView.vue'),
           meta: {
             requiresAuth: true,
-            requiresLicense: true,
+            requiresLicense: false,
             title: 'Panel de Control'
           } as RouteMeta
         },
@@ -52,8 +52,18 @@ const router = createRouter({
           component: () => import('@/views/AnalyticsView.vue'),
           meta: {
             requiresAuth: true,
-            requiresLicense: true,
+            requiresLicense: false,
             title: 'Analíticas'
+          } as RouteMeta
+        },
+        {
+          path: 'contracts',
+          name: 'contracts',
+          component: () => import('@/views/contracts/ContractsView.vue'),
+          meta: {
+            requiresAuth: true,
+            requiresLicense: true,
+            title: 'Gestión de Contratos'
           } as RouteMeta
         },
         {
@@ -63,7 +73,7 @@ const router = createRouter({
           meta: {
             requiresAuth: true,
             requiresAdmin: true,
-            requiresLicense: true,
+            requiresLicense: false,
             title: 'Configuración'
           } as RouteMeta
         }

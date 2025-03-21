@@ -1,11 +1,13 @@
-import { Router } from 'express';
+import express from 'express';
 import { body, validationResult } from 'express-validator';
-import { authenticateToken, isAdmin } from '../middleware/auth.js';
-import { Contract, User, ActivityLog } from '../models/associations.js';
+import { authenticateToken, isAdmin, requiresLicense } from '../middleware/auth.js';
+import { Contract, User, ActivityLog } from '../models/index.js';
+import { db } from '../config/database.js';
+import { Op } from 'sequelize';
 
-const router = Router();
+const router = express.Router();
 
-// Get all contracts (filtered by user role)
+// Get all contracts (filtered by user role) - solo lectura sin licencia
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const contracts = await Contract.findAll({
@@ -24,7 +26,7 @@ router.get('/', authenticateToken, async (req, res) => {
   }
 });
 
-// Get contract by ID
+// Get contract by ID - solo lectura sin licencia
 router.get('/:id', authenticateToken, async (req, res) => {
   try {
     const contract = await Contract.findOne({
@@ -42,9 +44,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Create new contract
+// Create new contract - requiere licencia
 router.post('/', [
   authenticateToken,
+  requiresLicense, // Añadir middleware para verificar licencia
   body('title')
     .isLength({ min: 3, max: 100 })
     .trim()
@@ -122,9 +125,10 @@ router.post('/', [
   }
 });
 
-// Update contract
+// Update contract - requiere licencia
 router.put('/:id', [
   authenticateToken,
+  requiresLicense, // Añadir middleware para verificar licencia
   body('title')
     .optional()
     .isLength({ min: 3, max: 100 })
@@ -204,8 +208,8 @@ router.put('/:id', [
   }
 });
 
-// Delete contract
-router.delete('/:id', authenticateToken, async (req, res) => {
+// Delete contract - requiere licencia
+router.delete('/:id', authenticateToken, requiresLicense, async (req, res) => {
   try {
     const contract = await Contract.findOne({
       where: {
@@ -231,6 +235,91 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     res.json({ message: 'Contract deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting contract' });
+  }
+});
+
+// Get contract statistics
+router.get('/statistics', authenticateToken, async (req, res) => {
+  try {
+    const sequelize = db.sequelize;
+    const { Op } = require('sequelize');
+    const today = new Date();
+
+    // Consultar todos los contratos del usuario o todos si es admin
+    const contracts = await Contract.findAll({
+      where: req.user.role === 'admin' ? {} : { createdBy: req.user.id }
+    });
+
+    // Calcular estadísticas
+    const stats = {
+      totalContracts: contracts.length,
+      activeContracts: 0,
+      expiringContracts: 0,
+      expiredContracts: 0,
+      totalByCurrency: {
+        CUP: 0,
+        USD: 0,
+        EUR: 0
+      }
+    };
+
+    // Calcular estadísticas
+    contracts.forEach(contract => {
+      // Contar por estado
+      if (contract.status === 'active') {
+        stats.activeContracts++;
+        
+        // Verificar si está próximo a vencer
+        const daysUntilExpiry = Math.ceil(
+          (new Date(contract.endDate) - today) / (1000 * 60 * 60 * 24)
+        );
+        
+        if (daysUntilExpiry <= contract.notificationDays) {
+          stats.expiringContracts++;
+        }
+      } else if (contract.status === 'expired') {
+        stats.expiredContracts++;
+      }
+      
+      // Sumar importes por moneda
+      if (contract.currency && stats.totalByCurrency[contract.currency] !== undefined) {
+        stats.totalByCurrency[contract.currency] += parseFloat(contract.amount);
+      }
+    });
+
+    // Obtener contratos más recientes (últimos 5)
+    const recentContracts = await Contract.findAll({
+      where: req.user.role === 'admin' ? {} : { createdBy: req.user.id },
+      order: [['createdAt', 'DESC']],
+      limit: 5,
+      include: [
+        {
+          model: User,
+          as: 'creator',
+          attributes: ['username', 'email']
+        }
+      ]
+    });
+
+    // Obtener distribución por estado
+    const statusCounts = {
+      active: stats.activeContracts,
+      expired: stats.expiredContracts,
+      draft: contracts.filter(c => c.status === 'draft').length,
+      terminated: contracts.filter(c => c.status === 'terminated').length,
+      renewed: contracts.filter(c => c.status === 'renewed').length
+    };
+
+    // Devolver estadísticas completas
+    res.json({
+      stats,
+      statusCounts,
+      recentContracts
+    });
+    
+  } catch (error) {
+    console.error('Error fetching contract statistics:', error);
+    res.status(500).json({ message: 'Error fetching contract statistics' });
   }
 });
 

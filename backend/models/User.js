@@ -38,6 +38,14 @@ const User = sequelize.define('User', {
     defaultValue: 'readonly',
     allowNull: false
   },
+  licenseId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'Licenses',
+      key: 'id'
+    }
+  },
   firstLogin: {
     type: DataTypes.BOOLEAN,
     defaultValue: true
