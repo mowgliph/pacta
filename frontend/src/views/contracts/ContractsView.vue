@@ -424,5 +424,5 @@ async function deleteContract() {
 </script>
 
 <style lang="scss" scoped>
-@import './contracts.scss';
+@use './contracts.scss';
 </style>

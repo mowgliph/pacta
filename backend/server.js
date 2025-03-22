@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.js';
 import protectedRoutes from './routes/protected.js';
 import contractRoutes from './routes/contracts.js';
 import dashboardRoutes from './routes/dashboard.js';
+import analyticsRoutes from './routes/analytics.js';
 import scheduler from './services/scheduler.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -42,6 +43,7 @@ app.use(express.static(path.join(__dirname, '../frontend/dist'), {
 app.use('/api/auth', authRoutes);
 app.use('/api/contracts', contractRoutes); // Add contract routes
 app.use('/api/dashboard', dashboardRoutes); // Add dashboard routes
+app.use('/api/analytics', analyticsRoutes); // Add analytics routes
 app.use('/api', protectedRoutes); // Add protected routes
 
 // Verificar permisos del directorio de la base de datos

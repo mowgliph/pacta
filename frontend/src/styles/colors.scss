@@ -32,6 +32,7 @@ $color-text-light: #ffffff;
 // Colores de superficie
 $color-surface: #ffffff;
 $color-surface-hover: color.adjust($color-surface, $lightness: -5%);
+$color-surface-variant: color.adjust($color-surface, $lightness: -3%);
 $color-divider: rgba(15, 26, 46, 0.08);
 $color-border: color.adjust($color-secondary, $lightness: 25%);
 
@@ -60,6 +61,7 @@ $colors: (
   "background": $color-background,
   "surface": $color-surface,
   "surface-hover": $color-surface-hover,
+  "surface-variant": $color-surface-variant,
   "divider": $color-divider,
   "border": $color-border,
 );
@@ -88,6 +90,7 @@ $colors: (
   --color-background: #{$color-background};
   --color-surface: #{$color-surface};
   --color-surface-hover: #{$color-surface-hover};
+  --color-surface-variant: #{$color-surface-variant};
   --color-divider: #{$color-divider};
   --color-border: #{$color-border};
   --color-hover: #{$color-hover};

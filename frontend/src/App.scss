@@ -39,6 +39,19 @@ body {
   }
 }
 
+// Media query para pantallas grandes y extra grandes
+@media (min-width: v.$breakpoint-xl) {
+  .main-content {
+    max-width: 1600px; // Ancho máximo para pantallas grandes
+  }
+}
+
+@media (min-width: v.$breakpoint-xxl) {
+  .main-content {
+    max-width: 1920px; // Ancho máximo para pantallas extra grandes
+  }
+}
+
 @media (max-width: v.$breakpoint-md) {
   .main-content {
     padding: v.$spacing-sm;

@@ -3,135 +3,280 @@
 @use '../../styles/mixins' as m;
 
 .analytics-view {
-  .page-header {
-    @include m.flex-between;
-    margin-bottom: v.$spacing-xl;
-    position: sticky;
+  position: relative;
+  padding: v.$spacing-lg;
+  
+  .loading-overlay {
+    position: absolute;
     top: 0;
-    z-index: 100;
-    background-color: c.$color-surface;
-    padding: v.$spacing-lg 0;
-    border-bottom: 1px solid c.$color-border;
-
-    h1 {
-      @include m.heading-1;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid c.$color-surface-variant;
+      border-top-color: c.$color-primary;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: v.$spacing-md;
+    }
+    
+    span {
+      font-size: v.$font-size-md;
       color: c.$color-text-primary;
     }
   }
-
-  .metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: v.$spacing-lg;
-    margin-bottom: v.$spacing-xl;
-  }
-
-  .metric-card {
-    @include m.card-style;
+  
+  .error-container {
     display: flex;
-    align-items: flex-start;
-    gap: v.$spacing-md;
-
-    .metric-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: v.$border-radius-md;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
+    align-items: center;
+    justify-content: center;
+    padding: v.$spacing-xxl 0;
+    
+    .error-message {
+      text-align: center;
+      max-width: 500px;
+      
       i {
-        font-size: v.$font-size-xl;
+        font-size: v.$font-size-xxl;
+        color: c.$color-error;
+        margin-bottom: v.$spacing-md;
       }
-    }
-
-    .metric-content {
+      
       h3 {
-        @include m.text-secondary;
-        margin: 0 0 v.$spacing-xs;
+        font-size: v.$font-size-lg;
+        margin-bottom: v.$spacing-xs;
       }
-
-      .metric-value {
-        @include m.heading-2;
-        color: c.$color-text-primary;
-        margin: 0 0 v.$spacing-xs;
+      
+      p {
+        color: c.$color-text-secondary;
+        margin-bottom: v.$spacing-lg;
       }
-
-      .metric-change {
-        @include m.text-small;
-        display: flex;
+      
+      .btn-retry {
+        padding: v.$spacing-sm v.$spacing-lg;
+        background-color: c.$color-primary;
+        color: white;
+        border: none;
+        border-radius: v.$border-radius-sm;
+        cursor: pointer;
+        font-size: v.$font-size-md;
+        display: inline-flex;
         align-items: center;
         gap: v.$spacing-xs;
+      }
+    }
+  }
+  
+  .analytics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: v.$spacing-xl;
+    
+    .header-content {
+      max-width: 60%;
+      
+      h1 {
+        font-size: v.$font-size-xxl;
+        font-weight: v.$font-weight-bold;
+        margin: 0 0 v.$spacing-xs 0;
+      }
+      
+      p {
+        color: c.$color-text-secondary;
+        font-size: v.$font-size-md;
         margin: 0;
-
+      }
+    }
+    
+    .header-actions {
+      display: flex;
+      gap: v.$spacing-sm;
+      
+      .btn-export {
+        display: inline-flex;
+        align-items: center;
+        gap: v.$spacing-xs;
+        padding: v.$spacing-sm v.$spacing-md;
+        background-color: c.$color-surface-variant;
+        border: none;
+        border-radius: v.$border-radius-sm;
+        font-size: v.$font-size-sm;
+        cursor: pointer;
+        
+        &:hover {
+          background-color: c.$color-surface-hover;
+        }
+        
+        i {
+          font-size: v.$font-size-md;
+        }
+      }
+    }
+  }
+  
+  section {
+    margin-bottom: v.$spacing-xl;
+    
+    h2 {
+      font-size: v.$font-size-lg;
+      font-weight: v.$font-weight-semibold;
+      margin: 0 0 v.$spacing-lg 0;
+    }
+  }
+  
+  .metrics-overview {
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: v.$spacing-lg;
+    }
+  }
+  
+  .charts-section {
+    .charts-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: v.$spacing-lg;
+    }
+  }
+  
+  .stats-section {
+    .stats-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: v.$spacing-lg;
+    }
+    
+    .stats-column {
+      h3 {
+        font-size: v.$font-size-lg;
+        margin: 0 0 v.$spacing-md 0;
+      }
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: v.$spacing-md;
+    }
+    
+    .stat-card {
+      background-color: c.$color-surface;
+      border-radius: v.$border-radius;
+      padding: v.$spacing-md;
+      box-shadow: v.$shadow-sm;
+      
+      .stat-value {
+        font-size: v.$font-size-xl;
+        font-weight: v.$font-weight-bold;
+        margin-bottom: v.$spacing-xxs;
+      }
+      
+      .stat-label {
+        font-size: v.$font-size-sm;
+        color: c.$color-text-secondary;
+        margin-bottom: v.$spacing-xs;
+      }
+      
+      .stat-trend {
+        display: flex;
+        align-items: center;
+        gap: v.$spacing-xxs;
+        font-size: v.$font-size-sm;
+        font-weight: v.$font-weight-semibold;
+        
+        &.up {
+          color: c.$color-success;
+        }
+        
+        &.down {
+          color: c.$color-error;
+        }
+      }
+    }
+  }
+  
+  .predictions-section {
+    .predictions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: v.$spacing-lg;
+    }
+    
+    .prediction-card {
+      background-color: c.$color-surface;
+      border-radius: v.$border-radius;
+      padding: v.$spacing-lg;
+      box-shadow: v.$shadow-sm;
+      
+      h3 {
+        font-size: v.$font-size-md;
+        margin: 0 0 v.$spacing-xs 0;
+        color: c.$color-text-secondary;
+      }
+      
+      .prediction-value {
+        font-size: v.$font-size-xxl;
+        font-weight: v.$font-weight-bold;
+        margin-bottom: v.$spacing-xs;
+      }
+      
+      .prediction-change {
+        display: flex;
+        align-items: center;
+        gap: v.$spacing-xxs;
+        font-size: v.$font-size-sm;
+        
         &.positive {
           color: c.$color-success;
         }
-
+        
         &.negative {
           color: c.$color-error;
         }
       }
     }
   }
+}
 
-  .charts-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: v.$spacing-lg;
-    margin-bottom: v.$spacing-xl;
-  }
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
-  .chart-card {
-    @include m.card-style;
-
-    .card-header {
-      @include m.flex-between;
-      margin-bottom: v.$spacing-lg;
-
-      h3 {
-        @include m.heading-3;
-        color: c.$color-text-primary;
-        margin: 0;
-      }
+@media (max-width: v.$breakpoint-lg) {
+  .analytics-view {
+    .charts-section .charts-container,
+    .stats-section .stats-container {
+      grid-template-columns: 1fr;
     }
   }
+}
 
-  .efficiency-stats,
-  .compliance-stats {
-    .stat-item {
-      padding: v.$spacing-md 0;
-      border-bottom: 1px solid c.$color-border;
-
-      &:last-child {
-        border-bottom: none;
+@media (max-width: v.$breakpoint-md) {
+  .analytics-view {
+    padding: v.$spacing-md;
+    
+    .analytics-header {
+      flex-direction: column;
+      gap: v.$spacing-md;
+      
+      .header-content {
+        max-width: 100%;
       }
-
-      .stat-label {
-        @include m.text-secondary;
-        margin-bottom: v.$spacing-xs;
-      }
-
-      .stat-value {
-        @include m.text-base;
-        font-weight: v.$font-weight-medium;
-        margin-bottom: v.$spacing-xs;
-      }
-
-      .stat-trend {
-        @include m.text-small;
-        display: flex;
-        align-items: center;
-        gap: v.$spacing-xs;
-
-        &.up {
-          color: c.$color-success;
-        }
-
-        &.down {
-          color: c.$color-error;
-        }
-      }
+    }
+    
+    .stats-section .stats-grid {
+      grid-template-columns: 1fr;
     }
   }
 }
@@ -147,12 +292,4 @@
 
 .btn-text {
   @include m.button-text;
-}
-
-@media (max-width: v.$breakpoint-md) {
-  .analytics-view {
-    .charts-grid {
-      grid-template-columns: 1fr;
-    }
-  }
 }

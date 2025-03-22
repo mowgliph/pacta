@@ -2,6 +2,7 @@
 @use './colors.scss' as c;
 @use './mixins.scss' as m;
 @use './typography.scss' as ty;
+@use './responsive.scss';
 
 // Global styles
 :root {

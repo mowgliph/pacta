@@ -49,6 +49,7 @@
   overflow-x: hidden;
   scrollbar-width: thin;
   color: c.$color-text-light;
+  top: 0;
   
   &::-webkit-scrollbar {
     width: 4px;
@@ -92,7 +93,7 @@
   }
 
   .sidebar-header {
-    padding: 1.5rem;
+    padding: 1rem 1.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -241,11 +242,15 @@
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
+  max-width: 100vw;
   
   .dashboard-content {
     padding: 1.5rem;
     padding-top: calc(70px + 1.5rem);
     flex: 1;
+    max-width: v.$container-max-width;
+    margin: 0 auto;
+    width: 100%;
   }
 }
 
@@ -259,11 +264,32 @@
   height: 70px;
   position: fixed;
   top: 0;
+  right: 0;
   width: calc(100% - 260px);
   z-index: 50;
   backdrop-filter: blur(10px);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: v.$shadow-sm;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: inherit;
+    z-index: -1;
+  }
+
+  .inner-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: v.$container-max-width;
+    margin: 0 auto;
+  }
 
   .dashboard-layout.sidebar-collapsed .dashboard-header {
     width: calc(100% - 70px);
@@ -915,5 +941,18 @@
   &:hover {
     text-decoration: underline;
     background-color: rgba(c.$color-primary, 0.05);
+  }
+}
+
+// Responsive media queries para pantallas grandes
+@media (min-width: v.$breakpoint-xl) {
+  .dashboard-main .dashboard-content {
+    max-width: 1600px;
+  }
+}
+
+@media (min-width: v.$breakpoint-xxl) {
+  .dashboard-main .dashboard-content {
+    max-width: 1920px;
   }
 }
