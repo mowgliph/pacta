@@ -1,9 +1,9 @@
 <template>
   <div class="flex min-h-screen relative bg-gradient-to-br from-primary-dark via-primary to-primary-light" :class="{ 'dark-theme': isDark }">
-    <div class="flex-1 flex items-center justify-center p-8 animate-fade-in">
+    <div class="flex-1 flex items-center justify-center p-8 animate-[fade-in_0.8s_ease-in-out]">
       <div class="w-full max-w-md bg-surface rounded-md shadow-lg p-8 relative transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-        <div class="flex items-center justify-center mb-8 animate-fade-in">
-          <img src="@/assets/contract_icon.png" alt="Logo" class="w-12 h-12 mr-2 animate-pulse" />
+        <div class="flex items-center justify-center mb-8 animate-[fade-in_0.8s_ease-in-out]">
+          <img src="@/assets/contract_icon.png" alt="Logo" class="w-12 h-12 mr-2 animate-[pulse_2s_infinite]" />
           <h2 class="text-xl font-bold text-primary tracking-wider">PACTA</h2>
         </div>
                 
@@ -11,8 +11,8 @@
           <h1 class="text-xl font-semibold text-text-primary mb-4 text-center">Iniciar Sesión</h1>
           <p class="text-sm text-text-secondary mb-8 text-center">Ingresa tus credenciales para acceder al sistema</p>
           
-          <div class="mb-4">
-            <label for="username" class="text-sm font-medium block mb-1">Usuario</label>
+          <div class="form-control">
+            <label for="username" class="form-label">Usuario</label>
             <div class="relative">
               <i class="fas fa-user absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"></i>
               <input
@@ -21,16 +21,16 @@
                 type="text"
                 placeholder="Ingresa tu nombre de usuario"
                 required
-                class="w-full p-2 pl-10 border rounded-md text-sm transition-all duration-200 hover:border-gray-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                class="input pl-10"
                 :class="{ 'border-error focus:ring-error/10': errors.username }"
                 @focus="clearError('username')"
               />
             </div>
-            <span v-if="errors.username" class="text-error text-xs mt-1 block">{{ errors.username }}</span>
+            <span v-if="errors.username" class="form-error">{{ errors.username }}</span>
           </div>
 
-          <div class="mb-4">
-            <label for="password" class="text-sm font-medium block mb-1">Contraseña</label>
+          <div class="form-control">
+            <label for="password" class="form-label">Contraseña</label>
             <div class="relative">
               <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"></i>
               <input
@@ -39,7 +39,7 @@
                 type="password"
                 placeholder="Ingresa tu contraseña"
                 required
-                class="w-full p-2 pl-10 border rounded-md text-sm transition-all duration-200 hover:border-gray-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                class="input pl-10"
                 :class="{ 'border-error focus:ring-error/10': errors.password }"
                 @focus="clearError('password')"
               />
@@ -49,7 +49,7 @@
                 @click="togglePasswordVisibility"
               ></i>
             </div>
-            <span v-if="errors.password" class="text-error text-xs mt-1 block">{{ errors.password }}</span>
+            <span v-if="errors.password" class="form-error">{{ errors.password }}</span>
           </div>
 
           <div class="flex justify-between items-center my-4">
@@ -63,7 +63,7 @@
           <div class="mt-6">
             <button 
               type="submit" 
-              class="w-full bg-primary text-white py-2 rounded shadow-sm font-medium transition-all duration-200 hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-md disabled:opacity-65 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              class="btn btn-primary w-full"
               :disabled="loading"
             >
               <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
@@ -174,22 +174,5 @@ const handleForgotPassword = () => {
 </script>
 
 <style>
-@keyframes fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-.animate-fade-in {
-  animation: fade-in 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.animate-pulse {
-  animation: pulse 2s infinite;
-}
+/* El componente ahora usa animaciones de Tailwind directamente */
 </style>

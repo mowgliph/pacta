@@ -1,8 +1,13 @@
 <template>
-  <Transition name="notification">
+  <Transition 
+    enter-active-class="transition-all duration-300 ease-out"
+    enter-from-class="opacity-0 translate-x-5"
+    leave-active-class="transition-all duration-300 ease-in"
+    leave-to-class="opacity-0 translate-x-5"
+  >
     <div 
       v-if="show" 
-      class="flex items-start p-4 rounded shadow-md mb-4 max-w-md relative transition-all duration-200"
+      class="flex items-start p-4 rounded shadow-md mb-4 max-w-md relative border-l-4 transition-all"
       :class="[
         typeClasses,
         { 'pl-12': icon }
@@ -17,7 +22,8 @@
       </div>
       <button 
         v-if="dismissible" 
-        class="bg-transparent border-none opacity-70 cursor-pointer p-1 -m-1 rounded hover:opacity-100 hover:bg-black/5"
+        class="text-current opacity-70 p-1 -m-1 rounded hover:opacity-100 hover:bg-black/5 transition-opacity focus:outline-none focus:ring-2 focus:ring-offset-1"
+        :class="buttonRingClass"
         @click="dismiss"
         aria-label="Cerrar notificación"
       >
@@ -88,14 +94,25 @@ watch(show, (newVal) => {
 const typeClasses = computed(() => {
   switch(props.type) {
     case 'success':
-      return 'bg-success/10 text-success-800 border-l-4 border-success';
+      return 'bg-success/10 text-success-800 dark:text-success-300 border-success';
     case 'error':
-      return 'bg-error/10 text-error-800 border-l-4 border-error';
+      return 'bg-error/10 text-error-800 dark:text-error-300 border-error';
     case 'warning':
-      return 'bg-warning/10 text-warning-800 border-l-4 border-warning';
+      return 'bg-warning/10 text-warning-800 dark:text-warning-300 border-warning';
     case 'info':
     default:
-      return 'bg-info/10 text-info-800 border-l-4 border-info';
+      return 'bg-info/10 text-info-800 dark:text-info-300 border-info';
+  }
+});
+
+// Clases para el botón de cerrar
+const buttonRingClass = computed(() => {
+  switch(props.type) {
+    case 'success': return 'focus:ring-success/50';
+    case 'error': return 'focus:ring-error/50';
+    case 'warning': return 'focus:ring-warning/50';
+    case 'info':
+    default: return 'focus:ring-info/50';
   }
 });
 
@@ -114,20 +131,6 @@ const dismiss = () => {
 };
 </script>
 
-<style>
-/* Animaciones */
-.notification-enter-active,
-.notification-leave-active {
-  transition: all 0.3s ease;
-}
-
-.notification-enter-from {
-  opacity: 0;
-  transform: translateX(20px);
-}
-
-.notification-leave-to {
-  opacity: 0;
-  transform: translateX(20px);
-}
+<style scoped>
+/* La mayoría de los estilos ahora están implementados con clases de Tailwind */
 </style> 

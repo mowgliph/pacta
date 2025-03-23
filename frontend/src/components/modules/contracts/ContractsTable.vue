@@ -15,12 +15,12 @@
     
     <!-- Tabla de contratos -->
     <template v-else>
-      <div class="overflow-x-auto">
-        <table class="w-full border-collapse bg-surface rounded-md shadow-sm mb-6">
+      <div class="table-container">
+        <table class="table">
           <thead>
             <tr>
               <th @click="sortBy('contractNumber')" 
-                  class="p-3 bg-gray-50 dark:bg-surface-hover text-text-secondary font-semibold cursor-pointer whitespace-nowrap border-b border-border transition-colors relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                  class="cursor-pointer whitespace-nowrap relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
                   :class="{ 'text-primary': currentSort === 'contractNumber' }">
                 Número 
                 <i :class="[getSortIconClass('contractNumber'), 'text-sm ml-1 opacity-70']"></i>
@@ -28,7 +28,7 @@
                      :class="{ 'w-full': currentSort === 'contractNumber' }"></div>
               </th>
               <th @click="sortBy('title')" 
-                  class="p-3 bg-gray-50 dark:bg-surface-hover text-text-secondary font-semibold cursor-pointer whitespace-nowrap border-b border-border transition-colors relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                  class="cursor-pointer whitespace-nowrap relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
                   :class="{ 'text-primary': currentSort === 'title' }">
                 Título
                 <i :class="[getSortIconClass('title'), 'text-sm ml-1 opacity-70']"></i>
@@ -36,7 +36,7 @@
                      :class="{ 'w-full': currentSort === 'title' }"></div>
               </th>
               <th @click="sortBy('startDate')" 
-                  class="p-3 bg-gray-50 dark:bg-surface-hover text-text-secondary font-semibold cursor-pointer whitespace-nowrap border-b border-border transition-colors relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                  class="cursor-pointer whitespace-nowrap relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
                   :class="{ 'text-primary': currentSort === 'startDate' }">
                 Fecha Inicio
                 <i :class="[getSortIconClass('startDate'), 'text-sm ml-1 opacity-70']"></i>
@@ -44,7 +44,7 @@
                      :class="{ 'w-full': currentSort === 'startDate' }"></div>
               </th>
               <th @click="sortBy('endDate')" 
-                  class="p-3 bg-gray-50 dark:bg-surface-hover text-text-secondary font-semibold cursor-pointer whitespace-nowrap border-b border-border transition-colors relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                  class="cursor-pointer whitespace-nowrap relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
                   :class="{ 'text-primary': currentSort === 'endDate' }">
                 Fecha Fin
                 <i :class="[getSortIconClass('endDate'), 'text-sm ml-1 opacity-70']"></i>
@@ -52,7 +52,7 @@
                      :class="{ 'w-full': currentSort === 'endDate' }"></div>
               </th>
               <th @click="sortBy('status')" 
-                  class="p-3 bg-gray-50 dark:bg-surface-hover text-text-secondary font-semibold cursor-pointer whitespace-nowrap border-b border-border transition-colors relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                  class="cursor-pointer whitespace-nowrap relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
                   :class="{ 'text-primary': currentSort === 'status' }">
                 Estado
                 <i :class="[getSortIconClass('status'), 'text-sm ml-1 opacity-70']"></i>
@@ -60,15 +60,15 @@
                      :class="{ 'w-full': currentSort === 'status' }"></div>
               </th>
               <th @click="sortBy('amount')" 
-                  class="p-3 bg-gray-50 dark:bg-surface-hover text-text-secondary font-semibold cursor-pointer whitespace-nowrap border-b border-border transition-colors relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                  class="cursor-pointer whitespace-nowrap relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
                   :class="{ 'text-primary': currentSort === 'amount' }">
                 Importe
                 <i :class="[getSortIconClass('amount'), 'text-sm ml-1 opacity-70']"></i>
                 <div class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"
                      :class="{ 'w-full': currentSort === 'amount' }"></div>
               </th>
-              <th class="p-3 bg-gray-50 dark:bg-surface-hover text-text-secondary font-semibold whitespace-nowrap border-b border-border text-center">Doc</th>
-              <th class="p-3 bg-gray-50 dark:bg-surface-hover text-text-secondary font-semibold whitespace-nowrap border-b border-border">Acciones</th>
+              <th class="text-center">Doc</th>
+              <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -80,24 +80,7 @@
               <td class="p-3">{{ formatDate(contract.startDate) }}</td>
               <td class="p-3">{{ formatDate(contract.endDate) }}</td>
               <td class="p-3">
-                <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium"
-                      :class="{
-                        'bg-success/10 text-success': contract.status === 'active',
-                        'bg-error/10 text-error': contract.status === 'expired',
-                        'bg-warning/10 text-warning': contract.status === 'draft',
-                        'bg-secondary/10 text-secondary': contract.status === 'terminated',
-                        'bg-info/10 text-info': contract.status === 'renewed'
-                      }">
-                  <span class="w-1.5 h-1.5 rounded-full mr-1"
-                        :class="{
-                          'bg-success': contract.status === 'active',
-                          'bg-error': contract.status === 'expired',
-                          'bg-warning': contract.status === 'draft',
-                          'bg-secondary': contract.status === 'terminated',
-                          'bg-info': contract.status === 'renewed'
-                        }"></span>
-                  {{ getStatusText(contract.status) }}
-                </span>
+                <StatusBadge :status="contract.status" />
               </td>
               <td class="p-3">{{ formatCurrency(contract.amount, contract.currency) }}</td>
               <td class="p-3 text-center">
@@ -300,6 +283,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import type { Contract } from '@/stores/contract';
+import StatusBadge from '@/components/base/StatusBadge.vue';
 
 // Props
 const props = defineProps<{

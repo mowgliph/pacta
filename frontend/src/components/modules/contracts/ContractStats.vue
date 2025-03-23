@@ -1,94 +1,110 @@
 <template>
-  <div class="contract-stats">
-    <div class="stats-header">
-      <h3>Estadísticas de Contratos</h3>
-      <div class="refresh-button" @click="loadStats" :class="{ 'is-loading': loading }">
+  <div class="bg-surface rounded-lg shadow-sm p-6 mb-8">
+    <div class="flex justify-between items-center mb-6">
+      <h3 class="text-xl font-medium text-text-primary m-0">Estadísticas de Contratos</h3>
+      <button 
+        @click="loadStats" 
+        class="w-8 h-8 flex items-center justify-center rounded-full bg-primary/10 text-primary cursor-pointer transition-all hover:bg-primary/20"
+        :class="{ 'animate-spin': loading }"
+      >
         <i class="fas fa-sync-alt"></i>
-      </div>
+      </button>
     </div>
     
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon active">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="bg-surface border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex items-start shadow-sm">
+        <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center mr-4 flex-shrink-0">
           <i class="fas fa-file-contract"></i>
         </div>
-        <div class="stat-info">
-          <div class="stat-value">{{ statistics.stats?.totalContracts || 0 }}</div>
-          <div class="stat-label">Total Contratos</div>
+        <div class="flex-1">
+          <div class="text-2xl font-semibold text-text-primary leading-tight">{{ statistics.stats?.totalContracts || 0 }}</div>
+          <div class="text-xs text-text-secondary">Total Contratos</div>
         </div>
       </div>
       
-      <div class="stat-card">
-        <div class="stat-icon active">
+      <div class="bg-surface border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex items-start shadow-sm">
+        <div class="w-10 h-10 rounded-full bg-success/10 text-success flex items-center justify-center mr-4 flex-shrink-0">
           <i class="fas fa-check-circle"></i>
         </div>
-        <div class="stat-info">
-          <div class="stat-value">{{ statistics.stats?.activeContracts || 0 }}</div>
-          <div class="stat-label">Activos</div>
+        <div class="flex-1">
+          <div class="text-2xl font-semibold text-text-primary leading-tight">{{ statistics.stats?.activeContracts || 0 }}</div>
+          <div class="text-xs text-text-secondary">Activos</div>
         </div>
       </div>
       
-      <div class="stat-card">
-        <div class="stat-icon warning">
+      <div class="bg-surface border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex items-start shadow-sm">
+        <div class="w-10 h-10 rounded-full bg-warning/10 text-warning flex items-center justify-center mr-4 flex-shrink-0">
           <i class="fas fa-exclamation-triangle"></i>
         </div>
-        <div class="stat-info">
-          <div class="stat-value">{{ statistics.stats?.expiringContracts || 0 }}</div>
-          <div class="stat-label">Próximos a vencer</div>
+        <div class="flex-1">
+          <div class="text-2xl font-semibold text-text-primary leading-tight">{{ statistics.stats?.expiringContracts || 0 }}</div>
+          <div class="text-xs text-text-secondary">Próximos a vencer</div>
         </div>
       </div>
       
-      <div class="stat-card">
-        <div class="stat-icon danger">
+      <div class="bg-surface border border-gray-200 dark:border-gray-700 rounded-lg p-4 flex items-start shadow-sm">
+        <div class="w-10 h-10 rounded-full bg-error/10 text-error flex items-center justify-center mr-4 flex-shrink-0">
           <i class="fas fa-times-circle"></i>
         </div>
-        <div class="stat-info">
-          <div class="stat-value">{{ statistics.stats?.expiredContracts || 0 }}</div>
-          <div class="stat-label">Vencidos</div>
+        <div class="flex-1">
+          <div class="text-2xl font-semibold text-text-primary leading-tight">{{ statistics.stats?.expiredContracts || 0 }}</div>
+          <div class="text-xs text-text-secondary">Vencidos</div>
         </div>
       </div>
     </div>
     
-    <div class="stats-row">
-      <div class="status-distribution">
-        <h4>Distribución por Estado</h4>
-        <div v-if="statistics.statusCounts" class="status-chart">
-          <canvas ref="statusChartRef"></canvas>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div class="bg-surface border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+          <h4 class="text-base font-medium text-text-primary m-0">Distribución por Estado</h4>
         </div>
-        <div v-else class="chart-placeholder">
-          <i class="fas fa-chart-pie"></i>
-          <span>No hay datos suficientes</span>
+        <div class="p-5">
+          <div v-if="statistics.statusCounts" class="h-[200px] relative">
+            <canvas ref="statusChartRef"></canvas>
+          </div>
+          <div v-else class="h-[200px] flex flex-col items-center justify-center text-text-secondary">
+            <i class="fas fa-chart-pie text-3xl mb-2 opacity-50"></i>
+            <span class="text-sm">No hay datos suficientes</span>
+          </div>
         </div>
       </div>
       
-      <div class="currency-totals">
-        <h4>Totales por Moneda</h4>
-        <div v-if="statistics.stats?.totalByCurrency && hasCurrencyData" class="currency-list">
-          <div v-for="(value, currency) in statistics.stats.totalByCurrency" :key="currency" class="currency-item">
-            <div class="currency-name">{{ currency }}</div>
-            <div class="currency-value">{{ new Intl.NumberFormat('es-ES', { style: 'currency', currency: String(currency), minimumFractionDigits: 2 }).format(Number(value)) }}</div>
-          </div>
+      <div class="bg-surface border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
+        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+          <h4 class="text-base font-medium text-text-primary m-0">Totales por Moneda</h4>
         </div>
-        <div v-else class="currency-placeholder">
-          <i class="fas fa-money-bill-wave"></i>
-          <span>No hay datos suficientes</span>
+        <div class="p-5">
+          <div v-if="statistics.stats?.totalByCurrency && hasCurrencyData" class="flex flex-col gap-3">
+            <div v-for="(value, currency) in statistics.stats.totalByCurrency" :key="currency" class="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
+              <div class="font-medium text-text-primary">{{ currency }}</div>
+              <div class="font-semibold text-primary">{{ new Intl.NumberFormat('es-ES', { style: 'currency', currency: String(currency), minimumFractionDigits: 2 }).format(Number(value)) }}</div>
+            </div>
+          </div>
+          <div v-else class="h-[200px] flex flex-col items-center justify-center text-text-secondary">
+            <i class="fas fa-money-bill-wave text-3xl mb-2 opacity-50"></i>
+            <span class="text-sm">No hay datos suficientes</span>
+          </div>
         </div>
       </div>
     </div>
     
-    <div v-if="statistics.recentContracts && statistics.recentContracts.length > 0" class="recent-contracts">
-      <h4>Contratos Recientes</h4>
-      <div class="recent-list">
-        <div v-for="contract in statistics.recentContracts" :key="contract.id" class="recent-item">
-          <div class="recent-title">{{ contract.title }}</div>
-          <div class="recent-details">
-            <span class="recent-number">{{ contract.contractNumber }}</span>
-            <span :class="['recent-status', `status-${contract.status}`]">
-              {{ getStatusLabel(contract.status) }}
-            </span>
-          </div>
-          <div class="recent-date">
-            Actualizado: {{ formatDate(contract.updatedAt) }}
+    <div v-if="statistics.recentContracts && statistics.recentContracts.length > 0" class="bg-surface border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden">
+      <div class="p-4 border-b border-gray-200 dark:border-gray-700">
+        <h4 class="text-base font-medium text-text-primary m-0">Contratos Recientes</h4>
+      </div>
+      <div class="p-5">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-for="contract in statistics.recentContracts" :key="contract.id" class="bg-gray-50 dark:bg-gray-800 rounded p-3 border-l-4" :class="getBorderColorClass(contract.status)">
+            <div class="font-medium text-text-primary mb-2">{{ contract.title }}</div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs text-text-secondary">{{ contract.contractNumber }}</span>
+              <span class="text-xs px-2 py-0.5 rounded-full font-medium" :class="getStatusBadgeClass(contract.status)">
+                {{ getStatusLabel(contract.status) }}
+              </span>
+            </div>
+            <div class="text-xs text-text-secondary">
+              Actualizado: {{ formatDate(contract.updatedAt) }}
+            </div>
           </div>
         </div>
       </div>
@@ -198,6 +214,28 @@ function getStatusLabel(status: string) {
   return statusMap[status] || status;
 }
 
+function getStatusBadgeClass(status: string) {
+  const classMap: Record<string, string> = {
+    'draft': 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300',
+    'active': 'bg-success/10 text-success',
+    'expired': 'bg-error/10 text-error',
+    'terminated': 'bg-warning/10 text-warning',
+    'renewed': 'bg-info/10 text-info'
+  };
+  return classMap[status] || 'bg-gray-100 text-gray-600';
+}
+
+function getBorderColorClass(status: string) {
+  const classMap: Record<string, string> = {
+    'draft': 'border-gray-400',
+    'active': 'border-success',
+    'expired': 'border-error',
+    'terminated': 'border-warning',
+    'renewed': 'border-info'
+  };
+  return classMap[status] || 'border-gray-400';
+}
+
 function formatCurrency(amount: number, currency: string) {
   return new Intl.NumberFormat('es-ES', {
     style: 'currency',
@@ -216,269 +254,6 @@ function formatDate(dateString: string) {
 }
 </script>
 
-<style lang="scss" scoped>
-.contract-stats {
-  background-color: var(--bg-secondary);
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-
-.stats-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  
-  h3 {
-    margin: 0;
-    font-size: 1.25rem;
-    color: var(--text-primary);
-  }
-  
-  .refresh-button {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    background-color: var(--bg-primary);
-    cursor: pointer;
-    transition: all 0.2s;
-    
-    &:hover {
-      background-color: var(--bg-hover);
-    }
-    
-    &.is-loading i {
-      animation: spin 1s linear infinite;
-    }
-    
-    i {
-      color: var(--primary-color);
-      font-size: 0.875rem;
-    }
-  }
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.stat-card {
-  background-color: var(--bg-primary);
-  border-radius: 6px;
-  padding: 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  
-  .stat-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    
-    &.active {
-      background-color: var(--primary-light);
-      color: var(--primary-color);
-    }
-    
-    &.warning {
-      background-color: var(--warning-light);
-      color: var(--warning-color);
-    }
-    
-    &.danger {
-      background-color: var(--danger-light);
-      color: var(--danger-color);
-    }
-    
-    i {
-      font-size: 1rem;
-    }
-  }
-  
-  .stat-info {
-    display: flex;
-    flex-direction: column;
-    
-    .stat-value {
-      font-size: 1.5rem;
-      font-weight: 600;
-      line-height: 1.2;
-      color: var(--text-primary);
-    }
-    
-    .stat-label {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-    }
-  }
-}
-
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.status-distribution, .currency-totals {
-  background-color: var(--bg-primary);
-  border-radius: 6px;
-  padding: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  
-  h4 {
-    margin: 0 0 1rem;
-    font-size: 1rem;
-    color: var(--text-primary);
-  }
-}
-
-.status-chart {
-  height: 200px;
-  position: relative;
-}
-
-.chart-placeholder, .currency-placeholder {
-  height: 200px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-secondary);
-  
-  i {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    opacity: 0.5;
-  }
-  
-  span {
-    font-size: 0.875rem;
-  }
-}
-
-.currency-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  
-  .currency-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border-color);
-    
-    &:last-child {
-      border-bottom: none;
-    }
-    
-    .currency-name {
-      font-weight: 500;
-      color: var(--text-primary);
-    }
-    
-    .currency-value {
-      font-weight: 600;
-      color: var(--primary-color);
-    }
-  }
-}
-
-.recent-contracts {
-  background-color: var(--bg-primary);
-  border-radius: 6px;
-  padding: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  
-  h4 {
-    margin: 0 0 1rem;
-    font-size: 1rem;
-    color: var(--text-primary);
-  }
-}
-
-.recent-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1rem;
-}
-
-.recent-item {
-  background-color: var(--bg-secondary);
-  border-radius: 4px;
-  padding: 0.75rem;
-  border-left: 3px solid var(--primary-color);
-  
-  .recent-title {
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-    color: var(--text-primary);
-  }
-  
-  .recent-details {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.25rem;
-    
-    .recent-number {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-    }
-    
-    .recent-status {
-      font-size: 0.75rem;
-      padding: 0.125rem 0.375rem;
-      border-radius: 10px;
-      font-weight: 500;
-      
-      &.status-draft {
-        background-color: var(--bg-muted);
-        color: var(--text-secondary);
-      }
-      
-      &.status-active {
-        background-color: var(--success-light);
-        color: var(--success-color);
-      }
-      
-      &.status-expired {
-        background-color: var(--danger-light);
-        color: var(--danger-color);
-      }
-      
-      &.status-terminated {
-        background-color: var(--warning-light);
-        color: var(--warning-color);
-      }
-      
-      &.status-renewed {
-        background-color: var(--info-light);
-        color: var(--info-color);
-      }
-    }
-  }
-  
-  .recent-date {
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-  }
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+<style scoped>
+/* Este componente utiliza clases de Tailwind directamente en el template */
 </style> 

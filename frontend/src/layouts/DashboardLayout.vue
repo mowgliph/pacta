@@ -81,7 +81,7 @@
               :class="{ 'w-[calc(100%-70px)]': sidebarCollapsed }">
         <div class="flex items-center">
           <button 
-            class="h-10 w-10 flex items-center justify-center bg-transparent border-none rounded-full text-text-secondary cursor-pointer transition-all duration-200 hover:bg-secondary/10 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/20" 
+            class="icon-button icon-button-secondary" 
             @click="toggleSidebar" 
             aria-label="Toggle sidebar"
           >
@@ -92,7 +92,7 @@
         <div class="flex items-center gap-4">
           <div class="relative">
             <button 
-              class="h-10 w-10 flex items-center justify-center bg-transparent border-none rounded-full text-text-secondary cursor-pointer transition-all duration-200 hover:bg-secondary/10 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/20" 
+              class="icon-button icon-button-secondary" 
               aria-label="Notificaciones" 
               @click="toggleNotifications"
             >
@@ -159,7 +159,7 @@
                   <span>Configuración</span>
                 </router-link>
                 
-                <button class="flex items-center gap-4 py-2 px-4 text-error border-none bg-transparent cursor-pointer w-full text-left text-sm font-normal transition-all duration-200 rounded hover:bg-secondary/5"
+                <button class="link-danger w-full flex items-center gap-4 py-2 px-4 border-none bg-transparent cursor-pointer text-left text-sm font-normal"
                         @click.stop="logout">
                   <i class="fas fa-sign-out-alt w-4 text-sm"></i>
                   <span>Cerrar sesión</span>

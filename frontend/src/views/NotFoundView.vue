@@ -6,8 +6,7 @@
       <p class="mb-8 text-text-secondary">Lo sentimos, la página que buscas no existe.</p>
       <button 
         @click="goBack" 
-        class="min-w-[150px] py-2 px-6 rounded bg-primary text-white shadow-sm 
-               transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+        class="btn btn-primary min-w-[150px]"
       >
         Volver
       </button>

@@ -1,10 +1,9 @@
 <template>
   <button
     :class="[
-      'inline-flex items-center justify-center relative overflow-hidden transition-all duration-200 font-medium',
-      'focus:outline-none focus:ring-2 focus:ring-offset-2',
-      sizeClasses,
+      'btn',
       variantClasses,
+      sizeClasses,
       { 'w-full': block },
       { 'aspect-square p-0': iconOnly },
       { 'opacity-65 cursor-not-allowed pointer-events-none': disabled || loading },
@@ -33,7 +32,7 @@ const props = defineProps({
   variant: {
     type: String,
     default: 'primary',
-    validator: (value: string) => ['primary', 'secondary', 'tertiary', 'danger', 'text'].includes(value)
+    validator: (value: string) => ['primary', 'secondary', 'tertiary', 'danger', 'outline', 'text'].includes(value)
   },
   size: {
     type: String,
@@ -71,46 +70,31 @@ defineEmits(['click']);
 const sizeClasses = computed(() => {
   switch (props.size) {
     case 'sm':
-      return props.iconOnly ? 'w-7' : 'py-1 px-2 text-xs';
+      return props.iconOnly ? 'w-7 h-7' : 'text-xs py-1 px-2';
     case 'lg':
-      return props.iconOnly ? 'w-11' : 'py-3 px-4 text-base';
+      return props.iconOnly ? 'w-11 h-11' : 'text-base py-3 px-4';
     case 'md':
     default:
-      return props.iconOnly ? 'w-9' : 'py-2 px-3 text-sm';
+      return props.iconOnly ? 'w-9 h-9' : 'text-sm';
   }
 });
 
 const variantClasses = computed(() => {
   switch (props.variant) {
     case 'primary':
-      return 'bg-primary text-white shadow-sm hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm focus:ring-primary';
+      return 'btn-primary';
     case 'secondary':
-      return 'bg-surface text-text-primary border border-border rounded hover:bg-gray-100 hover:border-primary focus:ring-primary';
+      return 'btn-secondary';
     case 'tertiary':
       return 'bg-primary/10 text-primary hover:bg-primary/20 focus:ring-primary';
     case 'danger':
-      return 'bg-error text-white shadow-sm hover:bg-red-700 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm focus:ring-error';
+      return 'btn-danger';
+    case 'outline':
+      return 'btn-outline';
     case 'text':
       return 'bg-transparent text-primary hover:bg-primary/5 hover:text-primary-dark p-1 focus:ring-primary';
     default:
-      return '';
+      return 'btn-primary';
   }
 });
 </script>
-
-<style>
-@keyframes loader {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.animate-loader1 {
-  animation: loader 1s infinite 0s;
-}
-.animate-loader2 {
-  animation: loader 1s infinite 0.2s;
-}
-.animate-loader3 {
-  animation: loader 1s infinite 0.4s;
-}
-</style>

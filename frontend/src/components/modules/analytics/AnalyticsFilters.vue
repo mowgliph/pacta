@@ -1,51 +1,54 @@
 <template>
   <div class="mb-6">
     <div class="bg-surface dark:bg-gray-800 rounded-lg p-5 shadow-sm">
-      <div class="flex flex-col gap-4 mb-4">
+      <div class="space-y-4 mb-4">
         <div class="flex flex-wrap gap-2">
           <button 
             v-for="(preset, i) in datePresets" 
             :key="i" 
-            class="bg-gray-100 dark:bg-gray-700 border-none px-3 py-1.5 text-sm rounded-md cursor-pointer transition-colors"
-            :class="{ 'bg-primary text-white': selectedDatePreset === preset.value }"
+            class="bg-gray-100 dark:bg-gray-700 px-3 py-1.5 text-sm rounded-md transition-colors"
+            :class="selectedDatePreset === preset.value ? 'bg-primary text-white' : 'hover:bg-gray-200 dark:hover:bg-gray-600'"
             @click="selectDatePreset(preset.value)"
           >
             {{ preset.label }}
           </button>
         </div>
         
-        <div class="flex flex-wrap gap-4" v-if="showDatePicker">
-          <div class="flex flex-col flex-1 min-w-[150px]">
-            <label class="text-xs mb-1 text-text-secondary dark:text-gray-400">Desde</label>
+        <div v-if="showDatePicker" class="flex flex-wrap gap-4">
+          <div class="flex-1 min-w-[150px]">
+            <label class="text-xs mb-1 text-text-secondary dark:text-gray-400 block">Desde</label>
             <input 
               type="date" 
               v-model="startDate" 
               :max="formatDateForInput(endDate)"
               @change="onCustomDateChange"
-              class="p-2 border border-border dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-white"
+              class="w-full p-2 border border-border dark:border-gray-600 rounded-md text-sm focus-ring dark:bg-gray-700 dark:text-white"
             />
           </div>
-          <div class="flex flex-col flex-1 min-w-[150px]">
-            <label class="text-xs mb-1 text-text-secondary dark:text-gray-400">Hasta</label>
+          <div class="flex-1 min-w-[150px]">
+            <label class="text-xs mb-1 text-text-secondary dark:text-gray-400 block">Hasta</label>
             <input 
               type="date" 
               v-model="endDate" 
               :min="formatDateForInput(startDate)"
               :max="formatDateForInput(new Date())"
               @change="onCustomDateChange"
-              class="p-2 border border-border dark:border-gray-600 rounded-md text-sm dark:bg-gray-700 dark:text-white"
+              class="w-full p-2 border border-border dark:border-gray-600 rounded-md text-sm focus-ring dark:bg-gray-700 dark:text-white"
             />
           </div>
         </div>
       </div>
       
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 pt-4 border-t border-border dark:border-gray-700" v-if="showAdvancedFilters">
-        <div class="flex flex-col">
-          <label class="text-xs mb-1 text-text-secondary dark:text-gray-400">Categoría</label>
+      <div 
+        v-if="showAdvancedFilters" 
+        class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 pt-4 border-t border-border dark:border-gray-700"
+      >
+        <div>
+          <label class="text-xs mb-1 text-text-secondary dark:text-gray-400 block">Categoría</label>
           <select 
             v-model="selectedCategory" 
             @change="applyFilters"
-            class="p-2 border border-border dark:border-gray-600 rounded-md text-sm bg-surface dark:bg-gray-700 dark:text-white"
+            class="w-full p-2 border border-border dark:border-gray-600 rounded-md text-sm focus-ring bg-surface dark:bg-gray-700 dark:text-white"
           >
             <option value="">Todas</option>
             <option v-for="(category, i) in categories" :key="i" :value="category.value">
@@ -54,12 +57,12 @@
           </select>
         </div>
         
-        <div class="flex flex-col">
-          <label class="text-xs mb-1 text-text-secondary dark:text-gray-400">Estado</label>
+        <div>
+          <label class="text-xs mb-1 text-text-secondary dark:text-gray-400 block">Estado</label>
           <select 
             v-model="selectedStatus" 
             @change="applyFilters"
-            class="p-2 border border-border dark:border-gray-600 rounded-md text-sm bg-surface dark:bg-gray-700 dark:text-white"
+            class="w-full p-2 border border-border dark:border-gray-600 rounded-md text-sm focus-ring bg-surface dark:bg-gray-700 dark:text-white"
           >
             <option value="">Todos</option>
             <option v-for="(status, i) in statuses" :key="i" :value="status.value">
@@ -68,12 +71,12 @@
           </select>
         </div>
         
-        <div class="flex flex-col">
-          <label class="text-xs mb-1 text-text-secondary dark:text-gray-400">Nivel de riesgo</label>
+        <div>
+          <label class="text-xs mb-1 text-text-secondary dark:text-gray-400 block">Nivel de riesgo</label>
           <select 
             v-model="selectedRiskLevel" 
             @change="applyFilters"
-            class="p-2 border border-border dark:border-gray-600 rounded-md text-sm bg-surface dark:bg-gray-700 dark:text-white"
+            class="w-full p-2 border border-border dark:border-gray-600 rounded-md text-sm focus-ring bg-surface dark:bg-gray-700 dark:text-white"
           >
             <option value="">Todos</option>
             <option v-for="(risk, i) in riskLevels" :key="i" :value="risk.value">
@@ -85,7 +88,7 @@
       
       <div class="flex justify-end flex-wrap gap-2 mt-4">
         <button 
-          class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-gray-100 dark:bg-gray-700 cursor-pointer"
+          class="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-gray-100 dark:bg-gray-700 transition-colors hover:bg-gray-200 dark:hover:bg-gray-600"
           @click="toggleAdvancedFilters"
         >
           <i :class="showAdvancedFilters ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
@@ -93,7 +96,7 @@
         </button>
         
         <button 
-          class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-gray-100 dark:bg-gray-700 cursor-pointer"
+          class="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-gray-100 dark:bg-gray-700 transition-colors hover:bg-gray-200 dark:hover:bg-gray-600"
           @click="toggleDatePicker"
         >
           <i :class="showDatePicker ? 'fas fa-calendar-minus' : 'fas fa-calendar-alt'"></i>
@@ -101,16 +104,16 @@
         </button>
         
         <button 
-          class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-red-50 dark:bg-red-900/30 text-error dark:text-red-400 cursor-pointer"
-          @click="clearFilters"
           v-if="hasActiveFilters"
+          class="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-red-50 dark:bg-red-900/30 text-error dark:text-red-400 transition-colors hover:bg-red-100 dark:hover:bg-red-900/50"
+          @click="clearFilters"
         >
           <i class="fas fa-times"></i>
           Limpiar filtros
         </button>
         
         <button 
-          class="flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-primary text-white cursor-pointer"
+          class="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm bg-primary text-white transition-colors hover:bg-primary-dark"
           @click="applyFilters"
         >
           <i class="fas fa-filter"></i>
@@ -281,6 +284,6 @@ onMounted(() => {
 });
 </script>
 
-<style lang="scss" scoped>
-@use './AnalyticsFilters.scss';
+<style scoped>
+/* Este componente utiliza clases de Tailwind directamente en el template */
 </style> 

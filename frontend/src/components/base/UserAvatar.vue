@@ -1,19 +1,17 @@
 <template>
   <div 
-    class="flex items-center justify-center rounded-full font-medium uppercase transition-all duration-200 
-           shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0
-           relative overflow-hidden hover:before:opacity-100"
+    class="flex items-center justify-center rounded-full font-medium uppercase interactive-hover interactive-press
+           relative overflow-hidden focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-1"
     :style="{ 
       backgroundColor: avatarColor,
       color: textColor,
       width: size + 'px',
       height: size + 'px',
-      fontSize: fontSize + 'px',
-      '--before-gradient': 'linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))'
+      fontSize: fontSize + 'px'
     }"
   >
     <span class="relative z-10">{{ initials }}</span>
-    <div class="absolute inset-0 opacity-0 transition-opacity duration-200 bg-gradient-to-tr from-white/10 to-transparent"></div>
+    <div class="absolute inset-0 opacity-0 transition-opacity duration-200 bg-gradient-to-tr from-white/10 to-transparent group-hover:opacity-100"></div>
   </div>
 </template>
 
@@ -47,6 +45,8 @@ const fontSize = computed(() => Math.floor(size.value * 0.4))
 
 // Calcular las iniciales del nombre
 const initials = computed(() => {
+  if (!props.name) return '??';
+  
   return props.name
     .split(' ')
     .map(word => word[0])
@@ -57,6 +57,8 @@ const initials = computed(() => {
 
 // Seleccionar un color basado en el nombre
 const avatarColor = computed(() => {
+  if (!props.name) return colors.primary;
+  
   const index = props.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % avatarColors.length
   return avatarColors[index]
 })

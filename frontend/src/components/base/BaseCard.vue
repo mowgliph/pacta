@@ -1,13 +1,22 @@
 <template>
-  <div class="bg-surface rounded shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
-    <div v-if="$slots.header" class="p-3 border-b border-border bg-gray-50 dark:bg-surface-hover">
+  <div class="card card-interactive">
+    <div v-if="$slots.header" class="card-header dark:border-gray-700 dark:bg-gray-900">
       <slot name="header"></slot>
     </div>
-    <div class="p-3">
+    <div class="p-5">
       <slot></slot>
     </div>
-    <div v-if="$slots.footer" class="p-3 border-t border-border bg-gray-50 dark:bg-surface-hover">
+    <div v-if="$slots.footer" class="card-footer dark:border-gray-700 dark:bg-gray-900">
       <slot name="footer"></slot>
     </div>
   </div>
 </template>
+
+<script setup lang="ts">
+defineProps({
+  interactive: {
+    type: Boolean,
+    default: true
+  }
+});
+</script>

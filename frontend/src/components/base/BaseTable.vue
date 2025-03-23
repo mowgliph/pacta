@@ -1,20 +1,16 @@
 <template>
-  <div class="w-full bg-surface rounded overflow-hidden shadow-sm">
-    <table v-if="items.length" class="w-full">
+  <div class="table-container">
+    <table v-if="items.length" class="table">
       <thead>
         <tr>
           <th 
             v-for="column in columns" 
             :key="column.key"
-            class="p-2 text-left text-sm font-semibold text-text-secondary border-b border-border bg-gray-50 dark:bg-surface-hover"
           >
             {{ column.label }}
           </th>
-          <th 
-            v-if="$slots.actions"
-            class="p-2 text-left text-sm font-semibold text-text-secondary border-b border-border bg-gray-50 dark:bg-surface-hover"
-          >
-            Actions
+          <th v-if="$slots.actions">
+            {{ actionsLabel }}
           </th>
         </tr>
       </thead>
@@ -22,31 +18,32 @@
         <tr 
           v-for="item in items" 
           :key="item.id"
-          class="transition-colors hover:bg-gray-50 dark:hover:bg-surface-hover"
         >
           <td 
             v-for="column in columns" 
             :key="column.key"
-            class="p-2 border-b border-border text-text-primary"
           >
             <slot :name="column.key" :item="item">
               {{ item[column.key] }}
             </slot>
           </td>
-          <td 
-            v-if="$slots.actions"
-            class="p-2 border-b border-border"
-          >
+          <td v-if="$slots.actions">
             <slot name="actions" :item="item"></slot>
           </td>
         </tr>
       </tbody>
     </table>
-    <div v-else-if="loading" class="p-4 text-center text-text-secondary">
-      <slot name="loading">Loading...</slot>
+    <div v-else-if="loading" class="p-6 text-center text-text-secondary dark:text-gray-400">
+      <div class="flex items-center justify-center flex-col gap-2">
+        <div class="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+        <slot name="loading">Cargando...</slot>
+      </div>
     </div>
-    <div v-else class="p-4 text-center text-text-secondary">
-      <slot name="empty">No data available</slot>
+    <div v-else class="p-6 text-center text-text-secondary dark:text-gray-400">
+      <div class="flex items-center justify-center flex-col gap-2">
+        <i v-if="emptyIcon" :class="['text-2xl', emptyIcon]"></i>
+        <slot name="empty">No hay datos disponibles</slot>
+      </div>
     </div>
   </div>
 </template>
@@ -57,9 +54,31 @@ interface Column {
   label: string;
 }
 
-defineProps<{
-  columns: Column[];
-  items: any[];
-  loading?: boolean;
-}>();
+interface TableItem {
+  id: string | number;
+  [key: string]: any;
+}
+
+const props = defineProps({
+  columns: {
+    type: Array as () => Column[],
+    required: true
+  },
+  items: {
+    type: Array as () => TableItem[],
+    required: true
+  },
+  loading: {
+    type: Boolean,
+    default: false
+  },
+  actionsLabel: {
+    type: String,
+    default: 'Acciones'
+  },
+  emptyIcon: {
+    type: String,
+    default: 'fas fa-inbox'
+  }
+});
 </script>
