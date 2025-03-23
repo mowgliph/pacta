@@ -1,35 +1,14 @@
 {
-  "extends": [
-    "@vue/tsconfig/tsconfig.dom.json",
-    "./tsconfig.app.json"
-  ],
+  "extends": "@vue/tsconfig/tsconfig.dom.json",
+  "include": ["env.d.ts", "src/**/*", "src/**/*.vue", "src/**/*.ts", "src/**/*.d.ts"],
+  "exclude": ["src/**/__tests__/*"],
   "compilerOptions": {
+    "composite": true,
     "baseUrl": ".",
-    /* Paths eliminado para usar rutas relativas en lugar del alias @/
     "paths": {
       "@/*": ["./src/*"]
     },
-    */
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "jsx": "preserve",
-    "jsxImportSource": "vue",
-    "strict": true,
-    "target": "ESNext",
-    "useDefineForClassFields": true,
-    "skipLibCheck": true
-  },
-  "include": [
-    "env.d.ts",
-    "src/**/*",
-    "src/**/*.vue",
-    "src/**/*.ts",
-    "src/**/*.d.ts",
-    "src/types/**/*.ts"
-  ],
-  "references": [
-    {
-      "path": "./tsconfig.node.json"
-    }
-  ]
+    "types": ["node"],
+    "moduleResolution": "node"
+  }
 }

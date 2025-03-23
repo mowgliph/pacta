@@ -1,112 +1,156 @@
 import { defineStore } from 'pinia';
-import { notificationService, type Notification } from '../services/notification.service';
-import { useToastNotificationStore } from './toastNotification';
-
-interface NotificationState {
-  notifications: Notification[];
-  loading: boolean;
-  unreadCount: number;
-}
+import type { Notification, NotificationState } from '@/types/notification';
 
 export const useNotificationStore = defineStore('notification', {
   state: (): NotificationState => ({
     notifications: [],
-    loading: false,
-    unreadCount: 0
+    unreadCount: 0,
+    categoryUnreadCount: {}
   }),
 
   getters: {
-    sortedNotifications: (state) => [...state.notifications].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    ),
-    hasUnread: (state) => state.unreadCount > 0
+    sortedNotifications: (state) => {
+      return [...state.notifications].sort((a, b) => {
+        // Primero las notificaciones persistentes
+        if (a.persistent && !b.persistent) return -1;
+        if (!a.persistent && b.persistent) return 1;
+        
+        // Luego por timestamp (más recientes primero)
+        const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+        const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+        return bTime - aTime;
+      });
+    },
+
+    notificationsByCategory: (state) => {
+      return state.notifications.reduce((acc, notification) => {
+        const category = notification.category || 'uncategorized';
+        if (!acc[category]) {
+          acc[category] = [];
+        }
+        acc[category].push(notification);
+        return acc;
+      }, {} as Record<string, Notification[]>);
+    },
+
+    unreadCountByCategory: (state) => {
+      return state.categoryUnreadCount;
+    }
   },
 
   actions: {
-    async fetchNotifications() {
-      this.loading = true;
-      try {
-        this.notifications = await notificationService.getNotifications();
-        this.updateUnreadCount();
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-        const toastStore = useToastNotificationStore();
-        toastStore.error('Error al cargar notificaciones');
-      } finally {
-        this.loading = false;
-      }
-    },
+    add(notification: Notification) {
+      // Agregar timestamp si no existe
+      const newNotification = {
+        ...notification,
+        timestamp: notification.timestamp || new Date().toISOString()
+      };
 
-    async fetchUnreadCount() {
-      try {
-        this.unreadCount = await notificationService.getUnreadCount();
-      } catch (error) {
-        console.error('Error fetching unread count:', error);
-      }
-    },
-
-    async markAsRead(id: number) {
-      try {
-        await notificationService.markAsRead(id);
-        
-        const notification = this.notifications.find(n => n.id === id);
-        if (notification) {
-          notification.read = true;
-          this.updateUnreadCount();
-        }
-      } catch (error) {
-        console.error('Error marking notification as read:', error);
-        const toastStore = useToastNotificationStore();
-        toastStore.error('Error al marcar notificación como leída');
-      }
-    },
-
-    async markAllAsRead() {
-      try {
-        await notificationService.markAllAsRead();
-        
-        this.notifications = this.notifications.map(notification => ({
-          ...notification,
-          read: true
-        }));
-        
-        this.unreadCount = 0;
-        
-        const toastStore = useToastNotificationStore();
-        toastStore.success('Todas las notificaciones marcadas como leídas');
-      } catch (error) {
-        console.error('Error marking all notifications as read:', error);
-        const toastStore = useToastNotificationStore();
-        toastStore.error('Error al marcar todas las notificaciones como leídas');
-      }
-    },
-
-    async deleteNotification(id: number) {
-      try {
-        await notificationService.deleteNotification(id);
-        
-        this.notifications = this.notifications.filter(n => n.id !== id);
-        this.updateUnreadCount();
-        
-        const toastStore = useToastNotificationStore();
-        toastStore.success('Notificación eliminada');
-      } catch (error) {
-        console.error('Error deleting notification:', error);
-        const toastStore = useToastNotificationStore();
-        toastStore.error('Error al eliminar notificación');
-      }
-    },
-
-    // Actualiza el contador de no leídas basado en las notificaciones actuales
-    updateUnreadCount() {
-      this.unreadCount = this.notifications.filter(n => !n.read).length;
-    },
-
-    // Agrega una nueva notificación (para uso en tiempo real si se implementa)
-    addNotification(notification: Notification) {
-      this.notifications.unshift(notification);
-      if (!notification.read) {
+      // Si ya existe una notificación con el mismo ID, actualizarla
+      const existingIndex = this.notifications.findIndex(n => n.id === notification.id);
+      if (existingIndex !== -1) {
+        this.notifications[existingIndex] = newNotification;
+      } else {
+        this.notifications.push(newNotification);
         this.unreadCount++;
+        
+        // Actualizar contador por categoría
+        if (notification.category) {
+          this.categoryUnreadCount[notification.category] = 
+            (this.categoryUnreadCount[notification.category] || 0) + 1;
+        }
+      }
+
+      // Configurar timeout para notificaciones no persistentes
+      if (!notification.persistent && notification.timeout) {
+        setTimeout(() => {
+          this.remove(notification.id);
+        }, notification.timeout);
+      }
+
+      // Agrupar notificaciones similares
+      if (notification.group) {
+        const similarNotifications = this.notifications.filter(
+          n => n.group === notification.group && n.id !== notification.id
+        );
+        if (similarNotifications.length > 2) {
+          // Mantener solo las 2 más recientes del mismo grupo
+          similarNotifications
+            .slice(2)
+            .forEach(n => this.remove(n.id));
+        }
+      }
+    },
+
+    remove(id: string) {
+      const index = this.notifications.findIndex(n => n.id === id);
+      if (index !== -1) {
+        const notification = this.notifications[index];
+        if (!notification.persistent) {
+          this.unreadCount = Math.max(0, this.unreadCount - 1);
+          
+          // Actualizar contador por categoría
+          if (notification.category) {
+            this.categoryUnreadCount[notification.category] = Math.max(
+              0,
+              (this.categoryUnreadCount[notification.category] || 0) - 1
+            );
+          }
+        }
+        this.notifications.splice(index, 1);
+      }
+    },
+
+    clearCategory(category: string) {
+      const notificationsToRemove = this.notifications.filter(n => n.category === category);
+      notificationsToRemove.forEach(n => this.remove(n.id));
+      this.categoryUnreadCount[category] = 0;
+    },
+
+    clearGroup(group: string) {
+      const notificationsToRemove = this.notifications.filter(n => n.group === group);
+      notificationsToRemove.forEach(n => this.remove(n.id));
+    },
+
+    clearAll() {
+      this.notifications = [];
+      this.unreadCount = 0;
+      this.categoryUnreadCount = {};
+    },
+
+    markAsRead(id: string) {
+      const notification = this.notifications.find(n => n.id === id);
+      if (notification && !notification.persistent) {
+        this.unreadCount = Math.max(0, this.unreadCount - 1);
+        
+        // Actualizar contador por categoría
+        if (notification.category) {
+          this.categoryUnreadCount[notification.category] = Math.max(
+            0,
+            (this.categoryUnreadCount[notification.category] || 0) - 1
+          );
+        }
+      }
+    },
+
+    markAllAsRead(category?: string) {
+      if (category) {
+        const notifications = this.notifications.filter(
+          n => n.category === category && !n.persistent
+        );
+        notifications.forEach(n => this.markAsRead(n.id));
+        this.categoryUnreadCount[category] = 0;
+      } else {
+        const nonPersistentCount = this.notifications.filter(n => !n.persistent).length;
+        this.unreadCount = Math.max(0, this.unreadCount - nonPersistentCount);
+        this.categoryUnreadCount = {};
+      }
+    },
+
+    updateUnreadCount(count: number, categoryCount?: Record<string, number>) {
+      this.unreadCount = count;
+      if (categoryCount) {
+        this.categoryUnreadCount = { ...categoryCount };
       }
     }
   }

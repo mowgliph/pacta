@@ -1,31 +1,24 @@
-import express from 'express';
-import {
-  getUserNotifications,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
-  deleteNotification,
-  getUnreadCount
-} from '../controllers/notificationController.js';
-import { authMiddleware } from '../middleware/authMiddleware.js';
+import { Router } from 'express';
+import NotificationController from '../controllers/NotificationController.js';
+import { authenticate } from '../middleware/auth.js';
 
-const router = express.Router();
+const router = Router();
 
-// Todas las rutas de notificaciones requieren autenticación
-router.use(authMiddleware);
+// Todas las rutas requieren autenticación
+router.use(authenticate);
 
-// Obtener todas las notificaciones del usuario actual
-router.get('/', getUserNotifications);
+// Rutas para obtener notificaciones
+router.get('/', NotificationController.getNotifications);
+router.get('/unread', NotificationController.getUnreadCount);
 
-// Obtener conteo de notificaciones no leídas
-router.get('/unread-count', getUnreadCount);
+// Rutas para marcar notificaciones
+router.put('/:id/read', NotificationController.markAsRead);
+router.put('/read-all', NotificationController.markAllAsRead);
 
-// Marcar una notificación como leída
-router.post('/:id/read', markNotificationAsRead);
+// Ruta para eliminar notificación
+router.delete('/:id', NotificationController.deleteNotification);
 
-// Marcar todas las notificaciones como leídas
-router.post('/mark-all-read', markAllNotificationsAsRead);
-
-// Eliminar una notificación
-router.delete('/:id', deleteNotification);
+// Ruta administrativa para limpieza
+router.post('/cleanup', NotificationController.cleanupOldNotifications);
 
 export default router; 
