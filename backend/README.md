@@ -53,23 +53,6 @@ npm run dev
 - `npm run lint`: Ejecuta el linter
 - `npm run format`: Formatea el código con Prettier
 
-## Estructura del Proyecto
-
-```
-backend/
-├── config/             # Configuraciones
-├── controllers/        # Controladores
-├── database/          # Configuración de base de datos
-├── middleware/        # Middleware
-├── models/           # Modelos Sequelize
-├── routes/           # Rutas de la API
-├── services/         # Servicios y lógica de negocio
-├── utils/            # Utilidades
-├── .env.example      # Ejemplo de variables de entorno
-├── .gitignore        # Archivos ignorados por git
-├── package.json      # Dependencias y scripts
-└── server.js         # Punto de entrada
-```
 
 ## API Endpoints
 
