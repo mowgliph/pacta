@@ -7,22 +7,50 @@ import vue from '@vitejs/plugin-vue'
 const resolvePath = (p: string) => path.resolve(__dirname, p)
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue({
+      template: {
+        compilerOptions: {
+          isCustomElement: (tag) => tag.startsWith('i-')
+        }
+      }
+    })
+  ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@components': fileURLToPath(new URL('./src/components', import.meta.url)),
+      '@styles': fileURLToPath(new URL('./src/styles', import.meta.url)),
+      '@assets': fileURLToPath(new URL('./src/assets', import.meta.url))
     }
   },
   css: {
-    // Removemos las importaciones globales para evitar conflictos
-    // y usamos en su lugar importaciones locales en cada componente
+    preprocessorOptions: {
+      scss: {
+        charset: false
+      }
+    },
+    devSourcemap: true
   },
   server: {
+    port: 5173,
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
-        // Configuración de proxy para peticiones API
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
+    }
+  },
+  build: {
+    sourcemap: true,
+    cssCodeSplit: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor': ['vue'],
+          'styles': ['./src/styles/tailwind.css']
+        }
       }
     }
   }
