@@ -304,8 +304,12 @@ async function fetchRiskContractsData() {
   tableLoading.value = true;
   
   try {
-    // This would normally come from the API
-    // For now, we'll use mock data
+    // Conectar con el nuevo endpoint para obtener contratos en riesgo
+    const response = await analyticsService.getRiskContracts();
+    riskContractsData.value = response.data;
+  } catch (err) {
+    console.error('Error fetching risk contracts data:', err);
+    // Si hay un error, usar datos de respaldo
     riskContractsData.value = [
       {
         id: 'CNT-001',
@@ -348,8 +352,6 @@ async function fetchRiskContractsData() {
         status: 'active'
       }
     ];
-  } catch (err) {
-    console.error('Error fetching risk contracts data:', err);
   } finally {
     tableLoading.value = false;
   }

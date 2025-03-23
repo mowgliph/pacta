@@ -1,113 +1,159 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import DashboardLayout from '@/layouts/DashboardLayout.vue'
+import AuthLayout from '../layouts/AuthLayout.vue'
 
-// Definición de tipos para las rutas
-type RouteMeta = {
+// Definición de tipos para las rutas con extención adecuada para resolver errores de tipado
+export interface RouteMeta extends Record<string | number | symbol, unknown> {
   requiresAuth: boolean;
   requiresAdmin?: boolean;
   requiresLicense?: boolean;
   title?: string;
-} & Record<string | number | symbol, unknown>
+}
 
+// Lazy loading para optimizar la carga
+const loadView = (view: string) => {
+  return () => import(`@/views/${view}.vue`)
+}
+
+// Definición de rutas con mejores prácticas
+const routes: Array<RouteRecordRaw> = [
+  {
+    path: '/',
+    component: DashboardLayout,
+    meta: {
+      requiresAuth: true,
+      requiresLicense: false
+    } as RouteMeta,
+    children: [
+      {
+        path: '',
+        redirect: '/dashboard'
+      },
+      {
+        path: 'dashboard',
+        name: 'dashboard',
+        component: loadView('dashboard/DashboardView'),
+        meta: {
+          requiresAuth: true,
+          requiresLicense: false,
+          title: 'Panel de Control'
+        } as RouteMeta
+      },
+      {
+        path: 'users',
+        name: 'users',
+        component: loadView('users/UsersView'),
+        meta: {
+          requiresAuth: true,
+          requiresAdmin: true,
+          requiresLicense: true,
+          title: 'Gestión de Usuarios'
+        } as RouteMeta
+      },
+      {
+        path: 'analytics',
+        name: 'analytics',
+        component: loadView('analytics/AnalyticsView'),
+        meta: {
+          requiresAuth: true,
+          requiresLicense: false,
+          title: 'Analíticas'
+        } as RouteMeta
+      },
+      {
+        path: 'contracts',
+        name: 'contracts',
+        component: loadView('contracts/ContractsView'),
+        meta: {
+          requiresAuth: true,
+          requiresLicense: true,
+          title: 'Gestión de Contratos'
+        } as RouteMeta
+      },
+      {
+        path: 'notifications',
+        name: 'notifications',
+        component: loadView('notifications/NotificationsView'),
+        meta: {
+          requiresAuth: true,
+          requiresLicense: false,
+          title: 'Notificaciones'
+        } as RouteMeta
+      },
+      {
+        path: 'settings',
+        name: 'settings',
+        component: loadView('settings/SettingsView'),
+        meta: {
+          requiresAuth: true,
+          requiresAdmin: true,
+          requiresLicense: false,
+          title: 'Configuración'
+        } as RouteMeta
+      }
+    ]
+  },
+  {
+    path: '/auth',
+    component: AuthLayout,
+    meta: { requiresAuth: false },
+    children: [
+      {
+        path: 'login',
+        name: 'login',
+        component: loadView('login/LoginView'),
+        meta: {
+          requiresAuth: false,
+          title: 'Iniciar Sesión'
+        } as RouteMeta
+      },
+      {
+        path: 'reset-password/:token?',
+        name: 'resetPassword',
+        component: loadView('login/ResetPasswordView'),
+        meta: {
+          requiresAuth: false,
+          title: 'Restablecer Contraseña'
+        } as RouteMeta,
+        props: true
+      }
+    ]
+  },
+  {
+    path: '/license-required',
+    name: 'license-required',
+    component: loadView('licenses/LicenseRequiredView'),
+    meta: {
+      requiresAuth: true,
+      requiresLicense: false,
+      title: 'Licencia Requerida'
+    } as RouteMeta
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: loadView('NotFoundView'),
+    meta: {
+      requiresAuth: false,
+      title: 'Página no encontrada'
+    } as RouteMeta
+  }
+]
+
+// Creación del router con configuraciones modernas
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-    {
-      path: '/',
-      component: DashboardLayout,
-      meta: {
-        requiresAuth: true,
-        requiresLicense: false
-      } as RouteMeta,
-      children: [
-        {
-          path: '',
-          redirect: '/dashboard'
-        },
-        {
-          path: 'dashboard',
-          name: 'dashboard',
-          component: () => import('@/views/dashboard/DashboardView.vue'),
-          meta: {
-            requiresAuth: true,
-            requiresLicense: false,
-            title: 'Panel de Control'
-          } as RouteMeta
-        },
-        {
-          path: 'users',
-          name: 'users',
-          component: () => import('@/views/users/UsersView.vue'),
-          meta: {
-            requiresAuth: true,
-            requiresAdmin: true,
-            requiresLicense: true,
-            title: 'Gestión de Usuarios'
-          } as RouteMeta
-        },
-        {
-          path: 'analytics',
-          name: 'analytics',
-          component: () => import('@/views/analytics/AnalyticsView.vue'),
-          meta: {
-            requiresAuth: true,
-            requiresLicense: false,
-            title: 'Analíticas'
-          } as RouteMeta
-        },
-        {
-          path: 'contracts',
-          name: 'contracts',
-          component: () => import('@/views/contracts/ContractsView.vue'),
-          meta: {
-            requiresAuth: true,
-            requiresLicense: true,
-            title: 'Gestión de Contratos'
-          } as RouteMeta
-        },
-        {
-          path: 'settings',
-          name: 'settings',
-          component: () => import('@/views/settings/SettingsView.vue'),
-          meta: {
-            requiresAuth: true,
-            requiresAdmin: true,
-            requiresLicense: false,
-            title: 'Configuración'
-          } as RouteMeta
-        }
-      ]
-    },
-    {
-      path: '/login',
-      name: 'login',
-      component: () => import('@/views/login/LoginView.vue'),
-      meta: {
-        requiresAuth: false,
-        title: 'Iniciar Sesión'
-      } as RouteMeta
-    },
-    {
-      path: '/license-required',
-      name: 'license-required',
-      component: () => import('@/views/licenses/LicenseRequiredView.vue'),
-      meta: {
-        requiresAuth: true,
-        requiresLicense: false,
-        title: 'Licencia Requerida'
-      } as RouteMeta
-    },
-    {
-      path: '/:pathMatch(.*)*',
-      name: 'not-found',
-      component: () => import('@/views/NotFoundView.vue'),
-      meta: {
-        requiresAuth: false,
-        title: 'Página no encontrada'
-      } as RouteMeta
+  routes,
+  // Scroll automático al cambiar de ruta
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition
+    } else {
+      return { top: 0 }
     }
-  ]
+  }
 })
 
 // Guardia de navegación global
@@ -179,7 +225,7 @@ router.beforeEach(async (to, from, next) => {
 })
 
 // Guardia de navegación después de la ruta
-router.afterEach((to, from) => {
+router.afterEach(() => {
   // Limpiar mensajes de error después de la navegación
   const authStore = useAuthStore()
   authStore.clearErrors()

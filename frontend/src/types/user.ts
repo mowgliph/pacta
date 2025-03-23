@@ -12,11 +12,11 @@ export interface User {
   id: number;
   username: string;
   email: string;
-  password?: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'advanced' | 'readonly';
   active: boolean;
+  lastLogin?: string | Date | null;
+  password?: string;
   firstLogin: boolean;
-  lastLoginAt?: string;
   createdAt?: string;
   updatedAt?: string;
   license?: License;

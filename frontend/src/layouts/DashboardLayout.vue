@@ -50,39 +50,20 @@
         
         <div class="header-right">
           <div class="notifications">
-            <button class="header-button" aria-label="Notificaciones" @click="toggleNotifications">
+            <button 
+              class="header-button" 
+              aria-label="Notificaciones" 
+              @click="toggleNotifications"
+            >
               <i class="fas fa-bell"></i>
-              <span class="badge" v-if="recentActivities.length > 0">{{ recentActivities.length }}</span>
+              <span class="badge" v-if="unreadNotifications > 0">{{ unreadNotifications }}</span>
             </button>
             
-            <!-- Notifications dropdown -->
-            <div v-if="showNotifications" class="notifications-dropdown">
-              <div class="notifications-header">
-                <h3>Notificaciones</h3>
-                <button class="btn-text">Marcar todas como leídas</button>
-              </div>
-              
-              <div class="notifications-list" v-if="recentActivities.length > 0">
-                <div 
-                  v-for="activity in recentActivities" 
-                  :key="activity.id" 
-                  class="notification-item"
-                >
-                  <div class="notification-icon" :style="{ backgroundColor: activity.color + '20' }">
-                    <i :class="activity.icon" :style="{ color: activity.color }"></i>
-                  </div>
-                  <div class="notification-content">
-                    <p class="notification-title">{{ activity.title }}</p>
-                    <p class="notification-time">{{ activity.time }}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div v-else class="notifications-empty">
-                <i class="fas fa-bell-slash"></i>
-                <p>No tienes notificaciones</p>
-              </div>
-            </div>
+            <!-- Notification panel -->
+            <NotificationPanel
+              v-if="showNotifications"
+              :onClose="() => showNotifications = false"
+            />
           </div>
           
           <div class="user-menu" @click="toggleUserMenu">
@@ -154,13 +135,16 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
+import { useNotificationStore } from '../stores/notification';
 import UserAvatar from '../components/base/UserAvatar.vue';
+import NotificationPanel from '../components/modules/NotificationPanel.vue';
 import { dashboardService } from '../services/dashboard.service';
 import { useColors } from '../types/colors';
 import type { DashboardResponse } from '../services/dashboard.service';
 
 // Stores
 const authStore = useAuthStore();
+const notificationStore = useNotificationStore();
 const router = useRouter();
 const route = useRoute();
 const colors = useColors();
@@ -171,8 +155,9 @@ const isUserMenuOpen = ref(false);
 const showNotifications = ref(false);
 const userData = computed(() => authStore.user || { username: 'Usuario', role: 'Invitado' });
 
-// Notifications & Activities
-const recentActivities = ref<DashboardResponse['recentActivities']>([]);
+// Notifications
+const unreadNotifications = computed(() => notificationStore.unreadCount);
+const recentActions = ref<DashboardResponse['recentActions']>([]);
 const license = ref<DashboardResponse['license'] | null>(null);
 const licenseDays = computed(() => license.value?.remainingDays || 0);
 
@@ -215,7 +200,7 @@ const toggleNotifications = (event: Event) => {
 const fetchNotifications = async () => {
   try {
     const data = await dashboardService.getDashboardData(30);
-    recentActivities.value = data.recentActivities;
+    recentActions.value = data.recentActions || [];
     license.value = data.license;
   } catch (error) {
     console.error('Error fetching notifications:', error);
@@ -247,9 +232,13 @@ const closeDropdownsOnClickOutside = (event: MouseEvent) => {
 onMounted(() => {
   document.addEventListener('click', closeDropdownsOnClickOutside);
   fetchNotifications();
+  notificationStore.fetchUnreadCount();
   
   // Refresh notifications every 5 minutes
-  const notificationsInterval = setInterval(fetchNotifications, 5 * 60 * 1000);
+  const notificationsInterval = setInterval(() => {
+    fetchNotifications();
+    notificationStore.fetchUnreadCount();
+  }, 5 * 60 * 1000);
   
   onBeforeUnmount(() => {
     clearInterval(notificationsInterval);

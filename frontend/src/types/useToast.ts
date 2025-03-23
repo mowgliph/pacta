@@ -1,12 +1,12 @@
-import { useToastStore } from '../stores/toast';
+import { useToastNotificationStore } from '../stores/toastNotification';
 
 export function useToast() {
-  const toastStore = useToastStore();
+  const notificationStore = useToastNotificationStore();
 
   return {
-    success: toastStore.success,
-    error: toastStore.error,
-    warning: toastStore.warning,
-    info: toastStore.info
+    success: notificationStore.success,
+    error: notificationStore.error,
+    warning: notificationStore.warning,
+    info: notificationStore.info
   };
 }

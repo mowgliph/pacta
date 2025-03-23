@@ -39,6 +39,7 @@
               Importe
               <i :class="getSortIconClass('amount')"></i>
             </th>
+            <th class="center-align">Doc</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -54,16 +55,31 @@
               </span>
             </td>
             <td>{{ formatCurrency(contract.amount, contract.currency) }}</td>
+            <td class="center-align">
+              <button 
+                v-if="contract.documentPath" 
+                @click="$emit('document', contract)" 
+                class="btn-icon document-btn"
+                title="Descargar documento"
+              >
+                <i class="fas fa-file-download"></i>
+              </button>
+              <span v-else class="no-document" title="Sin documento">
+                <i class="fas fa-file-alt text-muted"></i>
+              </span>
+            </td>
             <td class="actions">
-              <button @click="$emit('edit', contract)" class="btn-icon edit-btn">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button @click="$emit('delete', contract)" class="btn-icon delete-btn">
-                <i class="fas fa-trash-alt"></i>
-              </button>
-              <button @click="showContractDetails(contract)" class="btn-icon view-btn">
-                <i class="fas fa-eye"></i>
-              </button>
+              <div class="action-buttons">
+                <button @click="$emit('view', contract)" class="btn-icon view-btn" title="Ver detalles">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button @click="$emit('edit', contract)" class="btn-icon edit-btn" title="Editar">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button @click="$emit('delete', contract)" class="btn-icon delete-btn" title="Eliminar">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -79,6 +95,7 @@
             @click="currentPage = 1" 
             :disabled="currentPage === 1"
             class="page-btn"
+            title="Primera página"
           >
             <i class="fas fa-angle-double-left"></i>
           </button>
@@ -86,6 +103,7 @@
             @click="currentPage--" 
             :disabled="currentPage === 1"
             class="page-btn"
+            title="Página anterior"
           >
             <i class="fas fa-angle-left"></i>
           </button>
@@ -105,6 +123,7 @@
             @click="currentPage++" 
             :disabled="currentPage === totalPages"
             class="page-btn"
+            title="Página siguiente"
           >
             <i class="fas fa-angle-right"></i>
           </button>
@@ -112,6 +131,7 @@
             @click="currentPage = totalPages" 
             :disabled="currentPage === totalPages"
             class="page-btn"
+            title="Última página"
           >
             <i class="fas fa-angle-double-right"></i>
           </button>
@@ -207,7 +227,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import type { Contract } from '../../../types/contract';
+import type { Contract } from '@/stores/contract';
 
 // Props
 const props = defineProps<{
@@ -219,14 +239,21 @@ const props = defineProps<{
 defineEmits<{
   (e: 'edit', contract: Contract): void;
   (e: 'delete', contract: Contract): void;
+  (e: 'view', contract: Contract): void;
+  (e: 'document', contract: Contract): void;
 }>();
 
 // Referencias reactivas
-const currentSort = ref('contractNumber');
-const sortOrder = ref<'asc' | 'desc'>('asc');
+const currentSort = ref('updatedAt');
+const sortOrder = ref<'asc' | 'desc'>('desc');
 const currentPage = ref(1);
 const itemsPerPage = ref(10);
 const selectedContract = ref<Contract | null>(null);
+
+// Resetear página cuando cambian los contratos
+watch(() => props.contracts, () => {
+  currentPage.value = 1;
+});
 
 // Función para obtener el ícono de ordenación
 function getSortIconClass(field: string) {
@@ -248,75 +275,41 @@ function sortBy(field: string) {
 
 // Contratos ordenados
 const sortedContracts = computed(() => {
-  if (!props.contracts) return [];
-  
   return [...props.contracts].sort((a, b) => {
-    let valA: any, valB: any;
+    let aValue: any = a[currentSort.value as keyof Contract];
+    let bValue: any = b[currentSort.value as keyof Contract];
     
-    // Manejar casos especiales para fechas
-    if (currentSort.value === 'startDate' || currentSort.value === 'endDate') {
-      valA = new Date(a[currentSort.value]).getTime();
-      valB = new Date(b[currentSort.value]).getTime();
-    } else {
-      valA = a[currentSort.value as keyof Contract];
-      valB = b[currentSort.value as keyof Contract];
+    // Convertir fechas a objetos Date para comparar
+    if (currentSort.value === 'startDate' || currentSort.value === 'endDate' || currentSort.value === 'updatedAt' || currentSort.value === 'createdAt') {
+      aValue = new Date(aValue);
+      bValue = new Date(bValue);
     }
     
-    // Ordenar strings
-    if (typeof valA === 'string' && typeof valB === 'string') {
-      if (sortOrder.value === 'asc') {
-        return valA.localeCompare(valB);
-      } else {
-        return valB.localeCompare(valA);
-      }
+    // Convertir a minúsculas para strings para comparar sin distinguir mayúsculas
+    if (typeof aValue === 'string' && typeof bValue === 'string') {
+      aValue = aValue.toLowerCase();
+      bValue = bValue.toLowerCase();
     }
     
-    // Ordenar números, fechas, etc.
-    if (sortOrder.value === 'asc') {
-      return Number(valA) - Number(valB);
-    } else {
-      return Number(valB) - Number(valA);
+    // Realizar la comparación según el orden
+    if (aValue < bValue) {
+      return sortOrder.value === 'asc' ? -1 : 1;
     }
+    if (aValue > bValue) {
+      return sortOrder.value === 'asc' ? 1 : -1;
+    }
+    return 0;
   });
 });
 
-// Aplicar filtro si es necesario
+// Contratos filtrados (en este caso, simplemente los ordenados)
 const filteredContracts = computed(() => {
   return sortedContracts.value;
 });
 
-// Calcular número total de páginas
+// Total de páginas
 const totalPages = computed(() => {
   return Math.ceil(filteredContracts.value.length / itemsPerPage.value);
-});
-
-// Páginas a mostrar en la paginación
-const displayedPages = computed(() => {
-  const pages = [];
-  const maxPages = 5; // Máximo de botones de página a mostrar
-  
-  if (totalPages.value <= maxPages) {
-    // Mostrar todas las páginas si hay menos que el máximo
-    for (let i = 1; i <= totalPages.value; i++) {
-      pages.push(i);
-    }
-  } else {
-    // Mostrar un subconjunto centrado en la página actual
-    let startPage = Math.max(currentPage.value - Math.floor(maxPages / 2), 1);
-    let endPage = startPage + maxPages - 1;
-    
-    // Ajustar si excedemos el número total de páginas
-    if (endPage > totalPages.value) {
-      endPage = totalPages.value;
-      startPage = Math.max(endPage - maxPages + 1, 1);
-    }
-    
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(i);
-    }
-  }
-  
-  return pages;
 });
 
 // Contratos a mostrar en la página actual
@@ -326,49 +319,65 @@ const displayedContracts = computed(() => {
   return filteredContracts.value.slice(start, end);
 });
 
-// Restablecer a la primera página cuando cambian los contratos o el tamaño de la página
-watch([() => props.contracts, itemsPerPage], () => {
-  currentPage.value = 1;
+// Páginas a mostrar en la paginación
+const displayedPages = computed(() => {
+  const pages = [];
+  let startPage = Math.max(1, currentPage.value - 2);
+  let endPage = Math.min(totalPages.value, startPage + 4);
+  
+  // Ajustar startPage si endPage está al límite
+  if (endPage === totalPages.value) {
+    startPage = Math.max(1, endPage - 4);
+  }
+  
+  for (let i = startPage; i <= endPage; i++) {
+    pages.push(i);
+  }
+  
+  return pages;
 });
 
-// Funciones utilitarias
+// Formatear fecha
 function formatDate(dateString: string) {
-  if (!dateString) return '';
   const date = new Date(dateString);
-  return date.toLocaleDateString('es-ES', { 
-    day: '2-digit', 
-    month: '2-digit', 
-    year: 'numeric' 
+  return date.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
   });
 }
 
+// Formatear moneda
 function formatCurrency(amount: number, currency: string) {
-  return new Intl.NumberFormat('es-ES', { 
-    style: 'currency', 
-    currency: currency || 'CUP'
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: currency,
+    minimumFractionDigits: 2
   }).format(amount);
 }
 
+// Obtener clase CSS según el estado
 function getStatusClass(status: string) {
-  switch (status) {
-    case 'active': return 'status-active';
-    case 'expired': return 'status-expired';
-    case 'draft': return 'status-draft';
-    case 'terminated': return 'status-terminated';
-    case 'renewed': return 'status-renewed';
-    default: return '';
-  }
+  const statusClasses: Record<string, string> = {
+    'draft': 'status-draft',
+    'active': 'status-active',
+    'expired': 'status-expired',
+    'terminated': 'status-terminated',
+    'renewed': 'status-renewed'
+  };
+  return statusClasses[status] || '';
 }
 
+// Obtener texto según el estado
 function getStatusText(status: string) {
-  switch (status) {
-    case 'active': return 'Activo';
-    case 'expired': return 'Vencido';
-    case 'draft': return 'Borrador';
-    case 'terminated': return 'Terminado';
-    case 'renewed': return 'Renovado';
-    default: return status;
-  }
+  const statusTexts: Record<string, string> = {
+    'draft': 'Borrador',
+    'active': 'Activo',
+    'expired': 'Vencido',
+    'terminated': 'Terminado',
+    'renewed': 'Renovado'
+  };
+  return statusTexts[status] || status;
 }
 
 function showContractDetails(contract: Contract) {
@@ -378,4 +387,30 @@ function showContractDetails(contract: Contract) {
 
 <style lang="scss" scoped>
 @use './contractTable.scss';
+
+.center-align {
+  text-align: center;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.document-btn {
+  color: var(--primary-color);
+  
+  &:hover {
+    color: var(--primary-hover);
+  }
+}
+
+.no-document {
+  opacity: 0.5;
+  display: inline-block;
+}
+
+.text-muted {
+  color: var(--text-secondary);
+}
 </style>

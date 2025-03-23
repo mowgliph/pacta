@@ -56,14 +56,14 @@
 import { ref, onMounted } from 'vue';
 import { format } from 'date-fns';
 import { useLicenseStore } from '../../stores/license';
-import { useToast } from '../../types/useToast';
+import { useNotification } from '../../types/useNotification';
 import BaseButton from '../../components/base/BaseButton.vue';
 import StatusBadge from '../../components/base/StatusBadge.vue';
 import LicenseStatus from '../../components/modules/dashboard/LicenseStatus.vue';
 import type { License } from '../../types/license';
 
 const licenseStore = useLicenseStore();
-const toast = useToast();
+const notification = useNotification();
 const fileInput = ref<HTMLInputElement | null>(null);
 const licenses = ref<License[]>([]);
 
@@ -75,7 +75,7 @@ onMounted(async () => {
     }
     licenses.value = await response.json();
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : 'Failed to load license history');
+    notification.error(error instanceof Error ? error.message : 'Failed to load license history');
   }
 });
 
@@ -121,9 +121,9 @@ async function handleFileUpload(event: Event) {
     
     await licenseStore.checkLicenseStatus();
     await fetchLicenseHistory();
-    toast.success('License uploaded successfully');
+    notification.success('License uploaded successfully');
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : 'Failed to upload license');
+    notification.error(error instanceof Error ? error.message : 'Failed to upload license');
   } finally {
     if (target) target.value = '';
   }
@@ -137,7 +137,7 @@ async function fetchLicenseHistory() {
     }
     licenses.value = await response.json();
   } catch (error) {
-    toast.error(error instanceof Error ? error.message : 'Failed to load license history');
+    notification.error(error instanceof Error ? error.message : 'Failed to load license history');
   }
 }
 </script>

@@ -2,7 +2,7 @@
   <div class="toast-container">
     <TransitionGroup name="toast">
       <div
-        v-for="toast in toasts"
+        v-for="toast in notifications"
         :key="toast.id"
         class="toast"
         :class="[`toast--${toast.type}`]"
@@ -22,14 +22,15 @@
 </template>
 
 <script setup lang="ts">
-import { useToastStore } from '../../stores/toast';
+import { useToastNotificationStore } from '../../stores/toastNotification';
 import { storeToRefs } from 'pinia';
+import { computed } from 'vue';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
-const toastStore = useToastStore();
-const { toasts } = storeToRefs(toastStore);
-const { removeToast } = toastStore;
+const notificationStore = useToastNotificationStore();
+const { notifications } = storeToRefs(notificationStore);
+const removeToast = notificationStore.removeNotification;
 
 function getIcon(type: ToastType) {
   const icons = {

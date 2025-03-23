@@ -1,5 +1,9 @@
 import { defineStore } from 'pinia';
+import { useToastNotificationStore } from './toastNotification';
 
+/**
+ * @deprecated Este store está obsoleto. Usar useToastNotificationStore de ./toastNotification.ts en su lugar
+ */
 interface Toast {
   id: number;
   type: 'success' | 'error' | 'warning' | 'info';
@@ -10,6 +14,9 @@ interface ToastState {
   toasts: Toast[];
 }
 
+/**
+ * @deprecated Este store está obsoleto. Usar useToastNotificationStore de ./toastNotification.ts en su lugar
+ */
 export const useToastStore = defineStore('toast', {
   state: (): ToastState => ({
     toasts: []
@@ -17,8 +24,22 @@ export const useToastStore = defineStore('toast', {
 
   actions: {
     addToast(type: Toast['type'], message: string, duration = 5000) {
+      console.warn('useToastStore está obsoleto. Usar useToastNotificationStore en su lugar');
+      
+      // Utilizar el nuevo sistema de notificaciones pero mantener compatibilidad
+      const notificationStore = useToastNotificationStore();
       const id = Date.now();
+      
+      // Agregar al array local para mantener compatibilidad
       this.toasts.push({ id, type, message });
+      
+      // También agregar al nuevo sistema
+      notificationStore.addNotification({
+        type,
+        message,
+        duration,
+        autoClose: duration > 0
+      });
 
       if (duration > 0) {
         setTimeout(() => {

@@ -55,6 +55,16 @@ class ContractService {
     }
   }
 
+  async searchContracts(filters: ContractFilter): Promise<Contract[]> {
+    try {
+      const response = await axios.post('/api/contracts/search', filters);
+      return response.data;
+    } catch (error) {
+      console.error('Error searching contracts:', error);
+      throw new Error('No se pudieron buscar los contratos con los filtros especificados.');
+    }
+  }
+
   async getContract(id: number): Promise<Contract> {
     try {
       const response = await axios.get(`/api/contracts/${id}`);
@@ -65,9 +75,13 @@ class ContractService {
     }
   }
 
-  async createContract(contractData: Partial<Contract>): Promise<Contract> {
+  async createContract(contractData: FormData): Promise<Contract> {
     try {
-      const response = await axios.post('/api/contracts', contractData);
+      const response = await axios.post('/api/contracts', contractData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       return response.data;
     } catch (error: any) {
       console.error('Error creating contract:', error);
@@ -80,9 +94,13 @@ class ContractService {
     }
   }
 
-  async updateContract(id: number, contractData: Partial<Contract>): Promise<Contract> {
+  async updateContract(id: number, contractData: FormData): Promise<Contract> {
     try {
-      const response = await axios.put(`/api/contracts/${id}`, contractData);
+      const response = await axios.put(`/api/contracts/${id}`, contractData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
       return response.data;
     } catch (error: any) {
       console.error(`Error updating contract ${id}:`, error);
@@ -94,12 +112,25 @@ class ContractService {
     }
   }
 
-  async deleteContract(id: number): Promise<void> {
+  async deleteContract(id: number): Promise<{ message: string, contract: Contract }> {
     try {
-      await axios.delete(`/api/contracts/${id}`);
+      const response = await axios.delete(`/api/contracts/${id}`);
+      return response.data;
     } catch (error) {
       console.error(`Error deleting contract ${id}:`, error);
       throw new Error('No se pudo eliminar el contrato.');
+    }
+  }
+
+  async getContractDocument(id: number): Promise<Blob> {
+    try {
+      const response = await axios.get(`/api/contracts/${id}/document`, {
+        responseType: 'blob'
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching contract document ${id}:`, error);
+      throw new Error('No se pudo descargar el documento del contrato.');
     }
   }
 
@@ -107,10 +138,80 @@ class ContractService {
     try {
       const response = await axios.get('/api/contracts/statistics');
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching contract statistics:', error);
-      throw new Error('No se pudieron cargar las estadísticas de contratos.');
+      if (error.response && error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('No se pudieron obtener las estadísticas de contratos');
     }
+  }
+
+  async changeContractStatus(id: number, newStatus: 'draft' | 'active' | 'expired' | 'terminated' | 'renewed'): Promise<Contract> {
+    try {
+      const response = await axios.patch(`/api/contracts/${id}/status`, { status: newStatus });
+      return response.data;
+    } catch (error: any) {
+      console.error(`Error changing contract status:`, error);
+      if (error.response && error.response.data && error.response.data.message) {
+        throw new Error(error.response.data.message);
+      }
+      throw new Error('No se pudo cambiar el estado del contrato');
+    }
+  }
+
+  // Método para descargar un documento de contrato
+  downloadContractDocument(id: number, fileName?: string): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      this.getContractDocument(id)
+        .then(blob => {
+          // Crear URL para el blob
+          const url = window.URL.createObjectURL(blob);
+          
+          // Crear elemento de enlace para la descarga
+          const link = document.createElement('a');
+          link.href = url;
+          
+          // Determinar el nombre del archivo
+          const extension = this.getFileExtension(blob.type);
+          link.download = fileName || `contrato-${id}${extension}`;
+          
+          // Añadir al documento, simular clic y limpiar
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          // Liberar URL
+          window.URL.revokeObjectURL(url);
+          resolve();
+        })
+        .catch(error => {
+          console.error('Error downloading document:', error);
+          if (error.response) {
+            if (error.response.status === 404) {
+              reject(new Error('El documento solicitado no se encuentra disponible.'));
+            } else {
+              reject(new Error(`Error al descargar: ${error.response.data.message || 'Error de servidor'}`));
+            }
+          } else {
+            reject(new Error('No se pudo descargar el documento del contrato. Compruebe su conexión a internet.'));
+          }
+        });
+    });
+  }
+
+  // Método auxiliar para obtener la extensión del archivo basado en el tipo MIME
+  private getFileExtension(mimeType: string): string {
+    const mimeTypes: Record<string, string> = {
+      'application/pdf': '.pdf',
+      'application/msword': '.doc',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': '.docx',
+      'application/vnd.ms-excel': '.xls',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '.xlsx',
+      'text/plain': '.txt'
+    };
+
+    return mimeTypes[mimeType] || '';
   }
 
   // Método para filtrar contratos localmente (útil para búsquedas instantáneas)
@@ -157,8 +258,54 @@ class ContractService {
         return false;
       }
       
+      // Filtro por moneda
+      if (filter.currency && contract.currency !== filter.currency) {
+        return false;
+      }
+      
+      // Filtro por importe mínimo
+      if (filter.minAmount !== undefined && contract.amount < filter.minAmount) {
+        return false;
+      }
+      
+      // Filtro por importe máximo
+      if (filter.maxAmount !== undefined && contract.amount > filter.maxAmount) {
+        return false;
+      }
+      
+      // Filtro por búsqueda general
+      if (filter.searchQuery) {
+        const query = filter.searchQuery.toLowerCase();
+        const matchesTitle = contract.title.toLowerCase().includes(query);
+        const matchesNumber = contract.contractNumber.toLowerCase().includes(query);
+        const matchesDescription = contract.description?.toLowerCase().includes(query) || false;
+        
+        if (!matchesTitle && !matchesNumber && !matchesDescription) {
+          return false;
+        }
+      }
+      
       return true;
     });
+  }
+
+  // Método para preparar datos para crear o actualizar un contrato
+  prepareFormData(contractData: any, document?: File | null): FormData {
+    const formData = new FormData();
+    
+    // Añadir todos los campos del contrato
+    Object.keys(contractData).forEach(key => {
+      if (contractData[key] !== undefined && contractData[key] !== null) {
+        formData.append(key, contractData[key]);
+      }
+    });
+    
+    // Añadir el documento si existe
+    if (document) {
+      formData.append('document', document);
+    }
+    
+    return formData;
   }
 }
 

@@ -5,9 +5,16 @@
 .analytics-chart {
   background-color: c.$color-surface;
   border-radius: v.$border-radius;
-  padding: v.$spacing-lg;
+  padding: v.$spacing-md;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   box-shadow: v.$shadow-sm;
-  margin-bottom: v.$spacing-lg;
+  transition: all 0.25s ease-in-out;
+  
+  &:hover {
+    box-shadow: v.$shadow-md;
+  }
   
   &.loading {
     opacity: 0.7;
@@ -18,38 +25,83 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: v.$spacing-lg;
+    margin-bottom: v.$spacing-md;
+    padding-bottom: v.$spacing-sm;
+    border-bottom: 1px solid c.$color-border;
     
     h3 {
-      font-size: v.$font-size-lg;
+      font-size: v.$font-size-md;
       font-weight: v.$font-weight-semibold;
+      color: c.$color-text-primary;
       margin: 0;
+      flex: 1;
     }
     
     .chart-controls {
       display: flex;
       align-items: center;
-      gap: v.$spacing-md;
+      gap: v.$spacing-sm;
       
       .period-selector {
         display: flex;
-        gap: v.$spacing-xxs;
+        gap: 2px;
+        background-color: c.$color-surface-variant;
+        border-radius: v.$border-radius-sm;
+        padding: 2px;
         
-        button {
-          background: c.$color-surface-variant;
+        .btn-period {
+          padding: v.$spacing-xs v.$spacing-sm;
           border: none;
-          padding: v.$spacing-xxs v.$spacing-xs;
-          font-size: v.$font-size-xs;
-          border-radius: v.$border-radius-sm;
+          background: none;
+          font-size: v.$font-size-sm;
           cursor: pointer;
+          border-radius: v.$border-radius-sm;
+          color: c.$color-text-secondary;
+          transition: all 0.2s ease;
+          
+          &:hover:not(.active) {
+            background-color: rgba(c.$color-surface-hover, 0.5);
+          }
           
           &.active {
-            background: c.$color-primary;
+            background-color: c.$color-surface;
+            color: c.$color-primary;
+            font-weight: v.$font-weight-medium;
+            box-shadow: v.$shadow-xs;
+          }
+        }
+      }
+      
+      .chart-actions {
+        display: flex;
+        gap: 4px;
+        
+        .btn-chart-type {
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: none;
+          background-color: c.$color-surface-variant;
+          border-radius: v.$border-radius-sm;
+          color: c.$color-text-secondary;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          
+          &:hover:not(.active) {
+            background-color: c.$color-surface-hover;
+            color: c.$color-text-primary;
+          }
+          
+          &.active {
+            background-color: c.$color-primary;
             color: white;
           }
         }
       }
       
+      // Mantener por compatibilidad con posibles usos
       .chart-type-selector {
         display: flex;
         gap: v.$spacing-xxs;
@@ -75,6 +127,16 @@
           }
         }
       }
+    }
+  }
+  
+  .chart-container {
+    flex: 1;
+    position: relative;
+    width: 100%;
+    
+    canvas {
+      max-width: 100%;
     }
   }
   
@@ -150,7 +212,15 @@
   }
   
   .chart-footer {
-    margin-top: v.$spacing-md;
+    margin-top: v.$spacing-sm;
+    padding-top: v.$spacing-xs;
+    border-top: 1px solid c.$color-border;
+    
+    .footnote {
+      font-size: v.$font-size-xs;
+      color: c.$color-text-secondary;
+      font-style: italic;
+    }
     
     .chart-legend {
       display: flex;
@@ -191,5 +261,20 @@
   }
   100% {
     background-position: 0% 50%;
+  }
+} 
+
+@media (max-width: v.$breakpoint-md) {
+  .analytics-chart {
+    .chart-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: v.$spacing-sm;
+      
+      .chart-controls {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
   }
 } 

@@ -14,6 +14,7 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.getItem('token') || sessionStorage.getItem('token')
   );
   const errors = ref<string[]>([]);
+  const successMessage = ref<string | null>(null);
   const loading = ref(false);
 
   const isAuthenticated = computed(() => !!token.value && !isTokenExpired.value);
@@ -62,6 +63,14 @@ export const useAuthStore = defineStore('auth', () => {
     sessionStorage.removeItem('user');
     sessionStorage.removeItem('license');
     sessionStorage.removeItem('token');
+  }
+
+  function setMessage(message: string) {
+    successMessage.value = message;
+    // Limpiar el mensaje después de 5 segundos
+    setTimeout(() => {
+      successMessage.value = null;
+    }, 5000);
   }
 
   async function login(username: string, password: string, remember: boolean = false): Promise<boolean> {
@@ -163,10 +172,13 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const currentUser = await authService.getCurrentUser();
       if (currentUser) {
+        // Asegurarnos de que el objeto usuario contiene todos los campos necesarios
         user.value = {
           id: currentUser.id,
           username: currentUser.username,
-          role: currentUser.role
+          role: currentUser.role,
+          email: currentUser.email || '',
+          active: currentUser.active !== undefined ? currentUser.active : true
         };
         localStorage.setItem('user', JSON.stringify(user.value));
       }
@@ -182,6 +194,7 @@ export const useAuthStore = defineStore('auth', () => {
     license,
     token,
     errors,
+    successMessage,
     loading,
     isAuthenticated,
     isAdmin,
@@ -193,6 +206,7 @@ export const useAuthStore = defineStore('auth', () => {
     checkAuth,
     activateLicense,
     checkLicenseStatus,
+    setMessage,
     clearErrors: () => errors.value = []
   };
 });

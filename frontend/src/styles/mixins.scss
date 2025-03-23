@@ -26,6 +26,63 @@
   }
 }
 
+// Form components mixin
+@mixin form-components {
+  .form-group {
+    margin-bottom: v.$spacing-lg;
+    
+    label {
+      display: block;
+      margin-bottom: v.$spacing-xs;
+      font-weight: v.$font-weight-medium;
+      color: c.$color-text-primary;
+      font-size: v.$font-size-sm;
+    }
+    
+    input {
+      width: 100%;
+      padding: v.$spacing-md;
+      border: 1px solid c.$color-border;
+      border-radius: v.$border-radius;
+      font-size: v.$font-size-sm;
+      transition: v.$transition-normal;
+      background-color: c.$color-surface;
+      
+      &:focus {
+        outline: none;
+        border-color: c.$color-primary;
+        box-shadow: 0 0 0 2px rgba(c.$color-primary, 0.2);
+      }
+      
+      &.error {
+        border-color: c.$color-error;
+        
+        &:focus {
+          box-shadow: 0 0 0 2px rgba(c.$color-error, 0.2);
+        }
+      }
+      
+      &::placeholder {
+        color: c.$color-text-disabled;
+      }
+    }
+  }
+  
+  .error-message {
+    color: c.$color-error;
+    font-size: v.$font-size-xs;
+    margin-top: v.$spacing-xs;
+    display: block;
+  }
+  
+  .form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: v.$spacing-md;
+    margin-top: v.$spacing-lg;
+  }
+}
+
 // Container mixin
 @mixin container {
   max-width: v.$container-width;

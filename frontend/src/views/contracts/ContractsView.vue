@@ -173,7 +173,14 @@
         <span class="stat-label">Próximos a vencer:</span>
         <span class="stat-value">{{ contractStore.expiringContracts.length }}</span>
       </div>
+      <button @click="showStats = !showStats" class="btn-text show-stats-btn">
+        <i :class="showStats ? 'fas fa-chevron-up' : 'fas fa-chevron-down'"></i>
+        {{ showStats ? 'Ocultar estadísticas detalladas' : 'Ver estadísticas detalladas' }}
+      </button>
     </div>
+
+    <!-- Estadísticas detalladas -->
+    <contract-stats v-if="showStats && contractStore.contracts.length > 0" />
 
     <!-- Tabla de contratos -->
     <div class="contracts-table-container">
@@ -183,6 +190,8 @@
         :loading="contractStore.loading"
         @edit="editContract"
         @delete="confirmDelete"
+        @view="viewContract"
+        @document="downloadDocument"
       />
       <div v-else-if="!contractStore.loading" class="no-data-message">
         <i class="fas fa-folder-open"></i>
@@ -216,6 +225,118 @@
         </div>
       </div>
     </div>
+
+    <!-- Vista detallada del contrato -->
+    <div v-if="showContractDetail" class="contract-detail-overlay">
+      <div class="contract-detail-content">
+        <div class="contract-detail-header">
+          <h2>Detalles del Contrato</h2>
+          <button @click="closeContractDetail" class="close-button">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div v-if="contractStore.loading" class="loading-container">
+          <i class="fas fa-spinner fa-spin"></i>
+          <p>Cargando detalles del contrato...</p>
+        </div>
+
+        <div v-else-if="contractDetail" class="contract-detail-body">
+          <div class="detail-header">
+            <div class="contract-title">
+              <h3>{{ contractDetail.title }}</h3>
+              <div class="contract-number">Nº {{ contractDetail.contractNumber }}</div>
+              <div :class="['contract-status', `status-${contractDetail.status}`]">
+                {{ getStatusLabel(contractDetail.status) }}
+              </div>
+            </div>
+            <div class="detail-actions">
+              <button @click="editContract(contractDetail)" class="btn-outline">
+                <i class="fas fa-pencil-alt"></i> Editar
+              </button>
+              <div class="status-dropdown">
+                <button class="btn-outline status-button">
+                  <i class="fas fa-sync-alt"></i> Cambiar Estado
+                  <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="status-dropdown-content">
+                  <button 
+                    v-for="status in ['draft', 'active', 'expired', 'terminated', 'renewed'] as const" 
+                    :key="status"
+                    :class="['status-option', { 'active': contractDetail.status === status }]"
+                    @click="changeContractStatus(contractDetail, status)"
+                  >
+                    <i v-if="contractDetail.status === status" class="fas fa-check"></i>
+                    {{ getStatusLabel(status) }}
+                  </button>
+                </div>
+              </div>
+              <button @click="confirmDelete(contractDetail)" class="btn-outline btn-danger">
+                <i class="fas fa-trash"></i> Eliminar
+              </button>
+            </div>
+          </div>
+
+          <div class="detail-grid">
+            <div class="detail-group">
+              <div class="detail-label">Descripción</div>
+              <div class="detail-value description">
+                {{ contractDetail.description || 'Sin descripción' }}
+              </div>
+            </div>
+
+            <div class="detail-row">
+              <div class="detail-group">
+                <div class="detail-label">Fecha de inicio</div>
+                <div class="detail-value">{{ formatDate(contractDetail.startDate) }}</div>
+              </div>
+              <div class="detail-group">
+                <div class="detail-label">Fecha de fin</div>
+                <div class="detail-value">{{ formatDate(contractDetail.endDate) }}</div>
+              </div>
+            </div>
+
+            <div class="detail-row">
+              <div class="detail-group">
+                <div class="detail-label">Importe</div>
+                <div class="detail-value">{{ formatAmount(contractDetail.amount, contractDetail.currency) }}</div>
+              </div>
+              <div class="detail-group">
+                <div class="detail-label">Notificación</div>
+                <div class="detail-value">{{ contractDetail.notificationDays }} días antes</div>
+              </div>
+            </div>
+
+            <div class="detail-document" v-if="contractDetail.documentPath">
+              <div class="detail-label">Documento</div>
+              <div class="document-info">
+                <i class="fas fa-file-alt"></i>
+                <span>{{ getDocumentName(contractDetail.documentPath) }}</span>
+                <button @click="downloadDocument(contractDetail)" class="btn-text">
+                  <i class="fas fa-download"></i> Descargar
+                </button>
+              </div>
+            </div>
+
+            <div class="detail-metadata">
+              <div class="metadata-item">
+                <div class="metadata-label">Creado por</div>
+                <div class="metadata-value">
+                  {{ contractDetail.creator ? contractDetail.creator.username : 'Usuario desconocido' }}
+                </div>
+              </div>
+              <div class="metadata-item">
+                <div class="metadata-label">Última modificación</div>
+                <div class="metadata-value">
+                  {{ contractDetail.updatedAt ? formatDate(contractDetail.updatedAt) : 'Desconocida' }}
+                  {{ contractDetail.modifier ? `por ${contractDetail.modifier.username}` : '' }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -224,20 +345,29 @@ import { ref, computed, onMounted, reactive } from 'vue';
 import { useContractStore } from '@/stores/contract';
 import ContractsTable from '@/components/modules/contracts/ContractsTable.vue';
 import ContractDialog from '@/components/modules/contracts/ContractDialog.vue';
+import ContractStats from '@/components/modules/contracts/ContractStats.vue';
 import { contractService } from '@/services/contract.service';
 import type { Contract } from '@/stores/contract';
 import type { ContractFilter } from '@/services/contract.service';
-import { useToast } from '@/types/useToast';
+import { useNotification } from '@/types/useNotification';
+import { useRouter } from 'vue-router';
 
+const router = useRouter();
 const contractStore = useContractStore();
-const toast = useToast();
+const notification = useNotification();
+
+// Estados para los diálogos
 const isDialogVisible = ref(false);
 const selectedContract = ref<Contract | null>(null);
+const showDeleteConfirm = ref(false);
+const contractToDelete = ref<Contract | null>(null);
+const showContractDetail = ref(false);
+const contractDetail = ref<Contract | null>(null);
+
+// Estados para los filtros
 const searchQuery = ref('');
 const showAdvancedFilters = ref(false);
 const selectedStatuses = ref<string[]>([]);
-const showDeleteConfirm = ref(false);
-const contractToDelete = ref<Contract | null>(null);
 
 // Filtros avanzados
 const dateFilters = reactive({
@@ -249,51 +379,55 @@ const dateFilters = reactive({
 
 const currencyFilter = ref('');
 const amountFilter = reactive({
-  min: null as number | null,
-  max: null as number | null
+  min: undefined as number | undefined,
+  max: undefined as number | undefined
 });
 
-// Computed para verificar si hay filtros activos
+// Estado para mostrar/ocultar estadísticas
+const showStats = ref(false);
+
+// Contratos filtrados
+const filteredContracts = computed(() => {
+  return contractStore.filteredContracts;
+});
+
+// Verificar si hay filtros activos
 const hasActiveFilters = computed(() => {
-  return searchQuery.value !== '' || 
+  return (
+    searchQuery.value !== '' || 
     selectedStatuses.value.length > 0 || 
     dateFilters.startDateFrom !== '' ||
     dateFilters.startDateTo !== '' ||
     dateFilters.endDateFrom !== '' ||
     dateFilters.endDateTo !== '' ||
     currencyFilter.value !== '' ||
-    amountFilter.min !== null ||
-    amountFilter.max !== null;
-});
-
-// Computed para filtrar contratos
-const filteredContracts = computed(() => {
-  return contractStore.filteredContracts;
+    amountFilter.min !== undefined ||
+    amountFilter.max !== undefined
+  );
 });
 
 // Cargar contratos al montar el componente
 onMounted(async () => {
   try {
-    await applyFilters();
+    await contractStore.fetchContracts();
   } catch (error) {
-    console.error('Error al cargar contratos:', error);
-    toast.error('No se pudieron cargar los contratos. Por favor, intente de nuevo.');
+    notification.error('Error al cargar los contratos');
   }
 });
 
-// Métodos para manejar filtros
+// Funciones para manejar filtros
 function toggleStatusFilter(status: string) {
   if (status === 'all') {
     selectedStatuses.value = [];
-    return;
-  }
-  
-  const index = selectedStatuses.value.indexOf(status);
-  if (index === -1) {
-    selectedStatuses.value.push(status);
   } else {
-    selectedStatuses.value.splice(index, 1);
+    const index = selectedStatuses.value.indexOf(status);
+    if (index === -1) {
+      selectedStatuses.value.push(status);
+    } else {
+      selectedStatuses.value.splice(index, 1);
+    }
   }
+  applyFilters();
 }
 
 function clearSearch() {
@@ -309,72 +443,34 @@ function clearAllFilters() {
   dateFilters.endDateFrom = '';
   dateFilters.endDateTo = '';
   currencyFilter.value = '';
-  amountFilter.min = null;
-  amountFilter.max = null;
+  amountFilter.min = undefined;
+  amountFilter.max = undefined;
   
-  // Volver a cargar todos los contratos sin filtros
+  // Recargar todos los contratos
   contractStore.fetchContracts();
 }
 
 async function applyFilters() {
-  contractStore.setLoading(true);
+  const filters: ContractFilter = {
+    searchQuery: searchQuery.value,
+    status: selectedStatuses.value.length > 0 ? selectedStatuses.value : undefined,
+    startDateFrom: dateFilters.startDateFrom,
+    startDateTo: dateFilters.startDateTo,
+    endDateFrom: dateFilters.endDateFrom,
+    endDateTo: dateFilters.endDateTo,
+    currency: currencyFilter.value,
+    minAmount: amountFilter.min,
+    maxAmount: amountFilter.max
+  };
   
   try {
-    // Construir objeto de filtros para enviar al servidor
-    const filters: ContractFilter = {};
-    
-    // Filtro de texto
-    if (searchQuery.value.trim()) {
-      filters.searchQuery = searchQuery.value.trim();
-    }
-    
-    // Filtros de estado
-    if (selectedStatuses.value.length > 0) {
-      filters.status = selectedStatuses.value;
-    }
-    
-    // Filtros de fecha
-    if (dateFilters.startDateFrom) {
-      filters.startDateFrom = dateFilters.startDateFrom;
-    }
-    
-    if (dateFilters.startDateTo) {
-      filters.startDateTo = dateFilters.startDateTo;
-    }
-    
-    if (dateFilters.endDateFrom) {
-      filters.endDateFrom = dateFilters.endDateFrom;
-    }
-    
-    if (dateFilters.endDateTo) {
-      filters.endDateTo = dateFilters.endDateTo;
-    }
-    
-    // Filtro de moneda
-    if (currencyFilter.value) {
-      filters.currency = currencyFilter.value;
-    }
-    
-    // Filtros de importe
-    if (amountFilter.min !== null) {
-      filters.minAmount = amountFilter.min;
-    }
-    
-    if (amountFilter.max !== null) {
-      filters.maxAmount = amountFilter.max;
-    }
-    
-    // Enviar solicitud al servidor con los filtros
     await contractStore.fetchContractsWithFilters(filters);
   } catch (error) {
-    console.error('Error al aplicar filtros:', error);
-    toast.error('Error al aplicar los filtros. Por favor, intente de nuevo.');
-  } finally {
-    contractStore.setLoading(false);
+    notification.error('Error al aplicar los filtros');
   }
 }
 
-// Métodos para manejar contratos
+// Funciones para manejar contratos
 function openContractDialog() {
   selectedContract.value = null;
   isDialogVisible.value = true;
@@ -383,23 +479,37 @@ function openContractDialog() {
 function editContract(contract: Contract) {
   selectedContract.value = contract;
   isDialogVisible.value = true;
+  // Si estamos en la vista detallada, la cerramos
+  if (showContractDetail.value) {
+    showContractDetail.value = false;
+  }
 }
 
-async function saveContract(contractData: Partial<Contract>) {
+async function saveContract(data: any) {
   try {
-    if (selectedContract.value) {
+    if (data.formData.id) {
       // Actualizar contrato existente
-      await contractStore.updateContract(selectedContract.value.id, contractData);
-      toast.success('Contrato actualizado correctamente');
+      await contractStore.updateContract(
+        data.formData.id, 
+        data.formData, 
+        data.documentFile
+      );
+      notification.success('Contrato actualizado correctamente');
     } else {
       // Crear nuevo contrato
-      await contractStore.createContract(contractData);
-      toast.success('Contrato creado correctamente');
+      await contractStore.createContract(data.formData, data.documentFile);
+      notification.success('Contrato creado correctamente');
     }
+    
     isDialogVisible.value = false;
+    selectedContract.value = null;
+    
+    // Si estamos en la vista detallada, actualizar los datos
+    if (showContractDetail.value && contractDetail.value) {
+      contractDetail.value = contractStore.currentContract;
+    }
   } catch (error: any) {
-    console.error('Error al guardar contrato:', error);
-    toast.error(error.message || 'Error al guardar el contrato. Por favor, verifique los datos.');
+    notification.error(`Error: ${error.message}`);
   }
 }
 
@@ -411,14 +521,100 @@ function confirmDelete(contract: Contract) {
 async function deleteContract() {
   if (!contractToDelete.value) return;
   
+  const deletedContractId = contractToDelete.value.id;
+  
   try {
-    await contractStore.deleteContract(contractToDelete.value.id);
-    toast.success('Contrato eliminado correctamente');
+    await contractStore.deleteContract(deletedContractId);
+    notification.success('Contrato eliminado correctamente');
+    
+    // Cerrar todos los diálogos
     showDeleteConfirm.value = false;
     contractToDelete.value = null;
-  } catch (error: any) {
-    console.error('Error al eliminar contrato:', error);
-    toast.error(error.message || 'Error al eliminar el contrato. Por favor, intente de nuevo.');
+    
+    // Si estamos en la vista detallada y es el contrato que estamos viendo, cerrarla
+    if (showContractDetail.value && contractDetail.value && contractDetail.value.id === deletedContractId) {
+      showContractDetail.value = false;
+      contractDetail.value = null;
+    }
+  } catch (error) {
+    notification.error('Error al eliminar el contrato');
+  }
+}
+
+async function viewContract(contract: Contract) {
+  try {
+    showContractDetail.value = true;
+    
+    // Cargar los detalles completos del contrato
+    const detailedContract = await contractStore.fetchContractById(contract.id);
+    contractDetail.value = detailedContract;
+  } catch (error) {
+    notification.error('Error al cargar los detalles del contrato');
+    showContractDetail.value = false;
+  }
+}
+
+function downloadDocument(contract: Contract) {
+  if (!contract.documentPath) {
+    notification.info('Este contrato no tiene documento adjunto');
+    return;
+  }
+  
+  contractStore.downloadContractDocument(contract.id)
+    .then(() => {
+      notification.success('Documento descargado correctamente');
+    })
+    .catch(error => {
+      notification.error(error.message);
+    });
+}
+
+function closeContractDetail() {
+  showContractDetail.value = false;
+  contractDetail.value = null;
+}
+
+// Funciones auxiliares
+function formatDate(dateString: string) {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
+}
+
+function formatAmount(amount: number, currency: string) {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: currency,
+    minimumFractionDigits: 2
+  }).format(amount);
+}
+
+function getStatusLabel(status: string) {
+  const statusMap: Record<string, string> = {
+    'draft': 'Borrador',
+    'active': 'Activo',
+    'expired': 'Vencido',
+    'terminated': 'Terminado',
+    'renewed': 'Renovado'
+  };
+  return statusMap[status] || status;
+}
+
+function getDocumentName(path: string) {
+  if (!path) return '';
+  const parts = path.split('/');
+  return parts[parts.length - 1];
+}
+
+function changeContractStatus(contract: Contract, newStatus: 'draft' | 'active' | 'expired' | 'terminated' | 'renewed') {
+  try {
+    contractStore.changeContractStatus(contract.id, newStatus);
+    notification.success(`Estado del contrato actualizado a ${getStatusLabel(newStatus)}`);
+  } catch (error) {
+    notification.error('Error al cambiar el estado del contrato');
   }
 }
 </script>

@@ -1,200 +1,562 @@
 <template>
-  <div class="profile">
-    <h1>Profile Settings</h1>
-
-    <div class="profile-sections">
-      <div class="profile-info">
-        <h2>Account Information</h2>
-        <form @submit.prevent="handleUpdateProfile" class="form">
-          <div class="form-group">
-            <label for="username">Username</label>
-            <input 
-              id="username"
-              v-model="profileData.username"
-              type="text"
-              required
-            />
+  <div class="profile-view">
+    <div class="surface-section p-4 mb-4 border-round-lg shadow-1">
+      <h1 class="m-0 text-xl font-semibold mb-1">Mi Perfil</h1>
+      <p class="text-color-secondary mt-1 mb-4">Administre su información personal y seguridad</p>
+      
+      <TabView>
+        <!-- Pestaña de Información General -->
+        <TabPanel header="Información Personal">
+          <template #header>
+            <i class="pi pi-user mr-2"></i>
+            <span>Información Personal</span>
+          </template>
+          
+          <div class="card p-fluid">
+            <form @submit.prevent="updateProfile">
+              <div class="formgrid grid">
+                <div class="field col-12 md:col-6">
+                  <div class="flex align-items-center mb-3">
+                    <Avatar 
+                      :label="profileData.username?.substring(0, 2)?.toUpperCase()" 
+                      size="xlarge" 
+                      class="mr-3" 
+                      :style="{ backgroundColor: getAvatarColor(profileData.username || '') }" 
+                    />
+                    <div>
+                      <h3 class="m-0 text-lg">{{ profileData.username }}</h3>
+                      <span class="text-color-secondary text-sm">
+                        <Tag 
+                          :value="getRoleName(profileData.role)" 
+                          :severity="getRoleSeverity(profileData.role)"
+                        />
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div class="field">
+                    <label for="username" class="font-bold block mb-2">Nombre de Usuario</label>
+                    <InputText 
+                      id="username" 
+                      v-model="profileData.username" 
+                      disabled 
+                      aria-describedby="username-help"
+                    />
+                    <small id="username-help" class="block text-xs text-color-secondary">
+                      No se puede cambiar el nombre de usuario
+                    </small>
+                  </div>
+                  
+                  <div class="field">
+                    <label for="email" class="font-bold block mb-2">Correo Electrónico</label>
+                    <InputText 
+                      id="email" 
+                      v-model="profileData.email" 
+                      type="email" 
+                      :class="{ 'p-invalid': formValidation.email.$error }"
+                      aria-describedby="email-help"
+                    />
+                    <small v-if="formValidation.email.$error" id="email-help" class="p-error block">
+                      {{ formValidation.email.$errors[0].$message }}
+                    </small>
+                  </div>
+                  
+                  <div class="field">
+                    <label for="lastLogin" class="font-bold block mb-2">Último Acceso</label>
+                    <InputText 
+                      id="lastLogin" 
+                      :value="formatDate(profileData.lastLogin)" 
+                      disabled 
+                    />
+                  </div>
+                </div>
+                
+                <div class="field col-12 md:col-6">
+                  <div class="field">
+                    <label class="font-bold block mb-3">Estadísticas de Cuenta</label>
+                    <div class="grid">
+                      <div class="col-6">
+                        <div class="surface-card p-3 border-round">
+                          <div class="text-900 font-medium text-xl mb-2">{{ stats.contractsCreated }}</div>
+                          <div class="text-600">Contratos Creados</div>
+                        </div>
+                      </div>
+                      <div class="col-6">
+                        <div class="surface-card p-3 border-round">
+                          <div class="text-900 font-medium text-xl mb-2">{{ stats.daysActive }}</div>
+                          <div class="text-600">Días Activo</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="field">
+                    <label class="font-bold block mb-3">Estado de Licencia</label>
+                    <div class="surface-card p-3 border-round mb-3">
+                      <div class="flex justify-content-between align-items-center">
+                        <div>
+                          <div class="text-900 font-medium mb-1">
+                            {{ profileData.license ? profileData.license.licenseType : 'Sin licencia' }}
+                          </div>
+                          <div class="text-600 text-sm">
+                            <template v-if="profileData.license">
+                              Expira: {{ formatDate(profileData.license.expiryDate) }}
+                            </template>
+                            <template v-else>
+                              No hay licencia activa
+                            </template>
+                          </div>
+                        </div>
+                        <Badge 
+                          :value="profileData.license?.active ? 'Activa' : 'Inactiva'" 
+                          :severity="profileData.license?.active ? 'success' : 'danger'" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="flex justify-content-end mt-4">
+                <Button 
+                  label="Guardar Cambios" 
+                  icon="pi pi-check" 
+                  type="submit" 
+                  :loading="loading.profile"
+                />
+              </div>
+            </form>
           </div>
-
-          <div class="form-group">
-            <label for="email">Email</label>
-            <input 
-              id="email"
-              v-model="profileData.email"
-              type="email"
-              required
-            />
+        </TabPanel>
+        
+        <!-- Pestaña de Seguridad -->
+        <TabPanel header="Seguridad">
+          <template #header>
+            <i class="pi pi-shield mr-2"></i>
+            <span>Seguridad</span>
+          </template>
+          
+          <div class="card p-fluid">
+            <h3>Cambiar Contraseña</h3>
+            <form @submit.prevent="changePassword">
+              <div class="field">
+                <label for="currentPassword" class="font-bold block mb-2">Contraseña Actual</label>
+                <Password 
+                  id="currentPassword" 
+                  v-model="passwordData.currentPassword" 
+                  toggleMask 
+                  :class="{ 'p-invalid': formValidation.currentPassword.$error }"
+                  :feedback="false"
+                  aria-describedby="currentPassword-help"
+                />
+                <small v-if="formValidation.currentPassword.$error" id="currentPassword-help" class="p-error block">
+                  {{ formValidation.currentPassword.$errors[0].$message }}
+                </small>
+              </div>
+              
+              <div class="field">
+                <label for="newPassword" class="font-bold block mb-2">Nueva Contraseña</label>
+                <Password 
+                  id="newPassword" 
+                  v-model="passwordData.newPassword" 
+                  toggleMask 
+                  :class="{ 'p-invalid': formValidation.newPassword.$error }"
+                  :feedback="true"
+                  :promptLabel="'Ingrese una contraseña'"
+                  :weakLabel="'Débil'"
+                  :mediumLabel="'Media'"
+                  :strongLabel="'Fuerte'"
+                  aria-describedby="newPassword-help"
+                />
+                <small v-if="formValidation.newPassword.$error" id="newPassword-help" class="p-error block">
+                  {{ formValidation.newPassword.$errors[0].$message }}
+                </small>
+              </div>
+              
+              <div class="field">
+                <label for="confirmPassword" class="font-bold block mb-2">Confirmar Contraseña</label>
+                <Password 
+                  id="confirmPassword" 
+                  v-model="passwordData.confirmPassword" 
+                  toggleMask 
+                  :feedback="false"
+                  :class="{ 'p-invalid': formValidation.confirmPassword.$error }"
+                  aria-describedby="confirmPassword-help"
+                />
+                <small v-if="formValidation.confirmPassword.$error" id="confirmPassword-help" class="p-error block">
+                  {{ formValidation.confirmPassword.$errors[0].$message }}
+                </small>
+              </div>
+              
+              <div class="flex justify-content-end mt-4">
+                <Button 
+                  label="Cambiar Contraseña" 
+                  icon="pi pi-lock" 
+                  type="submit" 
+                  severity="info"
+                  :loading="loading.password"
+                />
+              </div>
+            </form>
           </div>
-
-          <button type="submit" class="btn-primary" :disabled="updating">
-            {{ updating ? 'Updating...' : 'Update Profile' }}
-          </button>
-        </form>
-      </div>
-
-      <div class="password-change">
-        <h2>Change Password</h2>
-        <form @submit.prevent="handlePasswordChange" class="form">
-          <div class="form-group">
-            <label for="currentPassword">Current Password</label>
-            <input 
-              id="currentPassword"
-              v-model="passwordData.currentPassword"
-              type="password"
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="newPassword">New Password</label>
-            <input 
-              id="newPassword"
-              v-model="passwordData.newPassword"
-              type="password"
-              required
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="confirmPassword">Confirm New Password</label>
-            <input 
-              id="confirmPassword"
-              v-model="passwordData.confirmPassword"
-              type="password"
-              required
-            />
-          </div>
-
-          <button type="submit" class="btn-primary" :disabled="changing">
-            {{ changing ? 'Changing...' : 'Change Password' }}
-          </button>
-        </form>
-      </div>
-
-      <div class="activity-log">
-        <h2>Recent Activity</h2>
-        <div class="activity-list" v-if="activities.length">
-          <div v-for="activity in activities" :key="activity.id" class="activity-item">
-            <span class="activity-icon">
-              <i :class="getActivityIcon(activity.action)"></i>
-            </span>
-            <div class="activity-content">
-              <p class="activity-details">{{ activity.details }}</p>
-              <span class="activity-time">{{ formatDate(activity.timestamp) }}</span>
+        </TabPanel>
+        
+        <!-- Pestaña de Actividad -->
+        <TabPanel header="Actividad Reciente">
+          <template #header>
+            <i class="pi pi-history mr-2"></i>
+            <span>Actividad Reciente</span>
+          </template>
+          
+          <div class="card">
+            <Timeline :value="recentActivity" class="w-full">
+              <template #content="slotProps">
+                <div class="flex flex-column">
+                  <span class="text-color-secondary text-sm mb-1">{{ formatDate(slotProps.item.date) }}</span>
+                  <span class="text-color font-medium">{{ slotProps.item.action }}</span>
+                  <div v-if="slotProps.item.details" class="mt-1 text-sm text-color-secondary">
+                    {{ slotProps.item.details }}
+                  </div>
+                </div>
+              </template>
+              
+              <template #opposite="slotProps">
+                <div class="flex align-items-center justify-content-center bg-primary border-circle p-2">
+                  <i :class="slotProps.item.icon" class="text-white"></i>
+                </div>
+              </template>
+            </Timeline>
+            
+            <div v-if="!recentActivity.length" class="text-center p-4">
+              <i class="pi pi-inbox text-6xl text-color-secondary mb-3"></i>
+              <p>No hay actividad reciente para mostrar</p>
             </div>
           </div>
-        </div>
-        <p v-else class="no-activity">No recent activity</p>
-      </div>
+        </TabPanel>
+      </TabView>
     </div>
+    
+    <!-- Toast para mensajes -->
+    <Toast />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useUserStore } from '../../stores/user';
-import { format } from 'date-fns';
-import { useToast } from '../../types/useToast';
+import { ref, reactive, computed, onMounted } from 'vue';
+// Importaciones comentadas de vuelidate - deberán instalarse estas dependencias
+// import { useVuelidate } from '@vuelidate/core';
+// import { required, email, minLength, sameAs, helpers } from '@vuelidate/validators';
+import { useToast } from 'primevue/usetoast';
+import { format, differenceInDays } from 'date-fns';
+import { es } from 'date-fns/locale';
+import axios from 'axios';
 
-const userStore = useUserStore();
-const toast = useToast();
-
-const updating = ref(false);
-const changing = ref(false);
-interface Activity {
-  id: number;
-  action: ActivityAction;
-  details: string;
-  timestamp: string;
+// Define interfaces para tipar datos
+interface License {
+  licenseType: string;
+  expiryDate: string | Date;
+  active: boolean;
 }
 
-const activities = ref<Activity[]>([]);
-const profileData = ref({
-  username: '',
-  email: ''
+interface Activity {
+  id: number;
+  action: string;
+  details?: string;
+  createdAt: string | Date;
+  date?: Date;
+  icon?: string;
+}
+
+interface ProfileData {
+  id: number | null;
+  username: string;
+  email: string;
+  role: string;
+  lastLogin: string | Date | null;
+  license: License | null;
+}
+
+interface PasswordData {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+// Composables
+const toast = useToast();
+
+// Estado
+const loading = reactive({
+  profile: false,
+  password: false,
+  activity: false,
 });
 
-const passwordData = ref({
+const profileData = reactive<ProfileData>({
+  id: null,
+  username: '',
+  email: '',
+  role: '',
+  lastLogin: null,
+  license: null
+});
+
+const passwordData = reactive<PasswordData>({
   currentPassword: '',
   newPassword: '',
   confirmPassword: ''
 });
 
-onMounted(async () => {
-  const user = await userStore.getCurrentUser();
-  profileData.value = {
-    username: user.username,
-    email: user.email
-  };
-  await fetchActivities();
+const recentActivity = ref<Activity[]>([]);
+
+// Estadísticas de usuario
+const stats = reactive({
+  contractsCreated: 0,
+  daysActive: 0
 });
 
-async function fetchActivities() {
-  try {
-    const response = await fetch('/api/activities/me');
-    activities.value = await response.json();
-  } catch (error) {
-    console.error('Error fetching activities:', error);
+// Errores simulados para formularios (mientras no estén las dependencias de vuelidate)
+const formValidation = reactive({
+  email: { 
+    $error: false, 
+    $errors: [{ $message: 'Correo electrónico inválido' }] 
+  },
+  currentPassword: {
+    $error: false,
+    $errors: [{ $message: 'La contraseña actual es requerida' }]
+  },
+  newPassword: {
+    $error: false,
+    $errors: [{ $message: 'La nueva contraseña debe tener al menos 6 caracteres' }]
+  },
+  confirmPassword: {
+    $error: false,
+    $errors: [{ $message: 'Las contraseñas no coinciden' }]
   }
-}
+});
 
-async function handleUpdateProfile() {
-  updating.value = true;
+// Cargar datos del perfil
+async function loadProfileData() {
   try {
-    await userStore.updateProfile(profileData.value);
-    toast.success('Profile updated successfully');
-  } catch (error) {
-    toast.error('Failed to update profile');
+    loading.profile = true;
+    const response = await axios.get('/api/v1/users/profile/me');
+    
+    if (response.data && response.data.data) {
+      const userData = response.data.data;
+      profileData.id = userData.id;
+      profileData.username = userData.username;
+      profileData.email = userData.email;
+      profileData.role = userData.role;
+      profileData.lastLogin = userData.lastLogin;
+      profileData.license = userData.license;
+      
+      // Calcular días activos
+      if (userData.createdAt) {
+        stats.daysActive = differenceInDays(new Date(), new Date(userData.createdAt));
+      }
+    }
+  } catch (error: any) {
+    console.error('Error al cargar datos del perfil:', error);
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: 'No se pudieron cargar los datos del perfil',
+      life: 5000
+    });
   } finally {
-    updating.value = false;
+    loading.profile = false;
   }
 }
 
-async function handlePasswordChange() {
-  if (passwordData.value.newPassword !== passwordData.value.confirmPassword) {
-    toast.error('New passwords do not match');
+// Cargar actividad reciente
+async function loadRecentActivity() {
+  try {
+    loading.activity = true;
+    const response = await axios.get('/api/v1/users/activity');
+    
+    if (response.data && response.data.data) {
+      recentActivity.value = response.data.data.map((item: any) => {
+        // Determinar icono según el tipo de actividad
+        let icon = 'pi pi-info-circle';
+        if (item.action.includes('login')) icon = 'pi pi-sign-in';
+        if (item.action.includes('password')) icon = 'pi pi-lock';
+        if (item.action.includes('contract')) icon = 'pi pi-file';
+        
+        return {
+          ...item,
+          date: new Date(item.createdAt),
+          icon
+        };
+      });
+    }
+  } catch (error: any) {
+    console.error('Error al cargar actividad reciente:', error);
+  } finally {
+    loading.activity = false;
+  }
+}
+
+// Cargar estadísticas
+async function loadStats() {
+  try {
+    const response = await axios.get('/api/v1/users/stats');
+    
+    if (response.data && response.data.data) {
+      stats.contractsCreated = response.data.data.contractsCreated || 0;
+    }
+  } catch (error: any) {
+    console.error('Error al cargar estadísticas:', error);
+  }
+}
+
+// Actualizar perfil
+async function updateProfile() {
+  // Simulamos validación
+  formValidation.email.$error = !profileData.email || !/\S+@\S+\.\S+/.test(profileData.email);
+  if (formValidation.email.$error) return;
+  
+  try {
+    loading.profile = true;
+    await axios.put('/api/v1/users/profile/me', {
+      email: profileData.email
+    });
+    
+    toast.add({
+      severity: 'success',
+      summary: 'Perfil actualizado',
+      detail: 'Su información ha sido actualizada correctamente',
+      life: 3000
+    });
+  } catch (error: any) {
+    console.error('Error al actualizar perfil:', error);
+    
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: error.response?.data?.message || 'No se pudo actualizar el perfil',
+      life: 5000
+    });
+  } finally {
+    loading.profile = false;
+  }
+}
+
+// Cambiar contraseña
+async function changePassword() {
+  // Simulamos validación
+  formValidation.currentPassword.$error = !passwordData.currentPassword;
+  formValidation.newPassword.$error = !passwordData.newPassword || passwordData.newPassword.length < 6;
+  formValidation.confirmPassword.$error = passwordData.newPassword !== passwordData.confirmPassword;
+  
+  if (formValidation.currentPassword.$error || formValidation.newPassword.$error || formValidation.confirmPassword.$error) {
     return;
   }
-
-  changing.value = true;
+  
   try {
-    await userStore.changePassword(
-      passwordData.value.currentPassword,
-      passwordData.value.newPassword
-    );
-    toast.success('Password changed successfully');
-    passwordData.value = {
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    };
-  } catch (error) {
-    toast.error('Failed to change password');
+    loading.password = true;
+    await axios.put('/api/v1/users/profile/change-password', {
+      currentPassword: passwordData.currentPassword,
+      newPassword: passwordData.newPassword
+    });
+    
+    // Limpiar formulario
+    passwordData.currentPassword = '';
+    passwordData.newPassword = '';
+    passwordData.confirmPassword = '';
+    
+    toast.add({
+      severity: 'success',
+      summary: 'Contraseña actualizada',
+      detail: 'Su contraseña ha sido cambiada correctamente',
+      life: 3000
+    });
+  } catch (error: any) {
+    console.error('Error al cambiar contraseña:', error);
+    
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: error.response?.data?.message || 'No se pudo cambiar la contraseña',
+      life: 5000
+    });
   } finally {
-    changing.value = false;
+    loading.password = false;
   }
 }
 
-type ActivityAction = 'LOGIN' | 'PROFILE_UPDATE' | 'PASSWORD_CHANGE' | 'CONTRACT_CREATE' | 'CONTRACT_UPDATE';
-
-function getActivityIcon(action: ActivityAction | string): string {
-  const icons: Record<ActivityAction | 'DEFAULT', string> = {
-    LOGIN: 'fas fa-sign-in-alt',
-    PROFILE_UPDATE: 'fas fa-user-edit',
-    PASSWORD_CHANGE: 'fas fa-key',
-    CONTRACT_CREATE: 'fas fa-file-contract',
-    CONTRACT_UPDATE: 'fas fa-edit',
-    DEFAULT: 'fas fa-info-circle'
-  };
-
-  return action in icons ? icons[action as ActivityAction] : icons.DEFAULT;
+// Obtener nombre legible para el rol
+function getRoleName(role: string): string {
+  switch (role) {
+    case 'admin': return 'Administrador';
+    case 'advanced': return 'Avanzado';
+    case 'readonly': return 'Solo lectura';
+    default: return role;
+  }
 }
 
-function formatDate(date: string) {
-  return format(new Date(date), 'MMM dd, yyyy HH:mm');
+// Obtener severidad para el rol
+function getRoleSeverity(role: string): 'success' | 'info' | 'warning' | 'danger' | undefined {
+  switch (role) {
+    case 'admin': return 'danger';
+    case 'advanced': return 'warning';
+    case 'readonly': return 'info';
+    default: return undefined;
+  }
 }
+
+// Generar color de avatar basado en el nombre de usuario
+function getAvatarColor(username: string): string {
+  const colors = [
+    '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
+    '#EC4899', '#F97316', '#14B8A6', '#6366F1', '#D946EF'
+  ];
+  
+  // Generar un índice basado en la suma de los códigos ASCII del nombre de usuario
+  const sum = username.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+  return colors[sum % colors.length];
+}
+
+// Formatear fecha
+function formatDate(date: string | Date | null | undefined): string {
+  if (!date) return 'N/A';
+  return format(new Date(date), 'dd MMM yyyy HH:mm', { locale: es });
+}
+
+// Cargar datos al montar el componente
+onMounted(() => {
+  loadProfileData();
+  loadRecentActivity();
+  loadStats();
+});
 </script>
 
 <style lang="scss" scoped>
-@use './profile.scss';
+.profile-view {
+  padding: 1.5rem;
+  
+  :deep(.p-tabview-panels) {
+    padding: 1.5rem 0;
+  }
+  
+  :deep(.p-tabview .p-tabview-nav) {
+    border-width: 0 0 1px 0;
+  }
+  
+  :deep(.p-timeline) {
+    .p-timeline-event-opposite {
+      flex: 0;
+      padding: 0 1rem;
+    }
+  }
+  
+  :deep(.p-password-input) {
+    width: 100%;
+  }
+  
+  .card {
+    background-color: var(--surface-card);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+  }
+}
 </style>

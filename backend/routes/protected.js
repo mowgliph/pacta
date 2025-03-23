@@ -25,11 +25,267 @@ router.get('/profile', authenticateToken, async (req, res) => {
 router.get('/users', authenticateToken, isAdmin, async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: { exclude: ['password'] }
+      attributes: { exclude: ['password', 'resetToken', 'resetTokenExpiry'] }
     });
     res.json(users);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Error al obtener usuarios' });
+  }
+});
+
+// Crear un nuevo usuario
+router.post('/users', authenticateToken, isAdmin, [
+  body('username')
+    .isLength({ min: 3, max: 50 })
+    .withMessage('El nombre de usuario debe tener entre 3 y 50 caracteres')
+    .trim()
+    .escape(),
+  body('email')
+    .isEmail()
+    .withMessage('Debe proporcionar un correo electrónico válido')
+    .normalizeEmail(),
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('La contraseña debe tener al menos 6 caracteres')
+    .matches(/^(?=.*[A-Za-z])(?=.*\d)/)
+    .withMessage('La contraseña debe contener al menos una letra y un número'),
+  body('role')
+    .isIn(['admin', 'advanced', 'readonly'])
+    .withMessage('El rol debe ser admin, advanced o readonly')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { username, email, password, role } = req.body;
+
+    // Comprobar si el usuario ya existe
+    const existingUser = await User.findOne({
+      where: {
+        [Op.or]: [
+          { username },
+          { email }
+        ]
+      }
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        message: 'El nombre de usuario o email ya está en uso'
+      });
+    }
+
+    // Crear nuevo usuario
+    const newUser = await User.create({
+      username,
+      email,
+      password,
+      role,
+      firstLogin: true,
+      active: true
+    });
+
+    // Registrar actividad
+    await ActivityLog.create({
+      userId: req.user.id,
+      action: 'USER_CREATION',
+      entityType: 'User',
+      entityId: newUser.id,
+      details: `Usuario ${username} creado con rol ${role}`
+    });
+
+    // Devolver el usuario creado sin la contraseña
+    const userResponse = newUser.toJSON();
+    delete userResponse.password;
+    
+    res.status(201).json({
+      message: 'Usuario creado exitosamente',
+      user: userResponse
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ message: 'Error al crear usuario' });
+  }
+});
+
+// Obtener un usuario específico
+router.get('/users/:id', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const user = await User.findByPk(req.params.id, {
+      attributes: { exclude: ['password', 'resetToken', 'resetTokenExpiry'] }
+    });
+    
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ message: 'Error al obtener usuario' });
+  }
+});
+
+// Actualizar un usuario
+router.put('/users/:id', authenticateToken, isAdmin, [
+  body('username')
+    .optional()
+    .isLength({ min: 3, max: 50 })
+    .withMessage('El nombre de usuario debe tener entre 3 y 50 caracteres')
+    .trim()
+    .escape(),
+  body('email')
+    .optional()
+    .isEmail()
+    .withMessage('Debe proporcionar un correo electrónico válido')
+    .normalizeEmail(),
+  body('password')
+    .optional()
+    .isLength({ min: 6 })
+    .withMessage('La contraseña debe tener al menos 6 caracteres')
+    .matches(/^(?=.*[A-Za-z])(?=.*\d)/)
+    .withMessage('La contraseña debe contener al menos una letra y un número'),
+  body('role')
+    .optional()
+    .isIn(['admin', 'advanced', 'readonly'])
+    .withMessage('El rol debe ser admin, advanced o readonly'),
+  body('active')
+    .optional()
+    .isBoolean()
+    .withMessage('El campo active debe ser booleano')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const userId = req.params.id;
+    const { username, email, password, role, active } = req.body;
+
+    // Verificar que el usuario existe
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Verificar si se está intentando actualizar el último administrador
+    if (user.role === 'admin' && role === 'readonly' || role === 'advanced') {
+      const adminCount = await User.count({ where: { role: 'admin' } });
+      if (adminCount <= 1) {
+        return res.status(400).json({
+          message: 'No se puede cambiar el rol del último administrador'
+        });
+      }
+    }
+
+    // Si se actualiza username o email, verificar que no exista ya
+    if (username || email) {
+      const existingUser = await User.findOne({
+        where: {
+          [Op.and]: [
+            { id: { [Op.ne]: userId } },
+            {
+              [Op.or]: [
+                username ? { username } : null,
+                email ? { email } : null
+              ].filter(condition => condition !== null)
+            }
+          ]
+        }
+      });
+
+      if (existingUser) {
+        return res.status(400).json({
+          message: 'El nombre de usuario o email ya está en uso por otro usuario'
+        });
+      }
+    }
+
+    // Actualizar el usuario
+    const updateData = {};
+    if (username) updateData.username = username;
+    if (email) updateData.email = email;
+    if (password) updateData.password = password;
+    if (role) updateData.role = role;
+    if (active !== undefined) updateData.active = active;
+
+    await user.update(updateData);
+
+    // Registrar actividad
+    await ActivityLog.create({
+      userId: req.user.id,
+      action: 'USER_UPDATE',
+      entityType: 'User',
+      entityId: user.id,
+      details: `Usuario ID ${userId} actualizado`
+    });
+
+    // Devolver el usuario actualizado sin la contraseña
+    const userResponse = user.toJSON();
+    delete userResponse.password;
+    delete userResponse.resetToken;
+    delete userResponse.resetTokenExpiry;
+    
+    res.json({
+      message: 'Usuario actualizado exitosamente',
+      user: userResponse
+    });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ message: 'Error al actualizar usuario' });
+  }
+});
+
+// Eliminar un usuario
+router.delete('/users/:id', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    
+    // Evitar eliminar el propio usuario
+    if (req.user.id.toString() === userId) {
+      return res.status(400).json({ 
+        message: 'No puedes eliminar tu propio usuario' 
+      });
+    }
+    
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+    
+    // Verificar si es el último administrador
+    if (user.role === 'admin') {
+      const adminCount = await User.count({ where: { role: 'admin' } });
+      if (adminCount <= 1) {
+        return res.status(400).json({
+          message: 'No se puede eliminar el último administrador del sistema'
+        });
+      }
+    }
+    
+    // Registrar actividad antes de eliminar
+    await ActivityLog.create({
+      userId: req.user.id,
+      action: 'USER_DELETION',
+      entityType: 'User',
+      entityId: user.id,
+      details: `Usuario ${user.username} con rol ${user.role} eliminado`
+    });
+    
+    // Eliminar el usuario
+    await user.destroy();
+    
+    res.json({ 
+      message: 'Usuario eliminado exitosamente',
+      userId
+    });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ message: 'Error al eliminar usuario' });
   }
 });
 

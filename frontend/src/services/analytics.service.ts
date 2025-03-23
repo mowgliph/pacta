@@ -172,6 +172,30 @@ class AnalyticsService {
       throw error;
     }
   }
+
+  /**
+   * Obtiene la lista de contratos en riesgo para la tabla de analíticas
+   * @returns Lista de contratos en riesgo
+   */
+  async getRiskContracts(): Promise<{
+    success: boolean;
+    data: Array<{
+      id: string;
+      name: string;
+      category: string;
+      riskLevel: string;
+      endDate: string;
+      status: string;
+    }>;
+  }> {
+    try {
+      const response = await api.get('/analytics/risk-contracts');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching risk contracts:', error);
+      throw error;
+    }
+  }
 }
 
 export const analyticsService = new AnalyticsService(); 
