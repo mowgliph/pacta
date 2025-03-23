@@ -1,7 +1,7 @@
 <template>
-  <div class="licenses">
-    <header class="licenses__header">
-      <h1>License Management</h1>
+  <div class="p-6 bg-background dark:bg-gray-900">
+    <header class="flex justify-between items-center mb-8 pb-4 border-b border-border dark:border-gray-700">
+      <h1 class="text-2xl font-bold text-text-primary dark:text-white">License Management</h1>
       <BaseButton 
         variant="primary"
         icon="fas fa-plus"
@@ -11,34 +11,34 @@
       </BaseButton>
     </header>
 
-    <div class="licenses__content">
-      <LicenseStatus class="licenses__status" />
+    <div class="grid gap-8">
+      <LicenseStatus class="w-full" />
       
-      <div class="licenses__history">
-        <h2>License History</h2>
-        <table v-if="licenses.length">
+      <div class="bg-surface dark:bg-gray-800 rounded-lg p-6 shadow-sm">
+        <h2 class="text-xl font-semibold mb-6 text-text-primary dark:text-white">License History</h2>
+        <table v-if="licenses.length" class="w-full border-collapse">
           <thead>
             <tr>
-              <th>License Key</th>
-              <th>Type</th>
-              <th>Start Date</th>
-              <th>Expiry Date</th>
-              <th>Status</th>
+              <th class="p-4 text-left font-semibold text-text-secondary dark:text-gray-400 border-b border-border dark:border-gray-700">License Key</th>
+              <th class="p-4 text-left font-semibold text-text-secondary dark:text-gray-400 border-b border-border dark:border-gray-700">Type</th>
+              <th class="p-4 text-left font-semibold text-text-secondary dark:text-gray-400 border-b border-border dark:border-gray-700">Start Date</th>
+              <th class="p-4 text-left font-semibold text-text-secondary dark:text-gray-400 border-b border-border dark:border-gray-700">Expiry Date</th>
+              <th class="p-4 text-left font-semibold text-text-secondary dark:text-gray-400 border-b border-border dark:border-gray-700">Status</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="license in licenses" :key="license.id">
-              <td>{{ license.licenseKey }}</td>
-              <td>{{ license.type }}</td>
-              <td>{{ formatDate(license.startDate) }}</td>
-              <td>{{ formatDate(license.expiryDate) }}</td>
-              <td>
+            <tr v-for="license in licenses" :key="license.id" class="hover:bg-gray-50 dark:hover:bg-gray-750">
+              <td class="p-4 text-text-primary dark:text-white border-b border-border dark:border-gray-700">{{ license.licenseKey }}</td>
+              <td class="p-4 text-text-primary dark:text-white border-b border-border dark:border-gray-700">{{ license.type }}</td>
+              <td class="p-4 text-text-primary dark:text-white border-b border-border dark:border-gray-700">{{ formatDate(license.startDate) }}</td>
+              <td class="p-4 text-text-primary dark:text-white border-b border-border dark:border-gray-700">{{ formatDate(license.expiryDate) }}</td>
+              <td class="p-4 text-text-primary dark:text-white border-b border-border dark:border-gray-700">
                 <StatusBadge :status="getLicenseStatus(license)" />
               </td>
             </tr>
           </tbody>
         </table>
-        <p v-else class="no-data">No license history available</p>
+        <p v-else class="text-center text-text-secondary dark:text-gray-400 py-8">No license history available</p>
       </div>
     </div>
 
@@ -46,7 +46,7 @@
       type="file" 
       ref="fileInput"
       accept=".json"
-      style="display: none"
+      class="hidden"
       @change="handleFileUpload"
     />
   </div>
@@ -141,7 +141,3 @@ async function fetchLicenseHistory() {
   }
 }
 </script>
-
-<style lang="scss" scoped>
-@use './licenseView.scss';
-</style>

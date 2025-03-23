@@ -1,66 +1,73 @@
 <template>
-  <div class="notification-panel">
-    <div class="notification-header">
-      <h3>Notificaciones</h3>
-      <div class="notification-actions">
+  <div class="bg-surface rounded-md shadow-lg w-[360px] max-h-[480px] flex flex-col overflow-hidden border border-border">
+    <div class="p-4 border-b border-border flex justify-between items-center">
+      <h3 class="m-0 text-base font-medium">Notificaciones</h3>
+      <div class="flex items-center gap-2">
         <button 
           v-if="hasUnread" 
-          class="btn-text" 
+          class="bg-transparent border-none text-primary text-sm cursor-pointer px-2 py-1 rounded hover:bg-primary/5 disabled:text-text-disabled disabled:cursor-not-allowed" 
           @click="markAllAsRead"
           :disabled="isLoading"
         >
           Marcar todo como leído
         </button>
-        <button class="btn-icon" @click="close">
+        <button class="bg-transparent border-none text-text-secondary flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:bg-black/5 hover:text-text-primary" @click="close">
           <i class="fas fa-times"></i>
         </button>
       </div>
     </div>
     
-    <div class="notification-content">
-      <div v-if="isLoading" class="notification-loading">
-        <i class="fas fa-circle-notch fa-spin"></i>
+    <div class="flex-1 overflow-y-auto py-2 min-h-[200px]">
+      <div v-if="isLoading" class="h-[200px] flex flex-col items-center justify-center text-text-secondary">
+        <i class="fas fa-circle-notch fa-spin text-3xl mb-4 opacity-50"></i>
         <p>Cargando notificaciones...</p>
       </div>
       
-      <div v-else-if="notifications.length === 0" class="notification-empty">
-        <i class="fas fa-bell-slash"></i>
+      <div v-else-if="notifications.length === 0" class="h-[200px] flex flex-col items-center justify-center text-text-secondary">
+        <i class="fas fa-bell-slash text-3xl mb-4 opacity-50"></i>
         <p>No tienes notificaciones</p>
       </div>
       
-      <div v-else class="notification-list">
+      <div v-else class="flex flex-col">
         <div 
           v-for="notification in notifications" 
           :key="notification.id" 
-          class="notification-item"
-          :class="{ 'is-unread': !notification.read }"
+          class="flex p-4 border-b border-border/50 cursor-pointer transition-colors last:border-b-0"
+          :class="{ 'bg-primary/8 hover:bg-primary/12': !notification.read, 'hover:bg-primary/5': notification.read }"
           @click="openNotificationDetails(notification)"
         >
-          <div class="notification-icon" :class="notificationTypeClass(notification.type)">
-            <i :class="notificationTypeIcon(notification.type)"></i>
+          <div class="w-10 h-10 rounded-full flex items-center justify-center mr-4 flex-shrink-0"
+               :class="{
+                 'bg-info/10 text-info': notificationTypeClass(notification.type) === 'is-info',
+                 'bg-warning/10 text-warning': notificationTypeClass(notification.type) === 'is-warning',
+                 'bg-error/10 text-error': notificationTypeClass(notification.type) === 'is-danger'
+               }">
+            <i :class="notificationTypeIcon(notification.type)" class="text-lg"></i>
           </div>
           
-          <div class="notification-body">
-            <div class="notification-message">{{ notification.message }}</div>
-            <div class="notification-meta">
-              <span class="notification-time">{{ formatDate(notification.createdAt) }}</span>
-              <span v-if="notification.Contract" class="notification-contract">
+          <div class="flex-1">
+            <div class="text-sm mb-1 text-text-primary" :class="{ 'font-medium': !notification.read }">
+              {{ notification.message }}
+            </div>
+            <div class="flex text-xs text-text-secondary">
+              <span class="mr-2">{{ formatDate(notification.createdAt) }}</span>
+              <span v-if="notification.Contract" class="font-medium py-0.5 px-1.5 bg-primary/10 rounded">
                 {{ notification.Contract.contractNumber }}
               </span>
             </div>
           </div>
           
-          <div class="notification-actions">
+          <div class="flex flex-col gap-1 opacity-0 transition-opacity group-hover:opacity-100">
             <button 
               v-if="!notification.read" 
-              class="btn-icon"
+              class="bg-transparent border-none text-text-secondary flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:bg-black/5 hover:text-text-primary"
               title="Marcar como leída"
               @click.stop="markAsRead(notification.id)"
             >
               <i class="fas fa-check"></i>
             </button>
             <button 
-              class="btn-icon"
+              class="bg-transparent border-none text-text-secondary flex items-center justify-center w-7 h-7 rounded-full cursor-pointer hover:bg-black/5 hover:text-text-primary"
               title="Eliminar notificación"
               @click.stop="deleteNotification(notification.id)"
             >
@@ -71,8 +78,8 @@
       </div>
     </div>
     
-    <div class="notification-footer">
-      <router-link to="/notifications" class="view-all" @click="close">
+    <div class="p-4 border-t border-border text-center">
+      <router-link to="/notifications" class="text-primary no-underline text-sm font-medium hover:underline" @click="close">
         Ver todas las notificaciones
       </router-link>
     </div>
@@ -167,221 +174,4 @@ const notificationTypeIcon = (type: string) => {
     default: return 'fas fa-bell';
   }
 };
-</script>
-
-<style lang="scss" scoped>
-@use '../../styles/variables' as v;
-@use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-
-.notification-panel {
-  background-color: v.$color-surface;
-  border-radius: v.$border-radius;
-  box-shadow: v.$shadow-lg;
-  width: 360px;
-  max-height: 480px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid v.$color-border;
-}
-
-.notification-header {
-  padding: v.$spacing-md;
-  border-bottom: 1px solid v.$color-border;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  
-  h3 {
-    margin: 0;
-    font-size: v.$font-size-md;
-    font-weight: v.$font-weight-medium;
-  }
-  
-  .notification-actions {
-    display: flex;
-    align-items: center;
-    gap: v.$spacing-sm;
-  }
-}
-
-.notification-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: v.$spacing-sm 0;
-  min-height: 200px;
-}
-
-.notification-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.notification-item {
-  display: flex;
-  padding: v.$spacing-md;
-  border-bottom: 1px solid rgba(v.$color-border, 0.5);
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  
-  &:last-child {
-    border-bottom: none;
-  }
-  
-  &:hover {
-    background-color: rgba(v.$color-primary, 0.05);
-  }
-  
-  &.is-unread {
-    background-color: rgba(v.$color-primary, 0.08);
-    
-    &:hover {
-      background-color: rgba(v.$color-primary, 0.12);
-    }
-    
-    .notification-message {
-      font-weight: v.$font-weight-medium;
-    }
-  }
-}
-
-.notification-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: v.$spacing-md;
-  flex-shrink: 0;
-  
-  &.is-info {
-    background-color: rgba(c.$color-info, 0.1);
-    color: c.$color-info;
-  }
-  
-  &.is-warning {
-    background-color: rgba(c.$color-warning, 0.1);
-    color: c.$color-warning;
-  }
-  
-  &.is-danger {
-    background-color: rgba(c.$color-error, 0.1);
-    color: c.$color-error;
-  }
-  
-  i {
-    font-size: v.$font-size-lg;
-  }
-}
-
-.notification-body {
-  flex: 1;
-}
-
-.notification-message {
-  font-size: v.$font-size-sm;
-  margin-bottom: v.$spacing-xs;
-  color: v.$color-text-primary;
-}
-
-.notification-meta {
-  display: flex;
-  font-size: v.$font-size-xs;
-  color: v.$color-text-secondary;
-  
-  .notification-time {
-    margin-right: v.$spacing-sm;
-  }
-  
-  .notification-contract {
-    font-weight: v.$font-weight-medium;
-    padding: 2px 6px;
-    background-color: rgba(v.$color-primary, 0.1);
-    border-radius: 4px;
-  }
-}
-
-.notification-actions {
-  display: flex;
-  flex-direction: column;
-  gap: v.$spacing-xs;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  
-  .notification-item:hover & {
-    opacity: 1;
-  }
-}
-
-.notification-loading,
-.notification-empty {
-  height: 200px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  color: v.$color-text-secondary;
-  
-  i {
-    font-size: 2rem;
-    margin-bottom: v.$spacing-md;
-    opacity: 0.5;
-  }
-}
-
-.notification-footer {
-  padding: v.$spacing-md;
-  border-top: 1px solid v.$color-border;
-  text-align: center;
-  
-  .view-all {
-    color: v.$color-primary;
-    text-decoration: none;
-    font-size: v.$font-size-sm;
-    font-weight: v.$font-weight-medium;
-    
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-}
-
-.btn-text {
-  background: none;
-  border: none;
-  color: v.$color-primary;
-  font-size: v.$font-size-sm;
-  cursor: pointer;
-  padding: v.$spacing-xs v.$spacing-sm;
-  border-radius: v.$border-radius-sm;
-  
-  &:hover {
-    background-color: rgba(v.$color-primary, 0.05);
-  }
-  
-  &:disabled {
-    color: v.$color-text-disabled;
-    cursor: not-allowed;
-  }
-}
-
-.btn-icon {
-  background: none;
-  border: none;
-  color: v.$color-text-secondary;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  cursor: pointer;
-  
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.05);
-    color: v.$color-text-primary;
-  }
-}
-</style> 
+</script> 

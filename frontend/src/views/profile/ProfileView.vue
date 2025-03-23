@@ -1,8 +1,8 @@
 <template>
-  <div class="profile-view">
-    <div class="surface-section p-4 mb-4 border-round-lg shadow-1">
-      <h1 class="m-0 text-xl font-semibold mb-1">Mi Perfil</h1>
-      <p class="text-color-secondary mt-1 mb-4">Administre su información personal y seguridad</p>
+  <div class="p-6 bg-background dark:bg-gray-900">
+    <div class="bg-surface dark:bg-gray-800 p-4 mb-4 rounded-lg shadow-sm">
+      <h1 class="m-0 text-xl font-semibold mb-1 text-text-primary dark:text-white">Mi Perfil</h1>
+      <p class="text-text-secondary dark:text-gray-400 mt-1 mb-4">Administre su información personal y seguridad</p>
       
       <TabView>
         <!-- Pestaña de Información General -->
@@ -12,11 +12,11 @@
             <span>Información Personal</span>
           </template>
           
-          <div class="card p-fluid">
+          <div class="bg-surface dark:bg-gray-800 rounded-lg p-6">
             <form @submit.prevent="updateProfile">
-              <div class="formgrid grid">
-                <div class="field col-12 md:col-6">
-                  <div class="flex align-items-center mb-3">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <div class="flex items-center mb-3">
                     <Avatar 
                       :label="profileData.username?.substring(0, 2)?.toUpperCase()" 
                       size="xlarge" 
@@ -24,8 +24,8 @@
                       :style="{ backgroundColor: getAvatarColor(profileData.username || '') }" 
                     />
                     <div>
-                      <h3 class="m-0 text-lg">{{ profileData.username }}</h3>
-                      <span class="text-color-secondary text-sm">
+                      <h3 class="m-0 text-lg text-text-primary dark:text-white">{{ profileData.username }}</h3>
+                      <span class="text-text-secondary dark:text-gray-400 text-sm">
                         <Tag 
                           :value="getRoleName(profileData.role)" 
                           :severity="getRoleSeverity(profileData.role)"
@@ -34,26 +34,27 @@
                     </div>
                   </div>
                   
-                  <div class="field">
-                    <label for="username" class="font-bold block mb-2">Nombre de Usuario</label>
+                  <div class="mb-4">
+                    <label for="username" class="font-bold block mb-2 text-text-primary dark:text-white">Nombre de Usuario</label>
                     <InputText 
                       id="username" 
                       v-model="profileData.username" 
                       disabled 
                       aria-describedby="username-help"
+                      class="w-full"
                     />
-                    <small id="username-help" class="block text-xs text-color-secondary">
+                    <small id="username-help" class="block text-xs text-text-secondary dark:text-gray-400">
                       No se puede cambiar el nombre de usuario
                     </small>
                   </div>
                   
-                  <div class="field">
-                    <label for="email" class="font-bold block mb-2">Correo Electrónico</label>
+                  <div class="mb-4">
+                    <label for="email" class="font-bold block mb-2 text-text-primary dark:text-white">Correo Electrónico</label>
                     <InputText 
                       id="email" 
                       v-model="profileData.email" 
                       type="email" 
-                      :class="{ 'p-invalid': formValidation.email.$error }"
+                      :class="{ 'p-invalid': formValidation.email.$error, 'w-full': true }"
                       aria-describedby="email-help"
                     />
                     <small v-if="formValidation.email.$error" id="email-help" class="p-error block">
@@ -61,44 +62,41 @@
                     </small>
                   </div>
                   
-                  <div class="field">
-                    <label for="lastLogin" class="font-bold block mb-2">Último Acceso</label>
+                  <div class="mb-4">
+                    <label for="lastLogin" class="font-bold block mb-2 text-text-primary dark:text-white">Último Acceso</label>
                     <InputText 
                       id="lastLogin" 
                       :value="formatDate(profileData.lastLogin)" 
                       disabled 
+                      class="w-full"
                     />
                   </div>
                 </div>
                 
-                <div class="field col-12 md:col-6">
-                  <div class="field">
-                    <label class="font-bold block mb-3">Estadísticas de Cuenta</label>
-                    <div class="grid">
-                      <div class="col-6">
-                        <div class="surface-card p-3 border-round">
-                          <div class="text-900 font-medium text-xl mb-2">{{ stats.contractsCreated }}</div>
-                          <div class="text-600">Contratos Creados</div>
-                        </div>
+                <div>
+                  <div class="mb-4">
+                    <label class="font-bold block mb-3 text-text-primary dark:text-white">Estadísticas de Cuenta</label>
+                    <div class="grid grid-cols-2 gap-4">
+                      <div class="bg-surface-variant dark:bg-gray-750 p-3 rounded-lg">
+                        <div class="text-text-primary dark:text-white font-medium text-xl mb-2">{{ stats.contractsCreated }}</div>
+                        <div class="text-text-secondary dark:text-gray-400">Contratos Creados</div>
                       </div>
-                      <div class="col-6">
-                        <div class="surface-card p-3 border-round">
-                          <div class="text-900 font-medium text-xl mb-2">{{ stats.daysActive }}</div>
-                          <div class="text-600">Días Activo</div>
-                        </div>
+                      <div class="bg-surface-variant dark:bg-gray-750 p-3 rounded-lg">
+                        <div class="text-text-primary dark:text-white font-medium text-xl mb-2">{{ stats.daysActive }}</div>
+                        <div class="text-text-secondary dark:text-gray-400">Días Activo</div>
                       </div>
                     </div>
                   </div>
                   
-                  <div class="field">
-                    <label class="font-bold block mb-3">Estado de Licencia</label>
-                    <div class="surface-card p-3 border-round mb-3">
-                      <div class="flex justify-content-between align-items-center">
+                  <div class="mb-4">
+                    <label class="font-bold block mb-3 text-text-primary dark:text-white">Estado de Licencia</label>
+                    <div class="bg-surface-variant dark:bg-gray-750 p-3 rounded-lg mb-3">
+                      <div class="flex justify-between items-center">
                         <div>
-                          <div class="text-900 font-medium mb-1">
+                          <div class="text-text-primary dark:text-white font-medium mb-1">
                             {{ profileData.license ? profileData.license.licenseType : 'Sin licencia' }}
                           </div>
-                          <div class="text-600 text-sm">
+                          <div class="text-text-secondary dark:text-gray-400 text-sm">
                             <template v-if="profileData.license">
                               Expira: {{ formatDate(profileData.license.expiryDate) }}
                             </template>
@@ -117,7 +115,7 @@
                 </div>
               </div>
               
-              <div class="flex justify-content-end mt-4">
+              <div class="flex justify-end mt-4">
                 <Button 
                   label="Guardar Cambios" 
                   icon="pi pi-check" 
@@ -136,16 +134,16 @@
             <span>Seguridad</span>
           </template>
           
-          <div class="card p-fluid">
-            <h3>Cambiar Contraseña</h3>
+          <div class="bg-surface dark:bg-gray-800 rounded-lg p-6">
+            <h3 class="text-text-primary dark:text-white text-lg font-semibold mb-4">Cambiar Contraseña</h3>
             <form @submit.prevent="changePassword">
-              <div class="field">
-                <label for="currentPassword" class="font-bold block mb-2">Contraseña Actual</label>
+              <div class="mb-4">
+                <label for="currentPassword" class="font-bold block mb-2 text-text-primary dark:text-white">Contraseña Actual</label>
                 <Password 
                   id="currentPassword" 
                   v-model="passwordData.currentPassword" 
                   toggleMask 
-                  :class="{ 'p-invalid': formValidation.currentPassword.$error }"
+                  :class="{ 'p-invalid': formValidation.currentPassword.$error, 'w-full': true }"
                   :feedback="false"
                   aria-describedby="currentPassword-help"
                 />
@@ -154,13 +152,13 @@
                 </small>
               </div>
               
-              <div class="field">
-                <label for="newPassword" class="font-bold block mb-2">Nueva Contraseña</label>
+              <div class="mb-4">
+                <label for="newPassword" class="font-bold block mb-2 text-text-primary dark:text-white">Nueva Contraseña</label>
                 <Password 
                   id="newPassword" 
                   v-model="passwordData.newPassword" 
                   toggleMask 
-                  :class="{ 'p-invalid': formValidation.newPassword.$error }"
+                  :class="{ 'p-invalid': formValidation.newPassword.$error, 'w-full': true }"
                   :feedback="true"
                   :promptLabel="'Ingrese una contraseña'"
                   :weakLabel="'Débil'"
@@ -173,14 +171,14 @@
                 </small>
               </div>
               
-              <div class="field">
-                <label for="confirmPassword" class="font-bold block mb-2">Confirmar Contraseña</label>
+              <div class="mb-4">
+                <label for="confirmPassword" class="font-bold block mb-2 text-text-primary dark:text-white">Confirmar Contraseña</label>
                 <Password 
                   id="confirmPassword" 
                   v-model="passwordData.confirmPassword" 
                   toggleMask 
                   :feedback="false"
-                  :class="{ 'p-invalid': formValidation.confirmPassword.$error }"
+                  :class="{ 'p-invalid': formValidation.confirmPassword.$error, 'w-full': true }"
                   aria-describedby="confirmPassword-help"
                 />
                 <small v-if="formValidation.confirmPassword.$error" id="confirmPassword-help" class="p-error block">
@@ -188,7 +186,7 @@
                 </small>
               </div>
               
-              <div class="flex justify-content-end mt-4">
+              <div class="flex justify-end mt-4">
                 <Button 
                   label="Cambiar Contraseña" 
                   icon="pi pi-lock" 
@@ -208,28 +206,28 @@
             <span>Actividad Reciente</span>
           </template>
           
-          <div class="card">
+          <div class="bg-surface dark:bg-gray-800 rounded-lg p-6">
             <Timeline :value="recentActivity" class="w-full">
               <template #content="slotProps">
-                <div class="flex flex-column">
-                  <span class="text-color-secondary text-sm mb-1">{{ formatDate(slotProps.item.date) }}</span>
-                  <span class="text-color font-medium">{{ slotProps.item.action }}</span>
-                  <div v-if="slotProps.item.details" class="mt-1 text-sm text-color-secondary">
+                <div class="flex flex-col">
+                  <span class="text-text-secondary dark:text-gray-400 text-sm mb-1">{{ formatDate(slotProps.item.date) }}</span>
+                  <span class="text-text-primary dark:text-white font-medium">{{ slotProps.item.action }}</span>
+                  <div v-if="slotProps.item.details" class="mt-1 text-sm text-text-secondary dark:text-gray-400">
                     {{ slotProps.item.details }}
                   </div>
                 </div>
               </template>
               
               <template #opposite="slotProps">
-                <div class="flex align-items-center justify-content-center bg-primary border-circle p-2">
-                  <i :class="slotProps.item.icon" class="text-white"></i>
+                <div class="flex items-center justify-center bg-primary text-white rounded-full p-2">
+                  <i :class="slotProps.item.icon"></i>
                 </div>
               </template>
             </Timeline>
             
             <div v-if="!recentActivity.length" class="text-center p-4">
-              <i class="pi pi-inbox text-6xl text-color-secondary mb-3"></i>
-              <p>No hay actividad reciente para mostrar</p>
+              <i class="pi pi-inbox text-6xl text-text-secondary dark:text-gray-400 mb-3"></i>
+              <p class="text-text-secondary dark:text-gray-400">No hay actividad reciente para mostrar</p>
             </div>
           </div>
         </TabPanel>
@@ -529,34 +527,3 @@ onMounted(() => {
   loadStats();
 });
 </script>
-
-<style lang="scss" scoped>
-.profile-view {
-  padding: 1.5rem;
-  
-  :deep(.p-tabview-panels) {
-    padding: 1.5rem 0;
-  }
-  
-  :deep(.p-tabview .p-tabview-nav) {
-    border-width: 0 0 1px 0;
-  }
-  
-  :deep(.p-timeline) {
-    .p-timeline-event-opposite {
-      flex: 0;
-      padding: 0 1rem;
-    }
-  }
-  
-  :deep(.p-password-input) {
-    width: 100%;
-  }
-  
-  .card {
-    background-color: var(--surface-card);
-    border-radius: var(--border-radius);
-    padding: 1.5rem;
-  }
-}
-</style>

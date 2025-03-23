@@ -1,71 +1,77 @@
 <template>
-  <div class="license-required">
-    <div class="content">
-      <h1>Licencia Requerida</h1>
-      <p>Para acceder a esta funcionalidad, necesitas una licencia activa.</p>
+  <div class="flex items-center justify-center flex-col min-h-screen p-8 bg-background dark:bg-gray-900 text-center">
+    <div class="max-w-2xl w-full bg-surface dark:bg-gray-800 rounded-lg shadow-md p-8 text-center">
+      <h1 class="text-2xl font-bold mb-4 text-text-primary dark:text-white">Licencia Requerida</h1>
+      <p class="text-text-secondary dark:text-gray-400 mb-8">Para acceder a esta funcionalidad, necesitas una licencia activa.</p>
       
-      <div class="license-form" v-if="!authStore.hasActiveLicense">
-        <div class="input-group">
+      <div class="my-8 p-6 bg-surface-variant dark:bg-gray-750 rounded-lg shadow-sm" v-if="!authStore.hasActiveLicense">
+        <div class="flex items-center gap-4 mb-4 md:flex-row flex-col">
           <input 
             v-model="licenseCode" 
             type="text" 
             placeholder="Ingresa tu código de promoción"
             @keyup.enter="activateLicense"
-            :class="{ 'error': authStore.errors.length > 0 }"
+            class="flex-1 w-full px-4 py-2 border rounded-md text-base transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary dark:bg-gray-700 dark:text-white dark:border-gray-600"
+            :class="{ 'border-error focus:border-error focus:ring-error': authStore.errors.length > 0, 'border-border': !authStore.errors.length }"
           >
-          <button @click="activateLicense" class="btn-primary" :disabled="!licenseCode.trim()">
+          <button 
+            @click="activateLicense" 
+            class="px-4 py-2 bg-primary text-white rounded-md transition-colors hover:bg-primary-dark disabled:opacity-70 disabled:cursor-not-allowed uppercase tracking-wide font-medium min-w-[120px]" 
+            :disabled="!licenseCode.trim()"
+          >
             Activar
           </button>
         </div>
-        <p class="hint">Códigos disponibles: DEMOPACTA (30 días) o TRYPACTA (7 días)</p>
+        <p class="text-sm text-text-secondary dark:text-gray-400 mt-2">Códigos disponibles: DEMOPACTA (30 días) o TRYPACTA (7 días)</p>
         
-        <div class="file-upload" v-if="showFileUpload">
-          <div class="upload-area" 
-               @click="triggerFileInput"
-               @drop.prevent="handleFileDrop"
-               @dragover.prevent
-               @dragenter.prevent>
+        <div class="mt-8" v-if="showFileUpload">
+          <div 
+            class="border-2 border-dashed border-border dark:border-gray-600 rounded-lg p-8 cursor-pointer transition-colors hover:border-primary hover:bg-primary/5 dark:hover:bg-primary/10" 
+            @click="triggerFileInput"
+            @drop.prevent="handleFileDrop"
+            @dragover.prevent
+            @dragenter.prevent
+          >
             <input 
               type="file" 
               ref="fileInput"
               accept=".lic"
               @change="handleFileSelect"
-              class="file-input"
-              style="display: none"
+              class="hidden"
             >
-            <div class="upload-content">
-              <i class="fas fa-cloud-upload-alt"></i>
-              <p>Arrastra y suelta tu archivo .lic aquí</p>
-              <p class="sub-text">o haz clic para seleccionar</p>
+            <div class="flex flex-col items-center gap-2">
+              <i class="fas fa-cloud-upload-alt text-4xl text-primary"></i>
+              <p class="text-text-secondary dark:text-gray-400 m-0">Arrastra y suelta tu archivo .lic aquí</p>
+              <p class="text-sm text-text-secondary dark:text-gray-400 m-0">o haz clic para seleccionar</p>
             </div>
           </div>
-          <div v-if="selectedFile" class="selected-file">
-            <span>{{ selectedFile.name }}</span>
-            <button @click="removeFile" class="btn-icon">
+          <div v-if="selectedFile" class="flex justify-between items-center mt-4 p-2 bg-primary/10 dark:bg-primary/20 rounded-md">
+            <span class="text-text-primary dark:text-white">{{ selectedFile.name }}</span>
+            <button @click="removeFile" class="text-error hover:text-error-dark p-1 rounded-full hover:bg-error/10">
               <i class="fas fa-times"></i>
             </button>
           </div>
         </div>
 
-        <div v-if="authStore.errors.length > 0" class="error-message">
+        <div v-if="authStore.errors.length > 0" class="text-sm text-error mt-2 p-2 bg-error/10 rounded-md">
           {{ authStore.errors[0] }}
         </div>
       </div>
 
-      <div class="license-info" v-if="authStore.license">
-        <h2>Estado de tu Licencia</h2>
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="label">Tipo:</span>
-            <span class="value">{{ authStore.license.type }}</span>
+      <div class="my-8 p-6 bg-surface-variant dark:bg-gray-750 rounded-lg shadow-sm" v-if="authStore.license">
+        <h2 class="text-xl font-semibold mb-6 text-text-primary dark:text-white">Estado de tu Licencia</h2>
+        <div class="grid gap-4 text-left">
+          <div class="flex justify-between items-center py-2">
+            <span class="text-text-secondary dark:text-gray-400">Tipo:</span>
+            <span class="text-text-primary dark:text-white font-medium">{{ authStore.license.type }}</span>
           </div>
-          <div class="info-item">
-            <span class="label">Fecha de Expiración:</span>
-            <span class="value">{{ formatDate(authStore.license.expiration_date) }}</span>
+          <div class="flex justify-between items-center py-2">
+            <span class="text-text-secondary dark:text-gray-400">Fecha de Expiración:</span>
+            <span class="text-text-primary dark:text-white font-medium">{{ formatDate(authStore.license.expiration_date) }}</span>
           </div>
-          <div class="info-item">
-            <span class="label">Características:</span>
-            <span class="value">
+          <div class="flex justify-between items-center py-2">
+            <span class="text-text-secondary dark:text-gray-400">Características:</span>
+            <span class="text-text-primary dark:text-white font-medium">
               Usuarios: {{ authStore.license.features.maxUsers }},
               Contratos: {{ authStore.license.features.maxContracts }}
             </span>
@@ -73,11 +79,17 @@
         </div>
       </div>
 
-      <div class="actions">
-        <button @click="contactSupport" class="btn-primary">
+      <div class="flex items-center justify-center gap-4 mt-8">
+        <button 
+          @click="contactSupport" 
+          class="px-4 py-2 bg-primary text-white rounded-md transition-colors hover:bg-primary-dark min-w-[150px]"
+        >
           Contactar Soporte
         </button>
-        <button @click="logout" class="btn-secondary">
+        <button 
+          @click="logout" 
+          class="px-4 py-2 border border-primary text-primary bg-transparent rounded-md transition-colors hover:bg-primary/10 min-w-[150px]"
+        >
           Cerrar Sesión
         </button>
       </div>
@@ -160,8 +172,4 @@ const logout = async () => {
   await authStore.logout()
   router.push('/login')
 }
-</script>
-
-<style lang="scss" scoped>
-@use './licenceRequired.scss';
-</style> 
+</script> 

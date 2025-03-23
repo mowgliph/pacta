@@ -1,5 +1,8 @@
-// Importar nuestro archivo de estilos unificado
-import "./styles/index.css";
+// Importar nuestros estilos Tailwind
+import "./styles/tailwind.css";
+
+// Importar variables CSS y estilos de tema
+import "./styles/theme.css";
 
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';
@@ -30,8 +33,7 @@ import ConfirmDialog from 'primevue/confirmdialog';
 import ConfirmationService from 'primevue/confirmationservice';
 import ProgressSpinner from 'primevue/progressspinner';
 
-// PrimeVue styles
-import './styles/theme.css';
+// PrimeVue styles - solo importamos las que son necesarias
 import 'primeflex/primeflex.css';
 import 'primeicons/primeicons.css';
 

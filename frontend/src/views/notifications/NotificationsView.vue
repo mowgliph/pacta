@@ -1,30 +1,30 @@
 <template>
-  <div class="notifications-view">
-    <header class="page-header">
-      <h1 class="page-title">Gestión de Notificaciones</h1>
-      <div class="page-actions">
+  <div class="max-w-7xl mx-auto p-6 bg-background dark:bg-gray-900">
+    <header class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-semibold text-text-primary dark:text-white m-0">Gestión de Notificaciones</h1>
+      <div>
         <button 
           v-if="hasUnread" 
-          class="btn-primary" 
+          class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md font-medium hover:bg-primary-dark disabled:opacity-70 disabled:cursor-not-allowed"
           @click="markAllAsRead"
           :disabled="isLoading"
         >
-          <i class="fas fa-check-double"></i>
+          <i class="fas fa-check-double mr-2"></i>
           Marcar todo como leído
         </button>
       </div>
     </header>
     
-    <div class="notification-filters">
-      <div class="filter-group">
-        <label class="filter-label">Filtrar por:</label>
+    <div class="flex justify-between mb-6 gap-4 flex-wrap">
+      <div class="flex items-center gap-2 flex-wrap">
+        <label class="text-sm text-text-secondary dark:text-gray-400">Filtrar por:</label>
         <Dropdown
           v-model="filters.status"
           :options="statusOptions"
           optionLabel="label"
           optionValue="value"
           placeholder="Estado"
-          class="filter-dropdown"
+          class="w-44"
         />
         <Dropdown
           v-model="filters.type"
@@ -32,43 +32,43 @@
           optionLabel="label"
           optionValue="value"
           placeholder="Tipo"
-          class="filter-dropdown"
+          class="w-44"
         />
       </div>
-      <div class="search-group">
+      <div>
         <span class="p-input-icon-left">
           <i class="fas fa-search"></i>
           <InputText 
             v-model="filters.search" 
             placeholder="Buscar en notificaciones" 
-            class="search-input"
+            class="w-72"
           />
         </span>
       </div>
     </div>
     
-    <div v-if="isLoading" class="loading-container">
-      <i class="fas fa-circle-notch fa-spin"></i>
-      <p>Cargando notificaciones...</p>
+    <div v-if="isLoading" class="flex flex-col justify-center items-center h-75 bg-surface dark:bg-gray-800 rounded-lg shadow-sm">
+      <i class="fas fa-circle-notch fa-spin text-4xl mb-4 text-text-secondary dark:text-gray-400"></i>
+      <p class="text-text-secondary dark:text-gray-400">Cargando notificaciones...</p>
     </div>
     
-    <div v-else-if="filteredNotifications.length === 0" class="empty-container">
-      <div class="empty-content">
-        <i class="fas fa-bell-slash"></i>
-        <h3>No hay notificaciones</h3>
-        <p v-if="hasFilters">No se encontraron notificaciones con los filtros aplicados.</p>
-        <p v-else>Aún no tienes notificaciones.</p>
+    <div v-else-if="filteredNotifications.length === 0" class="flex justify-center items-center h-75 bg-surface dark:bg-gray-800 rounded-lg shadow-sm">
+      <div class="text-center max-w-md">
+        <i class="fas fa-bell-slash text-6xl text-text-secondary dark:text-gray-400 opacity-50 mb-4"></i>
+        <h3 class="text-lg text-text-primary dark:text-white mb-2">No hay notificaciones</h3>
+        <p v-if="hasFilters" class="text-text-secondary dark:text-gray-400 mb-4">No se encontraron notificaciones con los filtros aplicados.</p>
+        <p v-else class="text-text-secondary dark:text-gray-400 mb-4">Aún no tienes notificaciones.</p>
         
-        <div v-if="hasFilters" class="empty-actions">
-          <button class="btn-secondary" @click="clearFilters">
-            <i class="fas fa-filter"></i>
+        <div v-if="hasFilters" class="mt-4">
+          <button class="inline-flex items-center px-4 py-2 bg-surface dark:bg-gray-700 text-text-secondary dark:text-gray-300 border border-border dark:border-gray-600 rounded-md font-medium hover:bg-gray-100 dark:hover:bg-gray-600" @click="clearFilters">
+            <i class="fas fa-filter mr-2"></i>
             Limpiar filtros
           </button>
         </div>
       </div>
     </div>
     
-    <div v-else class="notifications-container">
+    <div v-else class="bg-surface dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden">
       <DataTable 
         :value="filteredNotifications" 
         :paginator="true" 
@@ -93,8 +93,13 @@
         
         <Column field="type" header="Tipo" :sortable="true" style="width: 120px">
           <template #body="{ data }">
-            <div class="notification-type" :class="notificationTypeClass(data.type)">
-              <i :class="notificationTypeIcon(data.type)"></i>
+            <div class="inline-flex items-center px-2 py-1 rounded-md text-sm" 
+              :class="{
+                'bg-info/10 text-info-dark dark:text-info-light': notificationTypeClass(data.type) === 'type-info',
+                'bg-warning/10 text-warning-dark dark:text-warning-light': notificationTypeClass(data.type) === 'type-warning',
+                'bg-error/10 text-error-dark dark:text-error-light': notificationTypeClass(data.type) === 'type-danger'
+              }">
+              <i :class="[notificationTypeIcon(data.type), 'mr-1.5']"></i>
               <span>{{ formatNotificationType(data.type) }}</span>
             </div>
           </template>
@@ -102,11 +107,11 @@
         
         <Column field="message" header="Mensaje" :sortable="false">
           <template #body="{ data }">
-            <div class="notification-message">
+            <div class="relative">
               {{ data.message }}
-              <div class="notification-contract" v-if="data.Contract">
-                <span class="contract-number">{{ data.Contract.contractNumber }}</span>
-                <span class="contract-status">{{ formatContractStatus(data.Contract.status) }}</span>
+              <div class="inline-flex items-center ml-2" v-if="data.Contract">
+                <span class="font-medium bg-primary/10 dark:bg-primary/20 px-1.5 py-0.5 rounded text-xs mr-1.5">{{ data.Contract.contractNumber }}</span>
+                <span class="text-xs text-text-secondary dark:text-gray-400">{{ formatContractStatus(data.Contract.status) }}</span>
               </div>
             </div>
           </template>
@@ -114,16 +119,16 @@
         
         <Column field="createdAt" header="Fecha" :sortable="true" style="width: 150px">
           <template #body="{ data }">
-            <div class="notification-date">
-              <div class="date-display">{{ formatDate(data.createdAt) }}</div>
-              <div class="date-relative">{{ formatRelativeDate(data.createdAt) }}</div>
+            <div>
+              <div class="font-medium text-sm">{{ formatDate(data.createdAt) }}</div>
+              <div class="text-xs text-text-secondary dark:text-gray-400">{{ formatRelativeDate(data.createdAt) }}</div>
             </div>
           </template>
         </Column>
         
         <Column header="Acciones" style="width: 120px">
           <template #body="{ data }">
-            <div class="action-buttons">
+            <div class="flex gap-2">
               <Button 
                 v-if="!data.read"
                 icon="fas fa-check" 
@@ -157,8 +162,8 @@
       header="Confirmar eliminación" 
       :modal="true"
     >
-      <div class="confirmation-content">
-        <i class="fas fa-exclamation-triangle" style="color: var(--orange-500)"></i>
+      <div class="flex items-center gap-4">
+        <i class="fas fa-exclamation-triangle text-4xl text-orange-500"></i>
         <span>¿Estás seguro de que deseas eliminar esta notificación?</span>
       </div>
       <template #footer>
@@ -367,237 +372,4 @@ const notificationTypeIcon = (type: string) => {
     default: return 'fas fa-bell';
   }
 };
-</script>
-
-<style lang="scss" scoped>
-@use '../../styles/variables' as v;
-@use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-
-.notifications-view {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: v.$spacing-md;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: v.$spacing-lg;
-  
-  .page-title {
-    font-size: v.$font-size-xl;
-    font-weight: v.$font-weight-semibold;
-    color: v.$color-text-primary;
-    margin: 0;
-  }
-}
-
-.notification-filters {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: v.$spacing-lg;
-  gap: v.$spacing-md;
-  
-  .filter-group {
-    display: flex;
-    align-items: center;
-    gap: v.$spacing-sm;
-    
-    .filter-label {
-      font-size: v.$font-size-sm;
-      color: v.$color-text-secondary;
-    }
-    
-    .filter-dropdown {
-      width: 180px;
-    }
-  }
-  
-  .search-group {
-    .search-input {
-      width: 300px;
-    }
-  }
-}
-
-.notifications-container {
-  background-color: v.$color-surface;
-  border-radius: v.$border-radius;
-  box-shadow: v.$shadow-sm;
-  overflow: hidden;
-}
-
-.loading-container,
-.empty-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 300px;
-  background-color: v.$color-surface;
-  border-radius: v.$border-radius;
-  box-shadow: v.$shadow-sm;
-}
-
-.loading-container {
-  flex-direction: column;
-  color: v.$color-text-secondary;
-  
-  i {
-    font-size: 2rem;
-    margin-bottom: v.$spacing-md;
-  }
-}
-
-.empty-content {
-  text-align: center;
-  max-width: 400px;
-  
-  i {
-    font-size: 3rem;
-    color: v.$color-text-secondary;
-    opacity: 0.5;
-    margin-bottom: v.$spacing-md;
-  }
-  
-  h3 {
-    font-size: v.$font-size-lg;
-    margin-bottom: v.$spacing-sm;
-    color: v.$color-text-primary;
-  }
-  
-  p {
-    color: v.$color-text-secondary;
-    margin-bottom: v.$spacing-md;
-  }
-  
-  .empty-actions {
-    margin-top: v.$spacing-md;
-  }
-}
-
-.notification-type {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 8px;
-  border-radius: v.$border-radius-sm;
-  font-size: v.$font-size-sm;
-  
-  i {
-    margin-right: 6px;
-  }
-  
-  &.type-info {
-    background-color: rgba(c.$color-info, 0.1);
-    color: darken(c.$color-info, 10%);
-  }
-  
-  &.type-warning {
-    background-color: rgba(c.$color-warning, 0.1);
-    color: darken(c.$color-warning, 10%);
-  }
-  
-  &.type-danger {
-    background-color: rgba(c.$color-error, 0.1);
-    color: darken(c.$color-error, 10%);
-  }
-}
-
-.notification-message {
-  position: relative;
-  
-  .notification-contract {
-    display: inline-flex;
-    align-items: center;
-    margin-left: v.$spacing-sm;
-    
-    .contract-number {
-      font-weight: v.$font-weight-medium;
-      background-color: rgba(v.$color-primary, 0.1);
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: v.$font-size-xs;
-      margin-right: 6px;
-    }
-    
-    .contract-status {
-      font-size: v.$font-size-xs;
-      color: v.$color-text-secondary;
-    }
-  }
-}
-
-.notification-date {
-  .date-display {
-    font-weight: v.$font-weight-medium;
-    font-size: v.$font-size-sm;
-  }
-  
-  .date-relative {
-    font-size: v.$font-size-xs;
-    color: v.$color-text-secondary;
-  }
-}
-
-.action-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.confirmation-content {
-  display: flex;
-  align-items: center;
-  gap: v.$spacing-md;
-  
-  i {
-    font-size: 2rem;
-  }
-}
-
-// Botones
-.btn-primary {
-  background-color: v.$color-primary;
-  color: white;
-  border: none;
-  padding: v.$spacing-sm v.$spacing-md;
-  border-radius: v.$border-radius;
-  font-weight: v.$font-weight-medium;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  
-  i {
-    margin-right: v.$spacing-sm;
-  }
-  
-  &:hover {
-    background-color: darken(v.$color-primary, 5%);
-  }
-  
-  &:disabled {
-    background-color: lighten(v.$color-primary, 20%);
-    cursor: not-allowed;
-  }
-}
-
-.btn-secondary {
-  background-color: v.$color-surface;
-  color: v.$color-text-secondary;
-  border: 1px solid v.$color-border;
-  padding: v.$spacing-sm v.$spacing-md;
-  border-radius: v.$border-radius;
-  font-weight: v.$font-weight-medium;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  
-  i {
-    margin-right: v.$spacing-sm;
-  }
-  
-  &:hover {
-    background-color: darken(v.$color-surface, 5%);
-  }
-}
-</style> 
+</script> 

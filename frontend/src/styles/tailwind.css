@@ -7,6 +7,7 @@
 
 /* Clases de componentes personalizados con Tailwind */
 @layer components {
+  /* Botones y controles */
   .btn {
     @apply px-4 py-2 rounded font-medium transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2;
   }
@@ -27,6 +28,7 @@
     @apply bg-error text-white hover:bg-error/90 shadow-sm hover:shadow-md;
   }
   
+  /* Tarjetas y contenedores */
   .card {
     @apply bg-surface rounded shadow-sm p-5 transition-all duration-150 hover:shadow-md hover:translate-y-[-2px];
   }
@@ -39,6 +41,7 @@
     @apply mt-4 border-t border-border pt-4;
   }
   
+  /* Formularios */
   .input {
     @apply w-full border border-border rounded px-3 py-2 text-sm transition-colors duration-150 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20;
   }
@@ -55,6 +58,7 @@
     @apply text-xs text-error mt-1;
   }
 
+  /* Badges */
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
@@ -79,6 +83,7 @@
     @apply bg-info/10 text-info;
   }
 
+  /* Tablas */
   .table-container {
     @apply w-full overflow-x-auto rounded border border-border bg-surface shadow-sm;
   }
@@ -101,5 +106,109 @@
 
   .table tbody tr:hover {
     @apply bg-background/50;
+  }
+   
+  /* Estilos tipográficos migrados desde typography.scss */
+  h1, .h1 {
+    @apply text-2xl md:text-3xl lg:text-4xl font-bold leading-tight tracking-tight text-text-primary mb-4;
+  }
+  
+  h2, .h2 {
+    @apply text-xl md:text-2xl lg:text-3xl font-semibold leading-tight tracking-tight text-text-primary mb-4;
+  }
+  
+  h3, .h3 {
+    @apply text-lg md:text-xl lg:text-2xl font-semibold leading-tight text-text-primary mb-3;
+  }
+  
+  h4, .h4 {
+    @apply text-base md:text-lg font-semibold leading-tight text-text-primary mb-2;
+  }
+  
+  h5, .h5 {
+    @apply text-sm md:text-base font-medium leading-tight text-text-primary mb-2;
+  }
+  
+  h6, .h6 {
+    @apply text-sm font-medium leading-tight text-text-primary mb-2;
+  }
+  
+  p {
+    @apply text-text-primary leading-relaxed mb-4;
+  }
+  
+  a {
+    @apply text-primary hover:text-primary-light transition-colors duration-150;
+  }
+  
+  small {
+    @apply text-sm tracking-wide;
+  }
+  
+  /* Utilidades de texto migradas desde typography.scss */
+  .text-truncate {
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
+  }
+  
+  /* Otros estilos tipográficos que podrían ser necesarios */
+  .prose {
+    @apply max-w-none;
+  }
+  
+  .prose a {
+    @apply text-primary hover:text-primary-light no-underline hover:underline;
+  }
+  
+  /* Layouts y contenedores (desde main.scss) */
+  .container {
+    @apply w-full mx-auto px-4 md:px-6 max-w-7xl;
+  }
+  
+  /* Transiciones y efectos (desde mixins.scss) */
+  .transition-standard {
+    @apply transition-all duration-300 ease-in-out;
+  }
+  
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-1 hover:shadow-md;
+  }
+  
+  .focus-ring {
+    @apply focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary;
+  }
+}
+
+/* Extensiones para utilidades específicas que no están en Tailwind */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Utilidades para flexbox comunes */
+  .flex-center {
+    @apply flex items-center justify-center;
+  }
+  
+  .flex-between {
+    @apply flex items-center justify-between;
+  }
+  
+  /* Utilidades para scroll */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Utilidades para sombras y efectos */
+  .shadow-top {
+    box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1), 0 -2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+  
+  .backdrop-blur {
+    backdrop-filter: blur(8px);
   }
 } 

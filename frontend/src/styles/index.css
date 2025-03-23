@@ -1,33 +1,10 @@
 /**
  * PACTA - Sistema de Gestión de Contratos
- * Archivo principal de estilos
+ * Estilos globales complementarios
+ * 
+ * Nota: Los estilos principales de la aplicación se encuentran en tailwind.css
+ * Este archivo solo contiene animaciones y estilos específicos que no están cubiertos por Tailwind
  */
-
-/* Importar Tailwind */
-@import './tailwind.css';
-
-/* Importar estilos para PrimeVue si son necesarios */
-@import 'primeflex/primeflex.css';
-@import 'primeicons/primeicons.css';
-
-/* Estilos globales para la aplicación */
-html, body {
-  font-family: var(--font-sans);
-  color: var(--color-text-primary);
-  background-color: var(--color-background);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-/* Box sizing */
-*, *::before, *::after {
-  box-sizing: border-box;
-}
 
 /* Transiciones personalizadas */
 .fade-enter-active,

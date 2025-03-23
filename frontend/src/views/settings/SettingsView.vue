@@ -94,7 +94,7 @@
           <!-- Activación por archivo -->
           <div class="form-control mt-4">
             <label class="form-label">Archivo de Licencia</label>
-            <div class="file-upload" 
+            <div class="border-2 border-dashed border-border rounded-md p-4 cursor-pointer transition-all duration-200 hover:border-primary hover:bg-primary/5" 
                  @drop.prevent="handleFileDrop"
                  @dragover.prevent
                  @dragenter.prevent
@@ -102,26 +102,26 @@
               <input 
                 type="file" 
                 ref="fileInput"
-                style="display: none"
+                class="hidden"
                 accept=".lic"
                 @change="handleFileSelect"
               />
-              <div class="upload-content">
-                <i class="fas fa-cloud-upload-alt"></i>
-                <p>Arrastra y suelta un archivo .lic o haz clic para seleccionarlo</p>
+              <div class="text-center">
+                <i class="fas fa-cloud-upload-alt text-2xl text-text-secondary mb-2"></i>
+                <p class="text-text-secondary">Arrastra y suelta un archivo .lic o haz clic para seleccionarlo</p>
               </div>
             </div>
             
-            <div v-if="selectedFile" class="selected-file mt-2">
-              <span>{{ selectedFile.name }}</span>
-              <button @click.stop="removeFile" class="btn-icon">
+            <div v-if="selectedFile" class="flex items-center justify-between p-2 mt-2 bg-primary/10 rounded-md">
+              <span class="text-sm text-text-primary">{{ selectedFile.name }}</span>
+              <button @click.stop="removeFile" class="p-1 text-text-secondary hover:text-error transition-colors">
                 <i class="fas fa-times"></i>
               </button>
             </div>
             
-            <button v-if="selectedFile" class="btn-primary mt-2" @click="uploadLicenseFile" :disabled="loading">
-              <i class="fas fa-upload" v-if="!loading"></i>
-              <i class="fas fa-spinner fa-spin" v-else></i>
+            <button v-if="selectedFile" class="btn-primary mt-2 w-full" @click="uploadLicenseFile" :disabled="loading">
+              <i class="fas fa-upload mr-2" v-if="!loading"></i>
+              <i class="fas fa-spinner fa-spin mr-2" v-else></i>
               Subir y Activar Licencia
             </button>
           </div>
@@ -327,10 +327,10 @@
                   </div>
                 </div>
                 <div class="flex gap-2">
-                  <button class="icon-btn" @click="toggleApiKey(index)">
+                  <button class="text-lg p-1 rounded hover:bg-background transition-colors" @click="toggleApiKey(index)">
                     <i class="fas" :class="key.active ? 'fa-toggle-on text-success' : 'fa-toggle-off text-text-secondary'"></i>
                   </button>
-                  <button class="icon-btn" @click="deleteApiKey(index)">
+                  <button class="text-lg p-1 rounded hover:bg-background transition-colors" @click="deleteApiKey(index)">
                     <i class="fas fa-trash text-error"></i>
                   </button>
                 </div>
@@ -384,7 +384,7 @@
             <p class="text-xs text-text-secondary mb-3">
               ¡Advertencia! Esta acción eliminará permanentemente todos los datos del sistema
             </p>
-            <button class="btn-error w-full flex items-center justify-center gap-2">
+            <button class="bg-error hover:bg-error/90 text-white rounded-md py-2 px-4 w-full flex items-center justify-center gap-2 transition-colors">
               <i class="fas fa-trash-alt"></i>
               <span>Eliminar Todos los Datos</span>
             </button>
@@ -613,210 +613,4 @@ onMounted(async () => {
     }
   }
 })
-</script>
-
-<style lang="scss" scoped>
-@use './settings.scss';
-
-// Estilos adicionales para la sección de usuarios
-.users-list {
-  margin-top: 1.5rem;
-  
-  .table-container {
-    width: 100%;
-    overflow-x: auto;
-  }
-  
-  .data-table {
-    width: 100%;
-    border-collapse: collapse;
-    
-    th, td {
-      padding: 0.75rem;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
-    }
-    
-    th {
-      background-color: var(--bg-secondary);
-      font-weight: 600;
-    }
-    
-    .loading-row, .error-row, .empty-row {
-      text-align: center;
-      padding: 2rem 0;
-      
-      i {
-        margin-right: 0.5rem;
-      }
-    }
-    
-    .error-row {
-      color: var(--danger);
-    }
-    
-    .admin-badge {
-      display: inline-block;
-      font-size: 0.75rem;
-      background-color: var(--primary);
-      color: white;
-      padding: 0.125rem 0.375rem;
-      border-radius: 10px;
-      margin-left: 0.5rem;
-    }
-    
-    .role-badge, .status-badge {
-      display: inline-block;
-      padding: 0.25rem 0.5rem;
-      border-radius: 10px;
-      font-size: 0.875rem;
-    }
-    
-    .role-badge {
-      &.admin {
-        background-color: var(--primary);
-        color: white;
-      }
-      
-      &.advanced {
-        background-color: var(--info);
-        color: white;
-      }
-      
-      &.readonly {
-        background-color: var(--secondary);
-        color: white;
-      }
-    }
-    
-    .status-badge {
-      &.active {
-        background-color: var(--success);
-        color: white;
-      }
-      
-      &.inactive {
-        background-color: var(--warning);
-        color: white;
-      }
-    }
-    
-    .action-buttons {
-      display: flex;
-      gap: 0.5rem;
-      
-      .btn-icon {
-        &.delete {
-          color: var(--danger);
-          
-          &:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-          }
-        }
-      }
-    }
-    
-    tr.current-user {
-      background-color: rgba(var(--primary-rgb), 0.05);
-    }
-  }
-}
-
-// Estilos para el modal
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  
-  .modal-content {
-    background-color: var(--bg-primary);
-    border-radius: 8px;
-    width: 90%;
-    max-width: 500px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem;
-      border-bottom: 1px solid var(--border-color);
-      
-      h3 {
-        margin: 0;
-      }
-    }
-    
-    .modal-body {
-      padding: 1.5rem;
-      
-      .required {
-        color: var(--danger);
-      }
-      
-      .warning-text {
-        color: var(--warning);
-        
-        i {
-          margin-right: 0.5rem;
-        }
-      }
-      
-      .input-error {
-        border-color: var(--danger);
-      }
-      
-      .error-message {
-        color: var(--danger);
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
-      }
-      
-      .toggle-label {
-        margin-left: 0.5rem;
-        font-size: 0.875rem;
-      }
-    }
-    
-    .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 1rem;
-      padding: 1rem;
-      border-top: 1px solid var(--border-color);
-    }
-  }
-}
-
-// Botón de peligro
-.btn-danger {
-  background-color: var(--danger);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  
-  &:hover {
-    background-color: darken(#dc3545, 10%);
-  }
-  
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-}
-</style> 
+</script> 

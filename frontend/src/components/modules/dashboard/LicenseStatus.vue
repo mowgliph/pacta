@@ -1,18 +1,18 @@
 <template>
-  <div class="license-status">
-    <h3 class="license-status__title">License Status</h3>
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">License Status</h3>
     
-    <div class="license-info" :class="statusClass">
-      <div class="license-info__icon">
+    <div class="flex items-start gap-3 p-4 rounded-lg" :class="statusClass">
+      <div class="text-2xl">
         <i :class="statusIcon"></i>
       </div>
       
       <template>
-        <div class="license-info__content">
-          <p class="license-info__message">
+        <div class="flex-1">
+          <p class="font-medium text-gray-800 dark:text-gray-200 mb-2">
             {{ licenseStore.currentLicense?.message || getLicenseMessage(licenseStore.licenseStatus) }}
           </p>
-          <div class="license-info__details" v-if="licenseStore.currentLicense">
+          <div class="flex flex-col gap-1 text-sm text-gray-500 dark:text-gray-400" v-if="licenseStore.currentLicense">
             <span>Type: {{ licenseStore.currentLicense.type }}</span>
             <span>Expires: {{ formatDate(licenseStore.currentLicense.expiryDate) }}</span>
             <span v-if="licenseStore.currentLicense.customerName">
@@ -23,8 +23,8 @@
       </template>
     </div>
 
-    <div v-if="isExpiringSoon" class="license-action">
-      <button @click="handleRenewal" class="btn-renew">
+    <div v-if="isExpiringSoon" class="mt-4 text-center">
+      <button @click="handleRenewal" class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors">
         <i class="fas fa-sync-alt"></i>
         Renew License
       </button>
@@ -46,9 +46,9 @@ onMounted(async () => {
 const statusClass = computed(() => {
   const status = licenseStore.licenseStatus;
   return {
-    'license-info--valid': status === 'VALID',
-    'license-info--warning': status === 'EXPIRING_SOON',
-    'license-info--error': ['EXPIRED', 'NO_LICENSE', 'ERROR'].includes(status)
+    'bg-success/10 text-success': status === 'VALID',
+    'bg-warning/10 text-warning': status === 'EXPIRING_SOON',
+    'bg-error/10 text-error': ['EXPIRED', 'NO_LICENSE', 'ERROR'].includes(status)
   };
 });
 
@@ -88,7 +88,3 @@ function handleRenewal() {
   console.log('License renewal requested');
 }
 </script>
-
-<style lang="scss" scoped>
-@use './licenseStatus.scss';
-</style>

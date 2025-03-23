@@ -1,10 +1,10 @@
 <template>
-  <div class="users-view">
+  <div class="p-6">
     <!-- Cabecera con título y botón para añadir usuario -->
-    <div class="surface-section p-4 mb-4 flex justify-content-between align-items-center border-round-lg shadow-1">
+    <div class="bg-surface p-4 mb-4 flex justify-between items-center rounded-lg shadow">
       <div>
-        <h1 class="m-0 text-xl font-semibold">Gestión de Usuarios</h1>
-        <p class="text-color-secondary mt-1">Administre los usuarios y sus permisos en el sistema</p>
+        <h1 class="m-0 text-xl font-semibold text-text-primary">Gestión de Usuarios</h1>
+        <p class="text-text-secondary mt-1">Administre los usuarios y sus permisos en el sistema</p>
       </div>
       <PrimeButton 
         label="Nuevo Usuario" 
@@ -15,52 +15,46 @@
     </div>
 
     <!-- Estadísticas de usuarios -->
-    <div class="grid mb-4">
-      <div class="col-12 md:col-4">
-        <div class="surface-card p-4 border-round-lg shadow-1">
-          <div class="flex justify-content-between mb-3">
-            <div>
-              <span class="block text-500 font-medium mb-2">Total Usuarios</span>
-              <div class="text-900 font-bold text-2xl">{{ userStats.total }}</div>
-            </div>
-            <div class="flex align-items-center justify-content-center bg-primary border-round" style="width: 3.5rem; height: 3.5rem;">
-              <i class="pi pi-users text-white text-2xl"></i>
-            </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+      <div class="bg-surface p-4 rounded-lg shadow">
+        <div class="flex justify-between mb-3">
+          <div>
+            <span class="block text-text-secondary font-medium mb-2">Total Usuarios</span>
+            <div class="text-text-primary font-bold text-2xl">{{ userStats.total }}</div>
+          </div>
+          <div class="flex items-center justify-center bg-primary rounded-full w-14 h-14">
+            <i class="pi pi-users text-white text-2xl"></i>
           </div>
         </div>
       </div>
       
-      <div class="col-12 md:col-4">
-        <div class="surface-card p-4 border-round-lg shadow-1">
-          <div class="flex justify-content-between mb-3">
-            <div>
-              <span class="block text-500 font-medium mb-2">Usuarios Activos</span>
-              <div class="text-900 font-bold text-2xl">{{ userStats.active }}</div>
-            </div>
-            <div class="flex align-items-center justify-content-center bg-success border-round" style="width: 3.5rem; height: 3.5rem;">
-              <i class="pi pi-check-circle text-white text-2xl"></i>
-            </div>
+      <div class="bg-surface p-4 rounded-lg shadow">
+        <div class="flex justify-between mb-3">
+          <div>
+            <span class="block text-text-secondary font-medium mb-2">Usuarios Activos</span>
+            <div class="text-text-primary font-bold text-2xl">{{ userStats.active }}</div>
+          </div>
+          <div class="flex items-center justify-center bg-success rounded-full w-14 h-14">
+            <i class="pi pi-check-circle text-white text-2xl"></i>
           </div>
         </div>
       </div>
       
-      <div class="col-12 md:col-4">
-        <div class="surface-card p-4 border-round-lg shadow-1">
-          <div class="flex justify-content-between mb-3">
-            <div>
-              <span class="block text-500 font-medium mb-2">Administradores</span>
-              <div class="text-900 font-bold text-2xl">{{ userStats.admins }}</div>
-            </div>
-            <div class="flex align-items-center justify-content-center bg-danger border-round" style="width: 3.5rem; height: 3.5rem;">
-              <i class="pi pi-shield text-white text-2xl"></i>
-            </div>
+      <div class="bg-surface p-4 rounded-lg shadow">
+        <div class="flex justify-between mb-3">
+          <div>
+            <span class="block text-text-secondary font-medium mb-2">Administradores</span>
+            <div class="text-text-primary font-bold text-2xl">{{ userStats.admins }}</div>
+          </div>
+          <div class="flex items-center justify-center bg-error rounded-full w-14 h-14">
+            <i class="pi pi-shield text-white text-2xl"></i>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Componente de tabla de usuarios con loading state -->
-    <div class="surface-card p-4 border-round-lg shadow-1">
+    <div class="bg-surface p-4 rounded-lg shadow">
       <UsersTable 
         :users="users"
         :loading="loading"
@@ -253,13 +247,3 @@ onMounted(async () => {
   }
 });
 </script>
-
-<style lang="scss" scoped>
-.users-view {
-  padding: 1.5rem;
-  
-  .grid {
-    --grid-gutter: 0.75rem;
-  }
-}
-</style>

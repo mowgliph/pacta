@@ -73,7 +73,3 @@ function formatTime(date: string) {
   return formatDistanceToNow(new Date(date), { addSuffix: true });
 }
 </script>
-
-<style lang="scss" scoped>
-@use './activityFeed.scss';
-</style>
