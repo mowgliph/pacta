@@ -1,16 +1,24 @@
 <template>
-  <div class="activity-feed">
-    <h3 class="activity-feed__title">Recent Activity</h3>
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4">
+    <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4">Recent Activity</h3>
     
-    <div class="activity-feed__list">
-      <div v-for="activity in activities" :key="activity.id" class="activity-item">
-        <div class="activity-item__icon" :class="getActivityIcon(activity.type)">
+    <div class="space-y-4">
+      <div v-for="activity in activities" :key="activity.id" class="flex items-start gap-3">
+        <div 
+          class="w-8 h-8 rounded-full flex items-center justify-center text-white"
+          :class="{
+            'bg-success': activity.type.includes('CONTRACT'),
+            'bg-info': activity.type.includes('USER'),
+            'bg-warning': activity.type.includes('LICENSE'),
+            'bg-primary': !activity.type.includes('CONTRACT') && !activity.type.includes('USER') && !activity.type.includes('LICENSE')
+          }"
+        >
           <i :class="getActivityIconClass(activity.type)"></i>
         </div>
         
-        <div class="activity-item__content">
-          <p class="activity-item__message">{{ activity.message }}</p>
-          <span class="activity-item__time">{{ formatTime(activity.createdAt) }}</span>
+        <div class="flex-1">
+          <p class="text-gray-800 dark:text-gray-200 mb-1">{{ activity.message }}</p>
+          <span class="text-sm text-gray-500 dark:text-gray-400">{{ formatTime(activity.createdAt) }}</span>
         </div>
       </div>
     </div>

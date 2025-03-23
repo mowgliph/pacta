@@ -6,63 +6,67 @@
     :dismissableMask="true"
     :closable="true"
     :style="{ width: '500px' }"
-    class="user-dialog"
+    class="rounded-lg shadow-lg"
     :draggable="false"
     @hide="handleCancel"
   >
-    <div class="p-fluid">
-      <form @submit.prevent="handleSubmit" class="user-form">
-        <div class="p-field mb-3">
+    <div class="p-4">
+      <form @submit.prevent="handleSubmit" class="max-h-[70vh] overflow-y-auto pr-2 scrollbar scrollbar-thin scrollbar-thumb-primary scrollbar-track-gray-200">
+        <div class="mb-4">
           <label for="username" class="font-bold mb-2 block">Nombre de Usuario</label>
-          <span class="p-input-icon-right w-full">
-            <i class="pi pi-user" />
+          <span class="relative block w-full">
+            <i class="pi pi-user absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <InputText 
               id="username"
               v-model="formData.username"
               :placeholder="user ? 'Nombre de usuario actual' : 'Escriba un nombre de usuario'"
-              :class="{ 'p-invalid': v$.value.username.$error }"
+              :class="{ 'border-red-500 focus:ring-red-500': v$.value.username.$error }"
+              class="w-full"
               aria-describedby="username-help"
               :disabled="!!user"
               autocomplete="off"
             />
           </span>
-          <small v-if="v$.value.username.$error" id="username-help" class="p-error">
+          <small v-if="v$.value.username.$error" id="username-help" class="text-red-500 text-xs mt-1 block">
             {{ v$.value.username.$errors[0].$message }}
           </small>
         </div>
 
-        <div class="p-field mb-3">
+        <div class="mb-4">
           <label for="email" class="font-bold mb-2 block">Correo Electrónico</label>
-          <span class="p-input-icon-right w-full">
-            <i class="pi pi-envelope" />
+          <span class="relative block w-full">
+            <i class="pi pi-envelope absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" />
             <InputText 
               id="email"
               v-model="formData.email"
               :placeholder="user ? 'Email actual' : 'Escriba un correo electrónico'"
-              :class="{ 'p-invalid': v$.value.email.$error }"
+              :class="{ 'border-red-500 focus:ring-red-500': v$.value.email.$error }"
+              class="w-full"
               aria-describedby="email-help"
               autocomplete="off"
             />
           </span>
-          <small v-if="v$.value.email.$error" id="email-help" class="p-error">
+          <small v-if="v$.value.email.$error" id="email-help" class="text-red-500 text-xs mt-1 block">
             {{ v$.value.email.$errors[0].$message }}
           </small>
         </div>
 
-        <div class="p-field mb-3">
+        <div class="mb-4">
           <label for="password" class="font-bold mb-2 block">
             {{ user ? 'Nueva Contraseña (dejar vacío para mantener la actual)' : 'Contraseña' }}
           </label>
-          <span class="p-input-icon-right w-full">
+          <span class="relative block w-full">
             <i 
               :class="passwordVisible ? 'pi pi-eye-slash cursor-pointer' : 'pi pi-eye cursor-pointer'" 
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 z-10"
               @click="togglePasswordVisibility"
             />
             <Password 
               id="password"
               v-model="formData.password"
               :placeholder="user ? 'Nueva contraseña (opcional)' : 'Escriba una contraseña'"
-              :class="{ 'p-invalid': v$.value.password.$error }"
+              :class="{ 'border-red-500 focus:ring-red-500': v$.value.password.$error }"
+              class="w-full"
               :feedback="true"
               :toggleMask="true"
               aria-describedby="password-help"
@@ -74,12 +78,12 @@
               :disabled="processingForm"
             />
           </span>
-          <small v-if="v$.value.password.$error" id="password-help" class="p-error">
+          <small v-if="v$.value.password.$error" id="password-help" class="text-red-500 text-xs mt-1 block">
             {{ v$.value.password.$errors[0].$message }}
           </small>
         </div>
 
-        <div class="p-field mb-3">
+        <div class="mb-4">
           <label for="role" class="font-bold mb-2 block">Rol de Usuario</label>
           <Dropdown 
             id="role"
@@ -88,27 +92,28 @@
             optionLabel="label"
             optionValue="value"
             placeholder="Seleccione un rol"
-            :class="{ 'p-invalid': v$.value.role.$error }"
+            :class="{ 'border-red-500 focus:ring-red-500': v$.value.role.$error }"
+            class="w-full"
             aria-describedby="role-help"
             :disabled="processingForm || (!!user && user?.username === 'admin')"
           />
-          <small v-if="v$.value.role.$error" id="role-help" class="p-error">
+          <small v-if="v$.value.role.$error" id="role-help" class="text-red-500 text-xs mt-1 block">
             {{ v$.value.role.$errors[0].$message }}
           </small>
-          <small v-if="user && user.username === 'admin'" class="text-xs text-color-secondary">
+          <small v-if="user && user.username === 'admin'" class="text-xs text-gray-500 mt-1 block">
             No se puede cambiar el rol del administrador principal
           </small>
         </div>
 
-        <div v-if="!user" class="p-field mb-3">
+        <div v-if="!user" class="mb-4 flex items-center">
           <Checkbox id="active" v-model="formData.active" :binary="true" />
-          <label for="active" class="ml-2">Usuario activo</label>
+          <label for="active" class="ml-2 cursor-pointer">Usuario activo</label>
         </div>
       </form>
     </div>
 
     <template #footer>
-      <div class="flex justify-content-end gap-2">
+      <div class="flex justify-end gap-2">
         <Button 
           label="Cancelar" 
           icon="pi pi-times" 
@@ -270,37 +275,6 @@ function togglePasswordVisibility() {
 }
 </script>
 
-<style lang="scss" scoped>
-.user-dialog {
-  .user-form {
-    max-height: 70vh;
-    overflow-y: auto;
-    padding-right: 0.5rem;
-    
-    &::-webkit-scrollbar {
-      width: 4px;
-    }
-    
-    &::-webkit-scrollbar-track {
-      background: var(--surface-ground);
-    }
-    
-    &::-webkit-scrollbar-thumb {
-      background-color: var(--primary-color);
-      border-radius: 4px;
-    }
-  }
-  
-  :deep(.p-password-input) {
-    width: 100%;
-  }
-  
-  :deep(.p-password-panel) {
-    transform-origin: top;
-  }
-  
-  :deep(.p-dropdown) {
-    width: 100%;
-  }
-}
+<style>
+/* Estilos incorporados en las clases de Tailwind */
 </style>

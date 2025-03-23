@@ -1,18 +1,21 @@
 <template>
   <Teleport to="body">
     <Transition name="dialog">
-      <div v-if="modelValue" class="dialog-overlay" @click.self="close">
-        <div class="dialog">
-          <div class="dialog__header">
+      <div v-if="modelValue" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="close">
+        <div class="w-[90%] max-w-[600px] max-h-[90vh] bg-surface rounded shadow-md flex flex-col">
+          <div class="p-3 border-b border-border flex items-center justify-between">
             <slot name="header"></slot>
-            <button class="dialog__close" @click="close">
+            <button 
+              class="bg-transparent border-none text-text-secondary cursor-pointer p-2 rounded hover:bg-gray-100 dark:hover:bg-surface-hover transition-colors" 
+              @click="close"
+            >
               <i class="fas fa-times"></i>
             </button>
           </div>
-          <div class="dialog__body">
+          <div class="p-3 overflow-y-auto">
             <slot></slot>
           </div>
-          <div v-if="$slots.footer" class="dialog__footer">
+          <div v-if="$slots.footer" class="p-3 border-t border-border bg-gray-50 dark:bg-surface-hover">
             <slot name="footer"></slot>
           </div>
         </div>
@@ -35,66 +38,7 @@ function close() {
 }
 </script>
 
-<style lang="scss" scoped>
-@use '../../styles/variables' as v;
-@use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-@use '../../styles/typography' as t;
-
-.dialog-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(c.$color-text-primary, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: v.$z-index-modal;
-}
-
-.dialog {
-  @include m.card-theme;
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-
-  &__header {
-    padding: v.$spacing-unit * 3;
-    border-bottom: 1px solid c.$color-border;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  &__body {
-    padding: v.$spacing-unit * 3;
-    overflow-y: auto;
-  }
-
-  &__footer {
-    padding: v.$spacing-unit * 3;
-    border-top: 1px solid c.$color-border;
-    background: c.$color-surface-hover;
-  }
-
-  &__close {
-    background: none;
-    border: none;
-    color: c.$color-text-secondary;
-    cursor: pointer;
-    padding: v.$spacing-unit;
-    border-radius: v.$border-radius;
-    
-    &:hover {
-      background: c.$color-surface-hover;
-    }
-  }
-}
-
+<style>
 .dialog-enter-active,
 .dialog-leave-active {
   transition: opacity 0.3s ease;

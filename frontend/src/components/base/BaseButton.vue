@@ -1,31 +1,35 @@
 <template>
   <button
     :class="[
-      'base-button',
-      `base-button--${variant}`,
-      `base-button--${size}`,
-      { 'base-button--block': block },
-      { 'base-button--icon-only': iconOnly },
-      { 'base-button--loading': loading }
+      'inline-flex items-center justify-center relative overflow-hidden transition-all duration-200 font-medium',
+      'focus:outline-none focus:ring-2 focus:ring-offset-2',
+      sizeClasses,
+      variantClasses,
+      { 'w-full': block },
+      { 'aspect-square p-0': iconOnly },
+      { 'opacity-65 cursor-not-allowed pointer-events-none': disabled || loading },
+      { 'text-transparent': loading }
     ]"
     :disabled="disabled || loading"
     @click="$emit('click', $event)"
   >
-    <i v-if="icon && !iconRight" :class="['base-button__icon', icon]"></i>
-    <span v-if="!iconOnly" class="base-button__text">
+    <i v-if="icon && !iconRight" :class="['text-[1.2em] inline-flex', icon, { 'mr-1': !iconOnly }]"></i>
+    <span v-if="!iconOnly" class="relative">
       <slot></slot>
     </span>
-    <i v-if="icon && iconRight" :class="['base-button__icon', 'base-button__icon--right', icon]"></i>
-    <span v-if="loading" class="base-button__loader">
-      <span class="base-button__loader-dot"></span>
-      <span class="base-button__loader-dot"></span>
-      <span class="base-button__loader-dot"></span>
+    <i v-if="icon && iconRight" :class="['text-[1.2em] inline-flex ml-1', icon]"></i>
+    <span v-if="loading" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center">
+      <span class="w-1.5 h-1.5 rounded-full bg-current mx-0.5 animate-loader1"></span>
+      <span class="w-1.5 h-1.5 rounded-full bg-current mx-0.5 animate-loader2"></span>
+      <span class="w-1.5 h-1.5 rounded-full bg-current mx-0.5 animate-loader3"></span>
     </span>
   </button>
 </template>
 
 <script setup lang="ts">
-defineProps({
+import { computed } from 'vue';
+
+const props = defineProps({
   variant: {
     type: String,
     default: 'primary',
@@ -63,200 +67,50 @@ defineProps({
 });
 
 defineEmits(['click']);
+
+const sizeClasses = computed(() => {
+  switch (props.size) {
+    case 'sm':
+      return props.iconOnly ? 'w-7' : 'py-1 px-2 text-xs';
+    case 'lg':
+      return props.iconOnly ? 'w-11' : 'py-3 px-4 text-base';
+    case 'md':
+    default:
+      return props.iconOnly ? 'w-9' : 'py-2 px-3 text-sm';
+  }
+});
+
+const variantClasses = computed(() => {
+  switch (props.variant) {
+    case 'primary':
+      return 'bg-primary text-white shadow-sm hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm focus:ring-primary';
+    case 'secondary':
+      return 'bg-surface text-text-primary border border-border rounded hover:bg-gray-100 hover:border-primary focus:ring-primary';
+    case 'tertiary':
+      return 'bg-primary/10 text-primary hover:bg-primary/20 focus:ring-primary';
+    case 'danger':
+      return 'bg-error text-white shadow-sm hover:bg-red-700 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:shadow-sm focus:ring-error';
+    case 'text':
+      return 'bg-transparent text-primary hover:bg-primary/5 hover:text-primary-dark p-1 focus:ring-primary';
+    default:
+      return '';
+  }
+});
 </script>
 
-<style lang="scss" scoped>
-@use 'sass:color';
-@use '../../styles/variables' as v;
-@use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-@use '../../styles/typography' as t;
-
-.base-button {
-  @include m.button-text;
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: v.$spacing-xs;
-  border: none;
-  border-radius: v.$border-radius-md;
-  cursor: pointer;
-  transition: all v.$transition-normal;
-  outline: none;
-  overflow: hidden;
-  font-weight: v.$font-weight-medium;
-  
-  &:disabled {
-    opacity: 0.65;
-    cursor: not-allowed;
-    pointer-events: none;
-  }
-  
-  // Variants
-  &--primary {
-    background-color: c.$color-primary;
-    color: c.$color-text-light;
-    box-shadow: 0 2px 4px rgba(c.$color-primary-dark, 0.15);
-    
-    &:hover:not(:disabled) {
-      background-color: c.$color-primary-dark;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(c.$color-primary-dark, 0.2);
-    }
-    
-    &:active:not(:disabled) {
-      transform: translateY(0);
-      box-shadow: 0 1px 2px rgba(c.$color-primary-dark, 0.2);
-    }
-  }
-  
-  &--secondary {
-    background-color: c.$color-surface;
-    color: c.$color-text-primary;
-    border: 1px solid c.$color-border;
-    
-    &:hover:not(:disabled) {
-      background-color: c.$color-hover;
-      border-color: c.$color-primary;
-    }
-  }
-  
-  &--tertiary {
-    background-color: rgba(c.$color-primary, 0.08);
-    color: c.$color-primary;
-    
-    &:hover:not(:disabled) {
-      background-color: rgba(c.$color-primary, 0.15);
-    }
-  }
-  
-  &--danger {
-    background-color: c.$color-error;
-    color: c.$color-text-light;
-    box-shadow: 0 2px 4px rgba(c.$color-error, 0.15);
-    
-    &:hover:not(:disabled) {
-      background-color: color.adjust(c.$color-error, $lightness: -8%);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(c.$color-error, 0.2);
-    }
-    
-    &:active:not(:disabled) {
-      transform: translateY(0);
-      box-shadow: 0 1px 2px rgba(c.$color-error, 0.2);
-    }
-  }
-  
-  &--text {
-    background-color: transparent;
-    color: c.$color-primary;
-    padding: v.$spacing-xs;
-    
-    &:hover:not(:disabled) {
-      color: c.$color-primary-dark;
-      background-color: rgba(c.$color-primary, 0.05);
-    }
-  }
-  
-  // Sizes
-  &--sm {
-    padding: v.$spacing-unit * 1 v.$spacing-unit * 2;
-    font-size: v.$font-size-xs;
-  }
-  
-  &--md {
-    padding: v.$spacing-unit * 2 v.$spacing-unit * 3;
-    font-size: v.$font-size-sm;
-  }
-  
-  &--lg {
-    padding: v.$spacing-unit * 3 v.$spacing-unit * 4;
-    font-size: v.$font-size-md;
-  }
-  
-  // Block
-  &--block {
-    display: flex;
-    width: 100%;
-  }
-  
-  // Icon only
-  &--icon-only {
-    aspect-ratio: 1/1;
-    padding: 0;
-    
-    &.base-button--sm {
-      width: v.$spacing-unit * 7;
-    }
-    
-    &.base-button--md {
-      width: v.$spacing-unit * 9;
-    }
-    
-    &.base-button--lg {
-      width: v.$spacing-unit * 11;
-    }
-  }
-  
-  // Loading state
-  &--loading {
-    color: transparent;
-    
-    .base-button__icon,
-    .base-button__text {
-      visibility: hidden;
-    }
-  }
-  
-  // Icon
-  &__icon {
-    font-size: 1.2em;
-    display: inline-flex;
-    
-    &:not(.base-button__icon--right) {
-      margin-right: v.$spacing-unit * 1;
-    }
-    
-    &--right {
-      margin-left: v.$spacing-unit * 1;
-    }
-  }
-  
-  // Loader
-  &__loader {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    align-items: center;
-    
-    &-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background-color: currentColor;
-      margin: 0 2px;
-      animation: dot-flashing 1s infinite alternate;
-      
-      &:nth-child(2) {
-        animation-delay: 0.2s;
-      }
-      
-      &:nth-child(3) {
-        animation-delay: 0.4s;
-      }
-    }
-  }
+<style>
+@keyframes loader {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
-@keyframes dot-flashing {
-  0% {
-    opacity: 0.2;
-  }
-  100% {
-    opacity: 1;
-  }
+.animate-loader1 {
+  animation: loader 1s infinite 0s;
+}
+.animate-loader2 {
+  animation: loader 1s infinite 0.2s;
+}
+.animate-loader3 {
+  animation: loader 1s infinite 0.4s;
 }
 </style>

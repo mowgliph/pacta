@@ -1,41 +1,13 @@
 <template>
-  <div class="base-card">
-    <div v-if="$slots.header" class="base-card__header">
+  <div class="bg-surface rounded shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md hover:-translate-y-0.5">
+    <div v-if="$slots.header" class="p-3 border-b border-border bg-gray-50 dark:bg-surface-hover">
       <slot name="header"></slot>
     </div>
-    <div class="base-card__body">
+    <div class="p-3">
       <slot></slot>
     </div>
-    <div v-if="$slots.footer" class="base-card__footer">
+    <div v-if="$slots.footer" class="p-3 border-t border-border bg-gray-50 dark:bg-surface-hover">
       <slot name="footer"></slot>
     </div>
   </div>
 </template>
-
-<style lang="scss" scoped>
-@use '../../styles/variables' as v;
-@use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-@use '../../styles/typography' as t;
-
-.base-card {
-  @include m.card-theme;
-  overflow: hidden;
-
-  &__header {
-    padding: v.$spacing-unit * 3;
-    border-bottom: 1px solid c.$color-border;
-    background: c.$color-surface-hover;
-  }
-
-  &__body {
-    padding: v.$spacing-unit * 3;
-  }
-
-  &__footer {
-    padding: v.$spacing-unit * 3;
-    border-top: 1px solid c.$color-border;
-    background: c.$color-surface-hover;
-  }
-}
-</style>

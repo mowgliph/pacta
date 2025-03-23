@@ -2,22 +2,22 @@
   <Transition name="notification">
     <div 
       v-if="show" 
-      class="base-notification" 
+      class="flex items-start p-4 rounded shadow-md mb-4 max-w-md relative transition-all duration-200"
       :class="[
-        `base-notification--${type}`,
-        { 'base-notification--with-icon': icon }
+        typeClasses,
+        { 'pl-12': icon }
       ]"
     >
-      <i v-if="icon" :class="['base-notification__icon', icon]"></i>
-      <div class="base-notification__content">
-        <div v-if="title" class="base-notification__title">{{ title }}</div>
-        <div class="base-notification__message">
+      <i v-if="icon" :class="['absolute left-4 top-4 text-lg', icon]"></i>
+      <div class="flex-1 pr-4">
+        <div v-if="title" class="font-semibold mb-1">{{ title }}</div>
+        <div class="text-sm">
           <slot>{{ message }}</slot>
         </div>
       </div>
       <button 
         v-if="dismissible" 
-        class="base-notification__close"
+        class="bg-transparent border-none opacity-70 cursor-pointer p-1 -m-1 rounded hover:opacity-100 hover:bg-black/5"
         @click="dismiss"
         aria-label="Cerrar notificación"
       >
@@ -84,18 +84,19 @@ watch(show, (newVal) => {
   }
 });
 
-// Iconos por defecto según el tipo
-const defaultIcon = computed(() => {
-  if (!props.icon) {
-    switch (props.type) {
-      case 'success': return 'fas fa-check-circle';
-      case 'error': return 'fas fa-exclamation-circle';
-      case 'warning': return 'fas fa-exclamation-triangle';
-      case 'info': return 'fas fa-info-circle';
-      default: return '';
-    }
+// Obtener las clases según el tipo de notificación
+const typeClasses = computed(() => {
+  switch(props.type) {
+    case 'success':
+      return 'bg-success/10 text-success-800 border-l-4 border-success';
+    case 'error':
+      return 'bg-error/10 text-error-800 border-l-4 border-error';
+    case 'warning':
+      return 'bg-warning/10 text-warning-800 border-l-4 border-warning';
+    case 'info':
+    default:
+      return 'bg-info/10 text-info-800 border-l-4 border-info';
   }
-  return props.icon;
 });
 
 // Cierre automático
@@ -113,91 +114,8 @@ const dismiss = () => {
 };
 </script>
 
-<style lang="scss" scoped>
-@use '../../styles/variables' as v;
-@use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-
-.base-notification {
-  display: flex;
-  align-items: flex-start;
-  padding: v.$spacing-md v.$spacing-lg;
-  border-radius: v.$border-radius;
-  position: relative;
-  box-shadow: v.$shadow-md;
-  margin-bottom: v.$spacing-md;
-  transition: all v.$transition-normal;
-  max-width: 400px;
-  
-  &--with-icon {
-    padding-left: v.$spacing-lg + 30px;
-  }
-  
-  &__icon {
-    position: absolute;
-    left: v.$spacing-md;
-    top: v.$spacing-md;
-    font-size: v.$font-size-lg;
-  }
-  
-  &__content {
-    flex: 1;
-    padding-right: v.$spacing-md;
-  }
-  
-  &__title {
-    font-weight: v.$font-weight-semibold;
-    margin-bottom: v.$spacing-xs;
-  }
-  
-  &__message {
-    font-size: v.$font-size-sm;
-  }
-  
-  &__close {
-    background: transparent;
-    border: none;
-    color: inherit;
-    opacity: 0.7;
-    cursor: pointer;
-    padding: v.$spacing-xs;
-    font-size: v.$font-size-sm;
-    margin: -v.$spacing-xs;
-    border-radius: v.$border-radius-sm;
-    
-    &:hover {
-      opacity: 1;
-      background-color: rgba(0, 0, 0, 0.05);
-    }
-  }
-  
-  // Colores por tipo
-  &--success {
-    background-color: rgba(c.$color-success, 0.1);
-    color: darken(c.$color-success, 10%);
-    border-left: 4px solid c.$color-success;
-  }
-  
-  &--error {
-    background-color: rgba(c.$color-error, 0.1);
-    color: darken(c.$color-error, 10%);
-    border-left: 4px solid c.$color-error;
-  }
-  
-  &--warning {
-    background-color: rgba(c.$color-warning, 0.1);
-    color: darken(c.$color-warning, 15%);
-    border-left: 4px solid c.$color-warning;
-  }
-  
-  &--info {
-    background-color: rgba(c.$color-info, 0.1);
-    color: darken(c.$color-info, 10%);
-    border-left: 4px solid c.$color-info;
-  }
-}
-
-// Animaciones
+<style>
+/* Animaciones */
 .notification-enter-active,
 .notification-leave-active {
   transition: all 0.3s ease;

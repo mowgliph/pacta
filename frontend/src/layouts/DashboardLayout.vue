@@ -1,62 +1,106 @@
 <template>
-  <div class="dashboard-layout" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
-    <aside class="dashboard-sidebar" :class="{ 'is-collapsed': sidebarCollapsed }">
-      <div class="sidebar-header">
-        <div class="logo-container">
-          <img src="@/assets/contract_icon.png" alt="Logo" class="logo-img" width="32" height="32" />
-          <span class="logo-text">PACTA</span>
+  <div class="flex min-h-screen w-full bg-background relative overflow-x-hidden text-text-primary" 
+       :class="{ 'sidebar-collapsed': sidebarCollapsed }">
+    <!-- Sidebar -->
+    <aside class="fixed h-screen w-[260px] bg-gradient-to-br from-primary-dark to-primary shadow-md transition-all duration-300 z-50 flex flex-col overflow-y-auto text-white
+                 scrollbar-thin scrollbar-thumb-white/20 scrollbar-thumb-rounded-full"
+           :class="{ 'w-[70px]': sidebarCollapsed }">
+      <!-- Sidebar Header -->
+      <div class="px-6 py-4 flex items-center justify-center border-b border-white/10 transition-all duration-300"
+           :class="{ 'px-2 py-6 justify-center': sidebarCollapsed }">
+        <div class="flex items-center gap-2 justify-center">
+          <img src="@/assets/contract_icon.png" alt="Logo" class="w-8 h-8" />
+          <span class="text-lg font-bold text-white whitespace-nowrap shadow-sm transition-all duration-300"
+                :class="{ 'opacity-0 -translate-x-2 hidden': sidebarCollapsed }">
+            PACTA
+          </span>
         </div>
       </div>
       
+      <!-- Navigation -->
       <nav class="sidebar-nav">
         <div class="nav-items">
-          <router-link to="/dashboard" class="nav-item" :class="{ active: currentRoute.startsWith('/dashboard') }">
-            <i class="icon fas fa-home"></i>
-            <span class="item-text" v-if="!sidebarCollapsed">Menu Principal</span>
-            <div class="tooltip" v-if="sidebarCollapsed">Menu Principal</div>
+          <router-link to="/dashboard" 
+                      class="flex items-center px-6 py-3 text-white/70 no-underline transition-all duration-200 gap-4 mb-1 relative rounded-r-3xl mr-3 hover:bg-white/8 hover:text-white"
+                      :class="{ 'px-0 py-3 justify-center': sidebarCollapsed, 'bg-white/12 text-white font-medium': currentRoute.startsWith('/dashboard') }">
+            <i class="fas fa-home w-5 text-center" :class="{ 'mr-0': sidebarCollapsed }"></i>
+            <span class="font-medium tracking-wide transition-all duration-300"
+                  :class="{ 'opacity-0 -translate-x-2': sidebarCollapsed }">
+              Menu Principal
+            </span>
+            <div v-if="sidebarCollapsed" 
+                class="absolute left-full top-1/2 -translate-y-1/2 bg-surface text-text-primary py-1 px-2 rounded shadow-md text-sm whitespace-nowrap opacity-0 invisible transition-all duration-200 pointer-events-none ml-2 before:content-[''] before:absolute before:top-1/2 before:right-full before:border-[5px] before:border-transparent before:border-r-surface before:-mt-[5px] group-hover:opacity-100 group-hover:visible">
+              Menu Principal
+            </div>
+            <div v-if="currentRoute.startsWith('/dashboard')" class="absolute left-0 top-0 h-full w-1 bg-background"></div>
           </router-link>
         </div>
 
-        <div class="nav-section">
+        <div class="mt-2">
           <div class="nav-items">
-            <router-link to="/contracts" class="nav-item" :class="{ active: currentRoute.startsWith('/contracts') }">
-              <i class="icon fas fa-file-contract"></i>
-              <span class="item-text" v-if="!sidebarCollapsed">Contratos</span>
-              <div class="tooltip" v-if="sidebarCollapsed">Contratos</div>
+            <router-link to="/contracts" 
+                        class="flex items-center px-6 py-3 text-white/70 no-underline transition-all duration-200 gap-4 mb-1 relative rounded-r-3xl mr-3 hover:bg-white/8 hover:text-white"
+                        :class="{ 'px-0 py-3 justify-center': sidebarCollapsed, 'bg-white/12 text-white font-medium': currentRoute.startsWith('/contracts') }">
+              <i class="fas fa-file-contract w-5 text-center" :class="{ 'mr-0': sidebarCollapsed }"></i>
+              <span class="font-medium tracking-wide transition-all duration-300"
+                    :class="{ 'opacity-0 -translate-x-2': sidebarCollapsed }">
+                Contratos
+              </span>
+              <div v-if="sidebarCollapsed" 
+                  class="absolute left-full top-1/2 -translate-y-1/2 bg-surface text-text-primary py-1 px-2 rounded shadow-md text-sm whitespace-nowrap opacity-0 invisible transition-all duration-200 pointer-events-none ml-2 before:content-[''] before:absolute before:top-1/2 before:right-full before:border-[5px] before:border-transparent before:border-r-surface before:-mt-[5px] group-hover:opacity-100 group-hover:visible">
+                Contratos
+              </div>
+              <div v-if="currentRoute.startsWith('/contracts')" class="absolute left-0 top-0 h-full w-1 bg-background"></div>
             </router-link>
           </div>
           <div class="nav-items">
-            <router-link to="/analytics" class="nav-item" :class="{ active: currentRoute.startsWith('/analytics') }">
-              <i class="icon fas fa-chart-bar"></i>
-              <span class="item-text" v-if="!sidebarCollapsed">Estadisticas</span>
-              <div class="tooltip" v-if="sidebarCollapsed">Estadisticas</div>
+            <router-link to="/analytics" 
+                        class="flex items-center px-6 py-3 text-white/70 no-underline transition-all duration-200 gap-4 mb-1 relative rounded-r-3xl mr-3 hover:bg-white/8 hover:text-white"
+                        :class="{ 'px-0 py-3 justify-center': sidebarCollapsed, 'bg-white/12 text-white font-medium': currentRoute.startsWith('/analytics') }">
+              <i class="fas fa-chart-bar w-5 text-center" :class="{ 'mr-0': sidebarCollapsed }"></i>
+              <span class="font-medium tracking-wide transition-all duration-300"
+                    :class="{ 'opacity-0 -translate-x-2': sidebarCollapsed }">
+                Estadisticas
+              </span>
+              <div v-if="sidebarCollapsed" 
+                  class="absolute left-full top-1/2 -translate-y-1/2 bg-surface text-text-primary py-1 px-2 rounded shadow-md text-sm whitespace-nowrap opacity-0 invisible transition-all duration-200 pointer-events-none ml-2 before:content-[''] before:absolute before:top-1/2 before:right-full before:border-[5px] before:border-transparent before:border-r-surface before:-mt-[5px] group-hover:opacity-100 group-hover:visible">
+                Estadisticas
+              </div>
+              <div v-if="currentRoute.startsWith('/analytics')" class="absolute left-0 top-0 h-full w-1 bg-background"></div>
             </router-link>
           </div>
         </div>
       </nav>
     </aside>
     
-    <div class="dashboard-main">
-      <header class="dashboard-header">
-        <div class="header-left">
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col ml-[260px] transition-all duration-300 min-h-screen relative overflow-x-hidden max-w-full"
+         :class="{ 'ml-[70px]': sidebarCollapsed }">
+      <!-- Header -->
+      <header class="flex items-center justify-between p-3 bg-surface border-b border-border h-[70px] fixed top-0 right-0 w-[calc(100%-260px)] z-10 backdrop-blur-md transition-all duration-300 shadow-sm"
+              :class="{ 'w-[calc(100%-70px)]': sidebarCollapsed }">
+        <div class="flex items-center">
           <button 
-            class="menu-toggle" 
+            class="h-10 w-10 flex items-center justify-center bg-transparent border-none rounded-full text-text-secondary cursor-pointer transition-all duration-200 hover:bg-secondary/10 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/20" 
             @click="toggleSidebar" 
             aria-label="Toggle sidebar"
           >
-            <i class="fas fa-bars"></i>
+            <i class="fas fa-bars text-base"></i>
           </button>
         </div>
         
-        <div class="header-right">
-          <div class="notifications">
+        <div class="flex items-center gap-4">
+          <div class="relative">
             <button 
-              class="header-button" 
+              class="h-10 w-10 flex items-center justify-center bg-transparent border-none rounded-full text-text-secondary cursor-pointer transition-all duration-200 hover:bg-secondary/10 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/20" 
               aria-label="Notificaciones" 
               @click="toggleNotifications"
             >
               <i class="fas fa-bell"></i>
-              <span class="badge" v-if="unreadNotifications > 0">{{ unreadNotifications }}</span>
+              <span v-if="unreadNotifications > 0" 
+                   class="absolute top-0 right-0 bg-primary text-white rounded-full h-[18px] w-[18px] text-[10px] flex items-center justify-center font-bold translate-x-1/4 -translate-y-1/4 shadow-md">
+                {{ unreadNotifications }}
+              </span>
             </button>
             
             <!-- Notification panel -->
@@ -66,52 +110,58 @@
             />
           </div>
           
-          <div class="user-menu" @click="toggleUserMenu">
+          <div class="relative flex items-center gap-2 cursor-pointer py-1 px-2 rounded transition-all duration-200 hover:bg-secondary/10"
+               @click="toggleUserMenu">
             <UserAvatar :name="userData.username" />
-            <div v-if="!sidebarCollapsed" class="user-info">
-              <span class="username">@{{ userData.username }}</span>
+            <div v-if="!sidebarCollapsed" class="flex flex-col">
+              <span class="text-sm font-medium text-text-primary">@{{ userData.username }}</span>
             </div>
-            <i class="fas fa-chevron-down" :class="{ 'rotated': isUserMenuOpen }"></i>
+            <i class="fas fa-chevron-down text-text-secondary text-xs transition-transform duration-200"
+               :class="{ 'rotate-180': isUserMenuOpen }"></i>
             
             <!-- User dropdown menu -->
-            <div v-if="isUserMenuOpen" class="user-dropdown">
-              <div class="user-dropdown-header">
+            <div v-if="isUserMenuOpen" 
+                 class="absolute top-[calc(100%+10px)] right-0 w-[280px] bg-surface rounded shadow-lg z-50 border border-border animate-fadeIn">
+              <div class="p-4 flex items-center gap-4 border-b border-border">
                 <UserAvatar :name="userData.username" :size="64" />
-                <div class="user-info">
-                  <span class="full-name">{{ userData.username }}</span>
-                  <span class="role">{{ userData.role || 'Usuario' }}</span>
+                <div class="flex flex-col">
+                  <span class="text-base font-semibold text-text-primary m-0">{{ userData.username }}</span>
+                  <span class="text-xs text-text-secondary m-0">{{ userData.role || 'Usuario' }}</span>
                 </div>
               </div>
               
-              <hr class="user-dropdown-divider" />
+              <hr class="m-0 border-none border-t border-border" />
               
               <!-- License status info -->
-              <div class="license-status-info" v-if="license">
-                <div class="license-badge" :class="{ 'warning': licenseDays < 30 }">
-                  <i class="fas fa-shield-alt"></i>
+              <div v-if="license" class="p-4 flex flex-col gap-1">
+                <div class="inline-flex items-center gap-1 py-1 px-4 bg-success/10 text-success rounded-full text-xs font-medium self-start"
+                     :class="{ 'bg-warning/10 text-warning': licenseDays < 30 }">
+                  <i class="fas fa-shield-alt text-xs"></i>
                   <span>{{ license.status }}</span>
                 </div>
-                <div class="license-detail">
-                  <span class="expiry">Expira: {{ license.expiryDate }}</span>
-                  <span class="days-left">{{ license.remainingDays }} días restantes</span>
+                <div class="flex flex-col text-xs">
+                  <span class="text-text-primary font-medium">Expira: {{ license.expiryDate }}</span>
+                  <span class="text-text-secondary">{{ license.remainingDays }} días restantes</span>
                 </div>
               </div>
               
-              <div class="license-warning" v-else>
-                <i class="fas fa-exclamation-triangle"></i>
+              <div v-else class="p-4 flex items-center gap-1 text-warning text-xs font-medium">
+                <i class="fas fa-exclamation-triangle text-sm"></i>
                 <span>Sin licencia activa</span>
               </div>
               
-              <hr class="user-dropdown-divider" />
+              <hr class="m-0 border-none border-t border-border" />
               
-              <div class="user-dropdown-actions">
-                <router-link to="/settings" class="dropdown-item">
-                  <i class="fas fa-cog"></i>
+              <div class="p-2">
+                <router-link to="/settings" 
+                            class="flex items-center gap-4 py-2 px-4 text-text-primary no-underline transition-all duration-200 rounded hover:bg-secondary/5">
+                  <i class="fas fa-cog w-4 text-sm"></i>
                   <span>Configuración</span>
                 </router-link>
                 
-                <button class="dropdown-item logout" @click.stop="logout">
-                  <i class="fas fa-sign-out-alt"></i>
+                <button class="flex items-center gap-4 py-2 px-4 text-error border-none bg-transparent cursor-pointer w-full text-left text-sm font-normal transition-all duration-200 rounded hover:bg-secondary/5"
+                        @click.stop="logout">
+                  <i class="fas fa-sign-out-alt w-4 text-sm"></i>
                   <span>Cerrar sesión</span>
                 </button>
               </div>
@@ -120,9 +170,13 @@
         </div>
       </header>
       
-      <main class="dashboard-content">
+      <main class="pt-[calc(70px+1.5rem)] p-6 flex-1 max-w-7xl mx-auto w-full">
         <router-view v-slot="{ Component }">
-          <transition name="fade" mode="out-in">
+          <transition name="fade" mode="out-in"
+                     enter-active-class="transition-all duration-300 ease-out"
+                     leave-active-class="transition-all duration-200 ease-in"
+                     enter-from-class="opacity-0 translate-y-5"
+                     leave-to-class="opacity-0 -translate-y-5">
             <component :is="Component" />
           </transition>
         </router-view>
@@ -253,6 +307,13 @@ onBeforeUnmount(() => {
 const currentRoute = computed(() => route.path);
 </script>
 
-<style lang="scss" scoped>
-@use './dashboardLayout.scss';
+<style>
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease;
+}
 </style> 

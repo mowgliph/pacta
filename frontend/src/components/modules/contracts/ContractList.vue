@@ -13,7 +13,7 @@
     </template>
     
     <template #actions="{ item }">
-      <div class="action-buttons">
+      <div class="flex gap-2">
         <BaseButton
           variant="secondary"
           icon="edit"
@@ -28,10 +28,6 @@
     </template>
   </BaseTable>
 </template>
-
-<style lang="scss" scoped>
-@use './contractList.scss';
-</style>
 
 <script setup lang="ts">
 import BaseTable from '../../../components/base/BaseTable.vue';

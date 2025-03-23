@@ -1,133 +1,269 @@
 <template>
-  <div class="dashboard-view">
-    <!-- Muestra el SkeletonLoader mientras se cargan los datos -->
-    <SkeletonLoader v-if="loading" />
-
-    <!-- Contenido principal del dashboard cuando los datos están cargados -->
-    <div v-else class="dashboard-content">
-      <div class="dashboard-header">
-        <div class="header-main">
-          <h1>Dashboard</h1>
-          <p class="dashboard-description">Vista general del rendimiento y métricas de contratos</p>
+  <div class="max-w-7xl mx-auto p-6">
+    <!-- Header con resumen general -->
+    <div class="mb-6">
+      <h1 class="text-2xl font-semibold text-text-primary mb-4">Panel de Control</h1>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Resumen Contratos -->
+        <div class="card bg-primary/5 border-primary/20">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3 class="text-sm font-medium text-text-secondary">Contratos Activos</h3>
+              <p class="text-2xl font-semibold text-primary">{{ stats.activeContracts }}</p>
+            </div>
+            <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+              <i class="fas fa-file-signature text-primary"></i>
+            </div>
+          </div>
+          <div class="flex items-center text-xs text-text-secondary">
+            <span class="flex items-center text-success mr-2">
+              <i class="fas fa-arrow-up mr-1"></i>
+              3.2%
+            </span>
+            <span>vs mes anterior</span>
+          </div>
         </div>
-        <div class="header-actions">
-          <router-link to="/analytics" class="analytics-link">
-            <i class="fas fa-chart-bar"></i>
-            Ver análisis detallado
-          </router-link>
-          <button class="refresh-btn" @click="fetchData">
-            <i class="fas fa-sync-alt"></i>
-            Actualizar datos
-          </button>
+
+        <!-- Resumen Vencimientos -->
+        <div class="card bg-warning/5 border-warning/20">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3 class="text-sm font-medium text-text-secondary">Vencimientos Próximos</h3>
+              <p class="text-2xl font-semibold text-warning">{{ stats.upcomingDeadlines }}</p>
+            </div>
+            <div class="w-10 h-10 bg-warning/10 rounded-full flex items-center justify-center">
+              <i class="fas fa-clock text-warning"></i>
+            </div>
+          </div>
+          <div class="flex items-center text-xs text-text-secondary">
+            <span>En los próximos 30 días</span>
+          </div>
+        </div>
+
+        <!-- Resumen Renovaciones -->
+        <div class="card bg-success/5 border-success/20">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3 class="text-sm font-medium text-text-secondary">Renovaciones Pendientes</h3>
+              <p class="text-2xl font-semibold text-success">{{ stats.pendingRenewals }}</p>
+            </div>
+            <div class="w-10 h-10 bg-success/10 rounded-full flex items-center justify-center">
+              <i class="fas fa-sync-alt text-success"></i>
+            </div>
+          </div>
+          <div class="flex items-center text-xs text-text-secondary">
+            <span class="flex items-center text-success mr-2">
+              <i class="fas fa-arrow-down mr-1"></i>
+              1.8%
+            </span>
+            <span>vs mes anterior</span>
+          </div>
+        </div>
+
+        <!-- Resumen Pagos -->
+        <div class="card bg-error/5 border-error/20">
+          <div class="flex justify-between items-start mb-4">
+            <div>
+              <h3 class="text-sm font-medium text-text-secondary">Pagos Atrasados</h3>
+              <p class="text-2xl font-semibold text-error">{{ stats.overdueBills }}</p>
+            </div>
+            <div class="w-10 h-10 bg-error/10 rounded-full flex items-center justify-center">
+              <i class="fas fa-exclamation-triangle text-error"></i>
+            </div>
+          </div>
+          <div class="flex items-center text-xs text-text-secondary">
+            <span class="flex items-center text-error mr-2">
+              <i class="fas fa-arrow-up mr-1"></i>
+              5.1%
+            </span>
+            <span>vs mes anterior</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficos y Tablas -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <!-- Contratos por Estado (Gráfico) -->
+      <div class="lg:col-span-2 card h-[400px]">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-medium text-text-primary">Contratos por Estado</h2>
+          <div class="flex items-center gap-2">
+            <select v-model="timeRange" class="text-sm border border-border rounded px-2 py-1 bg-transparent">
+              <option value="month">Este Mes</option>
+              <option value="quarter">Este Trimestre</option>
+              <option value="year">Este Año</option>
+            </select>
+          </div>
+        </div>
+        <div class="w-full h-[320px] flex items-center justify-center">
+          <!-- Placeholder para el gráfico -->
+          <div class="text-center text-text-secondary">
+            <i class="fas fa-chart-line text-4xl mb-2"></i>
+            <p>Gráfico de contratos por estado</p>
+          </div>
         </div>
       </div>
 
-      <!-- Mensaje de error si hay problemas con la carga de datos -->
-      <div v-if="error" class="error-message">
-        <i class="material-icons">error_outline</i>
-        <p>{{ error }}</p>
-        <button @click="fetchData">Reintentar</button>
-      </div>
-
-      <!-- Tarjetas de estadísticas -->
-      <div v-if="!error" class="stats-cards" ref="statsRef">
-        <div class="stats-card" v-for="(stat, index) in stats" :key="index">
-          <div class="stats-icon" :class="stat.color">
-            <i class="material-icons">{{ stat.icon }}</i>
-          </div>
-          <div class="stats-content">
-            <h3 class="stats-value">{{ stat.value }}</h3>
-            <p class="stats-label">{{ stat.label }}</p>
-            <div class="stats-trend" :class="stat.trend > 0 ? 'positive' : 'negative'">
-              <i class="material-icons">{{ stat.trend > 0 ? 'trending_up' : 'trending_down' }}</i>
-              <span>{{ Math.abs(stat.trend) }}% vs mes anterior</span>
+      <!-- Recientes Actividades -->
+      <div class="card">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-medium text-text-primary">Actividades Recientes</h2>
+          <button class="text-xs text-primary">Ver Todas</button>
+        </div>
+        <div class="space-y-4">
+          <div v-for="(activity, index) in recentActivities" :key="index" class="flex items-start gap-3">
+            <div :class="`w-8 h-8 rounded-full flex items-center justify-center ${activityIconClass(activity.type)}`">
+              <i :class="`fas ${activityIcon(activity.type)}`"></i>
+            </div>
+            <div class="flex-1">
+              <p class="text-sm text-text-primary">{{ activity.description }}</p>
+              <div class="flex justify-between text-xs text-text-secondary mt-1">
+                <span>{{ activity.user }}</span>
+                <span>{{ activity.time }}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Gráficos y tablas -->
-      <div v-if="!error" class="dashboard-charts">
-        <!-- Gráfico de tendencias -->
-        <div class="chart-card" ref="trendsRef">
-          <div class="card-header">
-            <h2>Tendencias de Contratos</h2>
-            <div class="card-actions">
-              <button><i class="material-icons">more_vert</i></button>
-            </div>
-          </div>
-          <div class="card-content">
-            <div class="metrics-summary">
-              <div class="metric-item" v-for="(metric, index) in trendMetrics" :key="index">
-                <div class="metric-icon" :class="metric.color">
-                  <i class="material-icons">{{ metric.icon }}</i>
-                </div>
-                <div class="metric-data">
-                  <h4 class="metric-value">{{ metric.value }}</h4>
-                  <p class="metric-label">{{ metric.label }}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div class="chart-container">
-              <div class="chart-bars">
-                <div class="chart-bar" 
-                  v-for="(item, index) in chartData" 
-                  :key="index"
-                  :data-height="item.value"
-                  :style="{ height: '0%' }">
-                  <div class="bar-tooltip">{{ item.value }}</div>
-                </div>
-              </div>
-              <div class="chart-labels">
-                <span v-for="(item, index) in chartData" :key="index">{{ item.label }}</span>
-              </div>
-            </div>
-          </div>
+    <!-- Próximos Vencimientos y Tareas -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <!-- Próximos Vencimientos -->
+      <div class="card">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-medium text-text-primary">Próximos Vencimientos</h2>
+          <button class="text-xs text-primary">Ver Todos</button>
         </div>
-
-        <!-- Categorías de contratos -->
-        <div class="chart-card" ref="categoriesRef">
-          <div class="card-header">
-            <h2>Categorías de Contratos</h2>
-            <div class="card-actions">
-              <button><i class="material-icons">more_vert</i></button>
-            </div>
-          </div>
-          <div class="card-content">
-            <div class="categories-list">
-              <div class="category-item" 
-                v-for="(category, index) in categories" 
-                :key="index">
-                <div class="category-header">
-                  <h4>{{ category.name }}</h4>
-                  <span class="category-count">{{ category.count }}</span>
-                </div>
-                <div class="progress-bar">
-                  <div class="progress-track"></div>
-                  <div class="progress-fill" 
-                    :data-percentage="category.percentage" 
-                    :style="{ width: '0%', backgroundColor: category.color }">
+        <div class="overflow-x-auto">
+          <table class="min-w-full">
+            <thead>
+              <tr class="border-b border-border">
+                <th class="py-3 px-4 text-left text-xs font-medium text-text-secondary">Contrato</th>
+                <th class="py-3 px-4 text-left text-xs font-medium text-text-secondary">Fecha</th>
+                <th class="py-3 px-4 text-left text-xs font-medium text-text-secondary">Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(deadline, index) in upcomingDeadlines" :key="index" 
+                  class="border-b border-border hover:bg-background">
+                <td class="py-3 px-4">
+                  <div>
+                    <p class="text-sm font-medium text-text-primary">{{ deadline.contract }}</p>
+                    <p class="text-xs text-text-secondary">{{ deadline.client }}</p>
                   </div>
+                </td>
+                <td class="py-3 px-4">
+                  <div>
+                    <p class="text-sm text-text-primary">{{ deadline.date }}</p>
+                    <p class="text-xs text-text-secondary">{{ calculateDaysRemaining(deadline.date) }}</p>
+                  </div>
+                </td>
+                <td class="py-3 px-4">
+                  <span :class="`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${deadline.statusClass}`">
+                    {{ deadline.status }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tareas Pendientes -->
+      <div class="card">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-medium text-text-primary">Tareas Pendientes</h2>
+          <button class="text-xs text-primary">Ver Todas</button>
+        </div>
+        <div class="space-y-2">
+          <div v-for="(task, index) in pendingTasks" :key="index" 
+               class="p-3 border border-border rounded-md hover:bg-background">
+            <div class="flex justify-between items-start">
+              <div class="flex items-center gap-2">
+                <input type="checkbox" v-model="task.completed" class="checkbox" />
+                <div>
+                  <p class="text-sm font-medium text-text-primary" :class="{ 'line-through': task.completed }">
+                    {{ task.title }}
+                  </p>
+                  <p class="text-xs text-text-secondary">{{ task.description }}</p>
                 </div>
               </div>
+              <span class="text-xs px-2 py-1 rounded" :class="priorityClass(task.priority)">
+                {{ task.priority }}
+              </span>
+            </div>
+            <div class="flex justify-between items-center mt-2 text-xs text-text-secondary">
+              <span class="flex items-center gap-1">
+                <i class="fas fa-calendar-alt"></i>
+                {{ task.dueDate }}
+              </span>
+              <span class="flex items-center gap-1">
+                <i class="fas fa-user"></i>
+                {{ task.assignee }}
+              </span>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Acciones Recientes -->
-      <div v-if="!error && recentActions.length > 0" class="recent-actions" ref="actionsRef">
-        <h2>Acciones Recientes</h2>
-        <div class="actions-list">
-          <div class="action-item" v-for="(action, index) in recentActions" :key="index">
-            <div class="action-icon" :class="action.type">
-              <i class="material-icons">{{ getActionIcon(action.type) }}</i>
+    <!-- Última Sección: Categorías y Alertas -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- Contratos por Categoría -->
+      <div class="lg:col-span-2 card">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-medium text-text-primary">Contratos por Categoría</h2>
+          <div class="flex items-center gap-2">
+            <button class="text-xs text-primary">Descargar Reporte</button>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+          <div v-for="(category, index) in categories" :key="index" 
+               class="p-3 rounded-md border border-border">
+            <h3 class="text-sm font-medium text-text-primary mb-1">{{ category.name }}</h3>
+            <p class="text-2xl font-semibold">{{ category.count }}</p>
+            <div class="flex items-center text-xs mt-2">
+              <span :class="`${category.trend > 0 ? 'text-success' : 'text-error'} mr-1`">
+                <i :class="`fas fa-arrow-${category.trend > 0 ? 'up' : 'down'}`"></i>
+                {{ Math.abs(category.trend) }}%
+              </span>
+              <span class="text-text-secondary">vs período anterior</span>
             </div>
-            <div class="action-content">
-              <h4>{{ action.title }}</h4>
-              <p>{{ action.description }}</p>
-              <span class="action-time">{{ action.time }}</span>
+          </div>
+        </div>
+        <div class="w-full h-[200px] flex items-center justify-center">
+          <!-- Placeholder para el gráfico de categorías -->
+          <div class="text-center text-text-secondary">
+            <i class="fas fa-chart-pie text-4xl mb-2"></i>
+            <p>Distribución de contratos por categoría</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alertas y Notificaciones Importantes -->
+      <div class="card">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-lg font-medium text-text-primary">Alertas Importantes</h2>
+          <button class="text-xs text-primary">Administrar Alertas</button>
+        </div>
+        <div class="space-y-3">
+          <div v-for="(alert, index) in importantAlerts" :key="index" 
+               class="p-3 rounded-md" :class="alertBgClass(alert.level)">
+            <div class="flex items-start gap-3">
+              <div :class="alertIconClass(alert.level)">
+                <i :class="`fas ${alertIcon(alert.level)}`"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-medium text-text-primary">{{ alert.title }}</h3>
+                <p class="text-xs text-text-secondary mt-1">{{ alert.message }}</p>
+                <div class="flex justify-between items-center mt-2 text-xs">
+                  <span class="text-text-secondary">{{ alert.date }}</span>
+                  <button class="text-primary">Acción</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -136,639 +272,207 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, onMounted, computed, onBeforeUnmount } from 'vue'
-import { useColors } from '../../types/colors'
-import { dashboardService } from '@/services/dashboard.service'
-import type { DashboardResponse } from '@/services/dashboard.service'
-import { useAuthStore } from '@/stores/auth'
-import CircularChart from '@/components/modules/dashboard/CircularChart.vue'
-import SparkLine from '@/components/modules/dashboard/SparkLine.vue'
-import { useMotion } from '@vueuse/motion'
-import type { MotionVariants } from '@vueuse/motion'
-import SkeletonLoader from '@/components/modules/dashboard/SkeletonLoader.vue'
+<script setup>
+import { ref, computed } from 'vue'
 
-const colors = useColors()
-const authStore = useAuthStore()
-const showDateMenu = ref(false)
-const selectedRange = ref({
-  label: 'Últimos 30 días',
-  value: '30',
-  days: 30
+// Estadísticas principales
+const stats = ref({
+  activeContracts: 58,
+  upcomingDeadlines: 12,
+  pendingRenewals: 8,
+  overdueBills: 3
 })
 
-const dateRanges = [
-  { label: 'Últimos 7 días', value: '7', days: 7 },
-  { label: 'Últimos 30 días', value: '30', days: 30 },
-  { label: 'Últimos 60 días', value: '60', days: 60 },
-  { label: 'Últimos 90 días', value: '90', days: 90 },
-  { label: 'Últimos 6 meses', value: '180', days: 180 },
-  { label: 'Último año', value: '365', days: 365 }
-]
+// Configuración del rango de tiempo
+const timeRange = ref('month')
 
-// Datos reactivos para el dashboard
-const contractStats = ref<DashboardResponse['contractStats'] | null>(null);
-const contractTrends = ref<DashboardResponse['contractTrends'] | null>(null);
-const contractCategories = ref<DashboardResponse['contractCategories']>([]);
-const loading = ref<boolean>(true);
-const error = ref<string>('');
-
-// Colores para las barras del gráfico
-const chartBarColors = [
-  colors.primary + 'CC',
-  colors.info + 'CC',
-  colors.success + 'CC',
-  colors.primary + 'CC',
-  colors.info + 'CC',
-  colors.success + 'CC',
-  colors.primary + 'CC'
-]
-
-// Leyenda de categorías
-const categoryColors = computed(() => {
-  return [
-    { color: colors.primary, darkColor: colors.primaryDark },
-    { color: colors.secondary, darkColor: colors.secondaryDark },
-    { color: colors.success, darkColor: colors.success },
-    { color: colors.warning, darkColor: colors.warning },
-    { color: colors.info, darkColor: colors.info },
-    { color: colors.accent, darkColor: colors.accentDark },
-  ]
-})
-
-// Función para obtener el color de categoría por su índice
-const getCategoryColor = (category: string | number) => {
-  const colorArray = categoryColors.value;
-  let index = 0;
-  
-  if (typeof category === 'number') {
-    index = category;
-  } else {
-    // Usar el nombre de la categoría para generar un índice consistente
-    const hash = category.split('').reduce((acc, char) => {
-      return char.charCodeAt(0) + ((acc << 5) - acc);
-    }, 0);
-    index = Math.abs(hash) % colorArray.length;
-  }
-  
-  return colorArray[index % colorArray.length].color;
-}
-
-const toggleDateMenu = () => {
-  showDateMenu.value = !showDateMenu.value
-}
-
-const selectDateRange = async (range: typeof dateRanges[0]) => {
-  selectedRange.value = range
-  showDateMenu.value = false
-  
-  // Llamar al servicio para actualizar los datos
-  loading.value = true;
-  try {
-    await fetchDashboardData(range.days);
-  } catch (err) {
-    error.value = 'Error al cargar los datos del dashboard';
-  } finally {
-    loading.value = false;
-  }
-}
-
-const fetchDashboardData = async (days: number) => {
-  try {
-    const data = await dashboardService.getDashboardData(days);
-    
-    // Actualizar los datos con la respuesta del servicio
-    contractStats.value = data.contractStats;
-    contractTrends.value = data.contractTrends;
-    contractCategories.value = data.contractCategories;
-    
-    error.value = '';
-  } catch (err) {
-    console.error('Error fetching dashboard data:', err);
-    error.value = 'Error al cargar los datos del dashboard';
-    throw err;
-  }
-}
-
-const retryFetch = () => {
-  loading.value = true;
-  fetchDashboardData(selectedRange.value.days)
-    .finally(() => {
-      loading.value = false;
-    });
-}
-
-// Cerrar el menú cuando se hace clic fuera
-const closeDateMenu = (event: MouseEvent) => {
-  const target = event.target as HTMLElement
-  if (!target.closest('.date-selector')) {
-    showDateMenu.value = false
-  }
-}
-
-// Generar datos de ejemplo para nuevos componentes visuales
-const generateDummyContractTrends = () => {
-  // Datos mensuales para los últimos 12 meses (simulado)
-  const monthlyData = [];
-  for (let i = 0; i < 12; i++) {
-    // Simulando una tendencia general creciente con variaciones
-    const baseValue = 10 + i * 1.5;
-    const randomFactor = Math.random() * 5 - 2.5; // Fluctuación aleatoria entre -2.5 y +2.5
-    monthlyData.push(Math.max(1, Math.round(baseValue + randomFactor)));
-  }
-  
-  return monthlyData;
-}
-
-// Datos de contratos mensuales (simulados o reales)
-const contractMonthlyData = computed(() => {
-  // Si no hay datos reales, generar datos de ejemplo
-  if (!contractStats.value || !contractStats.value.total) {
-    return generateDummyContractTrends();
-  }
-  
-  // En un sistema real, estos datos vendrían del backend
-  // Por ahora simulamos datos basados en el total existente
-  return generateDummyContractTrends();
-});
-
-// Calcular tendencia relativa (cambio porcentual)
-const calculateTrend = (data: number[]) => {
-  if (data.length < 2) return 0;
-  
-  const lastMonth = data[data.length - 1];
-  const prevMonth = data[data.length - 2];
-  
-  if (prevMonth === 0) return 100; // Para evitar división por cero
-  
-  return Math.round(((lastMonth - prevMonth) / prevMonth) * 100);
-}
-
-// Tendencia de contratos (cambio porcentual desde el mes anterior)
-const contractTrend = computed(() => {
-  return calculateTrend(contractMonthlyData.value);
-});
-
-// Porcentaje de contratos activos
-const activeContractData = computed(() => {
-  if (!contractStats.value) return [50, 52, 55, 58, 60, 62, 65, 68, 70, 72, 75, 78];
-  
-  const percentages = [];
-  const total = contractStats.value.total;
-  
-  // Simular tendencia del porcentaje activo a lo largo del tiempo
-  for (let i = 0; i < 12; i++) {
-    const activePercent = Math.round(((contractStats.value.active / total) * 100) - 10 + i * 2);
-    percentages.push(Math.min(100, Math.max(0, activePercent)));
-  }
-  
-  return percentages;
-});
-
-// Tendencia de contratos activos
-const activeContractTrend = computed(() => {
-  return calculateTrend(activeContractData.value);
-});
-
-// Configuración para animaciones con vueuse/motion
-const statsCardVariants = {
-  initial: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
-}
-
-const trendsCardVariants = {
-  initial: { opacity: 0, x: -20 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.5 } }
-}
-
-const categoriesCardVariants = {
-  initial: { opacity: 0, x: 20 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.5 } }
-}
-
-const actionsVariants = {
-  initial: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
-}
-
-const categoryItemVariants = {
-  initial: { opacity: 0, x: 10 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.3 } }
-}
-
-// Refs para las animaciones
-const statsRef = ref(null)
-const trendsRef = ref(null) 
-const categoriesRef = ref(null)
-const actionsRef = ref(null)
-
-// Aplicar motion
-const statsMotion = useMotion(statsRef, statsCardVariants)
-const trendsMotion = useMotion(trendsRef, trendsCardVariants)
-const categoriesMotion = useMotion(categoriesRef, categoriesCardVariants)
-const actionsMotion = useMotion(actionsRef, actionsVariants)
-
-onMounted(async () => {
-  document.addEventListener('click', closeDateMenu)
-  
-  // Cargar datos iniciales
-  loading.value = true;
-  try {
-    await fetchDashboardData(selectedRange.value.days);
-    
-    // Activar animaciones después de cargar los datos
-    setTimeout(() => {
-      statsMotion.apply('visible');
-      trendsMotion.apply('visible');
-      categoriesMotion.apply('visible');
-      actionsMotion.apply('visible');
-      
-      // Animar las barras de progreso
-      const progressBars = document.querySelectorAll('.progress-fill');
-      progressBars.forEach((bar: Element) => {
-        const percentage = bar.getAttribute('data-percentage');
-        if (percentage && bar instanceof HTMLElement) {
-          bar.style.width = `${percentage}%`;
-        }
-      });
-      
-      // Animar barras del gráfico
-      const chartBars = document.querySelectorAll('.chart-bar');
-      chartBars.forEach((bar: Element) => {
-        const height = bar.getAttribute('data-height');
-        if (height && bar instanceof HTMLElement) {
-          bar.style.setProperty('--target-height', `${height}px`);
-        }
-      });
-    }, 300);
-  } catch (err) {
-    error.value = 'Error al cargar los datos iniciales del dashboard';
-  } finally {
-    loading.value = false;
-  }
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('click', closeDateMenu)
-})
-
-// Datos del dashboard
-const stats = ref([
-  {
-    icon: 'description',
-    value: '128',
-    label: 'Total de Contratos',
-    trend: 12,
-    color: 'primary'
-  },
-  {
-    icon: 'check_circle',
-    value: '85',
-    label: 'Contratos Activos',
-    trend: 8,
-    color: 'success'
-  },
-  {
-    icon: 'error',
-    value: '15',
-    label: 'Contratos Vencidos',
-    trend: -5,
-    color: 'danger'
-  },
-  {
-    icon: 'schedule',
-    value: '12',
-    label: 'Próximos a Vencer',
-    trend: 3,
-    color: 'warning'
-  }
-]);
-
-const trendMetrics = ref([
-  {
-    icon: 'today',
-    value: '5',
-    label: 'Nuevos hoy',
-    color: 'success'
-  },
-  {
-    icon: 'date_range',
-    value: '24',
-    label: 'Nuevos esta semana',
-    color: 'primary'
-  },
-  {
-    icon: 'search',
-    value: '8',
-    label: 'Pendientes de revisión',
-    color: 'warning'
-  },
-  {
-    icon: 'sync',
-    value: '10',
-    label: 'Pendientes de renovación',
-    color: 'info'
-  }
-]);
-
-const chartData = ref([
-  { label: 'Lun', value: 25 },
-  { label: 'Mar', value: 40 },
-  { label: 'Mié', value: 30 },
-  { label: 'Jue', value: 50 },
-  { label: 'Vie', value: 70 },
-  { label: 'Sáb', value: 45 },
-  { label: 'Dom', value: 60 }
-]);
-
-const categories = ref([
-  { name: 'Servicios', count: 42, percentage: 32, color: '#4a90e2' },
-  { name: 'Tecnología', count: 28, percentage: 22, color: '#50c878' },
-  { name: 'Proveedores', count: 35, percentage: 27, color: '#f39c12' },
-  { name: 'Recursos Humanos', count: 23, percentage: 19, color: '#9b59b6' }
-]);
-
-const recentActions = ref([
+// Actividades recientes
+const recentActivities = ref([
   {
     type: 'create',
-    title: 'Contrato Creado',
-    description: 'Se ha creado un nuevo contrato con Proveedor XYZ',
+    description: 'Nuevo contrato con Empresa ABC',
+    user: 'Juan Pérez',
     time: 'Hace 2 horas'
   },
   {
     type: 'update',
-    title: 'Contrato Actualizado',
-    description: 'Se actualizaron los términos del contrato #1242',
+    description: 'Actualización del contrato #12345',
+    user: 'María Gómez',
     time: 'Hace 5 horas'
   },
   {
     type: 'alert',
-    title: 'Alerta de Vencimiento',
-    description: 'El contrato #5678 vence en 7 días',
+    description: 'Contrato #5678 vence en 3 días',
+    user: 'Sistema',
     time: 'Hace 1 día'
+  },
+  {
+    type: 'payment',
+    description: 'Pago recibido: Factura #INV-2022-456',
+    user: 'Ana López',
+    time: 'Hace 2 días'
   }
-]);
+])
 
-// Función para obtener el icono según el tipo de acción
-function getActionIcon(type: string): string {
+// Funciones para los iconos de actividades
+const activityIcon = (type) => {
   switch (type) {
-    case 'create':
-      return 'add_circle';
-    case 'update':
-      return 'edit';
-    case 'delete':
-      return 'delete';
-    case 'alert':
-      return 'warning';
-    case 'complete':
-      return 'check_circle';
-    default:
-      return 'info';
+    case 'create': return 'fa-file-plus'
+    case 'update': return 'fa-edit'
+    case 'alert': return 'fa-exclamation-circle'
+    case 'payment': return 'fa-money-bill-wave'
+    default: return 'fa-circle'
   }
 }
 
-// Función para cargar datos del dashboard
-const fetchData = async () => {
-  loading.value = true;
-  error.value = '';
+const activityIconClass = (type) => {
+  switch (type) {
+    case 'create': return 'bg-success/10 text-success'
+    case 'update': return 'bg-primary/10 text-primary'
+    case 'alert': return 'bg-warning/10 text-warning'
+    case 'payment': return 'bg-info/10 text-info'
+    default: return 'bg-gray-100 text-gray-500'
+  }
+}
+
+// Próximos vencimientos
+const upcomingDeadlines = ref([
+  {
+    contract: 'Contrato Servicios IT',
+    client: 'Empresa Tecnológica XYZ',
+    date: '2023-07-15',
+    status: 'Pendiente',
+    statusClass: 'bg-warning/10 text-warning'
+  },
+  {
+    contract: 'Acuerdo de Confidencialidad',
+    client: 'Consultora Legal ABC',
+    date: '2023-07-20',
+    status: 'En proceso',
+    statusClass: 'bg-info/10 text-info'
+  },
+  {
+    contract: 'Contrato de Distribución',
+    client: 'Distribuidora Nacional',
+    date: '2023-07-25',
+    status: 'Revisión',
+    statusClass: 'bg-primary/10 text-primary'
+  },
+  {
+    contract: 'Contrato de Arrendamiento',
+    client: 'Inmobiliaria Central',
+    date: '2023-08-01',
+    status: 'Próximo',
+    statusClass: 'bg-success/10 text-success'
+  }
+])
+
+// Calcular días restantes
+const calculateDaysRemaining = (dateStr) => {
+  const today = new Date()
+  const targetDate = new Date(dateStr)
+  const diffTime = targetDate - today
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
   
-  try {
-    // Llamar al servicio real para obtener datos del backend
-    const response = await dashboardService.getDashboardData(selectedRange.value.days);
-    
-    // Actualizar los datos del dashboard con la respuesta del backend
-    if (response) {
-      // Actualizar estadísticas con datos reales del backend
-      if (response.contractStats) {
-        stats.value = [
-          {
-            icon: 'description',
-            value: response.contractStats.total.toString(),
-            label: 'Total de Contratos',
-            trend: response.contractStats.totalTrend || 0,
-            color: 'primary'
-          },
-          {
-            icon: 'check_circle',
-            value: response.contractStats.active.toString(),
-            label: 'Contratos Activos',
-            trend: response.contractStats.activeTrend || 0,
-            color: 'success'
-          },
-          {
-            icon: 'error',
-            value: response.contractStats.expired.toString(),
-            label: 'Contratos Vencidos',
-            trend: response.contractStats.expiredTrend || 0,
-            color: 'danger'
-          },
-          {
-            icon: 'schedule',
-            value: response.contractStats.expiringSoon.toString(),
-            label: 'Próximos a Vencer',
-            trend: response.contractStats.expiringSoonTrend || 0,
-            color: 'warning'
-          }
-        ];
-      }
-      
-      // Actualizar métricas de tendencia con datos reales
-      if (response.contractTrends) {
-        trendMetrics.value = [
-          {
-            icon: 'today',
-            value: response.contractTrends.newToday.toString(),
-            label: 'Nuevos hoy',
-            color: 'success'
-          },
-          {
-            icon: 'date_range',
-            value: response.contractTrends.newThisWeek.toString(),
-            label: 'Nuevos esta semana',
-            color: 'primary'
-          },
-          {
-            icon: 'search',
-            value: response.contractTrends.reviewPending.toString(),
-            label: 'Pendientes de revisión',
-            color: 'warning'
-          },
-          {
-            icon: 'sync',
-            value: response.contractTrends.renewalsPending.toString(),
-            label: 'Pendientes de renovación',
-            color: 'info'
-          }
-        ];
-      }
-      
-      // Actualizar datos de categorías si existen
-      if (response.contractCategories && response.contractCategories.length > 0) {
-        categories.value = response.contractCategories.map((category, index) => ({
-          name: category.name,
-          count: category.count,
-          percentage: category.percentage,
-          color: getCategoryColor(category.name) // Usar función existente para obtener colores
-        }));
-      }
-      
-      // Actualizar acciones recientes si existe la propiedad
-      if (response.recentActions && response.recentActions.length > 0) {
-        recentActions.value = response.recentActions.map(action => ({
-          type: action.type,
-          title: action.title,
-          description: action.description,
-          time: action.time
-        }));
-      }
-    }
-    
-    loading.value = false;
-    
-    // Activar animaciones después de cargar los datos
-    setTimeout(() => {
-      statsMotion.apply('visible');
-      trendsMotion.apply('visible');
-      categoriesMotion.apply('visible');
-      actionsMotion.apply('visible');
-      
-      // Animar barras de progreso
-      const progressBars = document.querySelectorAll('.progress-fill');
-      progressBars.forEach((bar: Element) => {
-        const percentage = (bar as HTMLElement).dataset.percentage;
-        if (percentage) {
-          (bar as HTMLElement).style.width = `${percentage}%`;
-        }
-      });
-      
-      // Animar barras del gráfico
-      const chartBars = document.querySelectorAll('.chart-bar');
-      chartBars.forEach((bar: Element) => {
-        const height = (bar as HTMLElement).dataset.height;
-        if (height) {
-          (bar as HTMLElement).style.height = `${height}%`;
-        }
-      });
-    }, 300);
-  } catch (err) {
-    console.error('Error fetching dashboard data:', err);
-    loading.value = false;
-    error.value = 'Error al cargar los datos del dashboard. Por favor, inténtelo de nuevo.';
+  if (diffDays < 0) return 'Vencido'
+  if (diffDays === 0) return 'Hoy'
+  if (diffDays === 1) return 'Mañana'
+  return `${diffDays} días restantes`
+}
+
+// Tareas pendientes
+const pendingTasks = ref([
+  {
+    title: 'Revisar contrato con proveedor',
+    description: 'Verificar cláusulas de renovación automática',
+    dueDate: '2023-07-12',
+    assignee: 'Juan Pérez',
+    priority: 'Alta',
+    completed: false
+  },
+  {
+    title: 'Enviar recordatorio de pago',
+    description: 'Factura #INV-2022-789 pendiente de pago',
+    dueDate: '2023-07-14',
+    assignee: 'María Gómez',
+    priority: 'Media',
+    completed: false
+  },
+  {
+    title: 'Actualizar datos de cliente',
+    description: 'Actualizar información de contacto de Empresa ABC',
+    dueDate: '2023-07-18',
+    assignee: 'Carlos Rodríguez',
+    priority: 'Baja',
+    completed: true
+  }
+])
+
+// Clases para prioridades
+const priorityClass = (priority) => {
+  switch (priority) {
+    case 'Alta': return 'bg-error/10 text-error'
+    case 'Media': return 'bg-warning/10 text-warning'
+    case 'Baja': return 'bg-success/10 text-success'
+    default: return 'bg-gray-100 text-gray-500'
+  }
+}
+
+// Categorías de contratos
+const categories = ref([
+  { name: 'Servicios', count: 25, trend: 5.2 },
+  { name: 'Compraventa', count: 18, trend: -2.1 },
+  { name: 'Laborales', count: 12, trend: 3.4 },
+  { name: 'Arrendamiento', count: 8, trend: 1.8 }
+])
+
+// Alertas importantes
+const importantAlerts = ref([
+  {
+    level: 'critical',
+    title: 'Contrato a punto de vencer',
+    message: 'El contrato #5678 con Empresa ABC vence en 3 días',
+    date: '12/07/2023'
+  },
+  {
+    level: 'warning',
+    title: 'Pago pendiente',
+    message: 'La factura #INV-2022-456 está pendiente de pago desde hace 15 días',
+    date: '10/07/2023'
+  },
+  {
+    level: 'info',
+    title: 'Recordatorio de renovación',
+    message: 'El período de renovación para 5 contratos comienza el próximo mes',
+    date: '08/07/2023'
+  }
+])
+
+// Clases para alertas
+const alertBgClass = (level) => {
+  switch (level) {
+    case 'critical': return 'bg-error/5 border border-error/20'
+    case 'warning': return 'bg-warning/5 border border-warning/20'
+    case 'info': return 'bg-info/5 border border-info/20'
+    default: return 'bg-gray-100'
+  }
+}
+
+const alertIconClass = (level) => {
+  switch (level) {
+    case 'critical': return 'w-8 h-8 rounded-full bg-error/10 text-error flex items-center justify-center'
+    case 'warning': return 'w-8 h-8 rounded-full bg-warning/10 text-warning flex items-center justify-center'
+    case 'info': return 'w-8 h-8 rounded-full bg-info/10 text-info flex items-center justify-center'
+    default: return 'w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center'
+  }
+}
+
+const alertIcon = (level) => {
+  switch (level) {
+    case 'critical': return 'fa-exclamation-triangle'
+    case 'warning': return 'fa-exclamation-circle'
+    case 'info': return 'fa-info-circle'
+    default: return 'fa-bell'
   }
 }
 </script>
-
-<style lang="scss" scoped>
-@use './dashboard.scss';
-
-.chart-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  margin: 1rem 0;
-}
-
-.categories-container {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.circular-charts {
-  display: flex;
-  justify-content: space-around;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
-}
-
-@media (max-width: 768px) {
-  .chart-row {
-    flex-direction: column;
-  }
-  
-  .circular-charts {
-    justify-content: center;
-    gap: 1rem;
-  }
-}
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-  
-  .header-main {
-    flex: 1;
-    min-width: 300px;
-  }
-  
-  .header-actions {
-    display: flex;
-    gap: 1rem;
-    
-    .analytics-link {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-      background-color: var(--color-surface-variant);
-      color: var(--color-primary);
-      text-decoration: none;
-      transition: background-color 0.2s ease;
-      
-      &:hover {
-        background-color: var(--color-surface-hover);
-      }
-      
-      i {
-        font-size: 18px;
-      }
-    }
-  }
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  
-  .analytics-link {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background-color: var(--color-surface-variant);
-    color: var(--color-text);
-    border-radius: 4px;
-    text-decoration: none;
-    transition: background-color 0.2s;
-    
-    &:hover {
-      background-color: var(--color-surface-hover);
-    }
-    
-    i {
-      color: var(--color-primary);
-    }
-  }
-  
-  .btn-refresh {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background-color: var(--color-surface-variant);
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    
-    &:hover {
-      background-color: var(--color-surface-hover);
-    }
-  }
-}
-</style>

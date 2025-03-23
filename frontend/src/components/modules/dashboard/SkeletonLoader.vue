@@ -1,54 +1,54 @@
 <template>
-  <div class="skeleton-loader">
-    <div class="skeleton-header">
-      <div class="skeleton-title"></div>
-      <div class="skeleton-subtitle"></div>
-      <div class="skeleton-button"></div>
+  <div class="w-full animate-pulse">
+    <div class="mb-6">
+      <div class="h-9 w-3/5 max-w-[300px] mb-1 bg-gray-200 dark:bg-gray-700 rounded"></div>
+      <div class="h-4 w-2/5 max-w-[250px] mb-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+      <div class="h-10 w-[150px] float-right -mt-[50px] bg-gray-200 dark:bg-gray-700 rounded-md md:float-none md:mt-2"></div>
     </div>
     
-    <div class="skeleton-cards">
-      <div class="skeleton-card" v-for="i in cards" :key="i">
-        <div class="skeleton-icon"></div>
-        <div class="skeleton-content">
-          <div class="skeleton-value"></div>
-          <div class="skeleton-label"></div>
-          <div class="skeleton-trend"></div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div v-for="i in cards" :key="i" class="h-[120px] flex items-start p-4 bg-surface dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+        <div class="w-12 h-12 rounded bg-gray-200 dark:bg-gray-700 mr-4 flex-shrink-0"></div>
+        <div class="flex-1">
+          <div class="h-8 w-4/5 mb-1 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div class="h-4 w-3/5 mb-2 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div class="h-3.5 w-2/5 bg-gray-200 dark:bg-gray-700 rounded"></div>
         </div>
       </div>
     </div>
     
-    <div class="skeleton-charts">
-      <div class="skeleton-chart-card">
-        <div class="skeleton-card-header">
-          <div class="skeleton-card-title"></div>
-          <div class="skeleton-card-action"></div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="bg-surface dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-surface dark:bg-gray-800">
+          <div class="h-6 w-3/5 max-w-[200px] bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div class="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
         </div>
-        <div class="skeleton-card-content">
-          <div class="skeleton-metrics">
-            <div class="skeleton-metric" v-for="i in 4" :key="i">
-              <div class="skeleton-metric-icon"></div>
-              <div class="skeleton-metric-content">
-                <div class="skeleton-metric-value"></div>
-                <div class="skeleton-metric-label"></div>
+        <div class="p-5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div v-for="i in 4" :key="i" class="flex flex-col items-center text-center p-3 rounded bg-gray-100 dark:bg-gray-700/50">
+              <div class="w-10 h-10 rounded-full mb-2 bg-gray-200 dark:bg-gray-700"></div>
+              <div class="w-full">
+                <div class="h-6 w-4/5 mx-auto mb-1 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                <div class="h-3 w-4/5 mx-auto bg-gray-200 dark:bg-gray-700 rounded"></div>
               </div>
             </div>
           </div>
-          <div class="skeleton-chart"></div>
+          <div class="h-[200px] mt-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
         </div>
       </div>
       
-      <div class="skeleton-chart-card">
-        <div class="skeleton-card-header">
-          <div class="skeleton-card-title"></div>
-          <div class="skeleton-card-action"></div>
+      <div class="bg-surface dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 bg-surface dark:bg-gray-800">
+          <div class="h-6 w-3/5 max-w-[200px] bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div class="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
         </div>
-        <div class="skeleton-card-content">
-          <div class="skeleton-category" v-for="i in 4" :key="i">
-            <div class="skeleton-category-header">
-              <div class="skeleton-category-name"></div>
-              <div class="skeleton-category-count"></div>
+        <div class="p-5">
+          <div v-for="i in 4" :key="i" class="mb-4">
+            <div class="flex justify-between mb-1">
+              <div class="h-4 w-1/2 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div class="h-4 w-8 bg-gray-200 dark:bg-gray-700 rounded"></div>
             </div>
-            <div class="skeleton-progress"></div>
+            <div class="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full"></div>
           </div>
         </div>
       </div>
@@ -65,239 +65,17 @@ defineProps({
 });
 </script>
 
-<style lang="scss" scoped>
-@use '../../../styles/variables' as v;
-@use '../../../styles/colors' as c;
-@use '../../../styles/mixins' as m;
-
-@keyframes shimmer {
-  0% {
-    background-position: -468px 0;
+<style>
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
   }
-  100% {
-    background-position: 468px 0;
+  50% {
+    opacity: 0.5;
   }
 }
 
-.skeleton-loader {
-  width: 100%;
-  
-  .skeleton-header, .skeleton-cards, .skeleton-charts {
-    margin-bottom: v.$spacing-lg;
-  }
-  
-  [class^="skeleton-"] {
-    background: linear-gradient(
-      to right,
-      rgba(c.$color-border, 0.2) 8%,
-      rgba(c.$color-border, 0.3) 18%,
-      rgba(c.$color-border, 0.2) 33%
-    );
-    background-size: 800px 104px;
-    border-radius: v.$border-radius-sm;
-    animation: shimmer 1.5s infinite linear;
-  }
-  
-  .skeleton-header {
-    .skeleton-title {
-      height: 36px;
-      width: 60%;
-      max-width: 300px;
-      margin-bottom: v.$spacing-xs;
-    }
-    
-    .skeleton-subtitle {
-      height: 16px;
-      width: 40%;
-      max-width: 250px;
-      margin-bottom: v.$spacing-md;
-    }
-    
-    .skeleton-button {
-      height: 40px;
-      width: 150px;
-      border-radius: v.$border-radius;
-      float: right;
-      margin-top: -50px;
-    }
-  }
-  
-  .skeleton-cards {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: v.$spacing-md;
-    
-    .skeleton-card {
-      height: 120px;
-      display: flex;
-      align-items: flex-start;
-      padding: v.$spacing-lg;
-      background-color: c.$color-surface;
-      border-radius: v.$border-radius-md;
-      box-shadow: v.$shadow-sm;
-      border: 1px solid rgba(c.$color-border, 0.5);
-      
-      .skeleton-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: v.$border-radius;
-        background-color: rgba(c.$color-border, 0.2);
-        margin-right: v.$spacing-md;
-        flex-shrink: 0;
-      }
-      
-      .skeleton-content {
-        flex: 1;
-        
-        .skeleton-value {
-          height: 32px;
-          width: 70%;
-          margin-bottom: v.$spacing-xs;
-        }
-        
-        .skeleton-label {
-          height: 16px;
-          width: 60%;
-          margin-bottom: v.$spacing-sm;
-        }
-        
-        .skeleton-trend {
-          height: 14px;
-          width: 40%;
-        }
-      }
-    }
-  }
-  
-  .skeleton-charts {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: v.$spacing-lg;
-    
-    @media (max-width: v.$breakpoint-lg) {
-      grid-template-columns: 1fr;
-    }
-    
-    .skeleton-chart-card {
-      background-color: c.$color-surface;
-      border-radius: v.$border-radius-md;
-      box-shadow: v.$shadow-sm;
-      border: 1px solid rgba(c.$color-border, 0.5);
-      overflow: hidden;
-      
-      .skeleton-card-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: v.$spacing-md v.$spacing-lg;
-        border-bottom: 1px solid rgba(c.$color-border, 0.2);
-        background-color: c.$color-surface;
-        
-        .skeleton-card-title {
-          height: 24px;
-          width: 60%;
-          max-width: 200px;
-        }
-        
-        .skeleton-card-action {
-          height: 32px;
-          width: 32px;
-          border-radius: 50%;
-        }
-      }
-      
-      .skeleton-card-content {
-        padding: v.$spacing-lg;
-        
-        .skeleton-metrics {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-          gap: v.$spacing-md;
-          margin-bottom: v.$spacing-lg;
-          
-          .skeleton-metric {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            padding: v.$spacing-md;
-            border-radius: v.$border-radius;
-            background-color: rgba(c.$color-border, 0.05);
-            
-            .skeleton-metric-icon {
-              width: 42px;
-              height: 42px;
-              border-radius: 50%;
-              margin-bottom: v.$spacing-sm;
-            }
-            
-            .skeleton-metric-content {
-              width: 100%;
-              
-              .skeleton-metric-value {
-                height: 24px;
-                width: 70%;
-                margin: 0 auto v.$spacing-xs;
-              }
-              
-              .skeleton-metric-label {
-                height: 12px;
-                width: 80%;
-                margin: 0 auto;
-              }
-            }
-          }
-        }
-        
-        .skeleton-chart {
-          height: 200px;
-          margin-top: v.$spacing-md;
-        }
-        
-        .skeleton-category {
-          margin-bottom: v.$spacing-md;
-          
-          .skeleton-category-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: v.$spacing-xs;
-            
-            .skeleton-category-name {
-              height: 16px;
-              width: 50%;
-            }
-            
-            .skeleton-category-count {
-              height: 16px;
-              width: 30px;
-            }
-          }
-          
-          .skeleton-progress {
-            height: 8px;
-            width: 100%;
-            border-radius: v.$border-radius-pill;
-          }
-        }
-      }
-    }
-  }
-}
-
-@media (max-width: v.$breakpoint-md) {
-  .skeleton-header {
-    .skeleton-button {
-      float: none;
-      margin-top: v.$spacing-sm;
-    }
-  }
-  
-  .skeleton-cards {
-    grid-template-columns: 1fr;
-  }
-  
-  .skeleton-charts {
-    grid-template-columns: 1fr;
-  }
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 </style> 

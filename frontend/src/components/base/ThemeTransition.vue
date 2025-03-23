@@ -1,7 +1,12 @@
 <template>
-  <transition name="theme-transition">
-    <div v-if="transitionActive" class="theme-transition-overlay"></div>
-  </transition>
+  <Transition
+    enter-active-class="transition-opacity duration-500 ease-in-out"
+    leave-active-class="transition-opacity duration-500 ease-in-out"
+    enter-from-class="opacity-0"
+    leave-to-class="opacity-0"
+  >
+    <div v-if="transitionActive" class="fixed inset-0 bg-black/20 z-[9999] pointer-events-none"></div>
+  </Transition>
 </template>
 
 <script setup lang="ts">
@@ -22,27 +27,4 @@ watch(() => isDark.value, () => {
     transitionActive.value = false;
   }, 600); // Tiempo suficiente para que la animación termine
 });
-</script>
-
-<style lang="scss" scoped>
-.theme-transition-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.2);
-  z-index: 9999;
-  pointer-events: none;
-}
-
-.theme-transition-enter-active,
-.theme-transition-leave-active {
-  transition: opacity 0.5s ease;
-}
-
-.theme-transition-enter-from,
-.theme-transition-leave-to {
-  opacity: 0;
-}
-</style> 
+</script> 

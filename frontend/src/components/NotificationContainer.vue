@@ -1,5 +1,5 @@
 <template>
-  <div class="notification-container">
+  <div class="fixed top-5 right-5 z-[1000] max-w-sm flex flex-col items-end">
     <TransitionGroup name="notification-list">
       <BaseNotification
         v-for="notification in notificationStore.notifications"
@@ -37,21 +37,7 @@ const defaultIcon = (type: string) => {
 };
 </script>
 
-<style lang="scss" scoped>
-@use '../styles/variables' as v;
-@use '../styles/colors' as c;
-
-.notification-container {
-  position: fixed;
-  top: v.$spacing-lg;
-  right: v.$spacing-lg;
-  z-index: 1000;
-  max-width: 400px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
+<style>
 .notification-list-enter-active,
 .notification-list-leave-active {
   transition: all 0.3s ease;

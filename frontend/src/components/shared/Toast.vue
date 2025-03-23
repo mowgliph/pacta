@@ -1,19 +1,38 @@
 <template>
-  <div class="toast-container">
-    <TransitionGroup name="toast">
+  <div class="fixed top-16 right-16 z-50 flex flex-col gap-8">
+    <TransitionGroup
+      enter-active-class="transition-all duration-300 ease-in-out"
+      enter-from-class="opacity-0 translate-x-8"
+      leave-active-class="transition-all duration-300 ease-in-out"
+      leave-to-class="opacity-0 translate-x-8"
+    >
       <div
         v-for="toast in notifications"
         :key="toast.id"
-        class="toast"
-        :class="[`toast--${toast.type}`]"
+        class="flex items-center gap-4 p-4 min-w-[300px] max-w-[500px] bg-surface rounded shadow-md"
+        :class="[
+          toast.type === 'success' ? 'border-l-4 border-success' : 
+          toast.type === 'error' ? 'border-l-4 border-error' :
+          toast.type === 'warning' ? 'border-l-4 border-warning' :
+          'border-l-4 border-info'
+        ]"
       >
-        <div class="toast__icon">
+        <div :class="[
+          'text-xl',
+          toast.type === 'success' ? 'text-success' : 
+          toast.type === 'error' ? 'text-error' :
+          toast.type === 'warning' ? 'text-warning' :
+          'text-info'
+        ]">
           <i :class="getIcon(toast.type)"></i>
         </div>
-        <div class="toast__content">
-          <p class="toast__message">{{ toast.message }}</p>
+        <div class="flex-1">
+          <p class="m-0 text-text-secondary text-sm">{{ toast.message }}</p>
         </div>
-        <button class="toast__close" @click="removeToast(toast.id)">
+        <button 
+          class="p-1 border-none bg-transparent text-text-secondary opacity-50 cursor-pointer transition-opacity hover:opacity-100" 
+          @click="removeToast(toast.id)"
+        >
           <i class="fas fa-times"></i>
         </button>
       </div>
@@ -43,7 +62,3 @@ function getIcon(type: ToastType) {
   return icons[type];
 }
 </script>
-
-<style lang="scss" scoped>
-@use './Toast.scss';
-</style>

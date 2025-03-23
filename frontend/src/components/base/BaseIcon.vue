@@ -1,6 +1,14 @@
 <template>
   <svg
-    :class="['base-icon', `base-icon--${size}`]"
+    :class="[
+      'inline-block align-middle text-current',
+      { 
+        'w-4 h-4': size === 'sm',
+        'w-6 h-6': size === 'md',
+        'w-8 h-8': size === 'lg',
+        'w-12 h-12': size === 'xl'
+      }
+    ]"
     :width="iconSize"
     :height="iconSize"
     viewBox="0 0 24 24"
@@ -56,21 +64,3 @@ const props = withDefaults(defineProps<{
 
 const iconSize = computed(() => sizes[props.size]);
 </script>
-
-<style lang="scss" scoped>
-@use '../../styles/variables' as v;
-@use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-
-
-.base-icon {
-  display: inline-block;
-  vertical-align: middle;
-  color: currentColor;
-
-  &--sm { width: 16px; height: 16px; }
-  &--md { width: 24px; height: 24px; }
-  &--lg { width: 32px; height: 32px; }
-  &--xl { width: 48px; height: 48px; }
-}
-</style>

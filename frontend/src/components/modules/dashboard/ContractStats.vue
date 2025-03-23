@@ -1,25 +1,25 @@
 <template>
-  <div class="contract-stats">
-    <h3 class="contract-stats__title">Contract Statistics</h3>
+  <div class="bg-surface rounded-lg shadow-sm p-4">
+    <h3 class="text-lg font-semibold text-text-primary mb-4">Contract Statistics</h3>
     
-    <div class="contract-stats__grid">
-      <div class="stat-card">
-        <span class="stat-card__label">Active Contracts</span>
-        <span class="stat-card__value">{{ stats.active }}</span>
+    <div class="grid grid-cols-3 gap-4 mb-6">
+      <div class="bg-white dark:bg-surface-hover p-3 rounded shadow-sm">
+        <span class="block text-sm text-text-secondary mb-1">Active Contracts</span>
+        <span class="text-xl font-bold text-text-primary">{{ stats.active }}</span>
       </div>
       
-      <div class="stat-card">
-        <span class="stat-card__label">Expiring Soon</span>
-        <span class="stat-card__value stat-card__value--warning">{{ stats.expiringSoon }}</span>
+      <div class="bg-white dark:bg-surface-hover p-3 rounded shadow-sm">
+        <span class="block text-sm text-text-secondary mb-1">Expiring Soon</span>
+        <span class="text-xl font-bold text-warning">{{ stats.expiringSoon }}</span>
       </div>
       
-      <div class="stat-card">
-        <span class="stat-card__label">Expired</span>
-        <span class="stat-card__value stat-card__value--danger">{{ stats.expired }}</span>
+      <div class="bg-white dark:bg-surface-hover p-3 rounded shadow-sm">
+        <span class="block text-sm text-text-secondary mb-1">Expired</span>
+        <span class="text-xl font-bold text-error">{{ stats.expired }}</span>
       </div>
     </div>
 
-    <div class="contract-stats__chart">
+    <div class="h-48">
       <canvas ref="chartRef"></canvas>
     </div>
   </div>
@@ -70,7 +70,3 @@ function initChart() {
   });
 }
 </script>
-
-<style lang="scss" scoped>
-@use './contractStats.scss';
-</style>

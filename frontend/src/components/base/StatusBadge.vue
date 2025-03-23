@@ -1,41 +1,29 @@
 <template>
-  <span :class="['status-badge', `status-badge--${status}`]">
+  <span :class="[
+    'inline-block py-1 px-3 rounded text-sm font-medium capitalize',
+    statusClasses
+  ]">
     {{ status }}
   </span>
 </template>
 
 <script setup lang="ts">
-defineProps<{
+import { computed } from 'vue';
+
+const props = defineProps<{
   status: 'active' | 'inactive' | 'expired'
 }>();
+
+const statusClasses = computed(() => {
+  switch (props.status) {
+    case 'active':
+      return 'bg-success/10 text-success';
+    case 'inactive':
+      return 'bg-warning/10 text-warning';
+    case 'expired':
+      return 'bg-error/10 text-error';
+    default:
+      return '';
+  }
+});
 </script>
-
-<style lang="scss" scoped>
-@use '../../styles/variables' as v;
-@use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-
-.status-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: v.$border-radius;
-  font-size: 0.875rem;
-  font-weight: v.$font-weight-medium;
-  text-transform: capitalize;
-
-  &--active {
-    background-color: rgba(c.$color-success, 0.1);
-    color: c.$color-success;
-  }
-
-  &--inactive {
-    background-color: rgba(c.$color-warning, 0.1);
-    color: c.$color-warning;
-  }
-
-  &--expired {
-    background-color: rgba(c.$color-error, 0.1);
-    color: c.$color-error;
-  }
-}
-</style>

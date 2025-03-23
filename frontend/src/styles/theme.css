@@ -1,86 +1,123 @@
-/* PrimeVue 4.x Theme */
+/* Variables CSS para temas de la aplicación - Sistema unificado */
 :root {
-  /* Colors */
-  --primary-color: #3B82F6;
-  --primary-color-light: #93C5FD;
-  --primary-color-dark: #1D4ED8;
-  --surface-color: #FFFFFF;
-  --background-color: #F8FAFC;
-  --text-primary: #1E293B;
-  --text-secondary: #64748B;
-  --border-color: #E2E8F0;
-  --hover-color: rgba(59, 130, 246, 0.1);
-
-  /* Surface Colors */
-  --surface-ground: #f8f9fa;
-  --surface-section: #ffffff;
-  --surface-card: #ffffff;
-  --surface-overlay: #ffffff;
-  --surface-border: #e5e7eb;
-  --surface-hover: rgba(0, 0, 0, 0.04);
-
-  /* Action Colors */
-  --focus-ring: 0 0 0 2px #bfdbfe;
-  --highlight-bg: #eef2ff;
-  --highlight-text-color: var(--primary-color);
-
-  /* Semantic Colors */
-  --info-color: #3b82f6;
-  --success-color: #10b981;
-  --warning-color: #f59e0b;
-  --error-color: #ef4444;
-
-  /* Border Radius */
-  --border-radius: 6px;
-
-  /* Font */
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-size: 1rem;
-  --text-sm: 0.875rem;
-  --text-xs: 0.75rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
+  /* Colores base */
+  --color-primary: #3182ce;
+  --color-primary-light: #4299e1;
+  --color-primary-dark: #2c5282;
+  
+  --color-secondary: #805ad5;
+  --color-secondary-light: #9f7aea;
+  --color-secondary-dark: #6b46c1;
+  
+  --color-background: #f8fafc;
+  --color-background-dark: #edf2f7;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f8fafc;
+  
+  /* Colores de estado */
+  --color-error: #e53e3e;
+  --color-success: #38a169;
+  --color-warning: #ed8936;
+  --color-info: #3182ce;
+  --color-accent: #667eea;
+  --color-accent-light: #9f7aea;
+  
+  /* Texto */
+  --color-text-primary: #2d3748;
+  --color-text-secondary: #718096;
+  --color-text-disabled: #a0aec0;
+  
+  /* Bordes */
+  --color-border: #e2e8f0;
+  
+  /* Tipografía */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  
   --font-weight-light: 300;
   --font-weight-normal: 400;
   --font-weight-medium: 500;
+  --font-weight-semibold: 600;
   --font-weight-bold: 700;
-
-  /* Transitions */
-  --transition-duration: 0.2s;
-
-  /* Shadows */
-  --shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  
+  /* Tamaños de fuente */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+  
+  /* Espaciado */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  
+  /* Sombras */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-} 
+  
+  /* Radios de borde */
+  --border-radius-sm: 0.125rem;
+  --border-radius: 0.25rem;
+  --border-radius-md: 0.375rem;
+  --border-radius-lg: 0.5rem;
+  --border-radius-xl: 0.75rem;
+  --border-radius-2xl: 1rem;
+  --border-radius-pill: 9999px;
+  
+  /* Transiciones */
+  --transition-fast: 150ms;
+  --transition-normal: 300ms;
+  --transition-slow: 500ms;
+  
+  /* Contenedores */
+  --container-max-width: 1280px;
+  
+  /* Z-index layers */
+  --z-sidebar: 50;
+  --z-header: 40;
+  --z-dropdown: 30;
+  --z-modal: 100;
+}
 
-/* Dark Theme Variables */
-.dark-theme {
-  --primary-color: #60A5FA;
-  --primary-color-light: #93C5FD;
-  --primary-color-dark: #2563EB;
-  --surface-color: #1E1E1E;
-  --background-color: #121212;
-  --text-primary: #F1F5F9;
-  --text-secondary: #94A3B8;
-  --border-color: #333333;
-  --hover-color: rgba(96, 165, 250, 0.15);
+/* Modo oscuro */
+.dark, .dark-theme {
+  --color-primary: #4299e1;
+  --color-primary-light: #63b3ed;
+  --color-primary-dark: #3182ce;
   
-  /* Surface Colors */
-  --surface-ground: #121212;
-  --surface-section: #1E1E1E;
-  --surface-card: #252525;
-  --surface-overlay: #2A2A2A;
-  --surface-border: #333333;
-  --surface-hover: rgba(255, 255, 255, 0.03);
+  --color-secondary: #9f7aea;
+  --color-secondary-light: #b794f4;
+  --color-secondary-dark: #805ad5;
   
-  /* Shadows for dark theme */
-  --shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+  --color-background: #1a202c;
+  --color-background-dark: #171923;
+  --color-surface: #2d3748;
+  --color-surface-hover: #4a5568;
+  
+  --color-error: #fc8181;
+  --color-success: #68d391;
+  --color-warning: #f6ad55;
+  --color-info: #63b3ed;
+  --color-accent: #7f9cf5;
+  --color-accent-light: #b794f4;
+  
+  --color-text-primary: #f7fafc;
+  --color-text-secondary: #e2e8f0;
+  --color-text-disabled: #718096;
+  
+  --color-border: #4a5568;
+  
+  /* Sombras para el tema oscuro */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
-  
-  /* Action Colors */
-  --focus-ring: 0 0 0 2px rgba(96, 165, 250, 0.4);
-  --highlight-bg: rgba(96, 165, 250, 0.1);
-  --highlight-text-color: var(--primary-color);
 }

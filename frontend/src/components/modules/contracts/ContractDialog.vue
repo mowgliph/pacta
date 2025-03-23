@@ -1,88 +1,95 @@
 <template>
-  <div v-if="visible" class="dialog-overlay">
-    <div class="dialog-content">
-      <div class="dialog-header">
-        <h2>{{ contract ? 'Editar Contrato' : 'Nuevo Contrato' }}</h2>
-        <button @click="handleCancel" class="close-button">
+  <div v-if="visible" 
+       class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-surface rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-semibold text-text-primary">{{ contract ? 'Editar Contrato' : 'Nuevo Contrato' }}</h2>
+        <button @click="handleCancel" class="text-xl text-text-secondary hover:text-text-primary bg-transparent border-none cursor-pointer">
           <i class="fas fa-times"></i>
         </button>
       </div>
       
-      <form @submit.prevent="handleSubmit" class="contract-form">
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="title">Título</label>
+      <form @submit.prevent="handleSubmit">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
+          <div>
+            <label for="title" class="block mb-2 font-medium">Título</label>
             <input 
               id="title"
               v-model="formData.title"
               type="text"
               required
-              :class="{ 'error': errors.title }"
+              :class="['w-full p-3 border rounded-md focus:outline-none focus:border-primary', 
+                     {'border-error': errors.title, 'border-border': !errors.title}]"
               placeholder="Ingrese el título del contrato"
             />
-            <span v-if="errors.title" class="error-message">{{ errors.title }}</span>
+            <span v-if="errors.title" class="text-error text-sm mt-1 block">{{ errors.title }}</span>
           </div>
 
-          <div class="form-group">
-            <label for="contractNumber">Número de Contrato</label>
+          <div>
+            <label for="contractNumber" class="block mb-2 font-medium">Número de Contrato</label>
             <input 
               id="contractNumber"
               v-model="formData.contractNumber"
               type="text"
               required
-              :class="{ 'error': errors.contractNumber }"
+              :class="['w-full p-3 border rounded-md focus:outline-none focus:border-primary', 
+                     {'border-error': errors.contractNumber, 'border-border': !errors.contractNumber}]"
               placeholder="Ej: CONT-2023-001"
             />
-            <span v-if="errors.contractNumber" class="error-message">
+            <span v-if="errors.contractNumber" class="text-error text-sm mt-1 block">
               {{ errors.contractNumber }}
             </span>
           </div>
 
-          <div class="form-group">
-            <label for="startDate">Fecha de Inicio</label>
+          <div>
+            <label for="startDate" class="block mb-2 font-medium">Fecha de Inicio</label>
             <input 
               id="startDate"
               v-model="formData.startDate"
               type="date"
               required
-              :class="{ 'error': errors.startDate }"
+              :class="['w-full p-3 border rounded-md focus:outline-none focus:border-primary', 
+                     {'border-error': errors.startDate, 'border-border': !errors.startDate}]"
             />
-            <span v-if="errors.startDate" class="error-message">{{ errors.startDate }}</span>
+            <span v-if="errors.startDate" class="text-error text-sm mt-1 block">{{ errors.startDate }}</span>
           </div>
 
-          <div class="form-group">
-            <label for="endDate">Fecha de Fin</label>
+          <div>
+            <label for="endDate" class="block mb-2 font-medium">Fecha de Fin</label>
             <input 
               id="endDate"
               v-model="formData.endDate"
               type="date"
               required
               :min="formData.startDate"
-              :class="{ 'error': errors.endDate }"
+              :class="['w-full p-3 border rounded-md focus:outline-none focus:border-primary', 
+                     {'border-error': errors.endDate, 'border-border': !errors.endDate}]"
             />
-            <span v-if="errors.endDate" class="error-message">{{ errors.endDate }}</span>
+            <span v-if="errors.endDate" class="text-error text-sm mt-1 block">{{ errors.endDate }}</span>
           </div>
 
-          <div class="form-group">
-            <label for="amount">Importe</label>
+          <div>
+            <label for="amount" class="block mb-2 font-medium">Importe</label>
             <input 
               id="amount"
               v-model.number="formData.amount"
               type="number"
               step="0.01"
               required
-              :class="{ 'error': errors.amount }"
+              :class="['w-full p-3 border rounded-md focus:outline-none focus:border-primary', 
+                     {'border-error': errors.amount, 'border-border': !errors.amount}]"
               placeholder="0.00"
             />
-            <span v-if="errors.amount" class="error-message">{{ errors.amount }}</span>
+            <span v-if="errors.amount" class="text-error text-sm mt-1 block">{{ errors.amount }}</span>
           </div>
 
-          <div class="form-group">
-            <label for="currency">Moneda</label>
+          <div>
+            <label for="currency" class="block mb-2 font-medium">Moneda</label>
             <select 
               id="currency"
               v-model="formData.currency"
               required
+              class="w-full p-3 border border-border rounded-md focus:outline-none focus:border-primary"
             >
               <option value="CUP">CUP</option>
               <option value="USD">USD</option>
@@ -90,12 +97,13 @@
             </select>
           </div>
 
-          <div class="form-group">
-            <label for="status">Estado</label>
+          <div>
+            <label for="status" class="block mb-2 font-medium">Estado</label>
             <select 
               id="status"
               v-model="formData.status"
               required
+              class="w-full p-3 border border-border rounded-md focus:outline-none focus:border-primary"
             >
               <option value="draft">Borrador</option>
               <option value="active">Activo</option>
@@ -105,8 +113,8 @@
             </select>
           </div>
 
-          <div class="form-group">
-            <label for="notificationDays">Días de Notificación</label>
+          <div>
+            <label for="notificationDays" class="block mb-2 font-medium">Días de Notificación</label>
             <input 
               id="notificationDays"
               v-model.number="formData.notificationDays"
@@ -115,68 +123,78 @@
               max="90"
               required
               placeholder="30"
+              class="w-full p-3 border border-border rounded-md focus:outline-none focus:border-primary"
             />
-            <small class="input-help">Días de antelación para notificar vencimiento</small>
+            <span class="text-xs text-text-secondary mt-1 block">Días de antelación para notificar vencimiento</span>
           </div>
 
-          <div class="form-group full-width">
-            <label for="description">Descripción</label>
+          <div class="col-span-1 md:col-span-2">
+            <label for="description" class="block mb-2 font-medium">Descripción</label>
             <textarea 
               id="description"
               v-model="formData.description"
               rows="4"
-              :class="{ 'error': errors.description }"
+              :class="['w-full p-3 border rounded-md focus:outline-none focus:border-primary', 
+                     {'border-error': errors.description, 'border-border': !errors.description}]"
               placeholder="Describa los detalles del contrato..."
             ></textarea>
-            <span v-if="errors.description" class="error-message">
+            <span v-if="errors.description" class="text-error text-sm mt-1 block">
               {{ errors.description }}
             </span>
           </div>
 
-          <div class="form-group full-width document-upload">
-            <label>Documento del Contrato</label>
-            <div class="document-container">
-              <div v-if="contract && contract.documentPath && !newDocumentFile" class="existing-document">
-                <i class="fas fa-file-alt"></i>
-                <span>{{ getDocumentName(contract.documentPath) }}</span>
-                <button type="button" @click="downloadDocument" class="btn-text">
+          <div class="col-span-1 md:col-span-2 mt-4">
+            <label class="block mb-2 font-medium">Documento del Contrato</label>
+            <div class="mt-2">
+              <div v-if="contract && contract.documentPath && !newDocumentFile" 
+                  class="flex items-center gap-2 p-2 border border-border rounded-md bg-gray-50 dark:bg-surface-hover">
+                <i class="fas fa-file-alt text-text-secondary text-lg"></i>
+                <span class="flex-1 whitespace-nowrap overflow-hidden text-ellipsis">{{ getDocumentName(contract.documentPath) }}</span>
+                <button type="button" @click="downloadDocument" 
+                        class="px-2 py-1 text-primary hover:underline">
                   <i class="fas fa-download"></i> Descargar
                 </button>
-                <button type="button" @click="removeExistingDocument" class="btn-text btn-danger">
+                <button type="button" @click="removeExistingDocument" 
+                        class="px-2 py-1 text-error hover:underline">
                   <i class="fas fa-trash"></i> Eliminar
                 </button>
               </div>
-              <div v-else class="document-upload-area">
+              <div v-else class="relative">
                 <input 
                   type="file" 
                   id="documentFile" 
                   ref="documentFileInput"
                   @change="handleFileChange" 
                   accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
-                  class="file-input"
+                  class="hidden"
                 />
-                <div v-if="newDocumentFile" class="selected-file">
-                  <i class="fas fa-file"></i>
-                  <span>{{ newDocumentFile.name }}</span>
-                  <button type="button" @click="removeNewDocument" class="btn-text btn-danger">
+                <div v-if="newDocumentFile" 
+                    class="flex items-center gap-2 p-3 border border-success rounded-md bg-success/10">
+                  <i class="fas fa-file text-success text-lg"></i>
+                  <span class="flex-1 whitespace-nowrap overflow-hidden text-ellipsis">{{ newDocumentFile.name }}</span>
+                  <button type="button" @click="removeNewDocument" 
+                          class="px-2 py-1 text-error">
                     <i class="fas fa-times"></i>
                   </button>
                 </div>
-                <label v-else for="documentFile" class="file-upload-label">
-                  <i class="fas fa-cloud-upload-alt"></i>
-                  <span>Seleccione un archivo o arrástrelo aquí</span>
-                  <small>PDF, Word, Excel o TXT (máx. 10MB)</small>
+                <label v-else for="documentFile" 
+                      class="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-md cursor-pointer transition-all hover:border-primary hover:bg-gray-50 dark:hover:bg-surface-hover">
+                  <i class="fas fa-cloud-upload-alt text-3xl text-primary mb-2"></i>
+                  <span class="font-medium mb-1">Seleccione un archivo o arrástrelo aquí</span>
+                  <small class="text-text-secondary">PDF, Word, Excel o TXT (máx. 10MB)</small>
                 </label>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="dialog-actions">
-          <button type="button" @click="handleCancel" class="btn-secondary">
+        <div class="flex justify-end gap-4 mt-8">
+          <button type="button" @click="handleCancel" 
+                  class="py-2 px-4 border border-border bg-white dark:bg-surface rounded-md hover:bg-gray-50 dark:hover:bg-surface-hover flex items-center gap-1">
             <i class="fas fa-times"></i> Cancelar
           </button>
-          <button type="submit" class="btn-primary" :disabled="isSubmitting">
+          <button type="submit" :disabled="isSubmitting"
+                  class="py-2 px-4 bg-primary text-white border-none rounded-md hover:bg-primary-dark transition-colors flex items-center gap-1 disabled:opacity-70">
             <i v-if="isSubmitting" class="fas fa-spinner fa-spin"></i>
             <i v-else class="fas fa-save"></i>
             {{ contract ? 'Actualizar' : 'Crear' }}
@@ -405,143 +423,3 @@ function handleCancel() {
   resetForm();
 }
 </script>
-
-<style lang="scss" scoped>
-@use './contractDialog.scss';
-
-.document-upload {
-  margin-top: 1rem;
-  
-  .document-container {
-    margin-top: 0.5rem;
-    
-    .existing-document {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem;
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      background-color: var(--bg-secondary);
-      
-      i {
-        font-size: 1.2rem;
-        color: var(--text-secondary);
-      }
-      
-      span {
-        flex: 1;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      
-      .btn-text {
-        padding: 0.25rem 0.5rem;
-        color: var(--primary-color);
-        
-        &.btn-danger {
-          color: var(--danger-color);
-        }
-      }
-    }
-    
-    .document-upload-area {
-      position: relative;
-      
-      .file-input {
-        display: none;
-      }
-      
-      .file-upload-label {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        padding: 1.5rem;
-        border: 2px dashed var(--border-color);
-        border-radius: 4px;
-        cursor: pointer;
-        transition: all 0.2s;
-        
-        i {
-          font-size: 2rem;
-          color: var(--primary-color);
-          margin-bottom: 0.5rem;
-        }
-        
-        span {
-          font-weight: 500;
-          margin-bottom: 0.25rem;
-        }
-        
-        small {
-          color: var(--text-secondary);
-        }
-        
-        &:hover {
-          border-color: var(--primary-color);
-          background-color: var(--bg-hover);
-        }
-      }
-      
-      .selected-file {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem;
-        border: 1px solid var(--success-color);
-        border-radius: 4px;
-        background-color: var(--success-bg);
-        
-        i {
-          font-size: 1.2rem;
-          color: var(--success-color);
-        }
-        
-        span {
-          flex: 1;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        
-        button {
-          padding: 0.25rem 0.5rem;
-          color: var(--danger-color);
-        }
-      }
-    }
-  }
-}
-
-.input-help {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  margin-top: 0.25rem;
-}
-
-.dialog-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  
-  h2 {
-    margin: 0;
-  }
-  
-  .close-button {
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 1.25rem;
-    cursor: pointer;
-    
-    &:hover {
-      color: var(--text-primary);
-    }
-  }
-}
-</style>

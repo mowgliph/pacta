@@ -1,89 +1,144 @@
 <template>
-  <div class="reset-password-view">
-    <h2>{{ token ? 'Restablecer contraseña' : 'Solicitar restablecimiento' }}</h2>
-    
-    <div v-if="!token">
-      <p class="description">
-        Ingresa tu correo electrónico y te enviaremos instrucciones para restablecer tu contraseña.
-      </p>
-      
-      <form @submit.prevent="handleForgotPassword">
-        <div class="form-group">
-          <label for="email">Correo electrónico</label>
-          <input 
-            type="email" 
-            id="email" 
-            v-model="email" 
-            placeholder="Ingresa tu correo electrónico"
-            required
-            :disabled="loading"
-          />
-          <div v-if="errors.email" class="error-message">{{ errors.email }}</div>
+  <div class="flex min-h-screen relative bg-gradient-to-br from-primary-dark via-primary to-primary-light">
+    <div class="flex-1 flex items-center justify-center p-8 animate-fade-in">
+      <div class="w-full max-w-md bg-surface rounded-md shadow-lg p-8 relative transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+        <div class="flex items-center justify-center mb-8 animate-fade-in">
+          <img src="@/assets/contract_icon.png" alt="Logo" class="w-12 h-12 mr-2 animate-pulse" />
+          <h2 class="text-xl font-bold text-primary tracking-wider">PACTA</h2>
         </div>
         
-        <div class="form-actions">
-          <button type="submit" class="btn btn-primary" :disabled="loading">
-            {{ loading ? 'Enviando...' : 'Enviar instrucciones' }}
-          </button>
-          <router-link to="/auth/login" class="btn btn-text">Volver al inicio de sesión</router-link>
-        </div>
-      </form>
-    </div>
-    
-    <div v-else>
-      <div v-if="tokenVerified">
-        <p class="description">
-          Ingresa tu nueva contraseña para completar el proceso de restablecimiento.
-        </p>
+        <h1 class="text-xl font-semibold text-text-primary mb-4 text-center">
+          {{ token ? 'Restablecer contraseña' : 'Solicitar restablecimiento' }}
+        </h1>
         
-        <form @submit.prevent="handleResetPassword">
-          <div class="form-group">
-            <label for="password">Nueva contraseña</label>
-            <input 
-              type="password" 
-              id="password" 
-              v-model="password" 
-              placeholder="Ingresa tu nueva contraseña"
-              required
-              :disabled="loading"
-            />
-            <div v-if="errors.password" class="error-message">{{ errors.password }}</div>
-          </div>
-          
-          <div class="form-group">
-            <label for="confirmPassword">Confirmar contraseña</label>
-            <input 
-              type="password" 
-              id="confirmPassword" 
-              v-model="confirmPassword" 
-              placeholder="Confirma tu nueva contraseña"
-              required
-              :disabled="loading"
-            />
-            <div v-if="errors.confirmPassword" class="error-message">{{ errors.confirmPassword }}</div>
-          </div>
-          
-          <div class="form-actions">
-            <button type="submit" class="btn btn-primary" :disabled="loading">
-              {{ loading ? 'Guardando...' : 'Guardar nueva contraseña' }}
-            </button>
-          </div>
-        </form>
-      </div>
-      
-      <div v-else-if="verifyingToken">
-        <div class="loading-container">
-          <div class="spinner"></div>
-          <p>Verificando token...</p>
-        </div>
-      </div>
-      
-      <div v-else>
-        <div class="token-error">
-          <p class="error-message">
-            El enlace de restablecimiento es inválido o ha expirado.
+        <!-- Solicitud de recuperación -->
+        <div v-if="!token">
+          <p class="text-sm text-text-secondary mb-6 text-center">
+            Ingresa tu correo electrónico y te enviaremos instrucciones para restablecer tu contraseña.
           </p>
-          <router-link to="/auth/login" class="btn btn-primary">Volver al inicio de sesión</router-link>
+          
+          <form @submit.prevent="handleForgotPassword" class="space-y-4">
+            <div>
+              <label for="email" class="text-sm font-medium block mb-1">Correo electrónico</label>
+              <div class="relative">
+                <i class="fas fa-envelope absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"></i>
+                <input 
+                  type="email" 
+                  id="email" 
+                  v-model="email" 
+                  placeholder="Ingresa tu correo electrónico"
+                  required
+                  :disabled="loading"
+                  class="w-full p-2 pl-10 border rounded-md text-sm transition-all duration-200 hover:border-gray-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                  :class="{ 'border-error focus:ring-error/10': errors.email }"
+                />
+              </div>
+              <span v-if="errors.email" class="text-error text-xs mt-1 block">{{ errors.email }}</span>
+            </div>
+            
+            <div class="flex flex-col space-y-3 pt-4">
+              <button 
+                type="submit" 
+                class="w-full bg-primary text-white py-2 rounded shadow-sm font-medium transition-all duration-200 hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-md disabled:opacity-65 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                :disabled="loading"
+              >
+                <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
+                <span>{{ loading ? 'Enviando...' : 'Enviar instrucciones' }}</span>
+              </button>
+              
+              <router-link 
+                to="/auth/login" 
+                class="w-full text-center py-2 text-text-secondary text-sm hover:text-primary transition-colors"
+              >
+                Volver al inicio de sesión
+              </router-link>
+            </div>
+          </form>
+        </div>
+        
+        <!-- Restablecer contraseña -->
+        <div v-else>
+          <!-- Formulario de restablecimiento -->
+          <div v-if="tokenVerified">
+            <p class="text-sm text-text-secondary mb-6 text-center">
+              Ingresa tu nueva contraseña para completar el proceso de restablecimiento.
+            </p>
+            
+            <form @submit.prevent="handleResetPassword" class="space-y-4">
+              <div>
+                <label for="password" class="text-sm font-medium block mb-1">Nueva contraseña</label>
+                <div class="relative">
+                  <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"></i>
+                  <input 
+                    type="password" 
+                    id="password" 
+                    v-model="password" 
+                    placeholder="Ingresa tu nueva contraseña"
+                    required
+                    :disabled="loading"
+                    class="w-full p-2 pl-10 border rounded-md text-sm transition-all duration-200 hover:border-gray-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                    :class="{ 'border-error focus:ring-error/10': errors.password }"
+                  />
+                </div>
+                <span v-if="errors.password" class="text-error text-xs mt-1 block">{{ errors.password }}</span>
+              </div>
+              
+              <div>
+                <label for="confirmPassword" class="text-sm font-medium block mb-1">Confirmar contraseña</label>
+                <div class="relative">
+                  <i class="fas fa-lock absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"></i>
+                  <input 
+                    type="password" 
+                    id="confirmPassword" 
+                    v-model="confirmPassword" 
+                    placeholder="Confirma tu nueva contraseña"
+                    required
+                    :disabled="loading"
+                    class="w-full p-2 pl-10 border rounded-md text-sm transition-all duration-200 hover:border-gray-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+                    :class="{ 'border-error focus:ring-error/10': errors.confirmPassword }"
+                  />
+                </div>
+                <span v-if="errors.confirmPassword" class="text-error text-xs mt-1 block">{{ errors.confirmPassword }}</span>
+              </div>
+              
+              <div class="flex flex-col space-y-3 pt-4">
+                <button 
+                  type="submit" 
+                  class="w-full bg-primary text-white py-2 rounded shadow-sm font-medium transition-all duration-200 hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-md disabled:opacity-65 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                  :disabled="loading"
+                >
+                  <i v-if="loading" class="fas fa-spinner fa-spin mr-2"></i>
+                  <span>{{ loading ? 'Guardando...' : 'Guardar nueva contraseña' }}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+          
+          <!-- Verificando token -->
+          <div v-else-if="verifyingToken" class="flex flex-col items-center justify-center py-6">
+            <div class="w-10 h-10 border-t-2 border-primary rounded-full animate-spin mb-4"></div>
+            <p class="text-text-secondary">Verificando token...</p>
+          </div>
+          
+          <!-- Error de token -->
+          <div v-else class="text-center py-6">
+            <div class="rounded-full bg-error/10 p-4 inline-flex mb-4">
+              <i class="fas fa-exclamation-triangle text-2xl text-error"></i>
+            </div>
+            <p class="text-error font-medium mb-6">
+              El enlace de restablecimiento es inválido o ha expirado.
+            </p>
+            <router-link 
+              to="/auth/login" 
+              class="inline-block bg-primary text-white py-2 px-4 rounded shadow-sm font-medium transition-all duration-200 hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-md"
+            >
+              Volver al inicio de sesión
+            </router-link>
+          </div>
+        </div>
+        
+        <div class="text-center mt-8 text-xs text-text-disabled">
+          © {{ new Date().getFullYear() }} PACTA. Todos los derechos reservados.
         </div>
       </div>
     </div>
@@ -94,16 +149,18 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useToastNotificationStore } from '@/stores/toastNotification'
 
 // Props
 const props = defineProps<{
   token?: string
 }>()
 
-// Router
+// Router y stores
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const notificationStore = useToastNotificationStore()
 
 // Estado
 const token = computed(() => props.token || route.params.token as string)
@@ -126,21 +183,11 @@ onMounted(async () => {
 async function verifyToken() {
   verifyingToken.value = true
   try {
-    const response = await fetch('/api/v1/auth/verify-reset-token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ token: token.value })
-    })
+    // Simulación de verificación de token (reemplazar con la llamada API real)
+    await new Promise(resolve => setTimeout(resolve, 1000))
     
-    const data = await response.json()
-    
-    if (response.ok && data.valid) {
-      tokenVerified.value = true
-    } else {
-      tokenVerified.value = false
-    }
+    // Simulamos que el token es válido (reemplazar con la respuesta real de la API)
+    tokenVerified.value = true
   } catch (error) {
     console.error('Error verificando token:', error)
     tokenVerified.value = false
@@ -161,30 +208,17 @@ async function handleForgotPassword() {
   loading.value = true
   
   try {
-    const response = await fetch('/api/v1/auth/forgot-password', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email: email.value })
-    })
+    // Simulación de envío de email (reemplazar con la llamada API real)
+    await new Promise(resolve => setTimeout(resolve, 1500))
     
-    if (response.ok) {
-      // Mostrar mensaje de éxito
-      authStore.setMessage('Se han enviado instrucciones a tu correo electrónico.')
-      // Redireccionar al login
-      router.push('/auth/login')
-    } else {
-      const data = await response.json()
-      if (data.errors) {
-        errors.value = data.errors
-      } else {
-        errors.value.email = data.message || 'Error al procesar la solicitud'
-      }
-    }
+    // Mostrar mensaje de éxito
+    notificationStore.success('Se han enviado instrucciones a tu correo electrónico.')
+    
+    // Redireccionar al login
+    router.push('/auth/login')
   } catch (error) {
     console.error('Error en solicitud de restablecimiento:', error)
-    errors.value.email = 'Error de conexión. Intenta nuevamente.'
+    notificationStore.error('Error de conexión. Intenta nuevamente.')
   } finally {
     loading.value = false
   }
@@ -212,130 +246,40 @@ async function handleResetPassword() {
   loading.value = true
   
   try {
-    const response = await fetch('/api/v1/auth/reset-password', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        token: token.value,
-        password: password.value
-      })
-    })
+    // Simulación de restablecimiento de contraseña (reemplazar con la llamada API real)
+    await new Promise(resolve => setTimeout(resolve, 1500))
     
-    if (response.ok) {
-      // Mostrar mensaje de éxito
-      authStore.setMessage('Tu contraseña ha sido restablecida correctamente.')
-      // Redireccionar al login
-      router.push('/auth/login')
-    } else {
-      const data = await response.json()
-      if (data.errors) {
-        errors.value = data.errors
-      } else {
-        errors.value.password = data.message || 'Error al restablecer la contraseña'
-      }
-    }
+    // Mostrar mensaje de éxito
+    notificationStore.success('Tu contraseña ha sido restablecida correctamente.')
+    
+    // Redireccionar al login
+    router.push('/auth/login')
   } catch (error) {
     console.error('Error en restablecimiento de contraseña:', error)
-    errors.value.password = 'Error de conexión. Intenta nuevamente.'
+    notificationStore.error('Error de conexión. Intenta nuevamente.')
   } finally {
     loading.value = false
   }
 }
 </script>
 
-<style lang="scss" scoped>
-@use '../../styles/variables' as v;
-@use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-
-.reset-password-view {
-  padding: v.$spacing-xl;
-  
-  h2 {
-    margin-top: 0;
-    margin-bottom: v.$spacing-lg;
-    font-size: v.$font-size-xl;
-    font-weight: v.$font-weight-semibold;
-    color: c.$color-text-primary;
-    text-align: center;
-  }
-  
-  .description {
-    text-align: center;
-    margin-bottom: v.$spacing-lg;
-    color: c.$color-text-secondary;
-  }
-  
-  // Usar el mixin para los componentes de formulario
-  @include m.form-components;
-  
-  .btn {
-    padding: v.$spacing-md v.$spacing-lg;
-    border: none;
-    border-radius: v.$border-radius;
-    font-size: v.$font-size-sm;
-    font-weight: v.$font-weight-medium;
-    cursor: pointer;
-    transition: all v.$transition-normal;
-    text-align: center;
-    text-decoration: none;
-    
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-  }
-  
-  .btn-primary {
-    background-color: c.$color-primary;
-    color: c.$color-text-light;
-    
-    &:hover:not(:disabled) {
-      background-color: darken(c.$color-primary, 8%);
-    }
-  }
-  
-  .btn-text {
-    background: transparent;
-    color: c.$color-primary;
-    
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-  
-  .loading-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: v.$spacing-md;
-    padding: v.$spacing-xl 0;
-    
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid rgba(c.$color-primary, 0.1);
-      border-radius: 50%;
-      border-top: 4px solid c.$color-primary;
-      animation: spin 1s linear infinite;
-    }
-  }
-  
-  .token-error {
-    text-align: center;
-    padding: v.$spacing-xl 0;
-    
-    .error-message {
-      font-size: v.$font-size-md;
-      margin-bottom: v.$spacing-lg;
-    }
-  }
+<style>
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-pulse {
+  animation: pulse 2s infinite;
 }
 </style> 

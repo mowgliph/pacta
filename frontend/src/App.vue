@@ -15,15 +15,12 @@ const isAuthPage = computed(() => route.path.startsWith('/auth'))
 </script>
 
 <template>
-  <div class="app" :class="{ 'dark-theme': themeStore.isDark }">
+  <div class="min-h-screen transition-colors duration-300" :class="{ 'dark-theme dark': themeStore.isDark }">
     <ThemeTransition />
-    <main class="main-content" :class="{ 'auth-page': isAuthPage }">
+    <main class="p-4 md:p-5 mx-auto min-h-[calc(100vh-64px)] flex flex-col transition-colors duration-300" 
+          :class="{ 'p-0 max-w-none min-h-screen': isAuthPage, 'max-w-7xl': !isAuthPage }">
       <RouterView />
     </main>
     <NotificationContainer />
   </div>
 </template>
-
-<style lang="scss">
-@use './App.scss';
-</style>

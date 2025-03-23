@@ -1,16 +1,17 @@
 <template>
-  <div class="sparkline-container">
-    <div class="sparkline-header" v-if="title">
-      <div class="sparkline-title">{{ title }}</div>
-      <div class="sparkline-value" :class="trendClass">
+  <div class="w-full flex flex-col">
+    <div v-if="title" class="flex justify-between items-baseline mb-1">
+      <div class="text-xs text-text-secondary">{{ title }}</div>
+      <div class="text-sm font-medium text-text-primary" 
+           :class="{ 'text-success': trendClass === 'positive', 'text-error': trendClass === 'negative' }">
         {{ formattedValue }}
-        <span class="trend-indicator" v-if="showTrend">
-          <i :class="trendIconClass"></i>
+        <span v-if="showTrend" class="text-xs ml-1">
+          <i :class="trendIconClass" class="mr-0.5"></i>
           {{ trendValue }}
         </span>
       </div>
     </div>
-    <svg class="sparkline" :viewBox="`0 0 ${width} ${height}`">
+    <svg class="w-full h-auto my-1 sparkline-svg" :viewBox="`0 0 ${width} ${height}`">
       <path
         :d="pathD"
         fill="none"
@@ -18,6 +19,7 @@
         stroke-width="1.5"
         stroke-linecap="round"
         stroke-linejoin="round"
+        class="sparkline-path"
       />
       <circle
         v-if="showLastPoint"
@@ -25,6 +27,7 @@
         :cy="points[points.length - 1][1]"
         r="2"
         :fill="lastPointColor || lineColor"
+        class="sparkline-point"
       />
       <circle
         v-if="showFirstPoint"
@@ -32,9 +35,10 @@
         :cy="points[0][1]"
         r="2"
         :fill="firstPointColor || lineColor"
+        class="sparkline-point"
       />
     </svg>
-    <div class="sparkline-label" v-if="label">{{ label }}</div>
+    <div v-if="label" class="text-xs text-text-secondary text-center mt-1">{{ label }}</div>
   </div>
 </template>
 
@@ -172,82 +176,26 @@ const pathD = computed(() => {
 });
 </script>
 
-<style lang="scss" scoped>
-@use '../../../styles/variables' as v;
-@use '../../../styles/colors' as c;
-@use '../../../styles/mixins' as m;
-
-.sparkline-container {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  
-  .sparkline-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: v.$spacing-xs;
-    
-    .sparkline-title {
-      font-size: v.$font-size-xs;
-      color: c.$color-text-secondary;
-    }
-    
-    .sparkline-value {
-      font-size: v.$font-size-sm;
-      font-weight: v.$font-weight-medium;
-      color: c.$color-text-primary;
-      
-      &.positive {
-        color: c.$color-success;
-      }
-      
-      &.negative {
-        color: c.$color-error;
-      }
-      
-      .trend-indicator {
-        font-size: v.$font-size-xs;
-        margin-left: v.$spacing-xs;
-        
-        i {
-          margin-right: 2px;
-        }
-      }
-    }
-  }
-  
-  .sparkline {
-    width: 100%;
-    height: auto;
-    margin: v.$spacing-xs 0;
-    path {
-      stroke-dasharray: 1000;
-      stroke-dashoffset: 1000;
-      animation: dash 1.5s ease-in-out forwards;
-    }
-    
-    circle {
-      opacity: 0;
-      animation: fadeIn 0.3s ease-in-out 1.3s forwards;
-    }
-  }
-  
-  .sparkline-label {
-    font-size: v.$font-size-xs;
-    color: c.$color-text-secondary;
-    text-align: center;
-    margin-top: v.$spacing-xs;
-  }
+<style>
+/* Definimos las animaciones que necesitamos */
+.sparkline-path {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: sparkline-dash 1.5s ease-in-out forwards;
 }
 
-@keyframes dash {
+.sparkline-point {
+  opacity: 0;
+  animation: sparkline-fade-in 0.3s ease-in-out 1.3s forwards;
+}
+
+@keyframes sparkline-dash {
   to {
     stroke-dashoffset: 0;
   }
 }
 
-@keyframes fadeIn {
+@keyframes sparkline-fade-in {
   to {
     opacity: 1;
   }

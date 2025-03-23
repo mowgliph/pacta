@@ -1,13 +1,16 @@
 <template>
-  <div class="base-select">
-    <label v-if="label" :for="id" class="base-select__label">{{ label }}</label>
-    <div class="base-select__field-wrapper">
+  <div class="flex flex-col gap-1 w-full">
+    <label v-if="label" :for="id" class="text-sm font-medium text-text-primary">{{ label }}</label>
+    <div class="relative flex items-center w-full">
       <select
         :id="id"
-        class="base-select__field"
+        class="w-full px-3 py-2 border rounded-md text-sm transition-all duration-200 bg-surface text-text-primary appearance-none pr-10
+               bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20fill%3D%22%23666%22%20viewBox%3D%220%200%2016%2016%22%3E%3Cpath%20d%3D%22M7.247%2011.14L2.451%205.658C1.885%205.013%202.345%204%203.204%204h9.592a1%201%200%200%201%20.753%201.659l-4.796%205.48a1%201%200%200%201-1.506%200z%22%2F%3E%3C%2Fsvg%3E')]
+               bg-no-repeat bg-[center_right_1rem] cursor-pointer
+               hover:border-gray-400 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/10"
+        :class="{ 'border-error focus:ring-error/10': error }"
         :value="modelValue"
         @change="$emit('update:modelValue', ($event.target as HTMLSelectElement).value)"
-        :class="{ 'base-select__field--error': error }"
       >
         <option v-if="placeholder" value="">{{ placeholder }}</option>
         <option
@@ -19,7 +22,7 @@
         </option>
       </select>
     </div>
-    <span v-if="error" class="base-select__error">{{ error }}</span>
+    <span v-if="error" class="text-error text-xs mt-1 transition-all">{{ error }}</span>
   </div>
 </template>
 
@@ -42,71 +45,3 @@ defineEmits<{
   (e: 'update:modelValue', value: string): void;
 }>();
 </script>
-
-<style lang="scss" scoped>
-@use '../../styles/variables' as v;
-@use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-
-.base-select {
-  display: flex;
-  flex-direction: column;
-  gap: v.$spacing-xs;
-  width: 100%;
-
-  &__label {
-    @include m.form-label;
-    font-weight: v.$font-weight-medium;
-    transition: color v.$transition-fast;
-  }
-
-  &__field-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-    width: 100%;
-  }
-
-  &__field {
-    width: 100%;
-    padding: v.$spacing-sm v.$spacing-md;
-    border: 1px solid c.$color-border;
-    border-radius: v.$border-radius-md;
-    font-size: v.$font-size-sm;
-    transition: all v.$transition-normal;
-    background-color: c.$color-surface;
-    color: c.$color-text-primary;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23666' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right v.$spacing-md center;
-    padding-right: v.$spacing-xl;
-    cursor: pointer;
-    
-    &:focus {
-      outline: none;
-      border-color: c.$color-primary;
-      box-shadow: 0 0 0 2px rgba(c.$color-primary, 0.1);
-    }
-    
-    &:hover:not(:focus) {
-      border-color: darken-compat(c.$color-border, 10%);
-    }
-    
-    &--error {
-      border-color: c.$color-error;
-      
-      &:focus {
-        box-shadow: 0 0 0 2px rgba(c.$color-error, 0.1);
-      }
-    }
-  }
-
-  &__error {
-    color: c.$color-error;
-    font-size: v.$font-size-xs;
-    margin-top: v.$spacing-xs;
-    transition: all v.$transition-fast;
-  }
-}
-</style>

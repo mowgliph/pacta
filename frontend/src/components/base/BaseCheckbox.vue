@@ -1,14 +1,19 @@
 <template>
-  <label class="base-checkbox">
-    <span v-if="label" class="base-checkbox__label">{{ label }}</span>
+  <label class="flex items-center relative cursor-pointer select-none gap-2">
+    <span v-if="label" class="text-text-secondary text-sm pl-7">{{ label }}</span>
     <input
       type="checkbox"
       :id="id"
       :checked="modelValue"
       @change="handleChange"
-      class="base-checkbox__input"
+      class="absolute opacity-0 h-0 w-0 cursor-pointer peer"
     />
-    <span class="base-checkbox__checkmark"></span>
+    <span class="absolute left-0 top-0 h-[18px] w-[18px] bg-surface border border-border rounded-sm transition-all duration-200 
+                 after:content-[''] after:absolute after:hidden after:left-[6px] after:top-[2px] after:w-[5px] after:h-[10px] 
+                 after:border-white after:border-r-2 after:border-b-2 after:rotate-45
+                 peer-checked:bg-primary peer-checked:border-primary peer-checked:after:block
+                 peer-focus:ring-2 peer-focus:ring-primary/20
+                 hover:border-primary"></span>
   </label>
 </template>
 
@@ -27,75 +32,4 @@ const handleChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   emit('update:modelValue', target.checked);
 };
-</script>
-
-<style lang="scss" scoped>
-@use '../../styles/variables' as v;
-@use '../../styles/colors' as c;
-@use '../../styles/mixins' as m;
-
-.base-checkbox {
-  display: flex;
-  align-items: center;
-  position: relative;
-  cursor: pointer;
-  user-select: none;
-  gap: v.$spacing-sm;
-  
-  &__label {
-    color: c.$color-text-secondary;
-    font-size: v.$font-size-sm;
-    padding-left: 28px;
-  }
-  
-  &__input {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    height: 0;
-    width: 0;
-    
-    &:checked ~ .base-checkbox__checkmark {
-      background-color: c.$color-primary;
-      border-color: c.$color-primary;
-      
-      &:after {
-        display: block;
-      }
-    }
-    
-    &:focus ~ .base-checkbox__checkmark {
-      box-shadow: 0 0 0 2px rgba(c.$color-primary, 0.2);
-    }
-  }
-  
-  &__checkmark {
-    position: absolute;
-    left: 0;
-    top: 0;
-    height: 18px;
-    width: 18px;
-    background-color: c.$color-surface;
-    border: 1px solid c.$color-border;
-    border-radius: v.$border-radius-sm;
-    transition: all v.$transition-normal;
-    
-    &:after {
-      content: "";
-      position: absolute;
-      display: none;
-      left: 6px;
-      top: 2px;
-      width: 5px;
-      height: 10px;
-      border: solid white;
-      border-width: 0 2px 2px 0;
-      transform: rotate(45deg);
-    }
-  }
-  
-  &:hover .base-checkbox__checkmark {
-    border-color: c.$color-primary;
-  }
-}
-</style> 
+</script> 

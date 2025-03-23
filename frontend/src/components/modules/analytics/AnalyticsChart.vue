@@ -1,27 +1,27 @@
 <template>
-  <div class="analytics-chart">
-    <div class="chart-header">
-      <h3 v-if="title">{{ title }}</h3>
+  <div class="bg-surface dark:bg-gray-800 rounded-lg p-4 h-full flex flex-col shadow-sm transition-all duration-250 hover:shadow-md">
+    <div class="flex justify-between items-center mb-4 pb-2 border-b border-border dark:border-gray-700">
+      <h3 v-if="title" class="text-base font-semibold text-text-primary dark:text-white m-0 flex-1">{{ title }}</h3>
       
-      <div v-if="showControls" class="chart-controls">
-        <div v-if="periodSelector" class="period-selector">
+      <div v-if="showControls" class="flex items-center gap-2">
+        <div v-if="periodSelector" class="flex gap-0.5 bg-gray-100 dark:bg-gray-700 rounded-md p-0.5">
           <button 
             v-for="period in periods" 
             :key="period.value"
-            class="btn-period"
-            :class="{ active: selectedPeriod === period.value }"
+            class="px-2 py-1 border-none bg-transparent text-sm cursor-pointer rounded-md text-text-secondary dark:text-gray-400 transition-all duration-200"
+            :class="{ 'bg-white dark:bg-gray-600 text-primary dark:text-primary-light font-medium shadow-sm': selectedPeriod === period.value }"
             @click="handlePeriodChange(period.value)"
           >
             {{ period.label }}
           </button>
         </div>
         
-        <div class="chart-actions">
+        <div class="flex gap-1">
           <button 
             v-for="chartType in availableChartTypes" 
             :key="chartType.value"
-            class="btn-chart-type"
-            :class="{ active: currentType === chartType.value }"
+            class="w-7 h-7 flex items-center justify-center border-none bg-gray-100 dark:bg-gray-700 rounded-md text-text-secondary dark:text-gray-400 cursor-pointer transition-all duration-200"
+            :class="{ 'bg-primary text-white': currentType === chartType.value }"
             @click="currentType = chartType.value"
             :title="chartType.label"
           >
@@ -31,12 +31,12 @@
       </div>
     </div>
     
-    <div class="chart-container" :style="{ height: `${height}px` }">
+    <div class="flex-1 relative w-full" :style="{ height: `${height}px` }">
       <canvas ref="chartCanvas"></canvas>
     </div>
     
-    <div v-if="showFooter && footnote" class="chart-footer">
-      <span class="footnote">{{ footnote }}</span>
+    <div v-if="showFooter && footnote" class="mt-2 pt-1 border-t border-border dark:border-gray-700">
+      <span class="text-xs text-text-secondary dark:text-gray-400 italic">{{ footnote }}</span>
     </div>
   </div>
 </template>
@@ -280,6 +280,14 @@ onMounted(() => {
 });
 </script>
 
-<style lang="scss" scoped>
-@use './AnalyticsChart.scss';
+<style>
+/* Se usa Tailwind para estilos, y Chart.js tiene su propio estilo interno */
+@keyframes pulse {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+} 
 </style> 

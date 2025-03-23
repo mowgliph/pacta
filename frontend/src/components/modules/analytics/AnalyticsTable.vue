@@ -1,52 +1,52 @@
 <template>
-  <div class="analytics-table" :class="{ 'loading': loading }">
-    <div class="table-header">
-      <h3 v-if="title">{{ title }}</h3>
-      <div class="table-actions" v-if="showActions">
-        <div class="search-filter" v-if="searchable">
+  <div class="bg-surface dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden mb-6" :class="{ 'opacity-70 pointer-events-none': loading }">
+    <div class="flex justify-between items-center p-5 border-b border-border dark:border-gray-700">
+      <h3 v-if="title" class="text-base font-semibold text-text-primary dark:text-white m-0">{{ title }}</h3>
+      <div class="flex gap-2" v-if="showActions">
+        <div class="relative" v-if="searchable">
           <input 
             type="text" 
             v-model="searchQuery" 
             :placeholder="searchPlaceholder" 
             @input="handleSearch"
+            class="py-1.5 pl-3 pr-10 border border-border dark:border-gray-600 rounded-md text-sm min-w-[200px] dark:bg-gray-700 dark:text-white"
           >
-          <i class="fas fa-search"></i>
+          <i class="fas fa-search absolute right-3 top-1/2 transform -translate-y-1/2 text-text-secondary dark:text-gray-400"></i>
         </div>
-        <button v-if="exportable" class="btn-export" @click="$emit('export')">
+        <button v-if="exportable" class="flex items-center gap-1.5 py-1.5 px-3 bg-gray-100 dark:bg-gray-700 border-none rounded-md text-sm cursor-pointer transition-colors hover:bg-gray-200 dark:hover:bg-gray-600" @click="$emit('export')">
           <i class="fas fa-file-export"></i>
           Exportar
         </button>
       </div>
     </div>
     
-    <div v-if="loading" class="table-loading">
-      <div class="loading-spinner"></div>
-      <span>Cargando datos...</span>
+    <div v-if="loading" class="py-16 px-5 flex flex-col items-center justify-center text-center">
+      <div class="w-10 h-10 border-3 border-gray-200 dark:border-gray-700 border-t-primary rounded-full animate-spin mb-4"></div>
+      <span class="text-text-secondary dark:text-gray-400">Cargando datos...</span>
     </div>
     
-    <div v-else-if="error" class="table-error">
-      <i class="fas fa-exclamation-circle"></i>
-      <p>{{ error }}</p>
-      <button @click="$emit('reload')">Reintentar</button>
+    <div v-else-if="error" class="py-16 px-5 flex flex-col items-center justify-center text-center">
+      <i class="fas fa-exclamation-circle text-4xl mb-4 text-text-secondary dark:text-gray-400"></i>
+      <p class="mb-4 text-text-secondary dark:text-gray-400">{{ error }}</p>
+      <button class="py-1.5 px-4 bg-primary text-white border-none rounded-md cursor-pointer" @click="$emit('reload')">Reintentar</button>
     </div>
     
-    <div v-else-if="!data || data.length === 0" class="table-empty">
-      <i class="fas fa-inbox"></i>
-      <p>{{ emptyMessage }}</p>
+    <div v-else-if="!data || data.length === 0" class="py-16 px-5 flex flex-col items-center justify-center text-center">
+      <i class="fas fa-inbox text-4xl mb-4 text-text-secondary dark:text-gray-400"></i>
+      <p class="text-text-secondary dark:text-gray-400">{{ emptyMessage }}</p>
     </div>
     
-    <div v-else class="table-responsive">
-      <table>
+    <div v-else class="overflow-x-auto">
+      <table class="w-full border-collapse">
         <thead>
           <tr>
             <th 
               v-for="(column, index) in columns" 
               :key="index"
+              class="py-2 px-4 text-left border-b border-border dark:border-gray-700 font-semibold text-sm text-text-primary dark:text-white bg-gray-50 dark:bg-gray-750 first:pl-5 last:pr-5 relative"
               :class="{ 
-                'sortable': column.sortable, 
-                'sorted': sortColumn === column.key,
-                'ascending': sortColumn === column.key && sortDirection === 'asc',
-                'descending': sortColumn === column.key && sortDirection === 'desc'
+                'cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-700': column.sortable, 
+                'bg-gray-100 dark:bg-gray-700': sortColumn === column.key
               }"
               @click="column.sortable ? handleSort(column.key) : null"
             >
@@ -54,6 +54,7 @@
               <i 
                 v-if="column.sortable" 
                 :class="getSortIconClass(column.key)"
+                class="ml-1 text-xs"
               ></i>
             </th>
           </tr>
@@ -63,9 +64,14 @@
             v-for="(row, rowIndex) in paginatedData" 
             :key="rowIndex"
             @click="handleRowClick(row)"
-            :class="{ 'clickable': rowClickable }"
+            class="hover:bg-gray-50 dark:hover:bg-gray-750 border-b border-border dark:border-gray-700"
+            :class="{ 'cursor-pointer': rowClickable }"
           >
-            <td v-for="(column, colIndex) in columns" :key="colIndex">
+            <td 
+              v-for="(column, colIndex) in columns" 
+              :key="colIndex"
+              class="py-2 px-4 text-sm text-text-primary dark:text-gray-200 first:pl-5 last:pr-5"
+            >
               <div v-if="column.template" v-html="column.template(row[column.key], row)"></div>
               <div v-else-if="column.format" v-html="column.format(row[column.key])"></div>
               <div v-else>{{ row[column.key] }}</div>
@@ -75,13 +81,13 @@
       </table>
     </div>
     
-    <div class="table-footer" v-if="showPagination && data.length > 0">
-      <div class="pagination-info">
+    <div class="flex justify-between items-center p-4 border-t border-border dark:border-gray-700 text-sm md:flex-row flex-col gap-4" v-if="showPagination && data.length > 0">
+      <div class="text-text-secondary dark:text-gray-400 md:order-1 order-3">
         Mostrando {{ paginationStart }} - {{ paginationEnd }} de {{ data.length }}
       </div>
-      <div class="pagination-controls">
+      <div class="flex items-center gap-0.5 md:order-2 order-1 w-full md:w-auto justify-center">
         <button 
-          class="btn-page" 
+          class="flex items-center justify-center w-8 h-8 bg-transparent border border-border dark:border-gray-600 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-default"
           :disabled="currentPage === 1"
           @click="goToPage(currentPage - 1)"
         >
@@ -91,17 +97,17 @@
         <template v-for="(pageNum, idx) in displayedPages" :key="idx">
           <button 
             v-if="typeof pageNum === 'number'" 
-            class="btn-page" 
-            :class="{ 'active': currentPage === pageNum }"
+            class="flex items-center justify-center w-8 h-8 bg-transparent border border-border dark:border-gray-600 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+            :class="{ 'bg-primary text-white border-primary': currentPage === pageNum }"
             @click="goToPage(pageNum)"
           >
             {{ pageNum }}
           </button>
-          <span v-else class="page-ellipsis">...</span>
+          <span v-else class="px-1">...</span>
         </template>
         
         <button 
-          class="btn-page" 
+          class="flex items-center justify-center w-8 h-8 bg-transparent border border-border dark:border-gray-600 rounded-md cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-default"
           :disabled="currentPage === totalPages"
           @click="goToPage(currentPage + 1)"
         >
@@ -109,9 +115,13 @@
         </button>
       </div>
       
-      <div class="items-per-page" v-if="showItemsPerPage">
-        <span>Items por página:</span>
-        <select v-model="itemsPerPage" @change="currentPage = 1">
+      <div class="flex items-center gap-2 md:order-3 order-2 w-full md:w-auto justify-center" v-if="showItemsPerPage">
+        <span class="text-text-secondary dark:text-gray-400">Items por página:</span>
+        <select 
+          v-model="itemsPerPage" 
+          @change="currentPage = 1"
+          class="py-1 px-2 border border-border dark:border-gray-600 rounded-md bg-surface dark:bg-gray-700 dark:text-white"
+        >
           <option v-for="option in itemsPerPageOptions" :key="option" :value="option">
             {{ option }}
           </option>
@@ -317,8 +327,4 @@ watch(() => props.data, () => {
   // Reset to first page when data changes
   currentPage.value = 1;
 });
-</script>
-
-<style lang="scss" scoped>
-@use './AnalyticsTable.scss';
-</style> 
+</script> 

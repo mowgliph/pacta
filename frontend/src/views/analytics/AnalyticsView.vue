@@ -1,33 +1,33 @@
 <template>
-  <div class="analytics-view">
-    <div v-if="loading" class="loading-overlay">
-      <div class="spinner"></div>
-      <span>Cargando datos de análisis...</span>
+  <div class="p-5 bg-background dark:bg-gray-900 relative">
+    <div v-if="loading" class="absolute top-0 left-0 w-full h-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm flex flex-col items-center justify-center z-10">
+      <div class="w-12 h-12 border-3 border-gray-200 dark:border-gray-700 border-t-primary rounded-full animate-spin mb-4"></div>
+      <span class="text-base font-medium text-text-primary dark:text-white">Cargando datos de análisis...</span>
     </div>
 
-    <div v-else-if="error" class="error-container">
-      <div class="error-message">
-        <i class="fas fa-exclamation-circle"></i>
-        <h3>Error al cargar los datos</h3>
-        <p>{{ error }}</p>
-        <button @click="fetchAnalyticsData" class="btn-retry">
+    <div v-else-if="error" class="flex items-center justify-center py-16">
+      <div class="text-center max-w-md p-8 bg-surface dark:bg-gray-800 rounded-lg shadow-md">
+        <i class="fas fa-exclamation-circle text-4xl text-error dark:text-red-400 mb-4"></i>
+        <h3 class="text-lg mb-1 text-text-primary dark:text-white">Error al cargar los datos</h3>
+        <p class="text-text-secondary dark:text-gray-400 mb-6">{{ error }}</p>
+        <button @click="fetchAnalyticsData" class="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white border-none rounded-md cursor-pointer text-base transition-all duration-200 hover:bg-primary-dark hover:-translate-y-0.5 hover:shadow-sm">
           <i class="fas fa-sync-alt"></i> Reintentar
         </button>
       </div>
     </div>
 
     <template v-else>
-      <header class="analytics-header">
-        <div class="header-content">
-          <h1>Análisis y Estadísticas de Contratos</h1>
-          <p>Datos detallados y métricas para el rendimiento, cumplimiento y riesgo de sus contratos.</p>
+      <header class="flex justify-between items-start mb-6 pb-5 border-b border-border dark:border-gray-700 md:flex-row flex-col gap-4">
+        <div class="max-w-3xl">
+          <h1 class="text-2xl md:text-3xl font-bold m-0 mb-1 text-text-primary dark:text-white tracking-tight">Análisis y Estadísticas de Contratos</h1>
+          <p class="text-text-secondary dark:text-gray-400 text-base m-0 leading-relaxed">Datos detallados y métricas para el rendimiento, cumplimiento y riesgo de sus contratos.</p>
         </div>
-        <div class="header-actions">
-          <button class="btn-export" @click="generateReport('pdf')">
-            <i class="fas fa-file-pdf"></i> Exportar PDF
+        <div class="flex gap-2">
+          <button class="inline-flex items-center gap-2 px-3 py-2 bg-surface dark:bg-gray-800 border border-border dark:border-gray-700 rounded-md text-sm cursor-pointer transition-all duration-200 text-text-primary dark:text-white hover:bg-gray-50 dark:hover:bg-gray-750 hover:border-primary hover:-translate-y-0.5 hover:shadow-sm" @click="generateReport('pdf')">
+            <i class="fas fa-file-pdf text-primary"></i> Exportar PDF
           </button>
-          <button class="btn-export" @click="generateReport('excel')">
-            <i class="fas fa-file-excel"></i> Exportar Excel
+          <button class="inline-flex items-center gap-2 px-3 py-2 bg-surface dark:bg-gray-800 border border-border dark:border-gray-700 rounded-md text-sm cursor-pointer transition-all duration-200 text-text-primary dark:text-white hover:bg-gray-50 dark:hover:bg-gray-750 hover:border-primary hover:-translate-y-0.5 hover:shadow-sm" @click="generateReport('excel')">
+            <i class="fas fa-file-excel text-primary"></i> Exportar Excel
           </button>
         </div>
       </header>
@@ -42,9 +42,9 @@
         @filter-change="handleFilterChange"
       />
 
-      <section class="metrics-overview">
-        <h2>Métricas Principales</h2>
-        <div class="metrics-grid">
+      <section class="mb-10">
+        <h2 class="text-lg font-semibold mb-5 text-text-primary dark:text-white tracking-tight flex items-center before:content-[''] before:inline-block before:w-1 before:h-5 before:bg-primary before:mr-2 before:rounded-sm">Métricas Principales</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <MetricCard 
             v-for="(metric, index) in analyticsData.metrics" 
             :key="index"
@@ -54,12 +54,12 @@
             :change="metric.change"
             :colorClass="metric.colorClass"
           />
-      </div>
+        </div>
       </section>
 
-      <section class="charts-section">
-        <div class="charts-container">
-          <div class="chart-column">
+      <section class="mb-10">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 bg-surface dark:bg-gray-800 rounded-lg p-5 shadow-sm">
+          <div>
             <AnalyticsChart
               title="Tendencia de Contratos"
               :chartData="analyticsData.trends"
@@ -70,8 +70,8 @@
               :showFooter="true"
               @period-change="handlePeriodChange"
             />
-    </div>
-          <div class="chart-column">
+          </div>
+          <div>
             <AnalyticsChart
               title="Distribución de Contratos"
               :chartData="donutChartData"
@@ -84,57 +84,57 @@
         </div>
       </section>
 
-      <section class="stats-section">
-        <div class="stats-container">
-          <div class="stats-column">
-            <h3>Estadísticas de Eficiencia</h3>
-            <div class="stats-grid">
+      <section class="mb-10">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div class="bg-surface dark:bg-gray-800 rounded-lg p-5 shadow-sm">
+            <h3 class="text-base mb-4 text-text-primary dark:text-white pb-2 border-b border-border dark:border-gray-700">Estadísticas de Eficiencia</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div 
                 v-for="(stat, index) in analyticsData.efficiency" 
                 :key="index"
-                class="stat-card"
+                class="bg-background dark:bg-gray-750 rounded-lg p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-sm"
               >
-                <div class="stat-value">{{ stat.value }}</div>
-            <div class="stat-label">{{ stat.label }}</div>
-            <div class="stat-trend" :class="stat.trend">
-              <i :class="stat.trend === 'up' ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
-              {{ stat.percentage }}%
+                <div class="text-xl font-bold mb-0.5 text-text-primary dark:text-white">{{ stat.value }}</div>
+                <div class="text-sm text-text-secondary dark:text-gray-400 mb-1">{{ stat.label }}</div>
+                <div class="flex items-center gap-1 text-sm font-semibold" :class="stat.trend === 'up' ? 'text-success' : 'text-error'">
+                  <i :class="stat.trend === 'up' ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+                  {{ stat.percentage }}%
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-          <div class="stats-column">
-            <h3>Estadísticas de Cumplimiento</h3>
-            <div class="stats-grid">
+          <div class="bg-surface dark:bg-gray-800 rounded-lg p-5 shadow-sm">
+            <h3 class="text-base mb-4 text-text-primary dark:text-white pb-2 border-b border-border dark:border-gray-700">Estadísticas de Cumplimiento</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div 
                 v-for="(stat, index) in analyticsData.compliance" 
                 :key="index"
-                class="stat-card"
+                class="bg-background dark:bg-gray-750 rounded-lg p-4 transition-all duration-200 hover:-translate-y-1 hover:shadow-sm"
               >
-                <div class="stat-value">{{ stat.value }}</div>
-            <div class="stat-label">{{ stat.label }}</div>
-            <div class="stat-trend" :class="stat.trend">
-              <i :class="stat.trend === 'up' ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
-              {{ stat.percentage }}%
+                <div class="text-xl font-bold mb-0.5 text-text-primary dark:text-white">{{ stat.value }}</div>
+                <div class="text-sm text-text-secondary dark:text-gray-400 mb-1">{{ stat.label }}</div>
+                <div class="flex items-center gap-1 text-sm font-semibold" :class="stat.trend === 'up' ? 'text-success' : 'text-error'">
+                  <i :class="stat.trend === 'up' ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
+                  {{ stat.percentage }}%
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
       </section>
 
-      <section class="predictions-section">
-        <h2>Predicciones y Tendencias</h2>
-        <div class="predictions-grid">
+      <section class="mb-10">
+        <h2 class="text-lg font-semibold mb-5 text-text-primary dark:text-white tracking-tight flex items-center before:content-[''] before:inline-block before:w-1 before:h-5 before:bg-primary before:mr-2 before:rounded-sm">Predicciones y Tendencias</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <div 
             v-for="(prediction, index) in analyticsData.predictions" 
             :key="index"
-            class="prediction-card"
+            class="bg-surface dark:bg-gray-800 rounded-lg p-5 shadow-sm border-t-4 border-primary transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
           >
-            <h3>{{ prediction.title }}</h3>
-            <div class="prediction-value">{{ prediction.value }}</div>
-            <div class="prediction-change" :class="{ 'positive': prediction.isPositive, 'negative': !prediction.isPositive }">
+            <h3 class="text-base m-0 mb-1 text-text-secondary dark:text-gray-400">{{ prediction.title }}</h3>
+            <div class="text-3xl font-bold mb-1 text-text-primary dark:text-white">{{ prediction.value }}</div>
+            <div class="flex items-center gap-1 text-sm" :class="{ 'text-success': prediction.isPositive, 'text-error': !prediction.isPositive }">
               <i :class="prediction.isPositive ? 'fas fa-arrow-up' : 'fas fa-arrow-down'"></i>
               {{ prediction.change }}% {{ prediction.isPositive ? 'aumento' : 'reducción' }}
             </div>
@@ -142,8 +142,8 @@
         </div>
       </section>
 
-      <section class="contracts-section">
-        <h2>Contratos en Riesgo</h2>
+      <section class="mb-10 bg-surface dark:bg-gray-800 rounded-lg p-5 shadow-sm">
+        <h2 class="text-lg font-semibold mb-4 text-text-primary dark:text-white tracking-tight flex items-center before:content-[''] before:inline-block before:w-1 before:h-5 before:bg-primary before:mr-2 before:rounded-sm">Contratos en Riesgo</h2>
         <AnalyticsTable
           :columns="riskContractsColumns"
           :data="riskContractsData"
@@ -405,7 +405,3 @@ onMounted(() => {
   fetchAnalyticsData();
 });
 </script>
-
-<style lang="scss" scoped>
-@use './AnalyticsView.scss';
-</style> 

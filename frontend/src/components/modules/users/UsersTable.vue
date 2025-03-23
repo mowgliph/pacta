@@ -1,5 +1,5 @@
 <template>
-  <div class="users-table">
+  <div class="rounded-lg bg-surface shadow-md">
     <DataTable 
       :value="users" 
       :loading="loading"
@@ -17,24 +17,24 @@
       :globalFilterFields="['username', 'email', 'role']"
     >
       <template #header>
-        <div class="flex justify-content-between align-items-center">
+        <div class="flex justify-between items-center">
           <h4 class="m-0">Usuarios del Sistema</h4>
-          <span class="p-input-icon-left">
-            <i class="pi pi-search" />
-            <InputText v-model="filters['global'].value" placeholder="Buscar..." class="p-inputtext-sm" />
+          <span class="relative">
+            <i class="pi pi-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
+            <InputText v-model="filters['global'].value" placeholder="Buscar..." class="pl-8 text-sm" />
           </span>
         </div>
       </template>
 
       <template #empty>
-        <div class="empty-message">
-          <i class="pi pi-users text-6xl mb-3 text-color-secondary"></i>
+        <div class="flex flex-col items-center justify-center p-8 text-gray-500">
+          <i class="pi pi-users text-6xl mb-3"></i>
           <p>No se encontraron usuarios</p>
         </div>
       </template>
 
       <template #loading>
-        <div class="flex align-items-center justify-content-center p-4">
+        <div class="flex items-center justify-center p-4">
           <ProgressSpinner style="width:50px;height:50px" strokeWidth="3" />
           <span class="ml-3">Cargando usuarios...</span>
         </div>
@@ -42,19 +42,19 @@
 
       <Column field="username" header="Usuario" sortable>
         <template #body="{ data }">
-          <div class="flex align-items-center">
+          <div class="flex items-center">
             <Avatar :label="data.username.substring(0, 2).toUpperCase()" size="normal" class="mr-2" :style="{ backgroundColor: getAvatarColor(data.username) }" />
             <span>{{ data.username }}</span>
           </div>
         </template>
         <template #filter="{ filterModel, filterCallback }">
-          <InputText v-model="filterModel.value" @input="filterCallback()" placeholder="Buscar por usuario" class="p-column-filter" />
+          <InputText v-model="filterModel.value" @input="filterCallback()" placeholder="Buscar por usuario" class="w-full" />
         </template>
       </Column>
 
       <Column field="email" header="Email" sortable>
         <template #filter="{ filterModel, filterCallback }">
-          <InputText v-model="filterModel.value" @input="filterCallback()" placeholder="Buscar por email" class="p-column-filter" />
+          <InputText v-model="filterModel.value" @input="filterCallback()" placeholder="Buscar por email" class="w-full" />
         </template>
       </Column>
 
@@ -73,7 +73,7 @@
             optionLabel="label" 
             optionValue="value"
             placeholder="Seleccionar rol" 
-            class="p-column-filter" 
+            class="w-full" 
             style="min-width: 12rem"
             showClear
           />
@@ -98,7 +98,7 @@
             optionLabel="label" 
             optionValue="value"
             placeholder="Seleccionar estado" 
-            class="p-column-filter" 
+            class="w-full" 
             style="min-width: 12rem"
             showClear
           />
@@ -113,7 +113,7 @@
 
       <Column header="Acciones" :exportable="false" style="min-width: 8rem">
         <template #body="{ data }">
-          <div class="flex gap-2 justify-content-center">
+          <div class="flex gap-2 justify-center">
             <Button 
               icon="pi pi-pencil" 
               @click="$emit('edit', data)" 
@@ -249,58 +249,6 @@ function confirmDelete(user: User): void {
 }
 </script>
 
-<style lang="scss" scoped>
-.users-table {
-  border-radius: var(--border-radius);
-  background-color: var(--surface-card);
-  box-shadow: var(--card-shadow);
-  
-  .empty-message {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    color: var(--text-color-secondary);
-  }
-
-  :deep(.p-datatable-header) {
-    background-color: var(--surface-section);
-    border-top-left-radius: var(--border-radius);
-    border-top-right-radius: var(--border-radius);
-  }
-
-  :deep(.p-datatable .p-datatable-thead > tr > th) {
-    background-color: var(--surface-section);
-    color: var(--text-color);
-    font-weight: 600;
-  }
-
-  :deep(.p-datatable .p-datatable-tbody > tr) {
-    transition: background-color 0.2s;
-
-    &:hover {
-      background-color: var(--surface-hover);
-    }
-  }
-
-  :deep(.p-datatable .p-datatable-tbody > tr > td) {
-    padding: 0.75rem 1rem;
-  }
-
-  :deep(.p-tag) {
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  :deep(.p-badge) {
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  :deep(.p-button.p-button-icon-only) {
-    width: 2rem;
-    height: 2rem;
-  }
-}
+<style>
+/* Los estilos ahora están definidos con clases de Tailwind directamente en el template */
 </style>

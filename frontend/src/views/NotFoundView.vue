@@ -1,10 +1,14 @@
 <template>
-  <div class="not-found">
-    <div class="content">
-      <h1>404</h1>
-      <h2>Página no encontrada</h2>
-      <p>Lo sentimos, la página que buscas no existe.</p>
-      <button @click="goBack" class="btn-primary">
+  <div class="flex items-center justify-center min-h-screen p-8 bg-background">
+    <div class="max-w-[600px] w-full text-center p-8 bg-surface rounded-md shadow-md transition-all duration-200">
+      <h1 class="text-6xl mb-4 text-primary font-bold">404</h1>
+      <h2 class="text-2xl mb-4 text-text-primary font-medium">Página no encontrada</h2>
+      <p class="mb-8 text-text-secondary">Lo sentimos, la página que buscas no existe.</p>
+      <button 
+        @click="goBack" 
+        class="min-w-[150px] py-2 px-6 rounded bg-primary text-white shadow-sm 
+               transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
+      >
         Volver
       </button>
     </div>
@@ -19,61 +23,4 @@ const router = useRouter()
 const goBack = () => {
   router.back()
 }
-</script>
-
-<style lang="scss" scoped>
-@use '../styles/colors' as c;
-@use '../styles/variables' as v;
-@use '../styles/mixins' as m;
-
-.not-found {
-  @include m.flex-center;
-  min-height: 100vh;
-  padding: v.$spacing-xl;
-  background-color: c.$color-background;
-
-  .content {
-    @include m.card-style;
-    max-width: 600px;
-    width: 100%;
-    text-align: center;
-    padding: v.$spacing-xl;
-    border-radius: v.$border-radius-md;
-    box-shadow: v.$shadow-md;
-    transition: v.$transition-normal;
-
-    h1 {
-      @include m.heading-1;
-      margin-bottom: v.$spacing-md;
-      color: c.$color-primary;
-      font-size: 4rem;
-      font-weight: v.$font-weight-bold;
-    }
-
-    h2 {
-      @include m.heading-2;
-      margin-bottom: v.$spacing-md;
-      color: c.$color-text-primary;
-      font-weight: v.$font-weight-medium;
-    }
-
-    p {
-      @include m.text-base;
-      margin-bottom: v.$spacing-xl;
-      color: c.$color-text-secondary;
-    }
-
-    button {
-      @include m.button-theme('primary');
-      min-width: 150px;
-      padding: v.$spacing-sm v.$spacing-lg;
-      border-radius: v.$border-radius;
-      transition: v.$transition-normal;
-      
-      &:hover {
-        transform: translateY(-2px);
-      }
-    }
-  }
-}
-</style> 
+</script> 

@@ -1,24 +1,47 @@
 <template>
-  <div class="metric-card" :class="colorClass">
-    <div class="metric-icon">
-      <i :class="icon"></i>
+  <div 
+    class="flex p-4 lg:p-5 bg-surface dark:bg-gray-800 rounded-lg shadow-sm overflow-hidden relative"
+    :class="{
+      'border-l-4 border-l-primary': colorClass === 'primary',
+      'border-l-4 border-l-success': colorClass === 'success',
+      'border-l-4 border-l-warning': colorClass === 'warning',
+      'border-l-4 border-l-error': colorClass === 'error',
+      'border-l-4 border-l-info': colorClass === 'info'
+    }"
+  >
+    <div 
+      class="flex items-center justify-center w-12 h-12 lg:w-14 lg:h-14 bg-gray-100 dark:bg-gray-700 rounded-lg mr-3 lg:mr-4"
+    >
+      <i 
+        :class="[
+          icon, 
+          {
+            'text-primary': colorClass === 'primary',
+            'text-success': colorClass === 'success',
+            'text-warning': colorClass === 'warning',
+            'text-error': colorClass === 'error',
+            'text-info': colorClass === 'info'
+          }
+        ]"
+        class="text-xl lg:text-2xl"
+      ></i>
     </div>
-    <div class="metric-content">
-      <h3 class="metric-title">{{ title }}</h3>
-      <div class="metric-value">{{ value }}</div>
-      <div class="metric-trend" v-if="showTrend">
+    <div class="flex-1 flex flex-col justify-center">
+      <h3 class="text-sm text-gray-500 dark:text-gray-400 m-0 mb-0.5 font-medium">{{ title }}</h3>
+      <div class="text-xl lg:text-2xl font-bold mb-0.5 text-gray-900 dark:text-white">{{ value }}</div>
+      <div class="flex items-center gap-2 text-xs" v-if="showTrend">
         <span 
-          class="trend-indicator" 
+          class="flex items-center gap-0.5"
           :class="{ 
-            'positive': change > 0, 
-            'negative': change < 0, 
-            'neutral': change === 0 
+            'text-success': change > 0, 
+            'text-error': change < 0, 
+            'text-gray-500': change === 0 
           }"
         >
           <i :class="trendIcon"></i>
           {{ Math.abs(change).toFixed(1) }}%
         </span>
-        <span class="trend-label">{{ trendLabel }}</span>
+        <span class="text-gray-500 dark:text-gray-400">{{ trendLabel }}</span>
       </div>
     </div>
   </div>
@@ -58,7 +81,3 @@ const trendIcon = computed(() => {
   return 'fas fa-minus';
 });
 </script>
-
-<style lang="scss" scoped>
-@use './MetricCard.scss';
-</style> 

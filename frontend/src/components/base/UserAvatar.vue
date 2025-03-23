@@ -1,15 +1,19 @@
 <template>
   <div 
-    class="user-avatar" 
+    class="flex items-center justify-center rounded-full font-medium uppercase transition-all duration-200 
+           shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0
+           relative overflow-hidden hover:before:opacity-100"
     :style="{ 
       backgroundColor: avatarColor,
       color: textColor,
       width: size + 'px',
       height: size + 'px',
-      fontSize: fontSize + 'px'
+      fontSize: fontSize + 'px',
+      '--before-gradient': 'linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0))'
     }"
   >
-    {{ initials }}
+    <span class="relative z-10">{{ initials }}</span>
+    <div class="absolute inset-0 opacity-0 transition-opacity duration-200 bg-gradient-to-tr from-white/10 to-transparent"></div>
   </div>
 </template>
 
@@ -66,47 +70,4 @@ const textColor = computed(() => {
   const brightness = (r * 299 + g * 587 + b * 114) / 1000
   return brightness > 128 ? '#000000' : '#FFFFFF'
 })
-</script>
-
-<style lang="scss" scoped>
-@use '../../styles/variables' as v;
-@use '../../styles/mixins' as m;
-
-.user-avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  font-weight: v.$font-weight-medium;
-  text-transform: uppercase;
-  transition: all v.$transition-fast;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
-    opacity: 0;
-    transition: opacity v.$transition-fast;
-  }
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-
-    &::before {
-      opacity: 1;
-    }
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-}
-</style> 
+</script> 

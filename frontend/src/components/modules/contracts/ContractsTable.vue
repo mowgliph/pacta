@@ -1,143 +1,195 @@
 <template>
-  <div class="contracts-table">
-    <div v-if="loading" class="loading-indicator">
-      <i class="fas fa-spinner fa-spin"></i>
+  <div class="w-full relative">
+    <!-- Estado de carga -->
+    <div v-if="loading" class="py-10 flex flex-col items-center justify-center text-text-secondary">
+      <i class="fas fa-spinner fa-spin text-3xl mb-2 text-primary animate-spin"></i>
       <span>Cargando contratos...</span>
     </div>
     
-    <div v-else-if="!contracts || contracts.length === 0" class="no-data">
-      <i class="fas fa-file-contract no-data-icon"></i>
-      <h3>No hay contratos disponibles</h3>
+    <!-- Estado sin datos -->
+    <div v-else-if="!contracts || contracts.length === 0" class="py-10 text-center text-text-secondary">
+      <i class="fas fa-file-contract text-5xl mb-3 opacity-50 text-primary"></i>
+      <h3 class="mb-1 text-text-primary">No hay contratos disponibles</h3>
       <p>No se encontraron contratos que coincidan con los criterios de búsqueda.</p>
     </div>
     
+    <!-- Tabla de contratos -->
     <template v-else>
-      <table>
-        <thead>
-          <tr>
-            <th @click="sortBy('contractNumber')" :class="{ active: currentSort === 'contractNumber' }">
-              Número 
-              <i :class="getSortIconClass('contractNumber')"></i>
-            </th>
-            <th @click="sortBy('title')" :class="{ active: currentSort === 'title' }">
-              Título
-              <i :class="getSortIconClass('title')"></i>
-            </th>
-            <th @click="sortBy('startDate')" :class="{ active: currentSort === 'startDate' }">
-              Fecha Inicio
-              <i :class="getSortIconClass('startDate')"></i>
-            </th>
-            <th @click="sortBy('endDate')" :class="{ active: currentSort === 'endDate' }">
-              Fecha Fin
-              <i :class="getSortIconClass('endDate')"></i>
-            </th>
-            <th @click="sortBy('status')" :class="{ active: currentSort === 'status' }">
-              Estado
-              <i :class="getSortIconClass('status')"></i>
-            </th>
-            <th @click="sortBy('amount')" :class="{ active: currentSort === 'amount' }">
-              Importe
-              <i :class="getSortIconClass('amount')"></i>
-            </th>
-            <th class="center-align">Doc</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="contract in displayedContracts" :key="contract.id">
-            <td class="contract-number">{{ contract.contractNumber }}</td>
-            <td class="contract-title">{{ contract.title }}</td>
-            <td>{{ formatDate(contract.startDate) }}</td>
-            <td>{{ formatDate(contract.endDate) }}</td>
-            <td>
-              <span :class="['status-badge', getStatusClass(contract.status)]">
-                {{ getStatusText(contract.status) }}
-              </span>
-            </td>
-            <td>{{ formatCurrency(contract.amount, contract.currency) }}</td>
-            <td class="center-align">
-              <button 
-                v-if="contract.documentPath" 
-                @click="$emit('document', contract)" 
-                class="btn-icon document-btn"
-                title="Descargar documento"
-              >
-                <i class="fas fa-file-download"></i>
-              </button>
-              <span v-else class="no-document" title="Sin documento">
-                <i class="fas fa-file-alt text-muted"></i>
-              </span>
-            </td>
-            <td class="actions">
-              <div class="action-buttons">
-                <button @click="$emit('view', contract)" class="btn-icon view-btn" title="Ver detalles">
-                  <i class="fas fa-eye"></i>
+      <div class="overflow-x-auto">
+        <table class="w-full border-collapse bg-surface rounded-md shadow-sm mb-6">
+          <thead>
+            <tr>
+              <th @click="sortBy('contractNumber')" 
+                  class="p-3 bg-gray-50 dark:bg-surface-hover text-text-secondary font-semibold cursor-pointer whitespace-nowrap border-b border-border transition-colors relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                  :class="{ 'text-primary': currentSort === 'contractNumber' }">
+                Número 
+                <i :class="[getSortIconClass('contractNumber'), 'text-sm ml-1 opacity-70']"></i>
+                <div class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"
+                     :class="{ 'w-full': currentSort === 'contractNumber' }"></div>
+              </th>
+              <th @click="sortBy('title')" 
+                  class="p-3 bg-gray-50 dark:bg-surface-hover text-text-secondary font-semibold cursor-pointer whitespace-nowrap border-b border-border transition-colors relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                  :class="{ 'text-primary': currentSort === 'title' }">
+                Título
+                <i :class="[getSortIconClass('title'), 'text-sm ml-1 opacity-70']"></i>
+                <div class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"
+                     :class="{ 'w-full': currentSort === 'title' }"></div>
+              </th>
+              <th @click="sortBy('startDate')" 
+                  class="p-3 bg-gray-50 dark:bg-surface-hover text-text-secondary font-semibold cursor-pointer whitespace-nowrap border-b border-border transition-colors relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                  :class="{ 'text-primary': currentSort === 'startDate' }">
+                Fecha Inicio
+                <i :class="[getSortIconClass('startDate'), 'text-sm ml-1 opacity-70']"></i>
+                <div class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"
+                     :class="{ 'w-full': currentSort === 'startDate' }"></div>
+              </th>
+              <th @click="sortBy('endDate')" 
+                  class="p-3 bg-gray-50 dark:bg-surface-hover text-text-secondary font-semibold cursor-pointer whitespace-nowrap border-b border-border transition-colors relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                  :class="{ 'text-primary': currentSort === 'endDate' }">
+                Fecha Fin
+                <i :class="[getSortIconClass('endDate'), 'text-sm ml-1 opacity-70']"></i>
+                <div class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"
+                     :class="{ 'w-full': currentSort === 'endDate' }"></div>
+              </th>
+              <th @click="sortBy('status')" 
+                  class="p-3 bg-gray-50 dark:bg-surface-hover text-text-secondary font-semibold cursor-pointer whitespace-nowrap border-b border-border transition-colors relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                  :class="{ 'text-primary': currentSort === 'status' }">
+                Estado
+                <i :class="[getSortIconClass('status'), 'text-sm ml-1 opacity-70']"></i>
+                <div class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"
+                     :class="{ 'w-full': currentSort === 'status' }"></div>
+              </th>
+              <th @click="sortBy('amount')" 
+                  class="p-3 bg-gray-50 dark:bg-surface-hover text-text-secondary font-semibold cursor-pointer whitespace-nowrap border-b border-border transition-colors relative hover:bg-gray-100 dark:hover:bg-gray-700 group"
+                  :class="{ 'text-primary': currentSort === 'amount' }">
+                Importe
+                <i :class="[getSortIconClass('amount'), 'text-sm ml-1 opacity-70']"></i>
+                <div class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full"
+                     :class="{ 'w-full': currentSort === 'amount' }"></div>
+              </th>
+              <th class="p-3 bg-gray-50 dark:bg-surface-hover text-text-secondary font-semibold whitespace-nowrap border-b border-border text-center">Doc</th>
+              <th class="p-3 bg-gray-50 dark:bg-surface-hover text-text-secondary font-semibold whitespace-nowrap border-b border-border">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="contract in displayedContracts" 
+                :key="contract.id" 
+                class="border-b border-border transition-colors hover:bg-gray-50 dark:hover:bg-surface-hover last:border-b-0">
+              <td class="p-3 font-mono text-primary font-medium">{{ contract.contractNumber }}</td>
+              <td class="p-3 font-medium text-text-primary">{{ contract.title }}</td>
+              <td class="p-3">{{ formatDate(contract.startDate) }}</td>
+              <td class="p-3">{{ formatDate(contract.endDate) }}</td>
+              <td class="p-3">
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium"
+                      :class="{
+                        'bg-success/10 text-success': contract.status === 'active',
+                        'bg-error/10 text-error': contract.status === 'expired',
+                        'bg-warning/10 text-warning': contract.status === 'draft',
+                        'bg-secondary/10 text-secondary': contract.status === 'terminated',
+                        'bg-info/10 text-info': contract.status === 'renewed'
+                      }">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1"
+                        :class="{
+                          'bg-success': contract.status === 'active',
+                          'bg-error': contract.status === 'expired',
+                          'bg-warning': contract.status === 'draft',
+                          'bg-secondary': contract.status === 'terminated',
+                          'bg-info': contract.status === 'renewed'
+                        }"></span>
+                  {{ getStatusText(contract.status) }}
+                </span>
+              </td>
+              <td class="p-3">{{ formatCurrency(contract.amount, contract.currency) }}</td>
+              <td class="p-3 text-center">
+                <button 
+                  v-if="contract.documentPath" 
+                  @click="$emit('document', contract)" 
+                  class="w-9 h-9 rounded-full flex items-center justify-center transition-colors text-primary hover:bg-primary/10"
+                  title="Descargar documento">
+                  <i class="fas fa-file-download"></i>
                 </button>
-                <button @click="$emit('edit', contract)" class="btn-icon edit-btn" title="Editar">
-                  <i class="fas fa-edit"></i>
-                </button>
-                <button @click="$emit('delete', contract)" class="btn-icon delete-btn" title="Eliminar">
-                  <i class="fas fa-trash-alt"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+                <span v-else class="opacity-50 inline-block" title="Sin documento">
+                  <i class="fas fa-file-alt text-text-secondary"></i>
+                </span>
+              </td>
+              <td class="p-3">
+                <div class="flex justify-end gap-1">
+                  <button @click="$emit('view', contract); showContractDetails(contract)" 
+                          class="w-9 h-9 rounded-full flex items-center justify-center relative overflow-hidden text-info hover:text-info-dark group" 
+                          title="Ver detalles">
+                    <span class="absolute inset-0 bg-info/0 group-hover:bg-info/10 rounded-full transform scale-0 group-hover:scale-100 transition-transform"></span>
+                    <i class="fas fa-eye relative z-10"></i>
+                  </button>
+                  <button @click="$emit('edit', contract)" 
+                          class="w-9 h-9 rounded-full flex items-center justify-center relative overflow-hidden text-primary hover:text-primary-dark group" 
+                          title="Editar">
+                    <span class="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 rounded-full transform scale-0 group-hover:scale-100 transition-transform"></span>
+                    <i class="fas fa-edit relative z-10"></i>
+                  </button>
+                  <button @click="$emit('delete', contract)" 
+                          class="w-9 h-9 rounded-full flex items-center justify-center relative overflow-hidden text-error hover:text-error-dark group" 
+                          title="Eliminar">
+                    <span class="absolute inset-0 bg-error/0 group-hover:bg-error/10 rounded-full transform scale-0 group-hover:scale-100 transition-transform"></span>
+                    <i class="fas fa-trash-alt relative z-10"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       
       <!-- Paginación -->
-      <div class="pagination">
-        <div class="page-info">
+      <div class="flex justify-between items-center p-3 border-t border-border bg-surface rounded-b-md sm:flex-row flex-col gap-2">
+        <div class="text-text-secondary text-sm">
           Mostrando {{ (currentPage - 1) * itemsPerPage + 1 }}-{{ Math.min(currentPage * itemsPerPage, filteredContracts.length) }} de {{ filteredContracts.length }} contratos
         </div>
-        <div class="page-controls">
+        <div class="flex items-center gap-1">
           <button 
             @click="currentPage = 1" 
             :disabled="currentPage === 1"
-            class="page-btn"
-            title="Primera página"
-          >
+            class="w-9 h-9 flex items-center justify-center rounded border border-border bg-transparent cursor-pointer transition-all hover:bg-gray-100 hover:border-primary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-surface-hover"
+            title="Primera página">
             <i class="fas fa-angle-double-left"></i>
           </button>
           <button 
             @click="currentPage--" 
             :disabled="currentPage === 1"
-            class="page-btn"
-            title="Página anterior"
-          >
+            class="w-9 h-9 flex items-center justify-center rounded border border-border bg-transparent cursor-pointer transition-all hover:bg-gray-100 hover:border-primary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-surface-hover"
+            title="Página anterior">
             <i class="fas fa-angle-left"></i>
           </button>
           
-          <div class="page-numbers">
-            <span v-for="page in displayedPages" :key="page">
-              <button 
-                @click="currentPage = page" 
-                :class="['page-number', { active: currentPage === page }]"
-              >
-                {{ page }}
-              </button>
-            </span>
+          <div class="flex gap-1">
+            <button 
+              v-for="page in displayedPages" 
+              :key="page"
+              @click="currentPage = page" 
+              class="w-9 h-9 flex items-center justify-center rounded border border-border bg-transparent cursor-pointer transition-all text-sm"
+              :class="currentPage === page ? 'bg-primary text-white border-primary font-medium' : 'hover:bg-gray-100 hover:border-primary hover:text-primary dark:hover:bg-surface-hover'">
+              {{ page }}
+            </button>
           </div>
           
           <button 
             @click="currentPage++" 
             :disabled="currentPage === totalPages"
-            class="page-btn"
-            title="Página siguiente"
-          >
+            class="w-9 h-9 flex items-center justify-center rounded border border-border bg-transparent cursor-pointer transition-all hover:bg-gray-100 hover:border-primary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-surface-hover"
+            title="Página siguiente">
             <i class="fas fa-angle-right"></i>
           </button>
           <button 
             @click="currentPage = totalPages" 
             :disabled="currentPage === totalPages"
-            class="page-btn"
-            title="Última página"
-          >
+            class="w-9 h-9 flex items-center justify-center rounded border border-border bg-transparent cursor-pointer transition-all hover:bg-gray-100 hover:border-primary hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed dark:hover:bg-surface-hover"
+            title="Última página">
             <i class="fas fa-angle-double-right"></i>
           </button>
         </div>
-        <div class="items-per-page">
-          <select v-model="itemsPerPage">
+        <div>
+          <select 
+            v-model="itemsPerPage"
+            class="p-1.5 px-2 border border-border rounded bg-surface text-sm text-text-primary cursor-pointer transition-all hover:border-primary focus:border-primary focus:outline-none appearance-none pr-8 bg-[url('data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%228%22%20height%3D%226%22%20fill%3D%22none%22%3E%3Cpath%20stroke%3D%22%23666%22%20d%3D%22M7%201.5%204%204.5%201%201.5%22%2F%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[right_10px_center]">
             <option :value="5">5 por página</option>
             <option :value="10">10 por página</option>
             <option :value="20">20 por página</option>
@@ -148,75 +200,95 @@
     </template>
     
     <!-- Modal de detalles del contrato -->
-    <div v-if="selectedContract" class="contract-details-overlay">
-      <div class="contract-details-modal">
-        <div class="details-header">
-          <h2>Detalles del Contrato</h2>
-          <button @click="selectedContract = null" class="close-btn">
+    <div v-if="selectedContract" 
+         class="fixed inset-0 bg-black/50 flex justify-center items-center z-50 animate-fadeIn backdrop-blur-sm">
+      <div class="bg-surface rounded-lg w-[90%] max-w-3xl max-h-[90vh] flex flex-col overflow-hidden shadow-xl animate-slideInUp">
+        <div class="p-4 flex justify-between items-center border-b border-border">
+          <h2 class="m-0 text-text-primary font-semibold">Detalles del Contrato</h2>
+          <button @click="selectedContract = null" 
+                  class="w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-colors hover:bg-gray-100 hover:text-primary dark:hover:bg-surface-hover">
             <i class="fas fa-times"></i>
           </button>
         </div>
         
-        <div class="details-content">
-          <div class="detail-section">
-            <h3>Información General</h3>
-            <div class="detail-grid">
-              <div class="detail-item">
-                <span class="detail-label">Número de Contrato:</span>
-                <span class="detail-value">{{ selectedContract.contractNumber }}</span>
+        <div class="p-4 overflow-y-auto max-h-[calc(90vh-200px)]">
+          <div class="mb-4">
+            <h3 class="mt-0 mb-3 pb-2 border-b border-border text-primary font-medium">Información General</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <span class="block text-text-secondary mb-1 text-sm">Número de Contrato:</span>
+                <span class="font-medium text-text-primary">{{ selectedContract.contractNumber }}</span>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">Título:</span>
-                <span class="detail-value">{{ selectedContract.title }}</span>
+              <div>
+                <span class="block text-text-secondary mb-1 text-sm">Título:</span>
+                <span class="font-medium text-text-primary">{{ selectedContract.title }}</span>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">Estado:</span>
-                <span :class="['status-badge', getStatusClass(selectedContract.status)]">
+              <div>
+                <span class="block text-text-secondary mb-1 text-sm">Estado:</span>
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium"
+                      :class="{
+                        'bg-success/10 text-success': selectedContract.status === 'active',
+                        'bg-error/10 text-error': selectedContract.status === 'expired',
+                        'bg-warning/10 text-warning': selectedContract.status === 'draft',
+                        'bg-secondary/10 text-secondary': selectedContract.status === 'terminated',
+                        'bg-info/10 text-info': selectedContract.status === 'renewed'
+                      }">
+                  <span class="w-1.5 h-1.5 rounded-full mr-1"
+                        :class="{
+                          'bg-success': selectedContract.status === 'active',
+                          'bg-error': selectedContract.status === 'expired',
+                          'bg-warning': selectedContract.status === 'draft',
+                          'bg-secondary': selectedContract.status === 'terminated',
+                          'bg-info': selectedContract.status === 'renewed'
+                        }"></span>
                   {{ getStatusText(selectedContract.status) }}
                 </span>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">Fecha de Inicio:</span>
-                <span class="detail-value">{{ formatDate(selectedContract.startDate) }}</span>
+              <div>
+                <span class="block text-text-secondary mb-1 text-sm">Fecha de Inicio:</span>
+                <span class="font-medium text-text-primary">{{ formatDate(selectedContract.startDate) }}</span>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">Fecha de Fin:</span>
-                <span class="detail-value">{{ formatDate(selectedContract.endDate) }}</span>
+              <div>
+                <span class="block text-text-secondary mb-1 text-sm">Fecha de Fin:</span>
+                <span class="font-medium text-text-primary">{{ formatDate(selectedContract.endDate) }}</span>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">Importe:</span>
-                <span class="detail-value">{{ formatCurrency(selectedContract.amount, selectedContract.currency) }}</span>
+              <div>
+                <span class="block text-text-secondary mb-1 text-sm">Importe:</span>
+                <span class="font-medium text-text-primary">{{ formatCurrency(selectedContract.amount, selectedContract.currency) }}</span>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">Días de Notificación:</span>
-                <span class="detail-value">{{ selectedContract.notificationDays }}</span>
+              <div>
+                <span class="block text-text-secondary mb-1 text-sm">Días de Notificación:</span>
+                <span class="font-medium text-text-primary">{{ selectedContract.notificationDays }}</span>
               </div>
             </div>
           </div>
           
-          <div class="detail-section">
-            <h3>Descripción</h3>
-            <p class="contract-description">{{ selectedContract.description || 'Sin descripción' }}</p>
+          <div class="mb-4">
+            <h3 class="mt-0 mb-3 pb-2 border-b border-border text-primary font-medium">Descripción</h3>
+            <p class="whitespace-pre-line leading-relaxed text-text-primary">{{ selectedContract.description || 'Sin descripción' }}</p>
           </div>
           
-          <div class="detail-section">
-            <h3>Documentos</h3>
-            <div v-if="selectedContract.documentPath" class="document-link">
-              <i class="fas fa-file-pdf"></i>
-              <a :href="selectedContract.documentPath" target="_blank">Ver documento adjunto</a>
+          <div>
+            <h3 class="mt-0 mb-3 pb-2 border-b border-border text-primary font-medium">Documentos</h3>
+            <div v-if="selectedContract.documentPath" class="flex items-center gap-2 mt-2">
+              <i class="fas fa-file-pdf text-error"></i>
+              <a :href="selectedContract.documentPath" target="_blank" class="text-primary no-underline hover:underline transition-colors hover:text-primary-dark">Ver documento adjunto</a>
             </div>
             <p v-else>No hay documentos adjuntos</p>
           </div>
         </div>
         
-        <div class="details-actions">
-          <button @click="$emit('edit', selectedContract); selectedContract = null" class="btn-primary">
-            <i class="fas fa-edit"></i> Editar
+        <div class="p-4 flex justify-end gap-2 border-t border-border bg-gray-50 dark:bg-surface-hover">
+          <button @click="$emit('edit', selectedContract); selectedContract = null" 
+                  class="bg-primary text-white border-none py-1.5 px-3 rounded cursor-pointer transition-all hover:bg-primary-dark flex items-center gap-1 font-medium">
+            <i class="fas fa-edit text-sm"></i> Editar
           </button>
-          <button @click="$emit('delete', selectedContract); selectedContract = null" class="btn-danger">
-            <i class="fas fa-trash-alt"></i> Eliminar
+          <button @click="$emit('delete', selectedContract); selectedContract = null" 
+                  class="bg-error text-white border-none py-1.5 px-3 rounded cursor-pointer transition-all hover:bg-error-dark flex items-center gap-1 font-medium">
+            <i class="fas fa-trash-alt text-sm"></i> Eliminar
           </button>
-          <button @click="selectedContract = null" class="btn-secondary">
+          <button @click="selectedContract = null" 
+                  class="bg-transparent text-text-primary border border-border py-1.5 px-3 rounded cursor-pointer transition-all hover:border-primary hover:text-primary">
             Cerrar
           </button>
         </div>
@@ -356,18 +428,6 @@ function formatCurrency(amount: number, currency: string) {
   }).format(amount);
 }
 
-// Obtener clase CSS según el estado
-function getStatusClass(status: string) {
-  const statusClasses: Record<string, string> = {
-    'draft': 'status-draft',
-    'active': 'status-active',
-    'expired': 'status-expired',
-    'terminated': 'status-terminated',
-    'renewed': 'status-renewed'
-  };
-  return statusClasses[status] || '';
-}
-
 // Obtener texto según el estado
 function getStatusText(status: string) {
   const statusTexts: Record<string, string> = {
@@ -385,32 +445,45 @@ function showContractDetails(contract: Contract) {
 }
 </script>
 
-<style lang="scss" scoped>
-@use './contractTable.scss';
-
-.center-align {
-  text-align: center;
+<style>
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.action-buttons {
-  display: flex;
-  gap: 4px;
+@keyframes slideInUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
-.document-btn {
-  color: var(--primary-color);
-  
-  &:hover {
-    color: var(--primary-hover);
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease;
+}
+
+.animate-slideInUp {
+  animation: slideInUp 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  th {
+    display: none;
   }
-}
-
-.no-document {
-  opacity: 0.5;
-  display: inline-block;
-}
-
-.text-muted {
-  color: var(--text-secondary);
+  
+  tbody tr {
+    @apply block mb-3 border border-border rounded p-2;
+  }
+  
+  td {
+    @apply flex justify-between items-center py-1.5 text-right border-b border-border border-dashed;
+  }
+  
+  td:last-child {
+    @apply border-b-0 justify-end;
+  }
+  
+  td:before {
+    content: attr(data-label);
+    @apply font-medium text-left text-text-secondary;
+  }
 }
 </style>

@@ -1,4 +1,5 @@
-import "./styles/main.scss";
+// Importar nuestro archivo de estilos unificado
+import "./styles/index.css";
 
 import { createApp } from 'vue';
 import { createPinia } from 'pinia';

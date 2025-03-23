@@ -1,9 +1,0 @@
-@use '../../../styles/variables' as v;
-@use '../../../styles/colors' as c;
-@use '../../../styles/mixins' as m;
-
-
-.action-buttons {
-  display: flex;
-  gap: v.$spacing-unit;
-}
