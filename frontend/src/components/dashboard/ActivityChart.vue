@@ -23,19 +23,12 @@
 import { ref, onMounted, watch } from 'vue';
 import { Chart, registerables } from 'chart.js';
 import { useTheme } from '@/composables/useTheme';
+import type { ChartData } from '@/types/dashboard';
 
 Chart.register(...registerables);
 
 const props = defineProps<{
-  data: {
-    labels: string[];
-    datasets: {
-      label: string;
-      data: number[];
-      borderColor: string;
-      backgroundColor: string;
-    }[];
-  }
+  data: ChartData | null;
 }>();
 
 const selectedRange = ref('30');
@@ -90,7 +83,7 @@ function updateChart() {
         x: {
           grid: {
             color: isDark.value ? '#374151' : '#e5e7eb',
-            drawBorder: false
+            display: false
           },
           ticks: {
             color: isDark.value ? '#e5e7eb' : '#374151'
@@ -99,7 +92,7 @@ function updateChart() {
         y: {
           grid: {
             color: isDark.value ? '#374151' : '#e5e7eb',
-            drawBorder: false
+            display: false
           },
           ticks: {
             color: isDark.value ? '#e5e7eb' : '#374151',

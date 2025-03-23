@@ -1,20 +1,18 @@
 import { ref, computed } from 'vue';
-import type { DashboardStats } from '@/types';
+import type { DashboardStats, DashboardData, Activity } from '@/types/dashboard';
 
 export function useDashboard() {
   const isLoading = ref(false);
   const error = ref<string | null>(null);
-  const dashboardData = ref<any>(null);
+  const dashboardData = ref<DashboardData | null>(null);
   const selectedTimeRange = ref(30);
 
   const stats = computed<DashboardStats>(() => ({
-    activeContracts: dashboardData.value?.contractStats?.active || 0,
-    upcomingDeadlines: dashboardData.value?.contractStats?.expiringSoon || 0,
-    pendingRenewals: dashboardData.value?.contractTrends?.renewalsPending || 0,
-    overdueBills: 0, // Implementar cuando se agregue la funcionalidad de pagos
-    contractsTrend: calculateTrend(dashboardData.value?.contractStats?.active),
-    renewalsTrend: calculateTrend(dashboardData.value?.contractTrends?.renewalsPending),
-    billsTrend: 0 // Implementar cuando se agregue la funcionalidad de pagos
+    activeContracts: dashboardData.value?.contractStats?.active ?? 0,
+    upcomingDeadlines: dashboardData.value?.contractStats?.expiringSoon ?? 0,
+    pendingRenewals: dashboardData.value?.contractTrends?.renewalsPending ?? 0,
+    contractsTrend: calculateTrend(dashboardData.value?.contractStats?.active ?? 0),
+    renewalsTrend: calculateTrend(dashboardData.value?.contractTrends?.renewalsPending ?? 0)
   }));
 
   const chartData = computed(() => {
@@ -40,6 +38,10 @@ export function useDashboard() {
       ]
     };
   });
+
+  const recentActivities = computed<Activity[]>(() => 
+    dashboardData.value?.recentActivities || []
+  );
 
   async function fetchDashboardData() {
     isLoading.value = true;
@@ -92,6 +94,8 @@ export function useDashboard() {
     error,
     stats,
     chartData,
+    recentActivities,
+    dashboardData,
     fetchDashboardData,
     updateTimeRange
   };

@@ -2,7 +2,10 @@
   <div class="max-w-7xl mx-auto p-6 space-y-6">
     <!-- Header -->
     <div class="flex justify-between items-center">
-      <h1 class="text-2xl font-semibold text-text-primary">Panel de Control</h1>
+      <div>
+        <h1 class="text-2xl font-semibold text-text-primary">Panel de Control</h1>
+        <p class="text-sm text-text-secondary mt-1">Resumen de contratos y actividades</p>
+      </div>
       <div class="flex items-center gap-4">
         <button 
           class="btn btn-outline-primary btn-sm"
@@ -18,12 +21,6 @@
     <!-- Estadísticas Principales -->
     <DashboardStats :stats="stats" />
 
-    <!-- Acciones Rápidas -->
-    <div class="card">
-      <h2 class="text-lg font-medium text-text-primary mb-4">Acciones Rápidas</h2>
-      <QuickActions />
-    </div>
-
     <!-- Gráficos y Actividad Reciente -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Gráfico de Actividad -->
@@ -38,15 +35,18 @@
       <div class="card">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-lg font-medium text-text-primary">Actividad Reciente</h2>
-          <button class="text-xs text-primary hover:text-primary-600 transition-colors">
+          <button 
+            class="text-xs text-primary hover:text-primary-600 transition-colors"
+            @click="$router.push('/activity')"
+          >
             Ver Todo
           </button>
         </div>
         <div class="space-y-4">
           <div 
-            v-for="activity in dashboardData?.recentActivities" 
+            v-for="activity in recentActivities" 
             :key="activity.id"
-            class="flex items-start gap-3"
+            class="flex items-start gap-3 p-2 rounded-lg hover:bg-surface/50 transition-colors"
           >
             <div 
               class="w-8 h-8 rounded-full flex items-center justify-center"
@@ -55,10 +55,10 @@
               <i :class="activity.icon"></i>
             </div>
             <div class="flex-1 min-w-0">
-              <p class="text-sm text-text-primary">{{ activity.title }}</p>
+              <p class="text-sm text-text-primary line-clamp-2">{{ activity.title }}</p>
               <time 
                 :datetime="activity.time"
-                class="text-xs text-text-secondary"
+                class="text-xs text-text-secondary mt-1 block"
               >
                 {{ formatDate(activity.time) }}
               </time>
@@ -68,10 +68,16 @@
       </div>
     </div>
 
+    <!-- Acciones Rápidas -->
+    <div class="card">
+      <h2 class="text-lg font-medium text-text-primary mb-4">Acciones Rápidas</h2>
+      <QuickActions />
+    </div>
+
     <!-- Error Alert -->
     <div 
       v-if="error"
-      class="fixed bottom-4 right-4 bg-error/10 border border-error/20 text-error p-4 rounded-lg shadow-lg"
+      class="fixed bottom-4 right-4 bg-error/10 border border-error/20 text-error p-4 rounded-lg shadow-lg animate-fade-in"
     >
       <div class="flex items-center gap-2">
         <i class="fas fa-exclamation-circle"></i>
@@ -95,7 +101,7 @@ const {
   error,
   stats,
   chartData,
-  dashboardData,
+  recentActivities,
   fetchDashboardData,
   updateTimeRange
 } = useDashboard();
@@ -137,5 +143,20 @@ onMounted(() => {
 
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(1rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
 }
 </style>
