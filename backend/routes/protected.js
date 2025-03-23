@@ -5,7 +5,7 @@ import { User, Contract, License, Notification, ActivityLog } from '../models/in
 import { Op } from 'sequelize';
 import multer from 'multer';
 import LicenseValidator from '../services/licenseValidator.js';
-import { db } from '../config/database.js';
+import { db } from '../database/dbconnection.js';
 
 const router = express.Router();
 

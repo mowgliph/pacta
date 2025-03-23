@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 import cors from 'cors';
 import fs from 'fs';
-import sequelize from './config/database.js';
+import { db, testConnection, syncDatabase } from './database/dbconnection.js';
 import models from './models/index.js';
 import apiRoutes from './routes/index.js';
 import scheduler from './services/scheduler.js';
@@ -12,6 +12,8 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 import compression from 'compression';
 import { rateLimit } from 'express-rate-limit';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import NotificationService from './services/NotificationService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,18 +34,11 @@ const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: 100 // límite de 100 solicitudes por ventana
 });
-app.use(limiter);
+app.use('/api/', limiter);
 
 // Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(err.status || 500).json({
-    error: {
-      message: err.message || 'Internal Server Error',
-      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
-    }
-  });
-});
+app.use(notFoundHandler);
+app.use(errorHandler);
 
 // Serve static files from frontend build directory
 app.use(express.static(path.join(__dirname, '../frontend/dist'), {
@@ -69,62 +64,49 @@ if (!fs.existsSync(uploadsDir)) {
 }
 
 // Database connection test
-async function testConnection() {
+async function initializeDatabase() {
   try {
-    console.log('Intentando conectar a la base de datos en:', path.resolve(dbDir));
-    await sequelize.authenticate();
-    console.log('Database connection has been established successfully.');
+    console.log('Intentando conectar a la base de datos...');
+    const connected = await testConnection();
     
-    try {
+    if (connected) {
       console.log('Iniciando sincronización de la base de datos...');
+      const synced = await syncDatabase(true); // true para forzar la recreación de tablas
       
-      // Forzar la recreación de las tablas con logging detallado
-      console.log('Opciones de sincronización: { force: true }');
-      await sequelize.sync({ 
-        force: true, // Recrear las tablas
-        logging: console.log // Mostrar queries SQL para debug
-      });
-      console.log('Database tables recreated successfully');
-      
-      console.log('Intentando crear usuario admin...');
-      await models.User.createAdminIfNotExists();
-      console.log('Admin user checked/created successfully');
-      
-      // Iniciar servicios adicionales
-      if (scheduler && typeof scheduler.start === 'function') {
-        scheduler.start();
-        console.log('Contract expiration checker started');
+      if (synced) {
+        console.log('Intentando crear usuario admin...');
+        const adminUser = await models.User.findOne({ where: { role: 'admin' } });
+        if (!adminUser) {
+          await models.User.create({
+            username: 'admin',
+            email: 'admin@pacta.local',
+            password: 'Pacta2024',
+            role: 'admin',
+            active: true
+          });
+          console.log('Admin user created successfully');
+        }
+        
+        // Iniciar servicios adicionales
+        if (scheduler && typeof scheduler.start === 'function') {
+          scheduler.start();
+          console.log('Contract expiration checker started');
+        }
+
+        // Iniciar limpieza periódica de notificaciones expiradas
+        setInterval(() => {
+          NotificationService.cleanupExpiredNotifications()
+            .catch(error => console.error('Error cleaning up notifications:', error));
+        }, 24 * 60 * 60 * 1000); // Cada 24 horas
       }
-      
-    } catch (syncError) {
-      console.error('Error during database synchronization:', syncError);
-      console.error('Details:', syncError.message);
-      if (syncError.parent) {
-        console.error('Cause:', syncError.parent.message);
-      }
-      console.error('Stack:', syncError.stack);
     }
   } catch (error) {
-    console.error('Database connection error:', error);
-    console.error('Error details:', error.message);
-    if (error.parent) {
-      console.error('Cause:', error.parent.message);
-    }
-    console.error('Please check that the database directory exists and has write permissions');
-    
-    // Verificar permisos de escritura
-    try {
-      const testFile = path.join(dbDir, 'test-write.tmp');
-      fs.writeFileSync(testFile, 'test');
-      fs.unlinkSync(testFile);
-      console.log('Database directory has write permissions');
-    } catch (fsError) {
-      console.error('Cannot write to database directory. Permission issue:', fsError.message);
-    }
+    console.error('Error durante la inicialización de la base de datos:', error);
+    process.exit(1);
   }
 }
 
-testConnection();
+initializeDatabase();
 
 // Basic route
 app.get('/', (req, res) => {

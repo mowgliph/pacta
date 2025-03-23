@@ -1,32 +1,28 @@
 import express from 'express';
-import authRoutes from './auth.js';
-import protectedRoutes from './protected.js';
-import contractRoutes from './contracts.js';
-import dashboardRoutes from './dashboard.js';
-import analyticsRoutes from './analytics.js';
-import notificationRoutes from './notifications.js';
-import userRoutes from './users.js';
-import licenseRoutes from './license.routes.js';
+import authRoutes from './authRoutes.js';
+import contractRoutes from './contractRoutes.js';
+import userRoutes from './userRoutes.js';
+import notificationRoutes from './notificationRoutes.js';
+import analyticsRoutes from './analyticsRoutes.js';
+import { validateJWT } from '../middleware/errorHandler.js';
 
 const router = express.Router();
 
-// API versioning
-const apiV1 = express.Router();
+// Rutas públicas
+router.use('/auth', authRoutes);
 
-// Register all routes under v1 namespace
-apiV1.use('/auth', authRoutes);
-apiV1.use('/contracts', contractRoutes);
-apiV1.use('/dashboard', dashboardRoutes);
-apiV1.use('/analytics', analyticsRoutes);
-apiV1.use('/notifications', notificationRoutes);
-apiV1.use('/users', userRoutes);
-apiV1.use('/license', licenseRoutes);
-apiV1.use('/', protectedRoutes);
+// Rutas protegidas
+router.use('/contracts', validateJWT, contractRoutes);
+router.use('/users', validateJWT, userRoutes);
+router.use('/notifications', validateJWT, notificationRoutes);
+router.use('/analytics', validateJWT, analyticsRoutes);
 
-// Mount v1 routes at /api/v1
-router.use('/v1', apiV1);
-
-// For backward compatibility, also mount the routes at /api
-router.use('/', apiV1);
+// Ruta de salud
+router.get('/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString()
+  });
+});
 
 export default router; 

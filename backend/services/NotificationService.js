@@ -1,5 +1,6 @@
-import { Notification } from '../models/Notification.js';
-import { Op } from 'sequelize';
+import { Notification, User, Contract } from '../models/index.js';
+import { NOTIFICATION_CONFIG } from '../config/constants.js';
+import { AppError } from '../middleware/errorHandler.js';
 
 class NotificationService {
   static async createNotification(data) {
@@ -59,12 +60,13 @@ class NotificationService {
       });
 
       if (!notification) {
-        throw new Error('Notification not found');
+        throw new AppError('Notificación no encontrada', 404);
       }
 
-      notification.read = true;
-      notification.readAt = new Date();
-      await notification.save();
+      await notification.update({
+        status: 'read',
+        readAt: new Date()
+      });
 
       return notification;
     } catch (error) {
@@ -73,24 +75,20 @@ class NotificationService {
     }
   }
 
-  static async markAllAsRead(userId, category) {
+  static async markAllAsRead(userId) {
     try {
-      const where = { 
-        userId,
-        read: false
-      };
-
-      if (category) where.category = category;
-
       await Notification.update(
-        { 
-          read: true,
+        {
+          status: 'read',
           readAt: new Date()
         },
-        { where }
+        {
+          where: {
+            userId,
+            status: 'unread'
+          }
+        }
       );
-
-      return true;
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
       throw error;
@@ -175,7 +173,7 @@ class NotificationService {
 
       const where = {
         createdAt: {
-          [Op.lt]: cutoffDate
+          [db.Sequelize.Op.lt]: cutoffDate
         },
         read: true
       };
@@ -184,6 +182,173 @@ class NotificationService {
       return true;
     } catch (error) {
       console.error('Error cleaning up old notifications:', error);
+      throw error;
+    }
+  }
+
+  static async createContractExpiryNotification(contractId) {
+    try {
+      const contract = await Contract.findByPk(contractId, {
+        include: [{ model: User, attributes: ['id', 'username'] }]
+      });
+
+      if (!contract) {
+        throw new AppError('Contrato no encontrado', 404);
+      }
+
+      const daysUntilExpiry = Math.ceil((contract.endDate - new Date()) / (1000 * 60 * 60 * 24));
+      
+      if (daysUntilExpiry <= NOTIFICATION_CONFIG.DEFAULT_NOTIFICATION_DAYS) {
+        const message = `El contrato ${contract.contractNumber} expirará en ${daysUntilExpiry} días`;
+        
+        await Notification.createNotification(
+          contract.User.id,
+          'contract_expiry',
+          message,
+          contractId
+        );
+      }
+    } catch (error) {
+      console.error('Error creating contract expiry notification:', error);
+      throw error;
+    }
+  }
+
+  static async createRenewalReminder(contractId) {
+    try {
+      const contract = await Contract.findByPk(contractId, {
+        include: [{ model: User, attributes: ['id', 'username'] }]
+      });
+
+      if (!contract) {
+        throw new AppError('Contrato no encontrado', 404);
+      }
+
+      const message = `El contrato ${contract.contractNumber} está próximo a renovarse`;
+      
+      await Notification.createNotification(
+        contract.User.id,
+        'renewal_reminder',
+        message,
+        contractId
+      );
+    } catch (error) {
+      console.error('Error creating renewal reminder:', error);
+      throw error;
+    }
+  }
+
+  static async createStatusChangeNotification(contractId, oldStatus, newStatus) {
+    try {
+      const contract = await Contract.findByPk(contractId, {
+        include: [{ model: User, attributes: ['id', 'username'] }]
+      });
+
+      if (!contract) {
+        throw new AppError('Contrato no encontrado', 404);
+      }
+
+      const message = `El estado del contrato ${contract.contractNumber} ha cambiado de ${oldStatus} a ${newStatus}`;
+      
+      await Notification.createNotification(
+        contract.User.id,
+        'status_change',
+        message,
+        contractId
+      );
+    } catch (error) {
+      console.error('Error creating status change notification:', error);
+      throw error;
+    }
+  }
+
+  static async createDocumentUpdateNotification(contractId, documentName) {
+    try {
+      const contract = await Contract.findByPk(contractId, {
+        include: [{ model: User, attributes: ['id', 'username'] }]
+      });
+
+      if (!contract) {
+        throw new AppError('Contrato no encontrado', 404);
+      }
+
+      const message = `Se ha actualizado el documento ${documentName} en el contrato ${contract.contractNumber}`;
+      
+      await Notification.createNotification(
+        contract.User.id,
+        'document_update',
+        message,
+        contractId
+      );
+    } catch (error) {
+      console.error('Error creating document update notification:', error);
+      throw error;
+    }
+  }
+
+  static async getUserNotifications(userId, { page = 1, limit = 10, status = null } = {}) {
+    try {
+      const where = { userId };
+      if (status) {
+        where.status = status;
+      }
+
+      const notifications = await Notification.findAndCountAll({
+        where,
+        include: [
+          { model: Contract, attributes: ['contractNumber', 'name'] }
+        ],
+        order: [['createdAt', 'DESC']],
+        limit,
+        offset: (page - 1) * limit
+      });
+
+      return {
+        notifications: notifications.rows,
+        total: notifications.count,
+        page,
+        totalPages: Math.ceil(notifications.count / limit)
+      };
+    } catch (error) {
+      console.error('Error getting user notifications:', error);
+      throw error;
+    }
+  }
+
+  static async archiveNotification(notificationId, userId) {
+    try {
+      const notification = await Notification.findOne({
+        where: { id: notificationId, userId }
+      });
+
+      if (!notification) {
+        throw new AppError('Notificación no encontrada', 404);
+      }
+
+      await notification.update({
+        status: 'archived'
+      });
+
+      return notification;
+    } catch (error) {
+      console.error('Error archiving notification:', error);
+      throw error;
+    }
+  }
+
+  static async cleanupExpiredNotifications() {
+    try {
+      await Notification.update(
+        { status: 'archived' },
+        {
+          where: {
+            status: { [db.Sequelize.Op.ne]: 'archived' },
+            expiresAt: { [db.Sequelize.Op.lt]: new Date() }
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error cleaning up expired notifications:', error);
       throw error;
     }
   }

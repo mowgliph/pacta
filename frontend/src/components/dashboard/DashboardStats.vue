@@ -60,19 +60,15 @@
     <div class="card bg-error/5 border-error/20 hover:shadow-lg transition-shadow duration-300">
       <div class="flex justify-between items-start mb-4">
         <div>
-          <h3 class="text-sm font-medium text-text-secondary">Pagos Atrasados</h3>
-          <p class="text-2xl font-semibold text-error">{{ stats.overdueBills }}</p>
+          <h3 class="text-sm font-medium text-text-secondary">Alertas</h3>
+          <p class="text-2xl font-semibold text-error">0</p>
         </div>
         <div class="w-10 h-10 bg-error/10 rounded-full flex items-center justify-center">
           <i class="fas fa-exclamation-triangle text-error"></i>
         </div>
       </div>
       <div class="flex items-center text-xs text-text-secondary">
-        <span class="flex items-center" :class="stats.billsTrend > 0 ? 'text-error' : 'text-success'">
-          <i :class="`fas fa-arrow-${stats.billsTrend > 0 ? 'up' : 'down'} mr-1`"></i>
-          {{ Math.abs(stats.billsTrend) }}%
-        </span>
-        <span class="ml-2">vs mes anterior</span>
+        <span>Sin alertas pendientes</span>
       </div>
     </div>
   </div>
@@ -83,10 +79,8 @@ interface DashboardStats {
   activeContracts: number;
   upcomingDeadlines: number;
   pendingRenewals: number;
-  overdueBills: number;
   contractsTrend: number;
   renewalsTrend: number;
-  billsTrend: number;
 }
 
 defineProps<{

@@ -1,5 +1,5 @@
 import { DataTypes, Op } from 'sequelize';
-import sequelize from '../config/database.js';
+import sequelize from '../database/dbconnection.js';
 
 const License = sequelize.define('License', {
   id: {

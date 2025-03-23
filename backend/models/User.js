@@ -1,109 +1,126 @@
-import { DataTypes } from 'sequelize';
-import sequelize from '../config/database.js';
-import bcrypt from 'bcryptjs';
+import { Model, DataTypes } from 'sequelize';
+import bcrypt from 'bcrypt';
+import { sequelize } from '../database/dbconnection.js';
 
-const User = sequelize.define('User', {
-  id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true
-  },
-  username: {
-    type: DataTypes.STRING(50),
-    unique: true,
-    allowNull: false,
-    validate: {
-      notEmpty: true,
-      len: [3, 50]
-    }
-  },
-  password: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    validate: {
-      notEmpty: true,
-      len: [6, 100]
-    }
-  },
-  email: {
-    type: DataTypes.STRING,
-    unique: true,
-    allowNull: false,
-    validate: {
-      isEmail: true
-    }
-  },
-  role: {
-    type: DataTypes.ENUM('admin', 'advanced', 'readonly'),
-    defaultValue: 'readonly',
-    allowNull: false
-  },
-  licenseId: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'Licenses',
-      key: 'id'
-    }
-  },
-  firstLogin: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
-  },
-  lastLogin: {
-    type: DataTypes.DATE
-  },
-  active: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: true
-  },
-  resetToken: {
-    type: DataTypes.STRING,
-    allowNull: true
-  },
-  resetTokenExpiry: {
-    type: DataTypes.DATE,
-    allowNull: true
+export class User extends Model {
+  static async hashPassword(password) {
+    const salt = await bcrypt.genSalt(10);
+    return bcrypt.hash(password, salt);
   }
-}, {
-  hooks: {
-    beforeCreate: async (user) => {
-      if (user.password) {
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
-      }
+
+  async validatePassword(password) {
+    return bcrypt.compare(password, this.password);
+  }
+
+  toJSON() {
+    const values = { ...this.get() };
+    delete values.password;
+    delete values.refreshToken;
+    return values;
+  }
+}
+
+User.init(
+  {
+    id: {
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
+      primaryKey: true,
     },
-    beforeUpdate: async (user) => {
-      if (user.changed('password')) {
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
-      }
-    }
+    email: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      unique: true,
+      validate: {
+        isEmail: true,
+      },
+    },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    firstName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    lastName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    role: {
+      type: DataTypes.ENUM('admin', 'user', 'moderator'),
+      defaultValue: 'user',
+    },
+    status: {
+      type: DataTypes.ENUM('active', 'inactive', 'suspended'),
+      defaultValue: 'active',
+    },
+    lastLogin: {
+      type: DataTypes.DATE,
+    },
+    refreshToken: {
+      type: DataTypes.STRING,
+    },
+    emailVerified: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    emailVerificationToken: {
+      type: DataTypes.STRING,
+    },
+    passwordResetToken: {
+      type: DataTypes.STRING,
+    },
+    passwordResetExpires: {
+      type: DataTypes.DATE,
+    },
+    profilePicture: {
+      type: DataTypes.STRING,
+    },
+    phoneNumber: {
+      type: DataTypes.STRING,
+    },
+    address: {
+      type: DataTypes.JSON,
+    },
+    preferences: {
+      type: DataTypes.JSON,
+      defaultValue: {},
+    },
+    metadata: {
+      type: DataTypes.JSON,
+      defaultValue: {},
+    },
+  },
+  {
+    sequelize,
+    modelName: 'User',
+    tableName: 'users',
+    timestamps: true,
+    paranoid: true,
+    indexes: [
+      {
+        unique: true,
+        fields: ['email'],
+      },
+      {
+        fields: ['role'],
+      },
+      {
+        fields: ['status'],
+      },
+    ],
+    hooks: {
+      beforeCreate: async (user) => {
+        if (user.password) {
+          user.password = await User.hashPassword(user.password);
+        }
+      },
+      beforeUpdate: async (user) => {
+        if (user.changed('password')) {
+          user.password = await User.hashPassword(user.password);
+        }
+      },
+    },
   }
-});
-
-// Instance method to validate password
-User.prototype.validatePassword = async function(password) {
-  return await bcrypt.compare(password, this.password);
-};
-
-// Class method to create admin user if not exists
-User.createAdminIfNotExists = async function() {
-  try {
-    const adminExists = await this.findOne({ where: { role: 'admin' } });
-    if (!adminExists) {
-      await this.create({
-        username: 'admin',
-        password: 'Pacta2024',
-        email: 'admin@pacta.local',
-        role: 'admin',
-        firstLogin: true
-      });
-      console.log('Admin user created successfully');
-    }
-  } catch (error) {
-    console.error('Error creating admin user:', error);
-  }
-};
-
-export default User;
+);

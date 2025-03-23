@@ -1,7 +1,5 @@
 import moment from 'moment';
-import { Contract } from '../models/contract.js';
-import { User } from '../models/user.js';
-import { Activity } from '../models/activityLog.js';
+import { Contract, User, ActivityLog } from '../models/index.js';
 import { Op } from 'sequelize';
 import sequelize from 'sequelize';
 
@@ -719,5 +717,108 @@ export const getRiskContracts = async (req, res) => {
       message: 'Error al obtener contratos en riesgo',
       error: error.message
     });
+  }
+};
+
+// Obtener estadísticas generales
+export const getGeneralStats = async (req, res) => {
+  try {
+    const [
+      totalUsers,
+      totalContracts,
+      activeContracts,
+      recentActivities
+    ] = await Promise.all([
+      User.count(),
+      Contract.count(),
+      Contract.count({ where: { status: 'active' } }),
+      ActivityLog.findAll({
+        include: [
+          { model: User, attributes: ['username'] },
+          { model: Contract, attributes: ['contractNumber'] }
+        ],
+        order: [['timestamp', 'DESC']],
+        limit: 10
+      })
+    ]);
+
+    res.json({
+      totalUsers,
+      totalContracts,
+      activeContracts,
+      recentActivities
+    });
+  } catch (error) {
+    console.error('Error getting general stats:', error);
+    res.status(500).json({ message: 'Error al obtener estadísticas generales' });
+  }
+};
+
+// Obtener estadísticas de actividad por período
+export const getActivityStats = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const where = {
+      timestamp: {
+        [Op.between]: [
+          startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+          endDate ? new Date(endDate) : new Date()
+        ]
+      }
+    };
+
+    const activities = await ActivityLog.findAll({
+      where,
+      attributes: [
+        'action',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      group: ['action'],
+      order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']]
+    });
+
+    res.json(activities);
+  } catch (error) {
+    console.error('Error getting activity stats:', error);
+    res.status(500).json({ message: 'Error al obtener estadísticas de actividad' });
+  }
+};
+
+// Obtener estadísticas de contratos por estado
+export const getContractStats = async (req, res) => {
+  try {
+    const stats = await Contract.findAll({
+      attributes: [
+        'status',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      group: ['status']
+    });
+
+    res.json(stats);
+  } catch (error) {
+    console.error('Error getting contract stats:', error);
+    res.status(500).json({ message: 'Error al obtener estadísticas de contratos' });
+  }
+};
+
+// Obtener actividad reciente por usuario
+export const getUserActivity = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const activities = await ActivityLog.findAll({
+      where: { userId },
+      include: [
+        { model: User, attributes: ['username'] },
+        { model: Contract, attributes: ['contractNumber'] }
+      ],
+      order: [['timestamp', 'DESC']],
+      limit: 20
+    });
+
+    res.json(activities);
+  } catch (error) {
+    console.error('Error getting user activity:', error);
+    res.status(500).json({ message: 'Error al obtener actividad del usuario' });
   }
 }; 

@@ -1,23 +1,23 @@
-import sequelize from '../config/database.js';
+import { db } from '../database/dbconnection.js';
 import User from './User.js';
 import Contract from './Contract.js';
+import Notification from './Notification.js';
 import License from './License.js';
 import ActivityLog from './ActivityLog.js';
-import Notification from './Notification.js';
 
 // Importar y aplicar asociaciones desde associations.js
 import './associations.js';
 
-// Definimos los modelos
+// Inicializar modelos
 const models = {
-  User,
-  Contract,
-  License,
-  ActivityLog,
-  Notification
+  User: User(db),
+  Contract: Contract(db),
+  Notification: Notification(db),
+  License: License(db),
+  ActivityLog: ActivityLog(db)
 };
 
-// Set up associations from model definitions
+// Establecer asociaciones
 Object.keys(models).forEach(modelName => {
   if (models[modelName].associate) {
     models[modelName].associate(models);
@@ -30,7 +30,7 @@ export {
   License,
   ActivityLog,
   Notification,
-  sequelize
+  db
 };
 
 export default models;

@@ -1,7 +1,7 @@
-import { Contract, User, ActivityLog } from '../models/index.js';
+import { Contract, User, License, ActivityLog } from '../models/index.js';
 import { Op } from 'sequelize';
 import fs from 'fs';
-import { db } from '../config/database.js';
+import { db } from '../database/dbconnection.js';
 
 // Obtener todos los contratos (filtrados por rol de usuario)
 export const getAllContracts = async (req, res) => {
@@ -13,6 +13,10 @@ export const getAllContracts = async (req, res) => {
           model: User,
           as: 'creator',
           attributes: ['username', 'email']
+        },
+        {
+          model: License,
+          attributes: ['name', 'type']
         }
       ],
       order: [['updatedAt', 'DESC']]
@@ -42,6 +46,10 @@ export const getContractById = async (req, res) => {
           model: User,
           as: 'modifier',
           attributes: ['id', 'username', 'email']
+        },
+        {
+          model: License,
+          attributes: ['name', 'type']
         }
       ]
     });
@@ -315,6 +323,10 @@ export const searchContracts = async (req, res) => {
           model: User,
           as: 'creator',
           attributes: ['username', 'email']
+        },
+        {
+          model: License,
+          attributes: ['name', 'type']
         }
       ],
       order: [['updatedAt', 'DESC']]

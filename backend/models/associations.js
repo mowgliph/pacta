@@ -1,32 +1,27 @@
 import User from './User.js';
 import Contract from './Contract.js';
+import Notification from './Notification.js';
 import License from './License.js';
 import ActivityLog from './ActivityLog.js';
-import Notification from './Notification.js';
 
 // User - Contract associations
-User.hasMany(Contract, { foreignKey: 'createdBy' });
-Contract.belongsTo(User, { foreignKey: 'createdBy' });
+User.hasMany(Contract, { foreignKey: 'userId' });
+Contract.belongsTo(User, { foreignKey: 'userId' });
+
+// User - Notification associations
+User.hasMany(Notification, { foreignKey: 'userId' });
+Notification.belongsTo(User, { foreignKey: 'userId' });
 
 // User - ActivityLog associations
 User.hasMany(ActivityLog, { foreignKey: 'userId' });
 ActivityLog.belongsTo(User, { foreignKey: 'userId' });
 
-// Notification associations
-User.hasMany(Notification, { foreignKey: 'userId' });
-Notification.belongsTo(User, { foreignKey: 'userId' });
-Contract.hasMany(Notification, { foreignKey: 'contractId' });
-Notification.belongsTo(Contract, { foreignKey: 'contractId' });
+// License - Contract associations
+License.hasMany(Contract, { foreignKey: 'licenseId' });
+Contract.belongsTo(License, { foreignKey: 'licenseId' });
 
-// User - License associations
-User.belongsTo(License, {
-  foreignKey: 'licenseId',
-  as: 'license'
-});
+// Contract - ActivityLog associations
+Contract.hasMany(ActivityLog, { foreignKey: 'contractId' });
+ActivityLog.belongsTo(Contract, { foreignKey: 'contractId' });
 
-License.hasMany(User, {
-  foreignKey: 'licenseId',
-  as: 'users'
-});
-
-export { User, Contract, License, ActivityLog, Notification };
+export { User, Contract, Notification, License, ActivityLog };

@@ -1,6 +1,183 @@
 import { User, License, ActivityLog } from '../models/index.js';
 import bcrypt from 'bcryptjs';
 import { Op } from 'sequelize';
+import { BaseController } from './BaseController.js';
+import { UserService } from '../services/UserService.js';
+import { ValidationService } from '../services/ValidationService.js';
+import { ResponseService } from '../services/ResponseService.js';
+import { LoggingService } from '../services/LoggingService.js';
+import { CacheService } from '../services/CacheService.js';
+
+export class UserController extends BaseController {
+  constructor() {
+    super(new UserService());
+    this.validation = new ValidationService();
+    this.response = new ResponseService();
+    this.logger = new LoggingService('UserController');
+    this.cache = new CacheService();
+  }
+
+  // Authentication routes
+  async register(req, res, next) {
+    try {
+      const user = await this.service.register(req.body);
+      const response = this.response.success('User registered successfully', user);
+      res.status(201).json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async login(req, res, next) {
+    try {
+      const { email, password } = req.body;
+      const user = await this.service.login(email, password);
+      const response = this.response.success('Login successful', user);
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async refreshToken(req, res, next) {
+    try {
+      const { userId } = req.user;
+      const refreshToken = await this.service.refreshToken(userId);
+      const response = this.response.success('Token refreshed successfully', { refreshToken });
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Email verification routes
+  async verifyEmail(req, res, next) {
+    try {
+      const { token } = req.params;
+      const user = await this.service.verifyEmail(token);
+      const response = this.response.success('Email verified successfully', user);
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Password reset routes
+  async requestPasswordReset(req, res, next) {
+    try {
+      const { email } = req.body;
+      await this.service.requestPasswordReset(email);
+      const response = this.response.success('Password reset instructions sent to email');
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async resetPassword(req, res, next) {
+    try {
+      const { token } = req.params;
+      const { newPassword } = req.body;
+      const user = await this.service.resetPassword(token, newPassword);
+      const response = this.response.success('Password reset successfully', user);
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Profile management routes
+  async updateProfile(req, res, next) {
+    try {
+      const { userId } = req.user;
+      const user = await this.service.updateProfile(userId, req.body);
+      const response = this.response.success('Profile updated successfully', user);
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // User management routes (admin only)
+  async updateStatus(req, res, next) {
+    try {
+      const { userId } = req.params;
+      const { status } = req.body;
+      const user = await this.service.updateStatus(userId, status);
+      const response = this.response.success('User status updated successfully', user);
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async updateRole(req, res, next) {
+    try {
+      const { userId } = req.params;
+      const { role } = req.body;
+      const user = await this.service.updateRole(userId, role);
+      const response = this.response.success('User role updated successfully', user);
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getActiveUsers(req, res, next) {
+    try {
+      const users = await this.service.getActiveUsers();
+      const response = this.response.success('Active users retrieved successfully', users);
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getInactiveUsers(req, res, next) {
+    try {
+      const users = await this.service.getInactiveUsers();
+      const response = this.response.success('Inactive users retrieved successfully', users);
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getSuspendedUsers(req, res, next) {
+    try {
+      const users = await this.service.getSuspendedUsers();
+      const response = this.response.success('Suspended users retrieved successfully', users);
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getUnverifiedUsers(req, res, next) {
+    try {
+      const users = await this.service.getUnverifiedUsers();
+      const response = this.response.success('Unverified users retrieved successfully', users);
+      res.json(response);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Middleware methods
+  validateRegistration = this.validateRequest(this.validation.createUserRegistrationSchema());
+  validateLogin = this.validateRequest(this.validation.createUserLoginSchema());
+  validateProfileUpdate = this.validateRequest(this.validation.createUserProfileSchema());
+  validateStatusUpdate = this.validateRequest(this.validation.createUserStatusSchema());
+  validateRoleUpdate = this.validateRequest(this.validation.createUserRoleSchema());
+  validatePasswordReset = this.validateRequest(this.validation.createPasswordResetSchema());
+
+  // Cache middleware
+  cacheUserProfile = this.cacheResponse(300); // Cache for 5 minutes
+  cacheUserList = this.cacheResponse(300); // Cache for 5 minutes
+
+  // Logging middleware
+  logUserOperation = this.logOperation('User operation');
+}
 
 // Obtener todos los usuarios
 export const getAllUsers = async (req, res) => {
