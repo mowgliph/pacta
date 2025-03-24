@@ -8,11 +8,11 @@ import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import compression from 'compression';
 import config from './config/app.config.js';
-import { sequelize, syncDatabase } from './database/dbconnection.js';
+import { testConnection } from './database/prisma.js';
 import { errorHandler, notFoundHandler } from './api/middleware/errorHandler.js';
 
 // Importar rutas
-import userRoutes from './api/routes/userRoutes.js';
+import apiRoutes from './api/routes/index.js';
 
 // Inicializar aplicación
 const app = express();
@@ -40,7 +40,7 @@ app.use(rateLimit({
 }));
 
 // Rutas de la API
-app.use(`${config.apiPrefix}/users`, userRoutes);
+app.use(config.apiPrefix, apiRoutes);
 
 // Ruta de verificación de salud
 app.get('/health', (req, res) => {
@@ -61,15 +61,9 @@ app.use(errorHandler);
 // Función para iniciar el servidor
 const startServer = async () => {
   try {
-    // Conectar a la base de datos
-    await sequelize.authenticate();
+    // Conectar a la base de datos con Prisma
+    await testConnection();
     console.log('Database connection established successfully');
-    
-    // Sincronizar modelos con la base de datos si está habilitado
-    if (config.database.sync) {
-      await syncDatabase();
-      console.log('Database synchronized');
-    }
     
     // Iniciar servidor
     const server = app.listen(config.port, () => {

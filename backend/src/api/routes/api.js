@@ -1,5 +1,5 @@
 import express from 'express';
-import { UserRoute } from './UserRoute.js';
+import userRoutes from './userRoutes.js';
 import config from '../config/app.config.js';
 
 const router = express.Router();
@@ -17,8 +17,7 @@ router.get('/', (req, res) => {
 // Register routes with version prefix
 const registerRoutes = () => {
   // User routes
-  const userRoute = new UserRoute();
-  router.use(`/${apiVersion}/users`, userRoute.getRouter());
+  router.use(`/${apiVersion}/users`, userRoutes);
 
   // TODO: Add other routes here
   // Example:

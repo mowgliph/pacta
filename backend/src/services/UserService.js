@@ -3,7 +3,7 @@
  * Implementa lógica de negocio específica para usuarios
  */
 import { BaseService } from './BaseService.js';
-import UserRepository from '../database/repositories/UserRepository.js';
+import { UserRepository } from '../database/repositories/index.js';
 import { ValidationError, ConflictError, NotFoundError, AuthenticationError } from '../utils/errors.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';

@@ -6,6 +6,9 @@
 // Configuración
 export { default as config } from './config/app.config.js';
 
+// Prisma Cliente
+export { default as prisma, testConnection } from './database/prisma.js';
+
 // Modelos
 export * from './models/index.js';
 
@@ -28,9 +31,6 @@ export { authorize, authorizeOwnership } from './api/middleware/authorizationMid
 
 // Utils
 export * from './utils/errors.js';
-
-// Database
-export { sequelize, db, testConnection, syncDatabase } from './database/dbconnection.js';
 
 // Middleware
 export { errorHandler, notFoundHandler } from './api/middleware/errorHandler.js';
