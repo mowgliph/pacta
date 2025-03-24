@@ -5,20 +5,15 @@
   "type": "module",
   "main": "src/server.js",
   "scripts": {
-    "build": "node build.js",
+    "build": "node src/build.js",
     "dev": "nodemon src/server.js",
-    "start": "node src/server.js",
+    "test": "jest",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write \"**/*.{js,json,md}\"",
-    "normalize-eol": "node src/utils/eol-fixer.js",
-    "prepare": "npm run normalize-eol && npm run format",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "prisma:generate": "prisma generate",
+    "db:seed": "node src/database/seeders/index.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",

@@ -3,14 +3,14 @@
  * Implementa lógica de negocio específica para usuarios
  */
 import { BaseService } from './BaseService.js';
-import { UserRepository } from '../database/repositories/index.js';
+import repositories from '../database/repositories/index.js';
 import {
   ValidationError,
   ConflictError,
   NotFoundError,
   AuthenticationError,
 } from '../utils/errors.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import config from '../config/app.config.js';
 import { LoggingService } from './LoggingService.js';
@@ -18,11 +18,12 @@ import { CacheService } from './CacheService.js';
 import { ValidationService } from './ValidationService.js';
 import { ResponseService } from './ResponseService.js';
 
-class UserService extends BaseService {
+export class UserService extends BaseService {
   constructor() {
-    super(UserRepository);
+    super(repositories.user);
+    this.userRepository = repositories.user;
     this.logger = new LoggingService('UserService');
-    this.cache = new CacheService();
+    this.cacheService = new CacheService('users');
     this.validation = new ValidationService();
   }
 
@@ -39,22 +40,22 @@ class UserService extends BaseService {
       const validatedData = await this.validation.validateUserRegistration(userData);
 
       // Check if user already exists
-      const existingUser = await this.repository.findByEmail(validatedData.email);
+      const existingUser = await this.userRepository.findByEmail(validatedData.email);
       if (existingUser) {
         throw new ConflictError('Email already registered');
       }
 
       // Create user
-      const user = await this.repository.create(validatedData);
+      const user = await this.userRepository.create(validatedData);
 
       // Generate verification token
-      await this.repository.updateEmailVerification(user.id, false);
+      await this.userRepository.updateEmailVerification(user.id, false);
 
       // Log registration
       this.logger.info('User registered', { userId: user.id, email: user.email });
 
       // Invalidate cache
-      await this.cache.invalidateUserCache(user.id);
+      await this.cacheService.invalidateUserCache(user.id);
 
       return user;
     } catch (error) {
@@ -73,7 +74,7 @@ class UserService extends BaseService {
   async login(email, password) {
     try {
       // Find user
-      const user = await this.repository.findByEmail(email);
+      const user = await this.userRepository.findByEmail(email);
       if (!user) {
         throw new AuthenticationError('Invalid credentials');
       }
@@ -90,13 +91,13 @@ class UserService extends BaseService {
       }
 
       // Update last login
-      await this.repository.updateLastLogin(user.id);
+      await this.userRepository.updateLastLogin(user.id);
 
       // Log login
       this.logger.info('User logged in', { userId: user.id, email: user.email });
 
       // Invalidate cache
-      await this.cache.invalidateUserCache(user.id);
+      await this.cacheService.invalidateUserCache(user.id);
 
       // Generate tokens
       const tokens = this._generateTokens(user);
@@ -120,7 +121,7 @@ class UserService extends BaseService {
    */
   async updateProfile(userId, userData) {
     try {
-      const user = await this.repository.findById(userId);
+      const user = await this.userRepository.findById(userId);
       if (!user) {
         throw new NotFoundError('User not found');
       }
@@ -129,15 +130,15 @@ class UserService extends BaseService {
       const validatedData = await this.validation.validateUserProfile(userData);
 
       // Update profile
-      await this.repository.updateProfile(userId, validatedData);
+      await this.userRepository.updateProfile(userId, validatedData);
 
       // Log profile update
       this.logger.info('User profile updated', { userId });
 
       // Invalidate cache
-      await this.cache.invalidateUserCache(userId);
+      await this.cacheService.invalidateUserCache(userId);
 
-      return await this.repository.findById(userId);
+      return await this.userRepository.findById(userId);
     } catch (error) {
       this.logger.error('Profile update failed', { error });
       throw error;
@@ -181,7 +182,7 @@ class UserService extends BaseService {
    */
   async updateUserRole(userId, role) {
     try {
-      const user = await this.repository.findById(userId);
+      const user = await this.userRepository.findById(userId);
       if (!user) {
         throw new NotFoundError('User not found');
       }
@@ -191,15 +192,15 @@ class UserService extends BaseService {
         throw new ValidationError('Invalid role');
       }
 
-      await this.repository.updateRole(userId, role);
+      await this.userRepository.updateRole(userId, role);
 
       // Log role update
       this.logger.info('User role updated', { userId, role });
 
       // Invalidate cache
-      await this.cache.invalidateUserCache(userId);
+      await this.cacheService.invalidateUserCache(userId);
 
-      return await this.repository.findById(userId);
+      return await this.userRepository.findById(userId);
     } catch (error) {
       this.logger.error('Role update failed', { error });
       throw error;
@@ -214,7 +215,7 @@ class UserService extends BaseService {
    */
   async updateUserStatus(userId, status) {
     try {
-      const user = await this.repository.findById(userId);
+      const user = await this.userRepository.findById(userId);
       if (!user) {
         throw new NotFoundError('User not found');
       }
@@ -224,15 +225,15 @@ class UserService extends BaseService {
         throw new ValidationError('Invalid status');
       }
 
-      await this.repository.updateStatus(userId, status);
+      await this.userRepository.updateStatus(userId, status);
 
       // Log status update
       this.logger.info('User status updated', { userId, status });
 
       // Invalidate cache
-      await this.cache.invalidateUserCache(userId);
+      await this.cacheService.invalidateUserCache(userId);
 
-      return await this.repository.findById(userId);
+      return await this.userRepository.findById(userId);
     } catch (error) {
       this.logger.error('Status update failed', { error });
       throw error;
@@ -247,7 +248,7 @@ class UserService extends BaseService {
    * @returns {Promise<Object>} - Usuarios encontrados con paginación
    */
   async searchUsers(query, page = 1, limit = 10) {
-    return this.repository.searchByName(query, page, limit);
+    return this.userRepository.searchByName(query, page, limit);
   }
 
   /**
@@ -308,19 +309,19 @@ class UserService extends BaseService {
 
   async refreshToken(userId) {
     try {
-      const user = await this.repository.findById(userId);
+      const user = await this.userRepository.findById(userId);
       if (!user) {
         throw new NotFoundError('User not found');
       }
 
-      const refreshToken = this.repository.generateToken();
-      await this.repository.updateRefreshToken(userId, refreshToken);
+      const refreshToken = this.userRepository.generateToken();
+      await this.userRepository.updateRefreshToken(userId, refreshToken);
 
       // Log token refresh
       this.logger.info('User token refreshed', { userId });
 
       // Invalidate cache
-      await this.cache.invalidateUserCache(userId);
+      await this.cacheService.invalidateUserCache(userId);
 
       return refreshToken;
     } catch (error) {
@@ -331,18 +332,18 @@ class UserService extends BaseService {
 
   async verifyEmail(token) {
     try {
-      const user = await this.repository.findByEmailVerificationToken(token);
+      const user = await this.userRepository.findByEmailVerificationToken(token);
       if (!user) {
         throw new ValidationError('Invalid verification token');
       }
 
-      await this.repository.updateEmailVerification(user.id, true);
+      await this.userRepository.updateEmailVerification(user.id, true);
 
       // Log email verification
       this.logger.info('User email verified', { userId: user.id });
 
       // Invalidate cache
-      await this.cache.invalidateUserCache(user.id);
+      await this.cacheService.invalidateUserCache(user.id);
 
       return user;
     } catch (error) {
@@ -353,18 +354,18 @@ class UserService extends BaseService {
 
   async requestPasswordReset(email) {
     try {
-      const user = await this.repository.findByEmail(email);
+      const user = await this.userRepository.findByEmail(email);
       if (!user) {
         throw new NotFoundError('User not found');
       }
 
-      await this.repository.updatePasswordResetToken(user.id);
+      await this.userRepository.updatePasswordResetToken(user.id);
 
       // Log password reset request
       this.logger.info('Password reset requested', { userId: user.id });
 
       // Invalidate cache
-      await this.cache.invalidateUserCache(user.id);
+      await this.cacheService.invalidateUserCache(user.id);
 
       return user;
     } catch (error) {
@@ -375,7 +376,7 @@ class UserService extends BaseService {
 
   async resetPassword(token, newPassword) {
     try {
-      const user = await this.repository.findByPasswordResetToken(token);
+      const user = await this.userRepository.findByPasswordResetToken(token);
       if (!user) {
         throw new ValidationError('Invalid or expired reset token');
       }
@@ -384,14 +385,14 @@ class UserService extends BaseService {
       const validatedPassword = await this.validation.validatePassword(newPassword);
 
       // Update password
-      await this.repository.update(user.id, { password: validatedPassword });
-      await this.repository.clearPasswordResetToken(user.id);
+      await this.userRepository.update(user.id, { password: validatedPassword });
+      await this.userRepository.clearPasswordResetToken(user.id);
 
       // Log password reset
       this.logger.info('User password reset', { userId: user.id });
 
       // Invalidate cache
-      await this.cache.invalidateUserCache(user.id);
+      await this.cacheService.invalidateUserCache(user.id);
 
       return user;
     } catch (error) {
@@ -403,13 +404,13 @@ class UserService extends BaseService {
   async getActiveUsers() {
     try {
       const cacheKey = 'active_users';
-      const cachedUsers = await this.cache.get(cacheKey);
+      const cachedUsers = await this.cacheService.get(cacheKey);
       if (cachedUsers) {
         return cachedUsers;
       }
 
-      const users = await this.repository.findActiveUsers();
-      await this.cache.set(cacheKey, users, 300); // Cache for 5 minutes
+      const users = await this.userRepository.findActiveUsers();
+      await this.cacheService.set(cacheKey, users, 300); // Cache for 5 minutes
 
       return users;
     } catch (error) {
@@ -421,13 +422,13 @@ class UserService extends BaseService {
   async getInactiveUsers() {
     try {
       const cacheKey = 'inactive_users';
-      const cachedUsers = await this.cache.get(cacheKey);
+      const cachedUsers = await this.cacheService.get(cacheKey);
       if (cachedUsers) {
         return cachedUsers;
       }
 
-      const users = await this.repository.findInactiveUsers();
-      await this.cache.set(cacheKey, users, 300); // Cache for 5 minutes
+      const users = await this.userRepository.findInactiveUsers();
+      await this.cacheService.set(cacheKey, users, 300); // Cache for 5 minutes
 
       return users;
     } catch (error) {
@@ -439,13 +440,13 @@ class UserService extends BaseService {
   async getSuspendedUsers() {
     try {
       const cacheKey = 'suspended_users';
-      const cachedUsers = await this.cache.get(cacheKey);
+      const cachedUsers = await this.cacheService.get(cacheKey);
       if (cachedUsers) {
         return cachedUsers;
       }
 
-      const users = await this.repository.findSuspendedUsers();
-      await this.cache.set(cacheKey, users, 300); // Cache for 5 minutes
+      const users = await this.userRepository.findSuspendedUsers();
+      await this.cacheService.set(cacheKey, users, 300); // Cache for 5 minutes
 
       return users;
     } catch (error) {
@@ -457,13 +458,13 @@ class UserService extends BaseService {
   async getUnverifiedUsers() {
     try {
       const cacheKey = 'unverified_users';
-      const cachedUsers = await this.cache.get(cacheKey);
+      const cachedUsers = await this.cacheService.get(cacheKey);
       if (cachedUsers) {
         return cachedUsers;
       }
 
-      const users = await this.repository.findUnverifiedUsers();
-      await this.cache.set(cacheKey, users, 300); // Cache for 5 minutes
+      const users = await this.userRepository.findUnverifiedUsers();
+      await this.cacheService.set(cacheKey, users, 300); // Cache for 5 minutes
 
       return users;
     } catch (error) {
