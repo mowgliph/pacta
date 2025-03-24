@@ -1,17 +1,21 @@
 import { LoggingService } from './LoggingService.js';
 import { CacheService } from './CacheService.js';
 import { ValidationError, DatabaseError, NotFoundError, ConflictError } from '../utils/errors.js';
+import repositories from '../database/repositories/index.js';
 
 /**
  * Clase base para todos los servicios
  * Implementa la lógica de negocio genérica y manejo de errores
  */
 export class BaseService {
-  constructor(repository) {
-    if (!repository) {
-      throw new Error('Repository is required for BaseService');
-    }
+  /**
+   * Constructor del servicio base
+   * @param {Object} repository - Repositorio a utilizar (opcional)
+   */
+  constructor(repository = null) {
     this.repository = repository;
+    this.logger = new LoggingService(this.constructor.name);
+    this.cache = new CacheService();
   }
 
   /**

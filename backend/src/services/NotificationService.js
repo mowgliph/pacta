@@ -3,16 +3,17 @@
  * Gestiona la creación, consulta y actualización de notificaciones
  */
 import { BaseService } from './BaseService.js';
-import { NotificationRepository } from '../database/repositories/NotificationRepository.js';
+import repositories from '../database/repositories/index.js';
 import { ValidationError, NotFoundError } from '../utils/errors.js';
 import { LoggingService } from './LoggingService.js';
 import { CacheService } from './CacheService.js';
 
 export class NotificationService extends BaseService {
   constructor() {
-    super(new NotificationRepository());
-    this.notificationRepository = this.repository;
-    this.cacheService = new CacheService();
+    super(repositories.notification);
+    this.notificationRepository = repositories.notification;
+    this.logger = new LoggingService('NotificationService');
+    this.cacheService = new CacheService('notifications');
   }
 
   /**

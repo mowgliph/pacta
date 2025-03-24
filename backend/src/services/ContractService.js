@@ -3,17 +3,20 @@
  * Contiene la lógica de negocio relacionada con contratos
  */
 import { BaseService } from './BaseService.js';
-import { ContractRepository } from '../database/repositories/ContractRepository.js';
+import repositories from '../database/repositories/index.js';
 import { LoggingService } from './LoggingService.js';
 import { ValidationError, NotFoundError } from '../utils/errors.js';
 import { ValidationService } from './ValidationService.js';
 import { CacheService } from './CacheService.js';
+import { NotificationService } from './NotificationService.js';
 
 export class ContractService extends BaseService {
   constructor() {
-    super(new ContractRepository());
-    this.contractRepository = this.repository;
-    this.cacheService = new CacheService();
+    super(repositories.contract);
+    this.contractRepository = repositories.contract;
+    this.logger = new LoggingService('ContractService');
+    this.cacheService = new CacheService('contracts');
+    this.notificationService = new NotificationService();
   }
 
   /**

@@ -3,16 +3,20 @@
  * Contiene la lógica de negocio relacionada con compañías
  */
 import { BaseService } from './BaseService.js';
-import { CompanyRepository } from '../database/repositories/CompanyRepository.js';
+import repositories from '../database/repositories/index.js';
 import { LoggingService } from './LoggingService.js';
-import { ValidationError, NotFoundError } from '../utils/errors.js';
+import { ValidationError, NotFoundError, ConflictError } from '../utils/errors.js';
 import { CacheService } from './CacheService.js';
 
 export class CompanyService extends BaseService {
+  /**
+   * Constructor
+   */
   constructor() {
-    super(new CompanyRepository());
-    this.companyRepository = this.repository;
-    this.cacheService = new CacheService();
+    super(repositories.company);
+    this.companyRepository = repositories.company;
+    this.logger = new LoggingService('CompanyService');
+    this.cacheService = new CacheService('companies');
   }
 
   /**
