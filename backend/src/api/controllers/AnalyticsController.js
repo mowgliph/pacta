@@ -10,7 +10,9 @@ import sequelize from 'sequelize';
  * @returns {number} Porcentaje de cambio
  */
 const calculateChange = (current, previous) => {
-  if (previous === 0) return current > 0 ? 100 : 0;
+  if (previous === 0) {
+    return current > 0 ? 100 : 0;
+  }
   return ((current - previous) / previous) * 100;
 };
 
@@ -19,10 +21,10 @@ const calculateChange = (current, previous) => {
  */
 export const getAnalyticsData = async (req, res) => {
   try {
-    const days = parseInt(req.query.days) || 30;
+    const _period = parseInt(req.query.days) || 30;
     const preset = req.query.preset || 'monthly';
 
-    const startDate = moment().subtract(days, 'days').toDate();
+    const startDate = moment().subtract(_period, 'days').toDate();
     const endDate = moment().toDate();
 
     // Métricas de contratos
@@ -40,7 +42,7 @@ export const getAnalyticsData = async (req, res) => {
         status: 'active',
         endDate: {
           [Op.gte]: moment()
-            .subtract(days * 2, 'days')
+            .subtract(_period * 2, 'days')
             .toDate(),
           [Op.lte]: startDate,
         },
@@ -50,8 +52,7 @@ export const getAnalyticsData = async (req, res) => {
     const signedThisPeriod = await Contract.count({
       where: {
         createdAt: {
-          [Op.gte]: startDate,
-          [Op.lte]: endDate,
+          [Op.between]: [startDate, endDate],
         },
       },
     });
@@ -60,7 +61,7 @@ export const getAnalyticsData = async (req, res) => {
       where: {
         createdAt: {
           [Op.gte]: moment()
-            .subtract(days * 2, 'days')
+            .subtract(_period * 2, 'days')
             .toDate(),
           [Op.lte]: startDate,
         },
@@ -80,7 +81,7 @@ export const getAnalyticsData = async (req, res) => {
         riskLevel: { [Op.in]: ['high', 'medium'] },
         updatedAt: {
           [Op.gte]: moment()
-            .subtract(days * 2, 'days')
+            .subtract(_period * 2, 'days')
             .toDate(),
           [Op.lte]: startDate,
         },
@@ -102,7 +103,7 @@ export const getAnalyticsData = async (req, res) => {
         status: 'active',
         endDate: {
           [Op.gte]: startDate,
-          [Op.lte]: moment().subtract(days, 'days').add(30, 'days').toDate(),
+          [Op.lte]: moment().subtract(_period, 'days').add(30, 'days').toDate(),
         },
       },
     });
@@ -330,28 +331,28 @@ export const getHistoricalData = async (req, res) => {
     }
 
     // Configurar el formato para agrupar por granularidad
-    let dateFormat;
-    let timeGrouping;
+    let _formatterPattern = '';
+    let timeGrouping = '';
 
     switch (granularity) {
       case 'day':
-        dateFormat = '%Y-%m-%d';
+        _formatterPattern = '%Y-%m-%d';
         timeGrouping = 'DATE(createdAt)';
         break;
       case 'week':
-        dateFormat = '%Y-%U';
-        timeGrouping = 'YEARWEEK(createdAt, 1)';
+        _formatterPattern = '%Y-W%v';
+        timeGrouping = "CONCAT(YEAR(createdAt), '-W', WEEK(createdAt))";
         break;
       case 'month':
-        dateFormat = '%Y-%m';
+        _formatterPattern = '%Y-%m';
         timeGrouping = "DATE_FORMAT(createdAt, '%Y-%m')";
         break;
       case 'quarter':
-        dateFormat = '%Y-Q%q';
+        _formatterPattern = '%Y-Q%q';
         timeGrouping = "CONCAT(YEAR(createdAt), '-Q', QUARTER(createdAt))";
         break;
       case 'year':
-        dateFormat = '%Y';
+        _formatterPattern = '%Y';
         timeGrouping = 'YEAR(createdAt)';
         break;
     }
@@ -539,7 +540,7 @@ export const getHistoricalData = async (req, res) => {
 export const generateReport = async (req, res) => {
   try {
     const { format } = req.params;
-    const days = parseInt(req.query.days) || 30;
+    const _period = parseInt(req.query.days) || 30;
 
     // Validar formato
     if (!['pdf', 'excel', 'csv'].includes(format)) {

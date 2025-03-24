@@ -2,15 +2,15 @@
  * Controlador base para todos los controladores de la API
  * Implementa métodos CRUD comunes y manejo de errores centralizado
  */
-import { ResponseService } from '../services/ResponseService.js';
-import { LoggingService } from '../services/LoggingService.js';
-import { ValidationService } from '../services/ValidationService.js';
-import { CacheService } from '../services/CacheService.js';
+import { ResponseService } from '../../services/ResponseService.js';
+import { LoggingService } from '../../services/LoggingService.js';
+import { ValidationService } from '../../services/ValidationService.js';
+import { CacheService } from '../../services/CacheService.js';
 import {
-  ValidationError,
-  NotFoundError,
-  ConflictError,
-  AuthenticationError,
+  ValidationError as _ValidationError,
+  NotFoundError as _NotFoundError,
+  ConflictError as _ConflictError,
+  AuthenticationError as _AuthenticationError,
 } from '../../utils/errors.js';
 
 export class BaseController {

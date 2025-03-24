@@ -1,6 +1,6 @@
 import globals from 'globals';
 import js from '@eslint/js';
-import prettier from 'eslint-plugin-prettier';
+import prettierPlugin from 'eslint-plugin-prettier';
 import { FlatCompat } from '@eslint/eslintrc';
 
 // Crear un adaptador para la configuración antigua
@@ -26,6 +26,13 @@ export default [
 
   // Adaptación de configuración antigua
   ...compat.extends('plugin:prettier/recommended'),
+
+  // Configuración del plugin prettier
+  {
+    plugins: {
+      prettier: prettierPlugin,
+    },
+  },
 
   // Reglas personalizadas
   {

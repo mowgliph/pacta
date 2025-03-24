@@ -1,4 +1,3 @@
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { User, License } from '../models/index.js';
 import { Op } from 'sequelize';

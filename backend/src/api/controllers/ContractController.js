@@ -344,7 +344,7 @@ export const searchContracts = async (req, res) => {
 // Obtener estadísticas de contratos
 export const getContractStatistics = async (req, res) => {
   try {
-    const sequelize = db.sequelize;
+    const _sequelize = db.sequelize;
     const today = new Date();
 
     // Consultar todos los contratos del usuario o todos si es admin
@@ -358,7 +358,9 @@ export const getContractStatistics = async (req, res) => {
 
     // Contratos próximos a vencer (dentro del período de notificación)
     const expiringContracts = contracts.filter(c => {
-      if (c.status !== 'active') return false;
+      if (c.status !== 'active') {
+        return false;
+      }
 
       const daysUntilExpiry = Math.ceil(
         (new Date(c.endDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
@@ -367,14 +369,22 @@ export const getContractStatistics = async (req, res) => {
     }).length;
 
     // Contratos expirados
-    const expiredContracts = contracts.filter(
-      c => c.status === 'expired' || (c.status === 'active' && new Date(c.endDate) < today),
-    ).length;
+    const expiredContracts = contracts.filter(c => {
+      if (c.status === 'expired') {
+        return true;
+      }
+      if (c.status === 'active' && new Date(c.endDate) < today) {
+        return true;
+      }
+      return false;
+    }).length;
 
     // Calcular valores totales por moneda
     const totalByCurrency = contracts.reduce((acc, contract) => {
       const currency = contract.currency;
-      if (!acc[currency]) acc[currency] = 0;
+      if (!acc[currency]) {
+        acc[currency] = 0;
+      }
       acc[currency] += parseFloat(contract.amount);
       return acc;
     }, {});
