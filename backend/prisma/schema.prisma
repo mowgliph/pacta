@@ -15,82 +15,250 @@ datasource db {
 
 // User model
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  password     String
-  firstName    String
-  lastName     String
-  role         Role      @default(USER)
-  status       UserStatus @default(ACTIVE)
-  profileImage String?
-  lastLogin    DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  deletedAt    DateTime?
+  id                String          @id @default(uuid())
+  email             String          @unique
+  password          String
+  firstName         String
+  lastName          String
+  role              Role            @default(USER)
+  status            UserStatus      @default(ACTIVE)
+  profileImage      String?
+  lastLogin         DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  deletedAt         DateTime?
+  department        Department?     @relation(fields: [departmentId], references: [id])
+  departmentId      String?
 
   // Relations
-  posts        Post[]
-  comments     Comment[]
-  likes        Like[]
+  contracts         Contract[]      // Contratos creados por el usuario
+  notifications     Notification[]  // Notificaciones recibidas
+  activities        Activity[]      // Actividades realizadas
+  accessLogs        AccessLog[]     // Registros de acceso
 }
 
-// Post model
-model Post {
-  id        String    @id @default(uuid())
-  title     String
-  content   String
-  published Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+// Company model - Empresas relacionadas con los contratos
+model Company {
+  id                String          @id @default(uuid())
+  name              String
+  taxId             String?         @unique  // Identificación fiscal
+  email             String?
+  phone             String?
+  address           String?
+  website           String?
+  logo              String?
+  industry          String?
+  notes             String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  deletedAt         DateTime?
+
+  // Relations
+  contracts         Contract[]      // Contratos relacionados con la empresa
+  departments       Department[]    // Departamentos de la empresa
+}
+
+// Department model - Departamentos dentro de una empresa
+model Department {
+  id                String          @id @default(uuid())
+  name              String
+  description       String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  company           Company         @relation(fields: [companyId], references: [id])
+  companyId         String
+  users             User[]          // Usuarios asignados al departamento
+  contracts         Contract[]      // Contratos gestionados por el departamento
+}
+
+// Contract model - Core model for PACTA
+model Contract {
+  id                String          @id @default(uuid())
+  title             String
+  description       String?
+  contractNumber    String?         // Número de referencia del contrato
+  fileUrl           String          // URL del documento PDF/DOCX
+  fileSize          Int?            // Tamaño del archivo en bytes
+  fileMimeType      String?         // Tipo MIME del archivo
+  startDate         DateTime        // Fecha de inicio del contrato
+  endDate           DateTime        // Fecha de vencimiento del contrato
+  amount            Float?          // Valor monetario del contrato
+  currency          String?         // Moneda (USD, EUR, etc.)
+  status            ContractStatus  @default(ACTIVE)
+  contractType      ContractType    @default(OTHER)
+  renewalType       RenewalType?    @default(MANUAL)
+  renewalPeriod     Int?            // Período de renovación en días
+  alertDays         Int?            // Días antes para alertar del vencimiento
+  notes             String?         // Notas adicionales
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  deletedAt         DateTime?
+
+  // Relations
+  author            User            @relation(fields: [authorId], references: [id])
+  authorId          String
+  company           Company         @relation(fields: [companyId], references: [id])
+  companyId         String
+  department        Department?     @relation(fields: [departmentId], references: [id])
+  departmentId      String?
+  notifications     Notification[]  // Notificaciones asociadas
+  contractTags      ContractTag[]   // Tags asociados (many-to-many)
+  activities        Activity[]      // Actividades asociadas
+}
+
+// Tag model - Etiquetas para categorizar contratos
+model Tag {
+  id                String          @id @default(uuid())
+  name              String          @unique
+  color             String          @default("#3b82f6")  // Color para UI (hex)
+  description       String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  // Relations
+  contractTags      ContractTag[]   // Contratos asociados (many-to-many)
+}
+
+// ContractTag model - Relación many-to-many entre Contract y Tag
+model ContractTag {
+  contract          Contract        @relation(fields: [contractId], references: [id])
+  contractId        String
+  tag               Tag             @relation(fields: [tagId], references: [id])
+  tagId             String
+  createdAt         DateTime        @default(now())
   
-  // Relations
-  author    User      @relation(fields: [authorId], references: [id])
-  authorId  String
-  comments  Comment[]
-  likes     Like[]
+  @@id([contractId, tagId])
 }
 
-// Comment model
-model Comment {
-  id        String    @id @default(uuid())
-  content   String
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-  
+// Notification model - Notificaciones del sistema
+model Notification {
+  id                String             @id @default(uuid())
+  type              NotificationType   @default(EXPIRATION_WARNING)
+  title             String
+  message           String
+  isRead            Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  scheduledFor      DateTime?          // Para notificaciones programadas
+  sentAt            DateTime?          // Cuando se envió realmente
+  readAt            DateTime?          // Cuando se marcó como leída
+
   // Relations
-  author    User      @relation(fields: [authorId], references: [id])
-  authorId  String
-  post      Post      @relation(fields: [postId], references: [id])
-  postId    String
+  user              User               @relation(fields: [userId], references: [id])
+  userId            String
+  contract          Contract?          @relation(fields: [contractId], references: [id])
+  contractId        String?
 }
 
-// Like model
-model Like {
-  id        String    @id @default(uuid())
-  createdAt DateTime  @default(now())
-  
-  // Relations
-  user      User      @relation(fields: [userId], references: [id])
-  userId    String
-  post      Post      @relation(fields: [postId], references: [id])
-  postId    String
+// Activity model - Registro de actividades en el sistema
+model Activity {
+  id                String             @id @default(uuid())
+  action            String             // Acción realizada
+  description       String?            // Descripción de la actividad
+  ipAddress         String?            // Dirección IP
+  userAgent         String?            // User-Agent del navegador
+  createdAt         DateTime           @default(now())
 
-  // Unique constraint to prevent duplicate likes
-  @@unique([userId, postId])
+  // Relations
+  user              User               @relation(fields: [userId], references: [id])
+  userId            String
+  contract          Contract?          @relation(fields: [contractId], references: [id])
+  contractId        String?
 }
 
-// Enum for user roles
+// AccessLog model - Registro de accesos al sistema
+model AccessLog {
+  id                String             @id @default(uuid())
+  action            String             // Login, logout, failed attempt
+  ipAddress         String?            // Dirección IP
+  userAgent         String?            // User-Agent del navegador
+  success           Boolean            @default(true)
+  failReason        String?            // Razón del fallo si success=false
+  createdAt         DateTime           @default(now())
+
+  // Relations
+  user              User               @relation(fields: [userId], references: [id])
+  userId            String
+}
+
+// SystemSetting model - Configuraciones globales del sistema
+model SystemSetting {
+  id                String             @id @default(uuid())
+  key               String             @unique
+  value             String
+  description       String?
+  type              String             @default("string") // string, number, boolean, json
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+}
+
+// Report model - Reportes generados
+model Report {
+  id                String             @id @default(uuid())
+  name              String
+  description       String?
+  fileUrl           String?            // URL del archivo generado
+  format            ReportFormat       @default(PDF)
+  parameters        String?            // Parámetros en JSON
+  createdAt         DateTime           @default(now())
+  generatedAt       DateTime?
+  expiresAt         DateTime?
+}
+
+// Enums
 enum Role {
-  ADMIN
-  USER
-  GUEST
+  ADMIN             // Acceso total
+  MANAGER           // Gestor con permisos amplios
+  USER              // Usuario estándar
+  VIEWER            // Solo lectura
 }
 
-// Enum for user status
 enum UserStatus {
   ACTIVE
   INACTIVE
   SUSPENDED
+}
+
+enum ContractStatus {
+  DRAFT              // Borrador
+  ACTIVE             // Activo/Vigente
+  EXPIRED            // Vencido
+  TERMINATED         // Terminado anticipadamente
+  PENDING_RENEWAL    // Pendiente de renovación
+  RENEWED            // Renovado
+  ARCHIVED           // Archivado
+}
+
+enum ContractType {
+  SERVICE            // Servicios
+  PURCHASE           // Compra/Adquisición
+  LEASE              // Arrendamiento
+  EMPLOYMENT         // Laboral
+  NDA                // Confidencialidad
+  LICENSING          // Licenciamiento
+  PARTNERSHIP        // Asociación/Colaboración
+  OTHER              // Otros
+}
+
+enum RenewalType {
+  MANUAL             // Renovación manual
+  AUTOMATIC          // Renovación automática
+  CONDITIONAL        // Renovación condicional
+}
+
+enum NotificationType {
+  EXPIRATION_WARNING // Advertencia de vencimiento
+  RENEWAL_REMINDER   // Recordatorio de renovación
+  DOCUMENT_UPDATED   // Documento actualizado
+  COMMENT_ADDED      // Comentario agregado
+  ASSIGNMENT         // Asignación de contrato
+  SYSTEM             // Notificación del sistema
+}
+
+enum ReportFormat {
+  PDF
+  EXCEL
+  CSV
+  HTML
 }
