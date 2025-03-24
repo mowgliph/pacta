@@ -25,20 +25,20 @@ const EXCLUDED_DIRS = ['node_modules', 'dist', 'coverage', '.git'];
 async function normalizeFileEol(filePath) {
   try {
     const content = await fs.readFile(filePath, 'utf8');
-    
+
     // Normalizar a LF (\n)
     const normalized = content.replace(/\r\n/g, '\n');
-    
+
     // Asegurar que el archivo termine con un salto de línea
     const ensureEndingNewLine = normalized.endsWith('\n') ? normalized : `${normalized}\n`;
-    
+
     // Solo escribir si ha habido cambios
     if (content !== ensureEndingNewLine) {
       await fs.writeFile(filePath, ensureEndingNewLine, 'utf8');
       console.log(`✅ Normalizado: ${path.relative(PROJECT_ROOT, filePath)}`);
       return true;
     }
-    
+
     return false;
   } catch (error) {
     console.error(`❌ Error al procesar ${filePath}:`, error.message);
@@ -53,19 +53,19 @@ async function normalizeFileEol(filePath) {
  */
 async function processDirectory(dir) {
   let processedCount = 0;
-  
+
   try {
     const entries = await fs.readdir(dir, { withFileTypes: true });
-    
+
     for (const entry of entries) {
       const fullPath = path.join(dir, entry.name);
-      
+
       if (entry.isDirectory()) {
         // Saltar directorios excluidos
         if (EXCLUDED_DIRS.includes(entry.name)) {
           continue;
         }
-        
+
         // Procesar subdirectorio recursivamente
         processedCount += await processDirectory(fullPath);
       } else if (entry.isFile()) {
@@ -79,7 +79,7 @@ async function processDirectory(dir) {
         }
       }
     }
-    
+
     return processedCount;
   } catch (error) {
     console.error(`❌ Error al procesar el directorio ${dir}:`, error.message);
@@ -92,11 +92,11 @@ async function processDirectory(dir) {
  */
 async function main() {
   console.log('🔄 Normalizando finales de línea en archivos del proyecto...');
-  
+
   const startTime = Date.now();
   const processedCount = await processDirectory(PROJECT_ROOT);
   const duration = ((Date.now() - startTime) / 1000).toFixed(2);
-  
+
   console.log(`✨ Completado en ${duration}s. ${processedCount} archivos fueron normalizados.`);
 }
 
@@ -108,4 +108,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   });
 }
 
-export { normalizeFileEol, processDirectory }; 
+export { normalizeFileEol, processDirectory };

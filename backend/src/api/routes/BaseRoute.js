@@ -41,7 +41,7 @@ export class BaseRoute {
    */
   registerRoutes(path = '/', options = {}) {
     this.path = path;
-    
+
     const {
       getAll = true,
       getById = true,
@@ -51,7 +51,7 @@ export class BaseRoute {
       authAll = false,
       authRequired = [],
       adminOnly = [],
-      paramIdName = 'id'
+      paramIdName = 'id',
     } = options;
 
     // GET all
@@ -341,7 +341,9 @@ export class BaseRoute {
     const middlewares = [];
 
     if (validate) {
-      middlewares.push(this.controller.validateRequest(ValidationService.createFilterSchema(options.fields || [])));
+      middlewares.push(
+        this.controller.validateRequest(ValidationService.createFilterSchema(options.fields || [])),
+      );
     }
 
     if (cache) {
@@ -424,4 +426,4 @@ export class BaseRoute {
     this.router.use(middleware);
     return this;
   }
-} 
+}

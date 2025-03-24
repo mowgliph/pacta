@@ -143,15 +143,19 @@ export class BaseService {
    * @protected
    */
   _handleError(error) {
-    if (error.name === 'SequelizeValidationError' || 
-        error.name === 'SequelizeUniqueConstraintError') {
+    if (
+      error.name === 'SequelizeValidationError' ||
+      error.name === 'SequelizeUniqueConstraintError'
+    ) {
       throw new ValidationError(error.message, error.errors);
     }
 
     // Re-lanzar errores conocidos
-    if (error instanceof ValidationError || 
-        error instanceof NotFoundError || 
-        error instanceof ConflictError) {
+    if (
+      error instanceof ValidationError ||
+      error instanceof NotFoundError ||
+      error instanceof ConflictError
+    ) {
       throw error;
     }
 
@@ -197,7 +201,12 @@ export class BaseService {
       LoggingService.logDatabaseQuery('paginate', duration);
       return result;
     } catch (error) {
-      LoggingService.error('Error paginating records', { page, limit, options, error: error.message });
+      LoggingService.error('Error paginating records', {
+        page,
+        limit,
+        options,
+        error: error.message,
+      });
       throw new DatabaseError('Error paginating records', error);
     }
   }
@@ -239,7 +248,11 @@ export class BaseService {
       LoggingService.logDatabaseQuery('findOrCreate', duration);
       return result;
     } catch (error) {
-      LoggingService.error('Error finding or creating record', { where, defaults, error: error.message });
+      LoggingService.error('Error finding or creating record', {
+        where,
+        defaults,
+        error: error.message,
+      });
       throw new DatabaseError('Error finding or creating record', error);
     }
   }
@@ -252,8 +265,8 @@ export class BaseService {
       if (query && fields) {
         where[Op.or] = fields.map(field => ({
           [field]: {
-            [Op.like]: `%${query}%`
-          }
+            [Op.like]: `%${query}%`,
+          },
         }));
       }
 
@@ -289,4 +302,4 @@ export class BaseService {
       LoggingService.error('Cache invalidation error', { key, error: error.message });
     }
   }
-} 
+}

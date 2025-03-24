@@ -26,7 +26,7 @@ export class CompanyService extends BaseService {
     try {
       // Clave de cache basada en los filtros y paginación
       const cacheKey = `companies:${JSON.stringify(filters)}:page${page}:limit${limit}`;
-      
+
       // Intentar obtener del cache primero
       const cached = await this.cacheService.get(cacheKey);
       if (cached) {
@@ -34,10 +34,10 @@ export class CompanyService extends BaseService {
       }
 
       const result = await this.companyRepository.findCompanies(filters, page, limit);
-      
+
       // Guardar en cache por 10 minutos
       await this.cacheService.set(cacheKey, result, 600);
-      
+
       return result;
     } catch (error) {
       LoggingService.error('Error getting companies', { filters, error: error.message });
@@ -68,9 +68,9 @@ export class CompanyService extends BaseService {
 
       // Invalidar caches relacionados
       await this.cacheService.invalidatePattern('companies:*');
-      
+
       LoggingService.info('Company created', { companyId: newCompany.id });
-      
+
       return newCompany;
     } catch (error) {
       LoggingService.error('Error creating company', { data, error: error.message });
@@ -106,9 +106,9 @@ export class CompanyService extends BaseService {
       // Invalidar caches relacionados
       await this.cacheService.invalidatePattern('companies:*');
       await this.cacheService.invalidate(`company:${id}`);
-      
+
       LoggingService.info('Company updated', { companyId: id });
-      
+
       return updatedCompany;
     } catch (error) {
       LoggingService.error('Error updating company', { id, data, error: error.message });
@@ -124,7 +124,7 @@ export class CompanyService extends BaseService {
   async getTopCompaniesByContracts(limit = 5) {
     try {
       const cacheKey = `top-companies:${limit}`;
-      
+
       // Intentar obtener del cache primero
       const cached = await this.cacheService.get(cacheKey);
       if (cached) {
@@ -132,10 +132,10 @@ export class CompanyService extends BaseService {
       }
 
       const companies = await this.companyRepository.findTopCompaniesByContracts(limit);
-      
+
       // Guardar en cache por 1 hora
       await this.cacheService.set(cacheKey, companies, 3600);
-      
+
       return companies;
     } catch (error) {
       LoggingService.error('Error getting top companies', { limit, error: error.message });
@@ -151,21 +151,25 @@ export class CompanyService extends BaseService {
   async getCompaniesWithExpiringContracts(daysThreshold = 30) {
     try {
       const cacheKey = `companies-expiring-contracts:${daysThreshold}`;
-      
+
       // Intentar obtener del cache primero
       const cached = await this.cacheService.get(cacheKey);
       if (cached) {
         return cached;
       }
 
-      const companies = await this.companyRepository.findCompaniesWithExpiringContracts(daysThreshold);
-      
+      const companies =
+        await this.companyRepository.findCompaniesWithExpiringContracts(daysThreshold);
+
       // Guardar en cache por 1 hora
       await this.cacheService.set(cacheKey, companies, 3600);
-      
+
       return companies;
     } catch (error) {
-      LoggingService.error('Error getting companies with expiring contracts', { daysThreshold, error: error.message });
+      LoggingService.error('Error getting companies with expiring contracts', {
+        daysThreshold,
+        error: error.message,
+      });
       this._handleError(error);
     }
   }
@@ -179,7 +183,7 @@ export class CompanyService extends BaseService {
     // Verificar campos requeridos
     const requiredFields = ['name'];
     const missingFields = requiredFields.filter(field => !data[field]);
-    
+
     if (missingFields.length > 0) {
       throw new ValidationError(`Missing required fields: ${missingFields.join(', ')}`);
     }
@@ -192,4 +196,4 @@ export class CompanyService extends BaseService {
       }
     }
   }
-} 
+}

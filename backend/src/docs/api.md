@@ -614,4 +614,4 @@ These endpoints require admin privileges.
   "code": "INTERNAL_SERVER_ERROR",
   "message": "Something went wrong!"
 }
-``` 
+```

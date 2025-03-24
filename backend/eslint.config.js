@@ -9,7 +9,7 @@ const compat = new FlatCompat();
 export default [
   // Configuración general
   js.configs.recommended,
-  
+
   // Configuración de globals
   {
     languageOptions: {
@@ -23,10 +23,10 @@ export default [
       },
     },
   },
-  
+
   // Adaptación de configuración antigua
   ...compat.extends('plugin:prettier/recommended'),
-  
+
   // Reglas personalizadas
   {
     rules: {
@@ -34,42 +34,51 @@ export default [
       'no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       'no-var': 'error',
       'prefer-const': 'error',
-      'eqeqeq': ['error', 'always'],
-      'curly': ['error', 'all'],
+      eqeqeq: ['error', 'always'],
+      curly: ['error', 'all'],
       'brace-style': ['error', '1tbs'],
-      'space-before-function-paren': ['error', {
-        anonymous: 'always',
-        named: 'never',
-        asyncArrow: 'always'
-      }],
+      'space-before-function-paren': [
+        'error',
+        {
+          anonymous: 'always',
+          named: 'never',
+          asyncArrow: 'always',
+        },
+      ],
       'comma-dangle': ['error', 'always-multiline'],
-      'semi': ['error', 'always'],
-      'quotes': ['error', 'single', { avoidEscape: true }],
-      'indent': ['error', 2, { SwitchCase: 1 }],
-      'max-len': ['error', {
-        code: 100,
-        ignoreComments: true,
-        ignoreUrls: true,
-        ignoreStrings: true,
-        ignoreTemplateLiterals: true
-      }],
+      semi: ['error', 'always'],
+      quotes: ['error', 'single', { avoidEscape: true }],
+      indent: ['error', 2, { SwitchCase: 1 }],
+      'max-len': [
+        'error',
+        {
+          code: 100,
+          ignoreComments: true,
+          ignoreUrls: true,
+          ignoreStrings: true,
+          ignoreTemplateLiterals: true,
+        },
+      ],
       'object-curly-spacing': ['error', 'always'],
       'arrow-parens': ['error', 'as-needed'],
       'no-multiple-empty-lines': ['error', { max: 1, maxEOF: 1 }],
       'space-infix-ops': 'error',
       'keyword-spacing': ['error', { before: true, after: true }],
-      'prettier/prettier': ['error', {
-        endOfLine: 'auto',
-        singleQuote: true,
-        trailingComma: 'all',
-        printWidth: 100,
-        tabWidth: 2,
-        semi: true,
-        bracketSpacing: true,
-        arrowParens: 'avoid',
-        bracketSameLine: false,
-        quoteProps: 'as-needed'
-      }],
+      'prettier/prettier': [
+        'error',
+        {
+          endOfLine: 'auto',
+          singleQuote: true,
+          trailingComma: 'all',
+          printWidth: 100,
+          tabWidth: 2,
+          semi: true,
+          bracketSpacing: true,
+          arrowParens: 'avoid',
+          bracketSameLine: false,
+          quoteProps: 'as-needed',
+        },
+      ],
     },
   },
-]; 
+];

@@ -5,16 +5,7 @@ import { Sequelize } from 'sequelize';
 import config from '../config/app.config.js';
 
 // Configuración de la base de datos
-const { 
-  host, 
-  port, 
-  name, 
-  user, 
-  password, 
-  dialect, 
-  logging, 
-  pool 
-} = config.database;
+const { host, port, name, user, password, dialect, logging, pool } = config.database;
 
 // Crear instancia de Sequelize
 export const sequelize = new Sequelize(name, user, password, {
@@ -33,7 +24,7 @@ export const sequelize = new Sequelize(name, user, password, {
 // Exportar conexión para uso en models
 export const db = {
   sequelize,
-  Sequelize
+  Sequelize,
 };
 
 /**
@@ -65,4 +56,4 @@ export const syncDatabase = async (force = false) => {
     console.error('Unable to sync database:', error);
     return false;
   }
-}; 
+};

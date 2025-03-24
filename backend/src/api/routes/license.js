@@ -15,4 +15,4 @@ router.get('/history', LicenseController.getLicenseHistory);
 router.post('/renew', LicenseController.renewLicense);
 router.post('/upload', LicenseController.uploadLicense);
 
-export default router; 
+export default router;

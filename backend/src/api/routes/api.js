@@ -10,7 +10,7 @@ router.get('/', (req, res) => {
   res.json({
     message: `Welcome to PACTA API ${apiVersion}`,
     version: apiVersion,
-    documentation: `/api/${apiVersion}/docs`
+    documentation: `/api/${apiVersion}/docs`,
   });
 });
 
@@ -27,4 +27,4 @@ const registerRoutes = () => {
   return router;
 };
 
-export default registerRoutes(); 
+export default registerRoutes();

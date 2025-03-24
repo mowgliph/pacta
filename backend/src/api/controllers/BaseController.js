@@ -6,7 +6,12 @@ import { ResponseService } from '../services/ResponseService.js';
 import { LoggingService } from '../services/LoggingService.js';
 import { ValidationService } from '../services/ValidationService.js';
 import { CacheService } from '../services/CacheService.js';
-import { ValidationError, NotFoundError, ConflictError, AuthenticationError } from '../../utils/errors.js';
+import {
+  ValidationError,
+  NotFoundError,
+  ConflictError,
+  AuthenticationError,
+} from '../../utils/errors.js';
 
 export class BaseController {
   constructor(service) {
@@ -26,14 +31,14 @@ export class BaseController {
     try {
       // Extraer parámetros de paginación y filtrado
       const { page = 1, limit = 10, ...query } = req.query;
-      
+
       // Conversión de tipos
       const pageNum = parseInt(page, 10);
       const limitNum = parseInt(limit, 10);
-      
+
       // Obtener datos
       const result = await this.service.getAll(query, pageNum, limitNum);
-      
+
       // Responder
       res.status(200).json(result);
     } catch (error) {
@@ -51,17 +56,17 @@ export class BaseController {
     try {
       const { id } = req.params;
       const result = await this.service.getById(id);
-      
+
       if (!result) {
-        return res.status(404).json({ 
-          success: false, 
-          message: 'Resource not found' 
+        return res.status(404).json({
+          success: false,
+          message: 'Resource not found',
         });
       }
-      
+
       res.status(200).json({
         success: true,
-        data: result
+        data: result,
       });
     } catch (error) {
       next(error);
@@ -78,10 +83,10 @@ export class BaseController {
     try {
       const data = req.body;
       const result = await this.service.create(data);
-      
+
       res.status(201).json({
         success: true,
-        data: result
+        data: result,
       });
     } catch (error) {
       next(error);
@@ -98,12 +103,12 @@ export class BaseController {
     try {
       const { id } = req.params;
       const data = req.body;
-      
+
       const result = await this.service.update(id, data);
-      
+
       res.status(200).json({
         success: true,
-        data: result
+        data: result,
       });
     } catch (error) {
       next(error);
@@ -119,9 +124,9 @@ export class BaseController {
   delete = async (req, res, next) => {
     try {
       const { id } = req.params;
-      
+
       await this.service.delete(id);
-      
+
       res.status(204).send();
     } catch (error) {
       next(error);
@@ -209,7 +214,7 @@ export class BaseController {
         }
 
         const originalJson = res.json;
-        res.json = function(data) {
+        res.json = function (data) {
           CacheService.set(cacheKey, data, ttl);
           return originalJson.call(this, data);
         };
@@ -232,7 +237,7 @@ export class BaseController {
             url: req.originalUrl,
             status: res.statusCode,
             duration: `${duration}ms`,
-            userId: req.user?.id
+            userId: req.user?.id,
           });
         });
         next();
@@ -241,4 +246,4 @@ export class BaseController {
       }
     };
   }
-} 
+}

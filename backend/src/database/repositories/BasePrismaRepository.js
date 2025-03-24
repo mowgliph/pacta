@@ -7,7 +7,7 @@ import prisma from '../prisma.js';
 export class BasePrismaRepository {
   /**
    * Constructor del repositorio
-   * @param {String} model - Nombre del modelo de Prisma a usar 
+   * @param {String} model - Nombre del modelo de Prisma a usar
    */
   constructor(model) {
     if (!model) {
@@ -26,30 +26,30 @@ export class BasePrismaRepository {
    */
   async findAll(options = {}, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
-    
+
     // Contar total de registros para paginación
     const totalPromise = this.prisma[this.model].count({
-      where: options.where
+      where: options.where,
     });
-    
+
     // Obtener los datos con paginación
     const dataPromise = this.prisma[this.model].findMany({
       ...options,
       skip,
-      take: limit
+      take: limit,
     });
-    
+
     // Ejecutar ambas promesas en paralelo
     const [total, data] = await Promise.all([totalPromise, dataPromise]);
-    
+
     return {
       data,
       meta: {
         total,
         page,
         limit,
-        totalPages: Math.ceil(total / limit)
-      }
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -62,23 +62,23 @@ export class BasePrismaRepository {
   async findById(id, options = {}) {
     return this.prisma[this.model].findUnique({
       ...options,
-      where: { 
+      where: {
         id,
-        ...options.where
-      }
+        ...options.where,
+      },
     });
   }
 
   /**
    * Encuentra una entidad por criterios específicos
    * @param {Object} where - Criterios de búsqueda
-   * @param {Object} options - Opciones adicionales (include, select, etc) 
+   * @param {Object} options - Opciones adicionales (include, select, etc)
    * @returns {Promise<Object>} - Entidad encontrada
    */
   async findOne(where, options = {}) {
     return this.prisma[this.model].findFirst({
       ...options,
-      where
+      where,
     });
   }
 
@@ -91,7 +91,7 @@ export class BasePrismaRepository {
   async create(data, options = {}) {
     return this.prisma[this.model].create({
       data,
-      ...options
+      ...options,
     });
   }
 
@@ -106,32 +106,32 @@ export class BasePrismaRepository {
     return this.prisma[this.model].update({
       where: { id },
       data,
-      ...options
+      ...options,
     });
   }
 
   /**
    * Elimina una entidad (soft delete si se configura en el modelo)
-   * @param {String|Number} id - ID de la entidad a eliminar 
+   * @param {String|Number} id - ID de la entidad a eliminar
    * @returns {Promise<Boolean>} - true si se eliminó
    */
   async delete(id) {
     // Verificar si el modelo tiene campo deletedAt para soft delete
     const modelInfo = Reflect.ownKeys(this.prisma[this.model].fields || {});
-    
+
     if (modelInfo.includes('deletedAt')) {
       // Soft delete
       await this.prisma[this.model].update({
         where: { id },
-        data: { deletedAt: new Date() }
+        data: { deletedAt: new Date() },
       });
     } else {
       // Hard delete
       await this.prisma[this.model].delete({
-        where: { id }
+        where: { id },
       });
     }
-    
+
     return true;
   }
 
@@ -142,9 +142,9 @@ export class BasePrismaRepository {
    */
   async forceDelete(id) {
     await this.prisma[this.model].delete({
-      where: { id }
+      where: { id },
     });
-    
+
     return true;
   }
 
@@ -164,14 +164,14 @@ export class BasePrismaRepository {
    */
   async bulkCreate(dataArray) {
     const createdItems = [];
-    
-    await this.prisma.$transaction(async (tx) => {
+
+    await this.prisma.$transaction(async tx => {
       for (const data of dataArray) {
         const item = await tx[this.model].create({ data });
         createdItems.push(item);
       }
     });
-    
+
     return createdItems;
   }
-} 
+}

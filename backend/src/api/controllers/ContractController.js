@@ -12,14 +12,14 @@ export const getAllContracts = async (req, res) => {
         {
           model: User,
           as: 'creator',
-          attributes: ['username', 'email']
+          attributes: ['username', 'email'],
         },
         {
           model: License,
-          attributes: ['name', 'type']
-        }
+          attributes: ['name', 'type'],
+        },
       ],
-      order: [['updatedAt', 'DESC']]
+      order: [['updatedAt', 'DESC']],
     });
     res.json(contracts);
   } catch (error) {
@@ -34,24 +34,24 @@ export const getContractById = async (req, res) => {
     const contract = await Contract.findOne({
       where: {
         id: req.params.id,
-        ...(req.user.role !== 'admin' && { createdBy: req.user.id })
+        ...(req.user.role !== 'admin' && { createdBy: req.user.id }),
       },
       include: [
         {
           model: User,
           as: 'creator',
-          attributes: ['id', 'username', 'email']
+          attributes: ['id', 'username', 'email'],
         },
         {
           model: User,
           as: 'modifier',
-          attributes: ['id', 'username', 'email']
+          attributes: ['id', 'username', 'email'],
         },
         {
           model: License,
-          attributes: ['name', 'type']
-        }
-      ]
+          attributes: ['name', 'type'],
+        },
+      ],
     });
     if (!contract) {
       return res.status(404).json({ message: 'Contrato no encontrado' });
@@ -69,7 +69,7 @@ export const createContract = async (req, res) => {
     const contractData = {
       ...req.body,
       createdBy: req.user.id,
-      lastModifiedBy: req.user.id
+      lastModifiedBy: req.user.id,
     };
 
     // Si se ha subido un documento, guardar la ruta
@@ -85,7 +85,7 @@ export const createContract = async (req, res) => {
       action: 'CREATE',
       entityType: 'Contract',
       entityId: contract.id,
-      details: `Contrato ${contract.contractNumber} creado`
+      details: `Contrato ${contract.contractNumber} creado`,
     });
 
     res.status(201).json(contract);
@@ -101,8 +101,8 @@ export const updateContract = async (req, res) => {
     const contract = await Contract.findOne({
       where: {
         id: req.params.id,
-        ...(req.user.role !== 'admin' && { createdBy: req.user.id })
-      }
+        ...(req.user.role !== 'admin' && { createdBy: req.user.id }),
+      },
     });
 
     if (!contract) {
@@ -115,7 +115,7 @@ export const updateContract = async (req, res) => {
     // Preparamos los datos a actualizar
     const updateData = {
       ...req.body,
-      lastModifiedBy: req.user.id
+      lastModifiedBy: req.user.id,
     };
 
     // Si se ha subido un nuevo documento, actualizamos la ruta
@@ -136,7 +136,7 @@ export const updateContract = async (req, res) => {
       action: 'UPDATE',
       entityType: 'Contract',
       entityId: contract.id,
-      details: `Contrato ${contract.contractNumber} actualizado`
+      details: `Contrato ${contract.contractNumber} actualizado`,
     });
 
     res.json(contract);
@@ -152,8 +152,8 @@ export const deleteContract = async (req, res) => {
     const contract = await Contract.findOne({
       where: {
         id: req.params.id,
-        ...(req.user.role !== 'admin' && { createdBy: req.user.id })
-      }
+        ...(req.user.role !== 'admin' && { createdBy: req.user.id }),
+      },
     });
 
     if (!contract) {
@@ -164,7 +164,7 @@ export const deleteContract = async (req, res) => {
     const contractInfo = {
       id: contract.id,
       contractNumber: contract.contractNumber,
-      title: contract.title
+      title: contract.title,
     };
 
     // Si el contrato tiene un documento asociado, lo eliminamos
@@ -180,12 +180,12 @@ export const deleteContract = async (req, res) => {
       action: 'DELETE',
       entityType: 'Contract',
       entityId: contractInfo.id,
-      details: `Contrato ${contractInfo.contractNumber} eliminado`
+      details: `Contrato ${contractInfo.contractNumber} eliminado`,
     });
 
-    res.json({ 
+    res.json({
       message: 'Contrato eliminado correctamente',
-      contract: contractInfo
+      contract: contractInfo,
     });
   } catch (error) {
     console.error('Error deleting contract:', error);
@@ -199,8 +199,8 @@ export const getContractDocument = async (req, res) => {
     const contract = await Contract.findOne({
       where: {
         id: req.params.id,
-        ...(req.user.role !== 'admin' && { createdBy: req.user.id })
-      }
+        ...(req.user.role !== 'admin' && { createdBy: req.user.id }),
+      },
     });
 
     if (!contract) {
@@ -221,13 +221,15 @@ export const getContractDocument = async (req, res) => {
       action: 'VIEW',
       entityType: 'Contract_Document',
       entityId: contract.id,
-      details: `Documento del contrato ${contract.contractNumber} visualizado`
+      details: `Documento del contrato ${contract.contractNumber} visualizado`,
     });
 
     res.download(contract.documentPath);
   } catch (error) {
     console.error('Error getting contract document:', error);
-    res.status(500).json({ message: 'Error al obtener el documento del contrato', error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Error al obtener el documento del contrato', error: error.message });
   }
 };
 
@@ -245,7 +247,7 @@ export const searchContracts = async (req, res) => {
       minAmount,
       maxAmount,
       currency,
-      searchQuery
+      searchQuery,
     } = req.body;
 
     const where = req.user.role === 'admin' ? {} : { createdBy: req.user.id };
@@ -312,7 +314,7 @@ export const searchContracts = async (req, res) => {
       where[Op.or] = [
         { title: { [Op.iLike]: `%${searchQuery}%` } },
         { contractNumber: { [Op.iLike]: `%${searchQuery}%` } },
-        { description: { [Op.iLike]: `%${searchQuery}%` } }
+        { description: { [Op.iLike]: `%${searchQuery}%` } },
       ];
     }
 
@@ -322,14 +324,14 @@ export const searchContracts = async (req, res) => {
         {
           model: User,
           as: 'creator',
-          attributes: ['username', 'email']
+          attributes: ['username', 'email'],
         },
         {
           model: License,
-          attributes: ['name', 'type']
-        }
+          attributes: ['name', 'type'],
+        },
       ],
-      order: [['updatedAt', 'DESC']]
+      order: [['updatedAt', 'DESC']],
     });
 
     res.json(contracts);
@@ -347,26 +349,26 @@ export const getContractStatistics = async (req, res) => {
 
     // Consultar todos los contratos del usuario o todos si es admin
     const contracts = await Contract.findAll({
-      where: req.user.role === 'admin' ? {} : { createdBy: req.user.id }
+      where: req.user.role === 'admin' ? {} : { createdBy: req.user.id },
     });
 
     // Estadísticas básicas
     const totalContracts = contracts.length;
     const activeContracts = contracts.filter(c => c.status === 'active').length;
-    
+
     // Contratos próximos a vencer (dentro del período de notificación)
     const expiringContracts = contracts.filter(c => {
       if (c.status !== 'active') return false;
-      
+
       const daysUntilExpiry = Math.ceil(
-        (new Date(c.endDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+        (new Date(c.endDate).getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
       );
       return daysUntilExpiry <= c.notificationDays && daysUntilExpiry > 0;
     }).length;
-    
+
     // Contratos expirados
-    const expiredContracts = contracts.filter(c => 
-      c.status === 'expired' || (c.status === 'active' && new Date(c.endDate) < today)
+    const expiredContracts = contracts.filter(
+      c => c.status === 'expired' || (c.status === 'active' && new Date(c.endDate) < today),
     ).length;
 
     // Calcular valores totales por moneda
@@ -378,11 +380,14 @@ export const getContractStatistics = async (req, res) => {
     }, {});
 
     // Contar por estado
-    const statusCounts = contracts.reduce((acc, contract) => {
-      if (!acc[contract.status]) acc[contract.status] = 0;
-      acc[contract.status]++;
-      return acc;
-    }, { active: 0, expired: 0, draft: 0, terminated: 0, renewed: 0 });
+    const statusCounts = contracts.reduce(
+      (acc, contract) => {
+        if (!acc[contract.status]) acc[contract.status] = 0;
+        acc[contract.status]++;
+        return acc;
+      },
+      { active: 0, expired: 0, draft: 0, terminated: 0, renewed: 0 },
+    );
 
     // Contratos recientes
     const recentContracts = contracts
@@ -395,14 +400,16 @@ export const getContractStatistics = async (req, res) => {
         activeContracts,
         expiringContracts,
         expiredContracts,
-        totalByCurrency
+        totalByCurrency,
       },
       statusCounts,
-      recentContracts
+      recentContracts,
     });
   } catch (error) {
     console.error('Error getting contract statistics:', error);
-    res.status(500).json({ message: 'Error al obtener estadísticas de contratos', error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Error al obtener estadísticas de contratos', error: error.message });
   }
 };
 
@@ -411,42 +418,44 @@ export const changeContractStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    
+
     // Validar que el estado sea válido
     const validStatuses = ['draft', 'active', 'expired', 'terminated', 'renewed'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: 'Estado no válido' });
     }
-    
+
     const contract = await Contract.findOne({
       where: {
         id,
-        ...(req.user.role !== 'admin' && { createdBy: req.user.id })
-      }
+        ...(req.user.role !== 'admin' && { createdBy: req.user.id }),
+      },
     });
-    
+
     if (!contract) {
       return res.status(404).json({ message: 'Contrato no encontrado' });
     }
-    
+
     // Actualizar solo el estado y lastModifiedBy
-    await contract.update({ 
-      status, 
-      lastModifiedBy: req.user.id 
+    await contract.update({
+      status,
+      lastModifiedBy: req.user.id,
     });
-    
+
     // Log activity
     await ActivityLog.create({
       userId: req.user.id,
       action: 'UPDATE_STATUS',
       entityType: 'Contract',
       entityId: contract.id,
-      details: `Estado del contrato ${contract.contractNumber} cambiado a ${status}`
+      details: `Estado del contrato ${contract.contractNumber} cambiado a ${status}`,
     });
-    
+
     res.json(contract);
   } catch (error) {
     console.error('Error changing contract status:', error);
-    res.status(500).json({ message: 'Error al cambiar el estado del contrato', error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Error al cambiar el estado del contrato', error: error.message });
   }
-}; 
+};

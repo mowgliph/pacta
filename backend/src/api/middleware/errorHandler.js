@@ -18,14 +18,14 @@ export const handleSequelizeError = (err, req, res, next) => {
   if (err instanceof ValidationError) {
     const errors = err.errors.map(error => ({
       field: error.path,
-      message: error.message
+      message: error.message,
     }));
 
     return res.status(400).json({
       status: 'fail',
       code: 'VALIDATION_ERROR',
       message: 'Validation failed',
-      errors
+      errors,
     });
   }
 
@@ -36,8 +36,8 @@ export const handleSequelizeError = (err, req, res, next) => {
       message: 'Duplicate entry',
       errors: err.errors.map(error => ({
         field: error.path,
-        message: error.message
-      }))
+        message: error.message,
+      })),
     });
   }
 
@@ -48,8 +48,8 @@ export const handleSequelizeError = (err, req, res, next) => {
       message: 'Invalid reference to related record',
       errors: err.errors.map(error => ({
         field: error.path,
-        message: error.message
-      }))
+        message: error.message,
+      })),
     });
   }
 
@@ -66,7 +66,7 @@ export const errorHandler = (err, req, res, next) => {
       status: err.status,
       error: err,
       message: err.message,
-      stack: err.stack
+      stack: err.stack,
     });
   } else {
     // Production mode
@@ -74,7 +74,7 @@ export const errorHandler = (err, req, res, next) => {
       res.status(err.statusCode).json({
         status: err.status,
         code: err.code,
-        message: err.message
+        message: err.message,
       });
     } else {
       // Programming or unknown errors
@@ -82,7 +82,7 @@ export const errorHandler = (err, req, res, next) => {
       res.status(500).json({
         status: 'error',
         code: 'INTERNAL_SERVER_ERROR',
-        message: 'Something went wrong!'
+        message: 'Something went wrong!',
       });
     }
   }
@@ -99,7 +99,7 @@ export const handleJWTError = (err, req, res, next) => {
     return res.status(401).json({
       status: 'fail',
       code: 'INVALID_TOKEN',
-      message: 'Invalid token. Please log in again!'
+      message: 'Invalid token. Please log in again!',
     });
   }
 
@@ -107,7 +107,7 @@ export const handleJWTError = (err, req, res, next) => {
     return res.status(401).json({
       status: 'fail',
       code: 'TOKEN_EXPIRED',
-      message: 'Your token has expired! Please log in again.'
+      message: 'Your token has expired! Please log in again.',
     });
   }
 
@@ -122,4 +122,4 @@ export const validateRole = (...roles) => {
     }
     next();
   };
-}; 
+};

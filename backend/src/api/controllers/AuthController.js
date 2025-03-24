@@ -11,21 +11,21 @@ export const login = async (req, res) => {
     const { username, password } = req.body;
 
     // Buscar usuario usando Sequelize
-    const foundUser = await User.findOne({ 
+    const foundUser = await User.findOne({
       where: { username },
       include: [
-        { 
-          model: License, 
+        {
+          model: License,
           as: 'license',
-          required: false
-        }
-      ]
+          required: false,
+        },
+      ],
     });
 
     if (!foundUser) {
       return res.status(401).json({
         message: 'Usuario no encontrado',
-        status: 401
+        status: 401,
       });
     }
 
@@ -34,19 +34,19 @@ export const login = async (req, res) => {
     if (!validPassword) {
       return res.status(401).json({
         message: 'Contraseña incorrecta',
-        status: 401
+        status: 401,
       });
     }
 
     // Generar token JWT
     const token = jwt.sign(
-      { 
+      {
         id: foundUser.id,
         username: foundUser.username,
-        role: foundUser.role
+        role: foundUser.role,
       },
       process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' }
+      { expiresIn: '24h' },
     );
 
     // Enviar respuesta
@@ -55,16 +55,16 @@ export const login = async (req, res) => {
       user: {
         id: foundUser.id,
         username: foundUser.username,
-        role: foundUser.role
+        role: foundUser.role,
       },
       license: foundUser.license,
-      token
+      token,
     });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({
       message: 'Error interno del servidor',
-      status: 500
+      status: 500,
     });
   }
 };
@@ -73,24 +73,24 @@ export const login = async (req, res) => {
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    
+
     // Buscar usuario por email
     const user = await User.findOne({ where: { email } });
     if (!user) {
       // No indicamos si el email existe o no por razones de seguridad
-      return res.status(200).json({ 
-        message: 'Si el correo existe, recibirás instrucciones para restablecer tu contraseña.' 
+      return res.status(200).json({
+        message: 'Si el correo existe, recibirás instrucciones para restablecer tu contraseña.',
       });
     }
 
     // Generar token aleatorio
     const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hora de validez
-    
+
     // Guardar token y su expiración en la base de datos
     await user.update({
       resetToken,
-      resetTokenExpiry
+      resetTokenExpiry,
     });
 
     // Configurar el transporte de correo
@@ -100,13 +100,13 @@ export const forgotPassword = async (req, res) => {
       secure: process.env.MAIL_SECURE === 'true',
       auth: {
         user: process.env.MAIL_USER || 'user@example.com',
-        pass: process.env.MAIL_PASSWORD || 'password'
-      }
+        pass: process.env.MAIL_PASSWORD || 'password',
+      },
     });
 
     // URL para restablecer contraseña (frontend)
     const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
-    
+
     // Configurar el email
     const mailOptions = {
       from: process.env.MAIL_FROM || '"PACTA System" <noreply@example.com>',
@@ -118,14 +118,14 @@ export const forgotPassword = async (req, res) => {
         <a href="${resetUrl}">Restablecer contraseña</a>
         <p>Este enlace es válido por 1 hora.</p>
         <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
-      `
+      `,
     };
-    
+
     // Enviar el email
     await transporter.sendMail(mailOptions);
-    
-    res.status(200).json({ 
-      message: 'Si el correo existe, recibirás instrucciones para restablecer tu contraseña.' 
+
+    res.status(200).json({
+      message: 'Si el correo existe, recibirás instrucciones para restablecer tu contraseña.',
     });
   } catch (error) {
     console.error('Forgot password error:', error);
@@ -137,19 +137,19 @@ export const forgotPassword = async (req, res) => {
 export const verifyResetToken = async (req, res) => {
   try {
     const { token } = req.body;
-    
+
     // Buscar usuario con el token y que no haya expirado
-    const user = await User.findOne({ 
-      where: { 
+    const user = await User.findOne({
+      where: {
         resetToken: token,
-        resetTokenExpiry: { [Op.gt]: new Date() }
-      } 
+        resetTokenExpiry: { [Op.gt]: new Date() },
+      },
     });
-    
+
     if (!user) {
       return res.status(400).json({ message: 'Token inválido o expirado' });
     }
-    
+
     res.status(200).json({ valid: true });
   } catch (error) {
     console.error('Token verification error:', error);
@@ -161,26 +161,26 @@ export const verifyResetToken = async (req, res) => {
 export const resetPassword = async (req, res) => {
   try {
     const { token, password } = req.body;
-    
+
     // Buscar usuario con el token y que no haya expirado
-    const user = await User.findOne({ 
-      where: { 
+    const user = await User.findOne({
+      where: {
         resetToken: token,
-        resetTokenExpiry: { [Op.gt]: new Date() }
-      } 
+        resetTokenExpiry: { [Op.gt]: new Date() },
+      },
     });
-    
+
     if (!user) {
       return res.status(400).json({ message: 'Token inválido o expirado' });
     }
-    
+
     // Actualizar contraseña y limpiar tokens
     await user.update({
       password: password,
       resetToken: null,
-      resetTokenExpiry: null
+      resetTokenExpiry: null,
     });
-    
+
     res.status(200).json({ message: 'Contraseña restablecida correctamente' });
   } catch (error) {
     console.error('Password reset error:', error);
@@ -198,7 +198,7 @@ export const activateLicense = async (req, res) => {
     if (!['DEMOPACTA', 'TRYPACTA'].includes(licenseCode)) {
       return res.status(400).json({
         message: 'Código de promoción inválido',
-        status: 400
+        status: 400,
       });
     }
 
@@ -207,7 +207,7 @@ export const activateLicense = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         message: 'Usuario no encontrado',
-        status: 404
+        status: 404,
       });
     }
 
@@ -217,7 +217,7 @@ export const activateLicense = async (req, res) => {
 
     // Crear o actualizar licencia
     const licenseType = licenseCode === 'DEMOPACTA' ? 'DEMO' : 'TRIAL';
-    
+
     const [license, created] = await License.findOrCreate({
       where: { licenseKey: licenseCode },
       defaults: {
@@ -225,8 +225,8 @@ export const activateLicense = async (req, res) => {
         licenseType: licenseType,
         description: `Licencia ${licenseType} activada el ${new Date().toLocaleDateString()}`,
         active: true,
-        expiryDate: expirationDate
-      }
+        expiryDate: expirationDate,
+      },
     });
 
     // Si no se creó porque ya existía, actualizarla
@@ -236,20 +236,20 @@ export const activateLicense = async (req, res) => {
         licenseType: licenseType,
         description: `Licencia ${licenseType} renovada el ${new Date().toLocaleDateString()}`,
         active: true,
-        expiryDate: expirationDate
+        expiryDate: expirationDate,
       });
     }
 
     res.status(200).json({
       message: `Licencia ${licenseType} activada correctamente`,
       license: license,
-      status: 200
+      status: 200,
     });
   } catch (error) {
     console.error('License activation error:', error);
     res.status(500).json({
       message: 'Error al activar la licencia',
-      status: 500
+      status: 500,
     });
   }
-}; 
+};

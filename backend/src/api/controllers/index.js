@@ -17,4 +17,4 @@ export { NotificationController } from './NotificationController.js';
 export { default as AnalyticsController } from './AnalyticsController.js';
 export { default as DashboardController } from './DashboardController.js';
 export { default as IndexController } from './IndexController.js';
-export { default as LicenseController } from './LicenseController.js'; 
+export { default as LicenseController } from './LicenseController.js';

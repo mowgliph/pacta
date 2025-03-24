@@ -19,10 +19,7 @@ export { NotificationService } from './NotificationService.js';
 // Servicios de sistema
 export { SchedulerService } from './SchedulerService.js';
 export { LicenseValidatorService } from './LicenseValidatorService.js';
-
-// Servicios de análisis
 export { AnalyticsService } from './AnalyticsService.js';
-export { ReportService } from './ReportService.js';
 
 // Exportaciones específicas
-export * from './ValidationService.js'; 
+export * from './ValidationService.js';

@@ -6,7 +6,7 @@ export class ValidationService {
   constructor() {
     // Import validators dynamically
     this.validators = {
-      ...userValidators
+      ...userValidators,
     };
   }
 
@@ -17,7 +17,7 @@ export class ValidationService {
       if (error instanceof z.ZodError) {
         const errors = error.errors.map(err => ({
           field: err.path.join('.'),
-          message: err.message
+          message: err.message,
         }));
         throw new ValidationError('Validation failed', errors);
       }
@@ -46,23 +46,30 @@ export class ValidationService {
   }
 
   async validatePassword(password) {
-    const schema = z.string()
+    const schema = z
+      .string()
       .min(8, 'Password must be at least 8 characters')
       .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
       .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
       .regex(/[0-9]/, 'Password must contain at least one number')
       .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
-    
+
     return this.validate(schema, password);
   }
 
   // Standard schemas
   createPaginationSchema() {
     return z.object({
-      page: z.string().optional().transform(val => parseInt(val, 10) || 1),
-      limit: z.string().optional().transform(val => parseInt(val, 10) || 10),
+      page: z
+        .string()
+        .optional()
+        .transform(val => parseInt(val, 10) || 1),
+      limit: z
+        .string()
+        .optional()
+        .transform(val => parseInt(val, 10) || 10),
       sortBy: z.string().optional(),
-      sortOrder: z.enum(['asc', 'desc']).optional().default('asc')
+      sortOrder: z.enum(['asc', 'desc']).optional().default('asc'),
     });
   }
 
@@ -70,8 +77,14 @@ export class ValidationService {
     return z.object({
       query: z.string().min(1),
       fields: z.array(z.string()).optional(),
-      page: z.string().optional().transform(val => parseInt(val, 10) || 1),
-      limit: z.string().optional().transform(val => parseInt(val, 10) || 10)
+      page: z
+        .string()
+        .optional()
+        .transform(val => parseInt(val, 10) || 1),
+      limit: z
+        .string()
+        .optional()
+        .transform(val => parseInt(val, 10) || 10),
     });
   }
 
@@ -87,37 +100,37 @@ export class ValidationService {
     return z.object({
       startDate: z.string().datetime(),
       endDate: z.string().datetime(),
-      timezone: z.string().optional()
+      timezone: z.string().optional(),
     });
   }
 
   createIdSchema() {
     return z.object({
-      id: z.string().uuid()
+      id: z.string().uuid(),
     });
   }
 
   createIdsSchema() {
     return z.object({
-      ids: z.array(z.string().uuid())
+      ids: z.array(z.string().uuid()),
     });
   }
 
   createEmailSchema() {
     return z.object({
-      email: z.string().email()
+      email: z.string().email(),
     });
   }
 
   createTokenSchema() {
     return z.object({
-      token: z.string().min(1)
+      token: z.string().min(1),
     });
   }
 
   createRefreshTokenSchema() {
     return z.object({
-      refreshToken: z.string().min(1)
+      refreshToken: z.string().min(1),
     });
   }
 
@@ -161,4 +174,4 @@ export class ValidationService {
   createBulkUserUpdateSchema() {
     return this.validators.createBulkUserUpdateSchema();
   }
-} 
+}

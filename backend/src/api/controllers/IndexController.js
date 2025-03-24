@@ -89,4 +89,4 @@ export class IndexController {
       return next(error);
     }
   };
-} 
+}

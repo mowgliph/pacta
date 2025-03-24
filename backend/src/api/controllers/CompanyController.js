@@ -32,35 +32,35 @@ export class CompanyController extends BaseController {
         sortOrder,
         ...filters
       } = req.query;
-      
+
       // Conversión de tipos
       const pageNum = parseInt(page, 10);
       const limitNum = parseInt(limit, 10);
-      
+
       // Preparar filtros
       const queryFilters = { ...filters };
-      
+
       if (search) {
         queryFilters.search = search;
       }
-      
+
       if (industry) {
         queryFilters.industry = industry;
       }
-      
+
       if (status) {
         queryFilters.status = status;
       }
-      
+
       // Opciones de ordenamiento
       if (sortBy) {
         queryFilters.sortBy = sortBy;
         queryFilters.sortOrder = sortOrder || 'asc';
       }
-      
+
       // Obtener datos
       const result = await this.companyService.getCompanies(queryFilters, pageNum, limitNum);
-      
+
       // Responder
       res.status(200).json(ResponseService.paginate(result.data, result.pagination));
     } catch (error) {
@@ -78,11 +78,11 @@ export class CompanyController extends BaseController {
     try {
       const { id } = req.params;
       const result = await this.companyService.getById(id);
-      
+
       if (!result) {
         return res.status(404).json(ResponseService.error('Company not found', 404));
       }
-      
+
       res.status(200).json(ResponseService.success(result));
     } catch (error) {
       next(error);
@@ -98,7 +98,7 @@ export class CompanyController extends BaseController {
   createCompany = async (req, res, next) => {
     try {
       const data = req.body;
-      
+
       // Validar datos
       const schema = {
         name: { type: 'string', required: true },
@@ -115,12 +115,12 @@ export class CompanyController extends BaseController {
         status: { type: 'string', optional: true },
         notes: { type: 'string', optional: true },
       };
-      
+
       await ValidationService.validate(schema, data);
-      
+
       // Crear compañía
       const result = await this.companyService.createCompany(data);
-      
+
       res.status(201).json(ResponseService.created(result));
     } catch (error) {
       next(error);
@@ -137,7 +137,7 @@ export class CompanyController extends BaseController {
     try {
       const { id } = req.params;
       const data = req.body;
-      
+
       // Validar datos
       const schema = {
         name: { type: 'string', optional: true },
@@ -154,12 +154,12 @@ export class CompanyController extends BaseController {
         status: { type: 'string', optional: true },
         notes: { type: 'string', optional: true },
       };
-      
+
       await ValidationService.validate(schema, data);
-      
+
       // Actualizar compañía
       const result = await this.companyService.updateCompany(id, data);
-      
+
       res.status(200).json(ResponseService.updated(result));
     } catch (error) {
       next(error);
@@ -176,9 +176,9 @@ export class CompanyController extends BaseController {
     try {
       const { limit = 5 } = req.query;
       const limitNum = parseInt(limit, 10);
-      
+
       const result = await this.companyService.getTopCompaniesByContracts(limitNum);
-      
+
       res.status(200).json(ResponseService.success(result));
     } catch (error) {
       next(error);
@@ -195,12 +195,12 @@ export class CompanyController extends BaseController {
     try {
       const { daysThreshold = 30 } = req.query;
       const daysNum = parseInt(daysThreshold, 10);
-      
+
       const result = await this.companyService.getCompaniesWithExpiringContracts(daysNum);
-      
+
       res.status(200).json(ResponseService.success(result));
     } catch (error) {
       next(error);
     }
   };
-} 
+}

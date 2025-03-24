@@ -28,9 +28,9 @@ export const authorize = (allowedRoles = []) => {
           userRole: req.user.role,
           requiredRoles: allowedRoles,
           path: req.originalUrl,
-          method: req.method
+          method: req.method,
         });
-        
+
         throw new AuthorizationError('You do not have permission to access this resource');
       }
 
@@ -39,7 +39,7 @@ export const authorize = (allowedRoles = []) => {
         userId: req.user.id,
         role: req.user.role,
         path: req.originalUrl,
-        method: req.method
+        method: req.method,
       });
 
       next();
@@ -77,9 +77,9 @@ export const authorizeOwnership = (getResourceUserId, bypassRoles = ['admin']) =
           userId: req.user.id,
           resourceUserId,
           path: req.originalUrl,
-          method: req.method
+          method: req.method,
         });
-        
+
         throw new AuthorizationError('You do not have permission to access this resource');
       }
 
@@ -88,7 +88,7 @@ export const authorizeOwnership = (getResourceUserId, bypassRoles = ['admin']) =
         userId: req.user.id,
         resourceUserId,
         path: req.originalUrl,
-        method: req.method
+        method: req.method,
       });
 
       next();
@@ -103,7 +103,7 @@ export const authorizeOwnership = (getResourceUserId, bypassRoles = ['admin']) =
  * @param {string} permission - Permission required to access the resource
  * @returns {Function} Express middleware
  */
-export const authorizePermission = (permission) => {
+export const authorizePermission = permission => {
   return (req, res, next) => {
     try {
       // User must be authenticated first
@@ -123,4 +123,4 @@ export const authorizePermission = (permission) => {
       next(error);
     }
   };
-}; 
+};

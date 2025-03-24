@@ -20,9 +20,9 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     cb(null, 'contract-' + uniqueSuffix + path.extname(file.originalname));
-  }
+  },
 });
 
 const upload = multer({
@@ -37,7 +37,7 @@ const upload = multer({
       return cb(new Error('Solo se permiten archivos PDF, Word, Excel y TXT'));
     }
     cb(null, true);
-  }
+  },
 });
 
 // Get all contracts (filtered by user role) - solo lectura sin licencia
@@ -47,152 +47,155 @@ router.get('/', authenticateToken, contractController.getAllContracts);
 router.get('/:id', authenticateToken, contractController.getContractById);
 
 // Create new contract - requiere licencia
-router.post('/', [
-  authenticateToken,
-  requiresLicense,
-  body('title')
-    .isLength({ min: 3, max: 100 })
-    .withMessage('El título debe tener entre 3 y 100 caracteres')
-    .trim()
-    .escape(),
-  body('contractNumber')
-    .notEmpty()
-    .withMessage('El número de contrato es obligatorio')
-    .trim()
-    .custom(async value => {
-      const existingContract = await Contract.findOne({ where: { contractNumber: value } });
-      if (existingContract) {
-        throw new Error('El número de contrato ya existe');
-      }
-      return true;
-    }),
-  body('description')
-    .optional()
-    .isLength({ max: 1000 })
-    .withMessage('La descripción no debe exceder los 1000 caracteres')
-    .trim(),
-  body('startDate')
-    .isISO8601()
-    .withMessage('La fecha de inicio debe ser una fecha válida')
-    .custom((value) => {
-      const startDate = new Date(value);
-      const today = new Date();
-      // Para contratos, permitir fechas en el pasado o futuro
-      return true;
-    }),
-  body('endDate')
-    .isISO8601()
-    .withMessage('La fecha de fin debe ser una fecha válida')
-    .custom((value, { req }) => {
-      const endDate = new Date(value);
-      const startDate = new Date(req.body.startDate);
-      if (endDate <= startDate) {
-        throw new Error('La fecha de fin debe ser posterior a la fecha de inicio');
-      }
-      return true;
-    }),
-  body('status')
-    .isIn(['draft', 'active', 'expired', 'terminated', 'renewed'])
-    .withMessage('Estado no válido'),
-  body('amount')
-    .isFloat({ min: 0 })
-    .withMessage('El importe debe ser mayor o igual a 0'),
-  body('currency')
-    .isIn(['CUP', 'USD', 'EUR'])
-    .withMessage('Moneda no válida'),
-  body('notificationDays')
-    .optional()
-    .isInt({ min: 1, max: 90 })
-    .withMessage('Los días de notificación deben estar entre 1 y 90')
-], upload.single('document'), (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      errors: errors.array().map(err => ({
-        field: err.param,
-        message: err.msg
-      }))
-    });
-  }
-  contractController.createContract(req, res);
-});
+router.post(
+  '/',
+  [
+    authenticateToken,
+    requiresLicense,
+    body('title')
+      .isLength({ min: 3, max: 100 })
+      .withMessage('El título debe tener entre 3 y 100 caracteres')
+      .trim()
+      .escape(),
+    body('contractNumber')
+      .notEmpty()
+      .withMessage('El número de contrato es obligatorio')
+      .trim()
+      .custom(async value => {
+        const existingContract = await Contract.findOne({ where: { contractNumber: value } });
+        if (existingContract) {
+          throw new Error('El número de contrato ya existe');
+        }
+        return true;
+      }),
+    body('description')
+      .optional()
+      .isLength({ max: 1000 })
+      .withMessage('La descripción no debe exceder los 1000 caracteres')
+      .trim(),
+    body('startDate')
+      .isISO8601()
+      .withMessage('La fecha de inicio debe ser una fecha válida')
+      .custom(value => {
+        const startDate = new Date(value);
+        const today = new Date();
+        // Para contratos, permitir fechas en el pasado o futuro
+        return true;
+      }),
+    body('endDate')
+      .isISO8601()
+      .withMessage('La fecha de fin debe ser una fecha válida')
+      .custom((value, { req }) => {
+        const endDate = new Date(value);
+        const startDate = new Date(req.body.startDate);
+        if (endDate <= startDate) {
+          throw new Error('La fecha de fin debe ser posterior a la fecha de inicio');
+        }
+        return true;
+      }),
+    body('status')
+      .isIn(['draft', 'active', 'expired', 'terminated', 'renewed'])
+      .withMessage('Estado no válido'),
+    body('amount').isFloat({ min: 0 }).withMessage('El importe debe ser mayor o igual a 0'),
+    body('currency').isIn(['CUP', 'USD', 'EUR']).withMessage('Moneda no válida'),
+    body('notificationDays')
+      .optional()
+      .isInt({ min: 1, max: 90 })
+      .withMessage('Los días de notificación deben estar entre 1 y 90'),
+  ],
+  upload.single('document'),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        errors: errors.array().map(err => ({
+          field: err.param,
+          message: err.msg,
+        })),
+      });
+    }
+    contractController.createContract(req, res);
+  },
+);
 
 // Update contract - requiere licencia
-router.put('/:id', [
-  authenticateToken,
-  requiresLicense,
-  body('title')
-    .optional()
-    .isLength({ min: 3, max: 100 })
-    .withMessage('El título debe tener entre 3 y 100 caracteres')
-    .trim()
-    .escape(),
-  body('contractNumber')
-    .optional()
-    .trim()
-    .custom(async (value, { req }) => {
-      const existingContract = await Contract.findOne({ 
-        where: { 
-          contractNumber: value,
-          id: { [Op.ne]: req.params.id }
-        } 
+router.put(
+  '/:id',
+  [
+    authenticateToken,
+    requiresLicense,
+    body('title')
+      .optional()
+      .isLength({ min: 3, max: 100 })
+      .withMessage('El título debe tener entre 3 y 100 caracteres')
+      .trim()
+      .escape(),
+    body('contractNumber')
+      .optional()
+      .trim()
+      .custom(async (value, { req }) => {
+        const existingContract = await Contract.findOne({
+          where: {
+            contractNumber: value,
+            id: { [Op.ne]: req.params.id },
+          },
+        });
+        if (existingContract) {
+          throw new Error('El número de contrato ya existe');
+        }
+        return true;
+      }),
+    body('description')
+      .optional()
+      .isLength({ max: 1000 })
+      .withMessage('La descripción no debe exceder los 1000 caracteres')
+      .trim(),
+    body('startDate')
+      .optional()
+      .isISO8601()
+      .withMessage('La fecha de inicio debe ser una fecha válida'),
+    body('endDate')
+      .optional()
+      .isISO8601()
+      .withMessage('La fecha de fin debe ser una fecha válida')
+      .custom((value, { req }) => {
+        if (!req.body.startDate && !req.contract) return true;
+
+        const endDate = new Date(value);
+        const startDate = new Date(req.body.startDate || req.contract.startDate);
+        if (endDate <= startDate) {
+          throw new Error('La fecha de fin debe ser posterior a la fecha de inicio');
+        }
+        return true;
+      }),
+    body('status')
+      .optional()
+      .isIn(['draft', 'active', 'expired', 'terminated', 'renewed'])
+      .withMessage('Estado no válido'),
+    body('amount')
+      .optional()
+      .isFloat({ min: 0 })
+      .withMessage('El importe debe ser mayor o igual a 0'),
+    body('currency').optional().isIn(['CUP', 'USD', 'EUR']).withMessage('Moneda no válida'),
+    body('notificationDays')
+      .optional()
+      .isInt({ min: 1, max: 90 })
+      .withMessage('Los días de notificación deben estar entre 1 y 90'),
+  ],
+  upload.single('document'),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        errors: errors.array().map(err => ({
+          field: err.param,
+          message: err.msg,
+        })),
       });
-      if (existingContract) {
-        throw new Error('El número de contrato ya existe');
-      }
-      return true;
-    }),
-  body('description')
-    .optional()
-    .isLength({ max: 1000 })
-    .withMessage('La descripción no debe exceder los 1000 caracteres')
-    .trim(),
-  body('startDate')
-    .optional()
-    .isISO8601()
-    .withMessage('La fecha de inicio debe ser una fecha válida'),
-  body('endDate')
-    .optional()
-    .isISO8601()
-    .withMessage('La fecha de fin debe ser una fecha válida')
-    .custom((value, { req }) => {
-      if (!req.body.startDate && !req.contract) return true;
-      
-      const endDate = new Date(value);
-      const startDate = new Date(req.body.startDate || req.contract.startDate);
-      if (endDate <= startDate) {
-        throw new Error('La fecha de fin debe ser posterior a la fecha de inicio');
-      }
-      return true;
-    }),
-  body('status')
-    .optional()
-    .isIn(['draft', 'active', 'expired', 'terminated', 'renewed'])
-    .withMessage('Estado no válido'),
-  body('amount')
-    .optional()
-    .isFloat({ min: 0 })
-    .withMessage('El importe debe ser mayor o igual a 0'),
-  body('currency')
-    .optional()
-    .isIn(['CUP', 'USD', 'EUR'])
-    .withMessage('Moneda no válida'),
-  body('notificationDays')
-    .optional()
-    .isInt({ min: 1, max: 90 })
-    .withMessage('Los días de notificación deben estar entre 1 y 90')
-], upload.single('document'), (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      errors: errors.array().map(err => ({
-        field: err.param,
-        message: err.msg
-      }))
-    });
-  }
-  contractController.updateContract(req, res);
-});
+    }
+    contractController.updateContract(req, res);
+  },
+);
 
 // Delete contract - requiere licencia
 router.delete('/:id', authenticateToken, requiresLicense, contractController.deleteContract);
@@ -207,23 +210,27 @@ router.post('/search', authenticateToken, contractController.searchContracts);
 router.get('/statistics', authenticateToken, contractController.getContractStatistics);
 
 // Cambiar estado de un contrato - nueva ruta
-router.patch('/:id/status', [
-  authenticateToken,
-  requiresLicense,
-  body('status')
-    .isIn(['draft', 'active', 'expired', 'terminated', 'renewed'])
-    .withMessage('Estado no válido')
-], (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ 
-      errors: errors.array().map(err => ({
-        field: err.param,
-        message: err.msg
-      }))
-    });
-  }
-  contractController.changeContractStatus(req, res);
-});
+router.patch(
+  '/:id/status',
+  [
+    authenticateToken,
+    requiresLicense,
+    body('status')
+      .isIn(['draft', 'active', 'expired', 'terminated', 'renewed'])
+      .withMessage('Estado no válido'),
+  ],
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        errors: errors.array().map(err => ({
+          field: err.param,
+          message: err.msg,
+        })),
+      });
+    }
+    contractController.changeContractStatus(req, res);
+  },
+);
 
 export default router;

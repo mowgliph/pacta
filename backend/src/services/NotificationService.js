@@ -24,26 +24,35 @@ export class NotificationService extends BaseService {
   async getUserNotifications(userId, options = {}) {
     try {
       const { page = 1, limit = 10, isRead, type } = options;
-      
+
       // Clave de cache
       const cacheKey = `notifications:user:${userId}:${JSON.stringify(options)}`;
-      
+
       // Intentar obtener del cache
       const cached = await this.cacheService.get(cacheKey);
       if (cached) {
         return cached;
       }
-      
+
       const filterOptions = { isRead, type };
-      const result = await this.notificationRepository.findUserNotifications(userId, filterOptions, page, limit);
-      
+      const result = await this.notificationRepository.findUserNotifications(
+        userId,
+        filterOptions,
+        page,
+        limit,
+      );
+
       // Guardar en cache por tiempo breve (30 segundos)
       // Las notificaciones cambian frecuentemente
       await this.cacheService.set(cacheKey, result, 30);
-      
+
       return result;
     } catch (error) {
-      LoggingService.error('Error getting user notifications', { userId, options, error: error.message });
+      LoggingService.error('Error getting user notifications', {
+        userId,
+        options,
+        error: error.message,
+      });
       this._handleError(error);
     }
   }
@@ -56,22 +65,25 @@ export class NotificationService extends BaseService {
   async getUnreadCount(userId) {
     try {
       const cacheKey = `notifications:unread:${userId}`;
-      
+
       // Intentar obtener del cache
       const cached = await this.cacheService.get(cacheKey);
       if (cached !== undefined) {
         return cached;
       }
-      
+
       const options = { isRead: false };
       const result = await this.notificationRepository.findUserNotifications(userId, options, 1, 1);
-      
+
       // Guardar en cache por tiempo breve (15 segundos)
       await this.cacheService.set(cacheKey, result.meta.total, 15);
-      
+
       return result.meta.total;
     } catch (error) {
-      LoggingService.error('Error getting unread notifications count', { userId, error: error.message });
+      LoggingService.error('Error getting unread notifications count', {
+        userId,
+        error: error.message,
+      });
       this._handleError(error);
     }
   }
@@ -85,16 +97,24 @@ export class NotificationService extends BaseService {
   async markAsRead(notificationIds, userId) {
     try {
       const result = await this.notificationRepository.markAsRead(notificationIds, userId);
-      
+
       // Invalidar caches relacionados
       await this.cacheService.invalidate(`notifications:unread:${userId}`);
       await this.cacheService.invalidatePattern(`notifications:user:${userId}:*`);
-      
-      LoggingService.info('Notifications marked as read', { notificationIds, userId, count: result });
-      
+
+      LoggingService.info('Notifications marked as read', {
+        notificationIds,
+        userId,
+        count: result,
+      });
+
       return result;
     } catch (error) {
-      LoggingService.error('Error marking notifications as read', { notificationIds, userId, error: error.message });
+      LoggingService.error('Error marking notifications as read', {
+        notificationIds,
+        userId,
+        error: error.message,
+      });
       this._handleError(error);
     }
   }
@@ -107,16 +127,19 @@ export class NotificationService extends BaseService {
   async markAllAsRead(userId) {
     try {
       const result = await this.notificationRepository.markAllAsRead(userId);
-      
+
       // Invalidar caches relacionados
       await this.cacheService.invalidate(`notifications:unread:${userId}`);
       await this.cacheService.invalidatePattern(`notifications:user:${userId}:*`);
-      
+
       LoggingService.info('All notifications marked as read', { userId, count: result });
-      
+
       return result;
     } catch (error) {
-      LoggingService.error('Error marking all notifications as read', { userId, error: error.message });
+      LoggingService.error('Error marking all notifications as read', {
+        userId,
+        error: error.message,
+      });
       this._handleError(error);
     }
   }
@@ -129,15 +152,18 @@ export class NotificationService extends BaseService {
   async createNotification(data) {
     try {
       this._validateNotificationData(data);
-      
+
       const notification = await this.notificationRepository.create(data);
-      
+
       // Invalidar caches relacionados
       await this.cacheService.invalidate(`notifications:unread:${data.userId}`);
       await this.cacheService.invalidatePattern(`notifications:user:${data.userId}:*`);
-      
-      LoggingService.info('Notification created', { notificationId: notification.id, userId: data.userId });
-      
+
+      LoggingService.info('Notification created', {
+        notificationId: notification.id,
+        userId: data.userId,
+      });
+
       return notification;
     } catch (error) {
       LoggingService.error('Error creating notification', { data, error: error.message });
@@ -153,12 +179,15 @@ export class NotificationService extends BaseService {
   async createExpirationNotifications(daysThreshold = 30) {
     try {
       const count = await this.notificationRepository.createExpirationNotifications(daysThreshold);
-      
+
       LoggingService.info('Contract expiration notifications created', { count, daysThreshold });
-      
+
       return count;
     } catch (error) {
-      LoggingService.error('Error creating expiration notifications', { daysThreshold, error: error.message });
+      LoggingService.error('Error creating expiration notifications', {
+        daysThreshold,
+        error: error.message,
+      });
       this._handleError(error);
     }
   }
@@ -172,15 +201,22 @@ export class NotificationService extends BaseService {
   _validateNotificationData(data) {
     const requiredFields = ['userId', 'title', 'message', 'type'];
     const missingFields = requiredFields.filter(field => !data[field]);
-    
+
     if (missingFields.length > 0) {
       throw new ValidationError(`Missing required fields: ${missingFields.join(', ')}`);
     }
-    
+
     // Validar que el tipo sea válido
-    const validTypes = ['EXPIRATION_WARNING', 'RENEWAL_REMINDER', 'DOCUMENT_UPDATED', 'COMMENT_ADDED', 'ASSIGNMENT', 'SYSTEM'];
+    const validTypes = [
+      'EXPIRATION_WARNING',
+      'RENEWAL_REMINDER',
+      'DOCUMENT_UPDATED',
+      'COMMENT_ADDED',
+      'ASSIGNMENT',
+      'SYSTEM',
+    ];
     if (!validTypes.includes(data.type)) {
       throw new ValidationError(`Invalid notification type: ${data.type}`);
     }
   }
-} 
+}

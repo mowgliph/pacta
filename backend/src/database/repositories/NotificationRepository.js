@@ -31,20 +31,24 @@ export class NotificationRepository extends BasePrismaRepository {
     const orderBy = {};
     orderBy[sortBy] = sortOrder;
 
-    return this.findAll({
-      where,
-      orderBy,
-      include: {
-        contract: {
-          select: {
-            id: true,
-            title: true,
-            contractNumber: true,
-            endDate: true
-          }
-        }
-      }
-    }, page, limit);
+    return this.findAll(
+      {
+        where,
+        orderBy,
+        include: {
+          contract: {
+            select: {
+              id: true,
+              title: true,
+              contractNumber: true,
+              endDate: true,
+            },
+          },
+        },
+      },
+      page,
+      limit,
+    );
   }
 
   /**
@@ -59,12 +63,12 @@ export class NotificationRepository extends BasePrismaRepository {
     const result = await this.prisma.notification.updateMany({
       where: {
         id: { in: notificationIds },
-        userId
+        userId,
       },
       data: {
         isRead: true,
-        readAt: new Date()
-      }
+        readAt: new Date(),
+      },
     });
 
     return result.count;
@@ -79,12 +83,12 @@ export class NotificationRepository extends BasePrismaRepository {
     const result = await this.prisma.notification.updateMany({
       where: {
         userId,
-        isRead: false
+        isRead: false,
       },
       data: {
         isRead: true,
-        readAt: new Date()
-      }
+        readAt: new Date(),
+      },
     });
 
     return result.count;
@@ -106,22 +110,22 @@ export class NotificationRepository extends BasePrismaRepository {
       where: {
         endDate: {
           gte: today,
-          lte: thresholdDate
+          lte: thresholdDate,
         },
         status: {
-          in: ['ACTIVE', 'PENDING_RENEWAL']
+          in: ['ACTIVE', 'PENDING_RENEWAL'],
         },
-        deletedAt: null
+        deletedAt: null,
       },
       include: {
         author: true,
         company: true,
         department: {
           include: {
-            users: true
-          }
-        }
-      }
+            users: true,
+          },
+        },
+      },
     });
 
     // 2. Crear notificaciones
@@ -134,9 +138,9 @@ export class NotificationRepository extends BasePrismaRepository {
           contractId: contract.id,
           type: 'EXPIRATION_WARNING',
           createdAt: {
-            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // 7 días atrás
-          }
-        }
+            gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 días atrás
+          },
+        },
       });
 
       if (existingNotification) {
@@ -153,8 +157,8 @@ export class NotificationRepository extends BasePrismaRepository {
           title: `Contrato próximo a vencer: ${contract.title}`,
           message: `El contrato con ${contract.company.name} vencerá en ${daysToExpiration} días (${contract.endDate.toLocaleDateString()}).`,
           userId: contract.authorId,
-          contractId: contract.id
-        }
+          contractId: contract.id,
+        },
       });
       notificationsCreated++;
 
@@ -170,8 +174,8 @@ export class NotificationRepository extends BasePrismaRepository {
               title: `Contrato próximo a vencer: ${contract.title}`,
               message: `El contrato con ${contract.company.name} vencerá en ${daysToExpiration} días (${contract.endDate.toLocaleDateString()}).`,
               userId: user.id,
-              contractId: contract.id
-            }
+              contractId: contract.id,
+            },
           });
           notificationsCreated++;
         }
@@ -180,4 +184,4 @@ export class NotificationRepository extends BasePrismaRepository {
 
     return notificationsCreated;
   }
-} 
+}

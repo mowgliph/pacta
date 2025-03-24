@@ -5,7 +5,7 @@ import {
   markAsRead,
   markAllAsRead,
   archiveNotification,
-  getUnreadCount
+  getUnreadCount,
 } from '../api/controllers/notificationController.js';
 
 const router = express.Router();
@@ -20,4 +20,4 @@ router.patch('/:notificationId/read', markAsRead);
 router.patch('/mark-all-read', markAllAsRead);
 router.patch('/:notificationId/archive', archiveNotification);
 
-export default router; 
+export default router;

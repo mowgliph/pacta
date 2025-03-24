@@ -4,7 +4,12 @@
  */
 import { BaseService } from './BaseService.js';
 import { UserRepository } from '../database/repositories/index.js';
-import { ValidationError, ConflictError, NotFoundError, AuthenticationError } from '../utils/errors.js';
+import {
+  ValidationError,
+  ConflictError,
+  NotFoundError,
+  AuthenticationError,
+} from '../utils/errors.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import config from '../config/app.config.js';
@@ -98,7 +103,7 @@ class UserService extends BaseService {
 
       return {
         user: user.toJSON(),
-        ...tokens
+        ...tokens,
       };
     } catch (error) {
       this.logger.error('User login failed', { error });
@@ -156,7 +161,7 @@ class UserService extends BaseService {
 
     // Obtener usuario
     const user = await this.getById(userId);
-    
+
     // Verificar contraseña actual
     const isPasswordValid = await user.comparePassword(currentPassword);
     if (!isPasswordValid) {
@@ -236,7 +241,7 @@ class UserService extends BaseService {
 
   /**
    * Busca usuarios por nombre (parcial)
-   * @param {String} query - Texto a buscar 
+   * @param {String} query - Texto a buscar
    * @param {Number} page - Número de página
    * @param {Number} limit - Resultados por página
    * @returns {Promise<Object>} - Usuarios encontrados con paginación
@@ -255,25 +260,19 @@ class UserService extends BaseService {
     const userData = {
       id: user.id,
       email: user.email,
-      role: user.role
+      role: user.role,
     };
 
-    const accessToken = jwt.sign(
-      userData,
-      config.jwtSecret,
-      { expiresIn: config.jwtExpiresIn }
-    );
+    const accessToken = jwt.sign(userData, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
 
-    const refreshToken = jwt.sign(
-      userData,
-      config.jwtRefreshSecret,
-      { expiresIn: config.jwtRefreshExpiresIn }
-    );
+    const refreshToken = jwt.sign(userData, config.jwtRefreshSecret, {
+      expiresIn: config.jwtRefreshExpiresIn,
+    });
 
     return {
       accessToken,
       refreshToken,
-      expiresIn: config.jwtExpiresIn
+      expiresIn: config.jwtExpiresIn,
     };
   }
 
@@ -474,4 +473,4 @@ class UserService extends BaseService {
   }
 }
 
-export default new UserService(); 
+export default new UserService();

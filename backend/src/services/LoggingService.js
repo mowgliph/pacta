@@ -1,7 +1,6 @@
 import winston from 'winston';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import config from '../config/app.config.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,14 +11,14 @@ const logFormat = format.combine(
   format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   format.errors({ stack: true }),
   format.splat(),
-  format.json()
+  format.json(),
 );
 
 const errorLogFormat = format.combine(
   format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   format.errors({ stack: true }),
   format.splat(),
-  format.json()
+  format.json(),
 );
 
 export class LoggingService {
@@ -31,29 +30,19 @@ export class LoggingService {
       new transports.File({
         filename: path.join(__dirname, '../../logs/error.log'),
         level: 'error',
-        format: errorLogFormat
+        format: errorLogFormat,
       }),
       new transports.File({
-        filename: path.join(__dirname, '../../logs/combined.log')
-      })
-    ]
+        filename: path.join(__dirname, '../../logs/combined.log'),
+      }),
+    ],
   });
 
   static stream = {
-    write: (message) => {
+    write: message => {
       LoggingService.logger.info(message.trim());
-    }
+    },
   };
-
-  // Add console transport in development
-  if (process.env.NODE_ENV !== 'production') {
-    LoggingService.logger.add(new transports.Console({
-      format: format.combine(
-        format.colorize(),
-        format.simple()
-      )
-    }));
-  }
 
   static info(message, meta = {}) {
     LoggingService.logger.info(message, meta);
@@ -81,7 +70,7 @@ export class LoggingService {
         status: res.statusCode,
         duration: `${duration}ms`,
         ip: req.ip,
-        userAgent: req.get('user-agent')
+        userAgent: req.get('user-agent'),
       });
     });
     next();
@@ -92,7 +81,7 @@ export class LoggingService {
       message: error.message,
       stack: error.stack,
       code: error.code,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
 
     if (req) {
@@ -103,7 +92,7 @@ export class LoggingService {
         userAgent: req.get('user-agent'),
         body: req.body,
         query: req.query,
-        params: req.params
+        params: req.params,
       };
     }
 
@@ -113,7 +102,7 @@ export class LoggingService {
   static logDatabaseQuery(query, duration) {
     LoggingService.logger.debug('Database query executed', {
       query,
-      duration: `${duration}ms`
+      duration: `${duration}ms`,
     });
   }
 
@@ -122,7 +111,7 @@ export class LoggingService {
       userId,
       success,
       ip,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -132,7 +121,7 @@ export class LoggingService {
       action,
       resource,
       success,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -142,10 +131,10 @@ export class LoggingService {
       file: {
         name: file.name,
         size: file.size,
-        type: file.type
+        type: file.type,
       },
       userId,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -154,7 +143,7 @@ export class LoggingService {
       operation,
       key,
       hit,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -164,7 +153,16 @@ export class LoggingService {
       operation,
       duration: `${duration}ms`,
       success,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
   }
-} 
+}
+
+// Add console transport in development
+if (process.env.NODE_ENV !== 'production') {
+  LoggingService.logger.add(
+    new transports.Console({
+      format: format.combine(format.colorize(), format.simple()),
+    }),
+  );
+}

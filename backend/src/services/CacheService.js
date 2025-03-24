@@ -6,13 +6,13 @@ export class CacheService {
   static cache = new NodeCache({
     stdTTL: 600, // 10 minutes default TTL
     checkperiod: 120, // Check for expired keys every 2 minutes
-    useClones: false
+    useClones: false,
   });
 
   static async get(key, fetchFn = null, ttl = 600) {
     try {
       const value = this.cache.get(key);
-      
+
       if (value !== undefined) {
         LoggingService.logCacheOperation('get', key, true);
         return value;
@@ -88,11 +88,13 @@ export class CacheService {
 
   static mset(items, ttl = 600) {
     try {
-      return this.cache.mset(items.map(item => ({
-        key: item.key,
-        val: item.value,
-        ttl
-      })));
+      return this.cache.mset(
+        items.map(item => ({
+          key: item.key,
+          val: item.value,
+          ttl,
+        })),
+      );
     } catch (error) {
       LoggingService.error('Cache mset error', { items, error: error.message });
       return false;
@@ -166,20 +168,24 @@ export class CacheService {
     return this.get(`contract:${contractId}`, async () => {
       const { Contract } = await import('../models/index.js');
       return Contract.findByPk(contractId, {
-        include: ['User', 'License']
+        include: ['User', 'License'],
       });
     });
   }
 
   static async getCachedNotifications(userId) {
-    return this.get(`notifications:${userId}`, async () => {
-      const { Notification } = await import('../models/index.js');
-      return Notification.findAll({
-        where: { userId },
-        order: [['createdAt', 'DESC']],
-        limit: 10
-      });
-    }, 300); // 5 minutos para notificaciones
+    return this.get(
+      `notifications:${userId}`,
+      async () => {
+        const { Notification } = await import('../models/index.js');
+        return Notification.findAll({
+          where: { userId },
+          order: [['createdAt', 'DESC']],
+          limit: 10,
+        });
+      },
+      300,
+    ); // 5 minutos para notificaciones
   }
 
   static async invalidateUserCache(userId) {
@@ -195,4 +201,4 @@ export class CacheService {
   }
 }
 
-export default new CacheService(); 
+export default new CacheService();

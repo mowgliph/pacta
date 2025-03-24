@@ -50,7 +50,7 @@ export const authenticate = async (req, res, next) => {
       id: user.id,
       email: user.email,
       role: user.role,
-      status: user.status
+      status: user.status,
     };
 
     // Log authentication
@@ -63,25 +63,23 @@ export const authenticate = async (req, res, next) => {
   }
 };
 
-export const generateTokens = (user) => {
+export const generateTokens = user => {
   // Generate access token
   const accessToken = jwt.sign(
     { id: user.id, email: user.email, role: user.role },
     config.jwt.secret,
-    { expiresIn: config.jwt.expiresIn }
+    { expiresIn: config.jwt.expiresIn },
   );
 
   // Generate refresh token
-  const refreshToken = jwt.sign(
-    { id: user.id },
-    config.jwt.refreshSecret,
-    { expiresIn: config.jwt.refreshExpiresIn }
-  );
+  const refreshToken = jwt.sign({ id: user.id }, config.jwt.refreshSecret, {
+    expiresIn: config.jwt.refreshExpiresIn,
+  });
 
   return { accessToken, refreshToken };
 };
 
-export const refreshToken = async (refreshToken) => {
+export const refreshToken = async refreshToken => {
   try {
     // Verify refresh token
     const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret);
@@ -108,4 +106,4 @@ export const refreshToken = async (refreshToken) => {
     logger.error('Token refresh failed', { error: error.message });
     throw new AuthenticationError('Invalid refresh token');
   }
-}; 
+};

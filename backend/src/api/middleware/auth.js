@@ -8,9 +8,10 @@ export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: 5, // 5 intentos
   message: {
-    message: 'Demasiados intentos de inicio de sesión. Por favor, intente nuevamente en 15 minutos.',
-    status: 429
-  }
+    message:
+      'Demasiados intentos de inicio de sesión. Por favor, intente nuevamente en 15 minutos.',
+    status: 429,
+  },
 });
 
 // Validación de credenciales
@@ -34,11 +35,11 @@ export const validateLogin = [
         errors: errors.array().reduce((acc, err) => {
           acc[err.param] = [err.msg];
           return acc;
-        }, {})
+        }, {}),
       });
     }
     next();
-  }
+  },
 ];
 
 // Middleware para verificar el token JWT
@@ -49,7 +50,7 @@ export const authenticateToken = (req, res, next) => {
   if (!token) {
     return res.status(401).json({
       message: 'Token no proporcionado',
-      status: 401
+      status: 401,
     });
   }
 
@@ -61,12 +62,12 @@ export const authenticateToken = (req, res, next) => {
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         message: 'Token expirado',
-        status: 401
+        status: 401,
       });
     }
     return res.status(403).json({
       message: 'Token inválido',
-      status: 403
+      status: 403,
     });
   }
 };
@@ -78,7 +79,7 @@ export const isAdmin = (req, res, next) => {
   } else {
     res.status(403).json({
       message: 'Acceso denegado. Se requieren permisos de administrador.',
-      status: 403
+      status: 403,
     });
   }
 };
@@ -88,23 +89,23 @@ export const requiresLicense = async (req, res, next) => {
   try {
     // Buscar licencia activa
     const user = await User.findByPk(req.user.id, {
-      include: [{ model: License, as: 'license' }]
+      include: [{ model: License, as: 'license' }],
     });
-    
+
     if (!user.license || !user.license.active || new Date(user.license.expiryDate) < new Date()) {
       return res.status(403).json({
         message: 'Se requiere una licencia activa para acceder a esta funcionalidad',
         status: 403,
-        requiresLicense: true
+        requiresLicense: true,
       });
     }
-    
+
     next();
   } catch (error) {
     console.error('Error verificando licencia:', error);
     res.status(500).json({
       message: 'Error al verificar la licencia',
-      status: 500
+      status: 500,
     });
   }
 };

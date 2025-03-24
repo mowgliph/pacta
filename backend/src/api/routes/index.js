@@ -28,4 +28,4 @@ router.use('/companies', validateJWT, companyRoutes);
 // Estadísticas del sistema (protegido, solo admin)
 router.get('/stats', validateJWT, indexController.getSystemStats);
 
-export default router; 
+export default router;

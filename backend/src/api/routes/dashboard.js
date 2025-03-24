@@ -7,4 +7,4 @@ const router = express.Router();
 // Dashboard endpoint - Provides consolidated statistics for the dashboard
 router.get('/', authenticateToken, getDashboardData);
 
-export default router; 
+export default router;

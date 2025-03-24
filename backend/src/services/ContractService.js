@@ -27,7 +27,7 @@ export class ContractService extends BaseService {
     try {
       // Clave de cache basada en los filtros y paginación
       const cacheKey = `contracts:${JSON.stringify(filters)}:page${page}:limit${limit}`;
-      
+
       // Intentar obtener del cache primero
       const cached = await this.cacheService.get(cacheKey);
       if (cached) {
@@ -35,10 +35,10 @@ export class ContractService extends BaseService {
       }
 
       const result = await this.contractRepository.findContracts(filters, page, limit);
-      
+
       // Guardar en cache por 5 minutos
       await this.cacheService.set(cacheKey, result, 300);
-      
+
       return result;
     } catch (error) {
       LoggingService.error('Error getting contracts', { filters, error: error.message });
@@ -60,7 +60,7 @@ export class ContractService extends BaseService {
       // Asignar usuario creador
       const contractData = {
         ...data,
-        authorId: userId
+        authorId: userId,
       };
 
       // Crear el contrato
@@ -68,9 +68,9 @@ export class ContractService extends BaseService {
 
       // Invalidar caches relacionados
       await this.cacheService.invalidatePattern('contracts:*');
-      
+
       LoggingService.info('Contract created', { contractId: newContract.id, userId });
-      
+
       return newContract;
     } catch (error) {
       LoggingService.error('Error creating contract', { data, userId, error: error.message });
@@ -99,9 +99,9 @@ export class ContractService extends BaseService {
       // Invalidar caches relacionados
       await this.cacheService.invalidatePattern('contracts:*');
       await this.cacheService.invalidate(`contract:${id}`);
-      
+
       LoggingService.info('Contract updated', { contractId: id, userId });
-      
+
       return updatedContract;
     } catch (error) {
       LoggingService.error('Error updating contract', { id, data, userId, error: error.message });
@@ -125,7 +125,15 @@ export class ContractService extends BaseService {
       }
 
       // Validar que el estado sea válido
-      const validStatuses = ['DRAFT', 'ACTIVE', 'EXPIRED', 'TERMINATED', 'PENDING_RENEWAL', 'RENEWED', 'ARCHIVED'];
+      const validStatuses = [
+        'DRAFT',
+        'ACTIVE',
+        'EXPIRED',
+        'TERMINATED',
+        'PENDING_RENEWAL',
+        'RENEWED',
+        'ARCHIVED',
+      ];
       if (!validStatuses.includes(status)) {
         throw new ValidationError(`Invalid status: ${status}`);
       }
@@ -136,12 +144,17 @@ export class ContractService extends BaseService {
       // Invalidar caches relacionados
       await this.cacheService.invalidatePattern('contracts:*');
       await this.cacheService.invalidate(`contract:${id}`);
-      
+
       LoggingService.info('Contract status changed', { contractId: id, status, userId });
-      
+
       return updatedContract;
     } catch (error) {
-      LoggingService.error('Error changing contract status', { id, status, userId, error: error.message });
+      LoggingService.error('Error changing contract status', {
+        id,
+        status,
+        userId,
+        error: error.message,
+      });
       this._handleError(error);
     }
   }
@@ -155,7 +168,7 @@ export class ContractService extends BaseService {
   async getExpiringContracts(daysThreshold = 30, limit = 10) {
     try {
       const cacheKey = `expiring-contracts:${daysThreshold}:${limit}`;
-      
+
       // Intentar obtener del cache primero
       const cached = await this.cacheService.get(cacheKey);
       if (cached) {
@@ -163,13 +176,17 @@ export class ContractService extends BaseService {
       }
 
       const contracts = await this.contractRepository.findExpiringContracts(daysThreshold, limit);
-      
+
       // Guardar en cache por 1 hora
       await this.cacheService.set(cacheKey, contracts, 3600);
-      
+
       return contracts;
     } catch (error) {
-      LoggingService.error('Error getting expiring contracts', { daysThreshold, limit, error: error.message });
+      LoggingService.error('Error getting expiring contracts', {
+        daysThreshold,
+        limit,
+        error: error.message,
+      });
       this._handleError(error);
     }
   }
@@ -183,7 +200,7 @@ export class ContractService extends BaseService {
     // Verificar campos requeridos
     const requiredFields = ['title', 'companyId', 'fileUrl', 'startDate', 'endDate'];
     const missingFields = requiredFields.filter(field => !data[field]);
-    
+
     if (missingFields.length > 0) {
       throw new ValidationError(`Missing required fields: ${missingFields.join(', ')}`);
     }
@@ -191,15 +208,15 @@ export class ContractService extends BaseService {
     // Validar fechas
     const startDate = new Date(data.startDate);
     const endDate = new Date(data.endDate);
-    
+
     if (isNaN(startDate.getTime())) {
       throw new ValidationError('Invalid start date');
     }
-    
+
     if (isNaN(endDate.getTime())) {
       throw new ValidationError('Invalid end date');
     }
-    
+
     if (endDate <= startDate) {
       throw new ValidationError('End date must be after start date');
     }
@@ -208,9 +225,9 @@ export class ContractService extends BaseService {
     if (data.alertDays !== undefined && (isNaN(data.alertDays) || data.alertDays < 0)) {
       throw new ValidationError('Alert days must be a positive number');
     }
-    
+
     if (data.renewalPeriod !== undefined && (isNaN(data.renewalPeriod) || data.renewalPeriod < 0)) {
       throw new ValidationError('Renewal period must be a positive number');
     }
   }
-} 
+}

@@ -39,14 +39,11 @@ class SchedulerService {
     try {
       const licenses = await License.findAll({
         where: { active: true },
-        include: [{ model: User, as: 'user' }]
+        include: [{ model: User, as: 'user' }],
       });
 
       for (const license of licenses) {
-        const daysUntilExpiry = differenceInDays(
-          new Date(license.expiryDate),
-          new Date()
-        );
+        const daysUntilExpiry = differenceInDays(new Date(license.expiryDate), new Date());
 
         // Licencia expirada
         if (daysUntilExpiry < 0) {
@@ -56,8 +53,8 @@ class SchedulerService {
             `Your license ${license.licenseKey} has expired.`,
             {
               licenseId: license.id,
-              action: 'RENEW'
-            }
+              action: 'RENEW',
+            },
           );
           continue;
         }
@@ -72,8 +69,8 @@ class SchedulerService {
             {
               licenseId: license.id,
               daysRemaining: daysUntilExpiry,
-              action: 'RENEW'
-            }
+              action: 'RENEW',
+            },
           );
         }
       }
@@ -87,14 +84,11 @@ class SchedulerService {
     try {
       const contracts = await Contract.findAll({
         where: { active: true },
-        include: [{ model: User, as: 'user' }]
+        include: [{ model: User, as: 'user' }],
       });
 
       for (const contract of contracts) {
-        const daysUntilExpiry = differenceInDays(
-          new Date(contract.endDate),
-          new Date()
-        );
+        const daysUntilExpiry = differenceInDays(new Date(contract.endDate), new Date());
 
         // Contrato expirado
         if (daysUntilExpiry < 0) {
@@ -105,8 +99,8 @@ class SchedulerService {
             `Contract ${contract.contractNumber} has expired.`,
             {
               contractId: contract.id,
-              action: 'RENEW'
-            }
+              action: 'RENEW',
+            },
           );
           continue;
         }
@@ -122,8 +116,8 @@ class SchedulerService {
             {
               contractId: contract.id,
               daysRemaining: daysUntilExpiry,
-              action: 'RENEW'
-            }
+              action: 'RENEW',
+            },
           );
         }
 
@@ -140,8 +134,8 @@ class SchedulerService {
                 {
                   contractId: contract.id,
                   milestoneId: milestone.id,
-                  action: 'VIEW_MILESTONE'
-                }
+                  action: 'VIEW_MILESTONE',
+                },
               );
             }
           }

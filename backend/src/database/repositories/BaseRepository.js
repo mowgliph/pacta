@@ -21,7 +21,7 @@ export class BaseRepository {
     const { count, rows } = await this.model.findAndCountAll({
       ...options,
       offset,
-      limit
+      limit,
     });
 
     return {
@@ -30,8 +30,8 @@ export class BaseRepository {
         total: count,
         page,
         limit,
-        totalPages: Math.ceil(count / limit)
-      }
+        totalPages: Math.ceil(count / limit),
+      },
     };
   }
 
@@ -48,13 +48,13 @@ export class BaseRepository {
   /**
    * Encuentra una entidad por criterios específicos
    * @param {Object} criteria - Criterios de búsqueda (where)
-   * @param {Object} options - Opciones adicionales (include, attributes, etc) 
+   * @param {Object} options - Opciones adicionales (include, attributes, etc)
    * @returns {Promise<Object>} - Entidad encontrada
    */
   async findOne(criteria, options = {}) {
     return this.model.findOne({
       ...options,
-      where: criteria
+      where: criteria,
     });
   }
 
@@ -78,20 +78,20 @@ export class BaseRepository {
   async update(id, data, options = {}) {
     const entity = await this.findById(id);
     if (!entity) return null;
-    
+
     return entity.update(data, options);
   }
 
   /**
    * Elimina una entidad (o soft delete si el modelo tiene paranoid=true)
-   * @param {String|Number} id - ID de la entidad a eliminar 
+   * @param {String|Number} id - ID de la entidad a eliminar
    * @param {Object} options - Opciones adicionales
    * @returns {Promise<Boolean>} - true si se eliminó, false si no
    */
   async delete(id, options = {}) {
     const entity = await this.findById(id);
     if (!entity) return false;
-    
+
     await entity.destroy(options);
     return true;
   }
@@ -104,7 +104,7 @@ export class BaseRepository {
   async forceDelete(id) {
     const entity = await this.findById(id);
     if (!entity) return false;
-    
+
     await entity.destroy({ force: true });
     return true;
   }
@@ -117,7 +117,7 @@ export class BaseRepository {
   async restore(id) {
     const entity = await this.model.findByPk(id, { paranoid: false });
     if (!entity || !entity.deletedAt) return null;
-    
+
     return entity.restore();
   }
 
@@ -143,7 +143,7 @@ export class BaseRepository {
   async bulkUpdate(data, options = {}) {
     return this.model.bulkCreate(data, {
       ...options,
-      updateOnDuplicate: true
+      updateOnDuplicate: true,
     });
   }
 
@@ -151,10 +151,10 @@ export class BaseRepository {
     return this.model.findOrCreate({
       where: {
         ...where,
-        deletedAt: null
+        deletedAt: null,
       },
       defaults,
-      ...options
+      ...options,
     });
   }
 
@@ -164,10 +164,10 @@ export class BaseRepository {
       ...options,
       where: {
         ...options.where,
-        deletedAt: null
+        deletedAt: null,
       },
       limit,
-      offset
+      offset,
     });
 
     return {
@@ -176,8 +176,8 @@ export class BaseRepository {
         total: count,
         page,
         limit,
-        totalPages: Math.ceil(count / limit)
-      }
+        totalPages: Math.ceil(count / limit),
+      },
     };
   }
-} 
+}

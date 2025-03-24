@@ -39,28 +39,34 @@ El backend sigue una arquitectura en capas:
 ## Instalación
 
 1. Clonar el repositorio:
+
 ```bash
 git clone https://github.com/tu-usuario/pacta.git
 cd pacta/backend
 ```
 
 2. Instalar dependencias:
+
 ```bash
 npm install
 ```
 
 3. Configurar variables de entorno:
+
 ```bash
 cp .env.example .env
 ```
+
 Editar el archivo `.env` con tus configuraciones.
 
 4. Inicializar la base de datos:
+
 ```bash
 npx prisma migrate dev
 ```
 
 5. Iniciar el servidor:
+
 ```bash
 npm run dev
 ```
@@ -77,23 +83,27 @@ npm run dev
 ## API Endpoints
 
 ### General
+
 - `GET /api`: Información de la API
 - `GET /api/health`: Estado de salud del sistema
 - `GET /api/stats`: Estadísticas del sistema (sólo admin)
 
 ### Autenticación
+
 - `POST /api/auth/login`: Iniciar sesión
 - `POST /api/auth/register`: Registrar usuario
 - `POST /api/auth/refresh`: Renovar token
 - `POST /api/auth/logout`: Cerrar sesión
 
 ### Usuarios
+
 - `GET /api/users`: Obtener lista de usuarios
 - `GET /api/users/:id`: Obtener usuario por ID
 - `PUT /api/users/:id`: Actualizar usuario
 - `DELETE /api/users/:id`: Eliminar usuario
 
 ### Contratos
+
 - `GET /api/contracts`: Obtener lista de contratos
 - `POST /api/contracts`: Crear contrato
 - `GET /api/contracts/:id`: Obtener contrato por ID
@@ -102,6 +112,7 @@ npm run dev
 - `GET /api/contracts/expiring`: Obtener contratos próximos a vencer
 
 ### Compañías
+
 - `GET /api/companies`: Obtener lista de compañías
 - `POST /api/companies`: Crear compañía
 - `GET /api/companies/:id`: Obtener compañía por ID
@@ -110,12 +121,14 @@ npm run dev
 - `GET /api/companies/with-expiring-contracts`: Compañías con contratos próximos a vencer
 
 ### Notificaciones
+
 - `GET /api/notifications`: Obtener notificaciones del usuario
 - `GET /api/notifications/unread-count`: Obtener conteo de no leídas
 - `POST /api/notifications/read`: Marcar notificación como leída
 - `POST /api/notifications/read-all`: Marcar todas como leídas
 
 ### Analytics
+
 - `GET /api/analytics/contracts`: Estadísticas de contratos
 - `GET /api/analytics/users`: Estadísticas de usuarios
 - `GET /api/analytics/notifications`: Estadísticas de notificaciones
@@ -148,4 +161,4 @@ src/
 
 ## Licencia
 
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles. 
+Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para más detalles.

@@ -27,14 +27,18 @@ class UserRepository extends BaseRepository {
    * @returns {Promise<Object>} - Usuarios encontrados con paginación
    */
   async searchByName(query, page = 1, limit = 10) {
-    return this.findAll({
-      where: {
-        [Op.or]: [
-          { firstName: { [Op.like]: `%${query}%` } },
-          { lastName: { [Op.like]: `%${query}%` } }
-        ]
-      }
-    }, page, limit);
+    return this.findAll(
+      {
+        where: {
+          [Op.or]: [
+            { firstName: { [Op.like]: `%${query}%` } },
+            { lastName: { [Op.like]: `%${query}%` } },
+          ],
+        },
+      },
+      page,
+      limit,
+    );
   }
 
   /**
@@ -48,7 +52,7 @@ class UserRepository extends BaseRepository {
 
   /**
    * Actualiza el rol de un usuario
-   * @param {String} userId - ID del usuario 
+   * @param {String} userId - ID del usuario
    * @param {String} role - Nuevo rol ('admin', 'user', 'guest')
    * @returns {Promise<Object>} - Usuario actualizado
    */
@@ -125,10 +129,7 @@ class UserRepository extends BaseRepository {
   }
 
   async updateRefreshToken(userId, refreshToken) {
-    return this.update(
-      { refreshToken },
-      { where: { id: userId } }
-    );
+    return this.update({ refreshToken }, { where: { id: userId } });
   }
 
   async updateEmailVerification(userId, verified) {
@@ -137,7 +138,7 @@ class UserRepository extends BaseRepository {
         emailVerified: verified,
         emailVerificationToken: verified ? null : this.generateToken(),
       },
-      { where: { id: userId } }
+      { where: { id: userId } },
     );
   }
 
@@ -151,7 +152,7 @@ class UserRepository extends BaseRepository {
         passwordResetToken: token,
         passwordResetExpires: expires,
       },
-      { where: { id: userId } }
+      { where: { id: userId } },
     );
   }
 
@@ -161,7 +162,7 @@ class UserRepository extends BaseRepository {
         passwordResetToken: null,
         passwordResetExpires: null,
       },
-      { where: { id: userId } }
+      { where: { id: userId } },
     );
   }
 
@@ -190,4 +191,4 @@ class UserRepository extends BaseRepository {
   }
 }
 
-export default new UserRepository(); 
+export default new UserRepository();

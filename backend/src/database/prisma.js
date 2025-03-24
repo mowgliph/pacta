@@ -6,9 +6,7 @@ import { PrismaClient } from '@prisma/client';
 
 // Crear una instancia global de PrismaClient
 const prisma = new PrismaClient({
-  log: process.env.NODE_ENV === 'development' 
-    ? ['query', 'info', 'warn', 'error'] 
-    : ['error'],
+  log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
 });
 
 // Función para probar la conexión a la base de datos
@@ -28,4 +26,4 @@ export const disconnect = async () => {
   await prisma.$disconnect();
 };
 
-export default prisma; 
+export default prisma;

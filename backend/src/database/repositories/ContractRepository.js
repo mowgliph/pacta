@@ -17,19 +17,19 @@ export class ContractRepository extends BasePrismaRepository {
    * @returns {Promise<Object>} - Contratos encontrados con metadata
    */
   async findContracts(filters = {}, page = 1, limit = 10) {
-    const { 
-      search, 
-      status, 
-      contractType, 
-      companyId, 
-      departmentId, 
-      startDateFrom, 
+    const {
+      search,
+      status,
+      contractType,
+      companyId,
+      departmentId,
+      startDateFrom,
       startDateTo,
       endDateFrom,
       endDateTo,
       tags,
       sortBy = 'createdAt',
-      sortOrder = 'desc' 
+      sortOrder = 'desc',
     } = filters;
 
     // Construir condiciones de búsqueda
@@ -41,7 +41,7 @@ export class ContractRepository extends BasePrismaRepository {
         { title: { contains: search, mode: 'insensitive' } },
         { description: { contains: search, mode: 'insensitive' } },
         { contractNumber: { contains: search, mode: 'insensitive' } },
-        { notes: { contains: search, mode: 'insensitive' } }
+        { notes: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -62,9 +62,9 @@ export class ContractRepository extends BasePrismaRepository {
       where.contractTags = {
         some: {
           tagId: {
-            in: Array.isArray(tags) ? tags : [tags]
-          }
-        }
+            in: Array.isArray(tags) ? tags : [tags],
+          },
+        },
       };
     }
 
@@ -75,38 +75,42 @@ export class ContractRepository extends BasePrismaRepository {
     const orderBy = {};
     orderBy[sortBy] = sortOrder;
 
-    return this.findAll({
-      where,
-      orderBy,
-      include: {
-        author: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true
-          }
+    return this.findAll(
+      {
+        where,
+        orderBy,
+        include: {
+          author: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+            },
+          },
+          company: {
+            select: {
+              id: true,
+              name: true,
+              taxId: true,
+            },
+          },
+          department: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          contractTags: {
+            include: {
+              tag: true,
+            },
+          },
         },
-        company: {
-          select: {
-            id: true,
-            name: true,
-            taxId: true
-          }
-        },
-        department: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        contractTags: {
-          include: {
-            tag: true
-          }
-        }
-      }
-    }, page, limit);
+      },
+      page,
+      limit,
+    );
   }
 
   /**
@@ -124,30 +128,30 @@ export class ContractRepository extends BasePrismaRepository {
       where: {
         endDate: {
           gte: today,
-          lte: thresholdDate
+          lte: thresholdDate,
         },
         status: {
-          in: ['ACTIVE', 'PENDING_RENEWAL']
+          in: ['ACTIVE', 'PENDING_RENEWAL'],
         },
-        deletedAt: null
+        deletedAt: null,
       },
       include: {
         company: {
           select: {
             id: true,
-            name: true
-          }
+            name: true,
+          },
         },
         contractTags: {
           include: {
-            tag: true
-          }
-        }
+            tag: true,
+          },
+        },
       },
       orderBy: {
-        endDate: 'asc'
+        endDate: 'asc',
       },
-      take: limit
+      take: limit,
     });
   }
 
@@ -162,10 +166,10 @@ export class ContractRepository extends BasePrismaRepository {
       where: {
         companyId,
         deletedAt: null,
-        ...options.where
+        ...options.where,
       },
       ...options,
-      orderBy: options.orderBy || { createdAt: 'desc' }
+      orderBy: options.orderBy || { createdAt: 'desc' },
     });
   }
 
@@ -178,4 +182,4 @@ export class ContractRepository extends BasePrismaRepository {
   async updateStatus(id, status) {
     return this.update(id, { status });
   }
-} 
+}

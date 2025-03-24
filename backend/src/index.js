@@ -36,4 +36,4 @@ export * from './utils/errors.js';
 export { errorHandler, notFoundHandler } from './api/middleware/errorHandler.js';
 
 // Server (por si se quiere importar la aplicación sin iniciarla)
-export { default as app } from './server.js'; 
+export { default as app } from './server.js';

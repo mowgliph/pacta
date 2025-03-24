@@ -28,7 +28,7 @@ export class CompanyRepository extends BasePrismaRepository {
         { name: { contains: search, mode: 'insensitive' } },
         { taxId: { contains: search, mode: 'insensitive' } },
         { email: { contains: search, mode: 'insensitive' } },
-        { address: { contains: search, mode: 'insensitive' } }
+        { address: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -42,23 +42,27 @@ export class CompanyRepository extends BasePrismaRepository {
     const orderBy = {};
     orderBy[sortBy] = sortOrder;
 
-    return this.findAll({
-      where,
-      orderBy,
-      include: {
-        departments: {
-          select: {
-            id: true,
-            name: true
-          }
+    return this.findAll(
+      {
+        where,
+        orderBy,
+        include: {
+          departments: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          _count: {
+            select: {
+              contracts: true,
+            },
+          },
         },
-        _count: {
-          select: {
-            contracts: true
-          }
-        }
-      }
-    }, page, limit);
+      },
+      page,
+      limit,
+    );
   }
 
   /**
@@ -69,7 +73,7 @@ export class CompanyRepository extends BasePrismaRepository {
   async findTopCompaniesByContracts(limit = 5) {
     return this.prisma.company.findMany({
       where: {
-        deletedAt: null
+        deletedAt: null,
       },
       select: {
         id: true,
@@ -77,16 +81,16 @@ export class CompanyRepository extends BasePrismaRepository {
         industry: true,
         _count: {
           select: {
-            contracts: true
-          }
-        }
+            contracts: true,
+          },
+        },
       },
       orderBy: {
         contracts: {
-          _count: 'desc'
-        }
+          _count: 'desc',
+        },
       },
-      take: limit
+      take: limit,
     });
   }
 
@@ -106,36 +110,36 @@ export class CompanyRepository extends BasePrismaRepository {
           some: {
             endDate: {
               gte: today,
-              lte: thresholdDate
+              lte: thresholdDate,
             },
             status: {
-              in: ['ACTIVE', 'PENDING_RENEWAL']
+              in: ['ACTIVE', 'PENDING_RENEWAL'],
             },
-            deletedAt: null
-          }
+            deletedAt: null,
+          },
         },
-        deletedAt: null
+        deletedAt: null,
       },
       include: {
         contracts: {
           where: {
             endDate: {
               gte: today,
-              lte: thresholdDate
+              lte: thresholdDate,
             },
             status: {
-              in: ['ACTIVE', 'PENDING_RENEWAL']
+              in: ['ACTIVE', 'PENDING_RENEWAL'],
             },
-            deletedAt: null
+            deletedAt: null,
           },
           select: {
             id: true,
             title: true,
             endDate: true,
-            contractType: true
-          }
-        }
-      }
+            contractType: true,
+          },
+        },
+      },
     });
   }
-} 
+}

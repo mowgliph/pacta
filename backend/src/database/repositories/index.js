@@ -7,4 +7,4 @@ export { UserPrismaRepository } from './UserPrismaRepository.js';
 export { UserRepository } from './UserRepository.js';
 export { ContractRepository } from './ContractRepository.js';
 export { CompanyRepository } from './CompanyRepository.js';
-export { NotificationRepository } from './NotificationRepository.js'; 
+export { NotificationRepository } from './NotificationRepository.js';

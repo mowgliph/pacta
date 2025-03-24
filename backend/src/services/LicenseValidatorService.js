@@ -5,12 +5,12 @@ import { License, ActivityLog } from '../models/associations.js';
 const TRIAL_CODES = {
   DEMOPACTA: {
     days: 30,
-    type: 'DEMO'
+    type: 'DEMO',
   },
   TRYPACTA: {
     days: 14,
-    type: 'TRIAL'
-  }
+    type: 'TRIAL',
+  },
 };
 
 class LicenseValidator {
@@ -45,8 +45,8 @@ class LicenseValidator {
         features: licenseData.features || {},
         metadata: {
           customerName: licenseData.customerName,
-          renewalDate: licenseData.renewalDate
-        }
+          renewalDate: licenseData.renewalDate,
+        },
       });
 
       // Log the license activation
@@ -55,7 +55,7 @@ class LicenseValidator {
         action: 'LICENSE_ACTIVATION',
         entityType: 'License',
         entityId: license.id,
-        details: `License activated for ${licenseData.customerName}`
+        details: `License activated for ${licenseData.customerName}`,
       });
 
       return license;
@@ -83,7 +83,7 @@ class LicenseValidator {
       return {
         isValid: false,
         status: 'NO_LICENSE',
-        message: 'No valid license found'
+        message: 'No valid license found',
       };
     }
 
@@ -92,7 +92,7 @@ class LicenseValidator {
         isValid: false,
         status: 'EXPIRED',
         message: 'License has expired',
-        expiryDate: license.expiryDate
+        expiryDate: license.expiryDate,
       };
     }
 
@@ -102,7 +102,7 @@ class LicenseValidator {
         status: 'EXPIRING_SOON',
         message: 'License will expire soon',
         expiryDate: license.expiryDate,
-        renewalDate: license.metadata.renewalDate
+        renewalDate: license.metadata.renewalDate,
       };
     }
 
@@ -112,7 +112,7 @@ class LicenseValidator {
       message: 'License is valid',
       expiryDate: license.expiryDate,
       renewalDate: license.metadata.renewalDate,
-      customerName: license.metadata.customerName
+      customerName: license.metadata.customerName,
     };
   }
 
@@ -128,9 +128,9 @@ class LicenseValidator {
       const existingTrial = await License.findOne({
         where: {
           metadata: {
-            trialCode: code.toUpperCase()
-          }
-        }
+            trialCode: code.toUpperCase(),
+          },
+        },
       });
 
       if (existingTrial) {
@@ -149,13 +149,13 @@ class LicenseValidator {
         active: true,
         maxUsers: 1,
         features: {
-          fullAccess: true
+          fullAccess: true,
         },
         metadata: {
           trialCode: code.toUpperCase(),
           customerName: 'Trial User',
-          renewalDate: expiryDate
-        }
+          renewalDate: expiryDate,
+        },
       });
 
       // Log the trial activation
@@ -164,7 +164,7 @@ class LicenseValidator {
         action: 'TRIAL_ACTIVATION',
         entityType: 'License',
         entityId: license.id,
-        details: `Trial license activated with code ${code}`
+        details: `Trial license activated with code ${code}`,
       });
 
       return {
@@ -172,31 +172,31 @@ class LicenseValidator {
         license: {
           type: license.type,
           expiryDate: license.expiryDate,
-          daysRemaining: trialCode.days
-        }
+          daysRemaining: trialCode.days,
+        },
       };
     } catch (error) {
       return {
         success: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
 
   static async checkTrialStatus(userId) {
     const license = await License.getCurrentLicense();
-    
+
     if (!license) {
       return {
         status: 'NO_TRIAL',
-        message: 'No active trial found'
+        message: 'No active trial found',
       };
     }
 
     if (license.type !== 'DEMO' && license.type !== 'TRIAL') {
       return {
         status: 'FULL_LICENSE',
-        message: 'Full license active'
+        message: 'Full license active',
       };
     }
 
@@ -207,7 +207,7 @@ class LicenseValidator {
       return {
         status: 'EXPIRED',
         message: 'Trial period has expired',
-        expiryDate: license.expiryDate
+        expiryDate: license.expiryDate,
       };
     }
 
@@ -216,7 +216,7 @@ class LicenseValidator {
       message: `Trial active - ${daysRemaining} days remaining`,
       type: license.type,
       expiryDate: license.expiryDate,
-      daysRemaining
+      daysRemaining,
     };
   }
 }

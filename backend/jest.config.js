@@ -20,4 +20,4 @@ export default {
   verbose: true,
   setupFiles: ['<rootDir>/tests/setup.js'],
   testTimeout: 10000,
-}; 
+};

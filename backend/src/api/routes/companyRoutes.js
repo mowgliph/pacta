@@ -23,4 +23,4 @@ router.put('/:id', controller.updateCompany);
 router.get('/top/by-contracts', controller.getTopCompaniesByContracts);
 router.get('/with-expiring-contracts', controller.getCompaniesWithExpiringContracts);
 
-export default router; 
+export default router;

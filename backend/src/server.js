@@ -20,24 +20,28 @@ const app = express();
 // Middlewares globales
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({
-  origin: config.corsOrigin,
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: config.corsOrigin,
+    credentials: true,
+  }),
+);
 app.use(helmet());
 app.use(compression());
 app.use(morgan(config.nodeEnv === 'development' ? 'dev' : 'combined'));
 
 // Rate limiting
-app.use(rateLimit({
-  windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.max,
-  message: {
-    success: false,
-    message: 'Too many requests, please try again later.',
-    statusCode: 429
-  }
-}));
+app.use(
+  rateLimit({
+    windowMs: config.rateLimit.windowMs,
+    max: config.rateLimit.max,
+    message: {
+      success: false,
+      message: 'Too many requests, please try again later.',
+      statusCode: 429,
+    },
+  }),
+);
 
 // Rutas de la API
 app.use(config.apiPrefix, apiRoutes);
@@ -48,7 +52,7 @@ app.get('/health', (req, res) => {
     success: true,
     message: 'Server is running',
     timestamp: new Date(),
-    environment: config.nodeEnv
+    environment: config.nodeEnv,
   });
 });
 
@@ -64,13 +68,13 @@ const startServer = async () => {
     // Conectar a la base de datos con Prisma
     await testConnection();
     console.log('Database connection established successfully');
-    
+
     // Iniciar servidor
     const server = app.listen(config.port, () => {
       console.log(`Server running on port ${config.port} in ${config.nodeEnv} mode`);
       console.log(`API available at http://${config.host}:${config.port}${config.apiPrefix}`);
     });
-    
+
     // Manejo de cierre adecuado
     process.on('SIGTERM', () => {
       console.log('SIGTERM received. Shutting down gracefully');
@@ -79,7 +83,7 @@ const startServer = async () => {
         process.exit(0);
       });
     });
-    
+
     return server;
   } catch (error) {
     console.error('Unable to start server:', error);

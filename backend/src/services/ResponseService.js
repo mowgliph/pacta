@@ -4,17 +4,22 @@ export class ResponseService {
       status: 'success',
       message,
       data,
-      statusCode
+      statusCode,
     };
   }
 
-  static error(message = 'Error occurred', statusCode = 500, code = 'INTERNAL_SERVER_ERROR', errors = null) {
+  static error(
+    message = 'Error occurred',
+    statusCode = 500,
+    code = 'INTERNAL_SERVER_ERROR',
+    errors = null,
+  ) {
     return {
       status: 'error',
       message,
       code,
       errors,
-      statusCode
+      statusCode,
     };
   }
 
@@ -24,7 +29,7 @@ export class ResponseService {
       message,
       data,
       pagination,
-      statusCode: 200
+      statusCode: 200,
     };
   }
 
@@ -79,4 +84,4 @@ export class ResponseService {
   static gatewayTimeout(message = 'Gateway timeout') {
     return this.error(message, 504, 'GATEWAY_TIMEOUT');
   }
-} 
+}

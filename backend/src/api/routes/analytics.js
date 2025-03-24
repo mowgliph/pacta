@@ -7,11 +7,11 @@ const router = express.Router();
 // Middleware para verificar token
 const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
-  
+
   if (!token) {
     return res.status(403).json({ message: 'Se requiere un token para autenticación' });
   }
-  
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.userId = decoded.id;
@@ -51,4 +51,4 @@ router.get('/risk-contracts', verifyToken, analyticsController.getRiskContracts)
  */
 router.get('/:analysisType', verifyToken, analyticsController.getSpecificAnalysis);
 
-export default router; 
+export default router;

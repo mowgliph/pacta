@@ -15,7 +15,7 @@ const models = {
   Contract: Contract(db),
   Notification: Notification(db),
   License: License(db),
-  ActivityLog: ActivityLog(db)
+  ActivityLog: ActivityLog(db),
 };
 
 // Establecer asociaciones
@@ -31,7 +31,7 @@ const setupAssociations = () => {
   User.hasMany(Contract, { foreignKey: 'userId', as: 'contracts' });
   User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
   User.hasMany(ActivityLog, { foreignKey: 'userId', as: 'activityLogs' });
-  
+
   // Other associations
   Contract.belongsTo(User, { foreignKey: 'userId', as: 'user' });
   Notification.belongsTo(User, { foreignKey: 'userId', as: 'user' });
@@ -42,14 +42,6 @@ const setupAssociations = () => {
 setupAssociations();
 
 // Export models and sequelize
-export {
-  sequelize,
-  User,
-  Contract,
-  License,
-  ActivityLog,
-  Notification,
-  db
-};
+export { sequelize, User, Contract, License, ActivityLog, Notification, db };
 
 export default models;
