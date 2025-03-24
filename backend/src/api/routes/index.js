@@ -4,6 +4,7 @@ import contractRoutes from './contractRoutes.js';
 import userRoutes from './userRoutes.js';
 import notificationRoutes from './notificationRoutes.js';
 import analyticsRoutes from './analyticsRoutes.js';
+import companyRoutes from './companyRoutes.js';
 import { validateJWT } from '../api/middleware/errorHandler.js';
 
 const router = express.Router();
@@ -16,12 +17,13 @@ router.use('/contracts', validateJWT, contractRoutes);
 router.use('/users', validateJWT, userRoutes);
 router.use('/notifications', validateJWT, notificationRoutes);
 router.use('/analytics', validateJWT, analyticsRoutes);
+router.use('/companies', validateJWT, companyRoutes);
 
 // Ruta de salud
 router.get('/health', (req, res) => {
   res.json({
     status: 'ok',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 

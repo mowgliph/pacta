@@ -1,357 +1,186 @@
-import { Notification, User, Contract } from '../models/index.js';
-import { NOTIFICATION_CONFIG } from '../config/constants.js';
-import { AppError } from '../api/middleware/errorHandler.js';
+/**
+ * Servicio de notificaciones para la aplicación PACTA
+ * Gestiona la creación, consulta y actualización de notificaciones
+ */
+import { BaseService } from './BaseService.js';
+import { NotificationRepository } from '../database/repositories/NotificationRepository.js';
+import { ValidationError, NotFoundError } from '../utils/errors.js';
+import { LoggingService } from './LoggingService.js';
+import { CacheService } from './CacheService.js';
 
-class NotificationService {
-  static async createNotification(data) {
-    try {
-      const notification = await Notification.create({
-        userId: data.userId,
-        type: data.type,
-        title: data.title,
-        message: data.message,
-        group: data.group,
-        metadata: data.metadata || {},
-        read: false,
-        contractId: data.contractId
-      });
-
-      return notification;
-    } catch (error) {
-      console.error('Error creating notification:', error);
-      throw error;
-    }
+export class NotificationService extends BaseService {
+  constructor() {
+    super(new NotificationRepository());
+    this.notificationRepository = this.repository;
+    this.cacheService = new CacheService();
   }
 
-  static async getNotifications(userId, options = {}) {
+  /**
+   * Obtiene las notificaciones de un usuario
+   * @param {String} userId - ID del usuario
+   * @param {Object} options - Opciones de filtrado y paginación
+   * @returns {Promise<Object>} - Notificaciones con metadata de paginación
+   */
+  async getUserNotifications(userId, options = {}) {
     try {
-      const { page = 1, limit = 10, category, type, read } = options;
-      const offset = (page - 1) * limit;
-
-      const where = { userId };
+      const { page = 1, limit = 10, isRead, type } = options;
       
-      if (category) where.category = category;
-      if (type) where.type = type;
-      if (typeof read === 'boolean') where.read = read;
-
-      const { count, rows } = await Notification.findAndCountAll({
-        where,
-        order: [['createdAt', 'DESC']],
-        limit,
-        offset
-      });
-
-      return {
-        notifications: rows,
-        total: count,
-        page,
-        totalPages: Math.ceil(count / limit)
-      };
+      // Clave de cache
+      const cacheKey = `notifications:user:${userId}:${JSON.stringify(options)}`;
+      
+      // Intentar obtener del cache
+      const cached = await this.cacheService.get(cacheKey);
+      if (cached) {
+        return cached;
+      }
+      
+      const filterOptions = { isRead, type };
+      const result = await this.notificationRepository.findUserNotifications(userId, filterOptions, page, limit);
+      
+      // Guardar en cache por tiempo breve (30 segundos)
+      // Las notificaciones cambian frecuentemente
+      await this.cacheService.set(cacheKey, result, 30);
+      
+      return result;
     } catch (error) {
-      console.error('Error getting notifications:', error);
-      throw error;
+      LoggingService.error('Error getting user notifications', { userId, options, error: error.message });
+      this._handleError(error);
     }
   }
 
-  static async markAsRead(notificationId, userId) {
+  /**
+   * Obtiene el conteo de notificaciones no leídas
+   * @param {String} userId - ID del usuario
+   * @returns {Promise<Number>} - Número de notificaciones no leídas
+   */
+  async getUnreadCount(userId) {
     try {
-      const notification = await Notification.findOne({
-        where: { id: notificationId, userId }
-      });
-
-      if (!notification) {
-        throw new AppError('Notificación no encontrada', 404);
+      const cacheKey = `notifications:unread:${userId}`;
+      
+      // Intentar obtener del cache
+      const cached = await this.cacheService.get(cacheKey);
+      if (cached !== undefined) {
+        return cached;
       }
+      
+      const options = { isRead: false };
+      const result = await this.notificationRepository.findUserNotifications(userId, options, 1, 1);
+      
+      // Guardar en cache por tiempo breve (15 segundos)
+      await this.cacheService.set(cacheKey, result.meta.total, 15);
+      
+      return result.meta.total;
+    } catch (error) {
+      LoggingService.error('Error getting unread notifications count', { userId, error: error.message });
+      this._handleError(error);
+    }
+  }
 
-      await notification.update({
-        status: 'read',
-        readAt: new Date()
-      });
+  /**
+   * Marca notificaciones como leídas
+   * @param {String|Array} notificationIds - ID o array de IDs de notificaciones
+   * @param {String} userId - ID del usuario propietario
+   * @returns {Promise<Number>} - Número de notificaciones actualizadas
+   */
+  async markAsRead(notificationIds, userId) {
+    try {
+      const result = await this.notificationRepository.markAsRead(notificationIds, userId);
+      
+      // Invalidar caches relacionados
+      await this.cacheService.invalidate(`notifications:unread:${userId}`);
+      await this.cacheService.invalidatePattern(`notifications:user:${userId}:*`);
+      
+      LoggingService.info('Notifications marked as read', { notificationIds, userId, count: result });
+      
+      return result;
+    } catch (error) {
+      LoggingService.error('Error marking notifications as read', { notificationIds, userId, error: error.message });
+      this._handleError(error);
+    }
+  }
 
+  /**
+   * Marca todas las notificaciones de un usuario como leídas
+   * @param {String} userId - ID del usuario
+   * @returns {Promise<Number>} - Número de notificaciones actualizadas
+   */
+  async markAllAsRead(userId) {
+    try {
+      const result = await this.notificationRepository.markAllAsRead(userId);
+      
+      // Invalidar caches relacionados
+      await this.cacheService.invalidate(`notifications:unread:${userId}`);
+      await this.cacheService.invalidatePattern(`notifications:user:${userId}:*`);
+      
+      LoggingService.info('All notifications marked as read', { userId, count: result });
+      
+      return result;
+    } catch (error) {
+      LoggingService.error('Error marking all notifications as read', { userId, error: error.message });
+      this._handleError(error);
+    }
+  }
+
+  /**
+   * Crea una nueva notificación
+   * @param {Object} data - Datos de la notificación
+   * @returns {Promise<Object>} - Notificación creada
+   */
+  async createNotification(data) {
+    try {
+      this._validateNotificationData(data);
+      
+      const notification = await this.notificationRepository.create(data);
+      
+      // Invalidar caches relacionados
+      await this.cacheService.invalidate(`notifications:unread:${data.userId}`);
+      await this.cacheService.invalidatePattern(`notifications:user:${data.userId}:*`);
+      
+      LoggingService.info('Notification created', { notificationId: notification.id, userId: data.userId });
+      
       return notification;
     } catch (error) {
-      console.error('Error marking notification as read:', error);
-      throw error;
+      LoggingService.error('Error creating notification', { data, error: error.message });
+      this._handleError(error);
     }
   }
 
-  static async markAllAsRead(userId) {
+  /**
+   * Crea notificaciones para contratos próximos a vencer
+   * @param {Number} daysThreshold - Días umbral para considerar vencimiento próximo
+   * @returns {Promise<Number>} - Número de notificaciones creadas
+   */
+  async createExpirationNotifications(daysThreshold = 30) {
     try {
-      await Notification.update(
-        {
-          status: 'read',
-          readAt: new Date()
-        },
-        {
-          where: {
-            userId,
-            status: 'unread'
-          }
-        }
-      );
-    } catch (error) {
-      console.error('Error marking all notifications as read:', error);
-      throw error;
-    }
-  }
-
-  static async deleteNotification(notificationId, userId) {
-    try {
-      const notification = await Notification.findOne({
-        where: { id: notificationId, userId }
-      });
-
-      if (!notification) {
-        throw new Error('Notification not found');
-      }
-
-      await notification.destroy();
-      return true;
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-      throw error;
-    }
-  }
-
-  static async getUnreadCount(userId, category) {
-    try {
-      const where = { 
-        userId,
-        read: false
-      };
-
-      if (category) where.category = category;
-
-      const count = await Notification.count({ where });
+      const count = await this.notificationRepository.createExpirationNotifications(daysThreshold);
+      
+      LoggingService.info('Contract expiration notifications created', { count, daysThreshold });
+      
       return count;
     } catch (error) {
-      console.error('Error getting unread count:', error);
-      throw error;
+      LoggingService.error('Error creating expiration notifications', { daysThreshold, error: error.message });
+      this._handleError(error);
     }
   }
 
-  // Métodos específicos para notificaciones de licencias
-  static async createLicenseNotification(userId, type, message, metadata = {}) {
-    try {
-      const notification = await Notification.create({
-        userId,
-        type,
-        message,
-        category: 'LICENSE',
-        metadata: {
-          timestamp: new Date().toISOString(),
-          ...metadata
-        },
-        read: false
-      });
-
-      return notification;
-    } catch (error) {
-      console.error('Error creating license notification:', error);
-      throw error;
+  /**
+   * Valida los datos de una notificación
+   * @param {Object} data - Datos a validar
+   * @throws {ValidationError} - Si los datos son inválidos
+   * @private
+   */
+  _validateNotificationData(data) {
+    const requiredFields = ['userId', 'title', 'message', 'type'];
+    const missingFields = requiredFields.filter(field => !data[field]);
+    
+    if (missingFields.length > 0) {
+      throw new ValidationError(`Missing required fields: ${missingFields.join(', ')}`);
+    }
+    
+    // Validar que el tipo sea válido
+    const validTypes = ['EXPIRATION_WARNING', 'RENEWAL_REMINDER', 'DOCUMENT_UPDATED', 'COMMENT_ADDED', 'ASSIGNMENT', 'SYSTEM'];
+    if (!validTypes.includes(data.type)) {
+      throw new ValidationError(`Invalid notification type: ${data.type}`);
     }
   }
-
-  // Métodos específicos para notificaciones de contratos
-  static async createContractNotification(userId, contractId, type, message, metadata = {}) {
-    return this.createNotification({
-      userId,
-      contractId,
-      type,
-      title: 'Contract Notification',
-      message,
-      group: 'contract',
-      metadata
-    });
-  }
-
-  // Limpiar notificaciones antiguas
-  static async cleanupOldNotifications(days = 30) {
-    try {
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - days);
-
-      const where = {
-        createdAt: {
-          [db.Sequelize.Op.lt]: cutoffDate
-        },
-        read: true
-      };
-
-      await Notification.destroy({ where });
-      return true;
-    } catch (error) {
-      console.error('Error cleaning up old notifications:', error);
-      throw error;
-    }
-  }
-
-  static async createContractExpiryNotification(contractId) {
-    try {
-      const contract = await Contract.findByPk(contractId, {
-        include: [{ model: User, attributes: ['id', 'username'] }]
-      });
-
-      if (!contract) {
-        throw new AppError('Contrato no encontrado', 404);
-      }
-
-      const daysUntilExpiry = Math.ceil((contract.endDate - new Date()) / (1000 * 60 * 60 * 24));
-      
-      if (daysUntilExpiry <= NOTIFICATION_CONFIG.DEFAULT_NOTIFICATION_DAYS) {
-        const message = `El contrato ${contract.contractNumber} expirará en ${daysUntilExpiry} días`;
-        
-        await Notification.createNotification(
-          contract.User.id,
-          'contract_expiry',
-          message,
-          contractId
-        );
-      }
-    } catch (error) {
-      console.error('Error creating contract expiry notification:', error);
-      throw error;
-    }
-  }
-
-  static async createRenewalReminder(contractId) {
-    try {
-      const contract = await Contract.findByPk(contractId, {
-        include: [{ model: User, attributes: ['id', 'username'] }]
-      });
-
-      if (!contract) {
-        throw new AppError('Contrato no encontrado', 404);
-      }
-
-      const message = `El contrato ${contract.contractNumber} está próximo a renovarse`;
-      
-      await Notification.createNotification(
-        contract.User.id,
-        'renewal_reminder',
-        message,
-        contractId
-      );
-    } catch (error) {
-      console.error('Error creating renewal reminder:', error);
-      throw error;
-    }
-  }
-
-  static async createStatusChangeNotification(contractId, oldStatus, newStatus) {
-    try {
-      const contract = await Contract.findByPk(contractId, {
-        include: [{ model: User, attributes: ['id', 'username'] }]
-      });
-
-      if (!contract) {
-        throw new AppError('Contrato no encontrado', 404);
-      }
-
-      const message = `El estado del contrato ${contract.contractNumber} ha cambiado de ${oldStatus} a ${newStatus}`;
-      
-      await Notification.createNotification(
-        contract.User.id,
-        'status_change',
-        message,
-        contractId
-      );
-    } catch (error) {
-      console.error('Error creating status change notification:', error);
-      throw error;
-    }
-  }
-
-  static async createDocumentUpdateNotification(contractId, documentName) {
-    try {
-      const contract = await Contract.findByPk(contractId, {
-        include: [{ model: User, attributes: ['id', 'username'] }]
-      });
-
-      if (!contract) {
-        throw new AppError('Contrato no encontrado', 404);
-      }
-
-      const message = `Se ha actualizado el documento ${documentName} en el contrato ${contract.contractNumber}`;
-      
-      await Notification.createNotification(
-        contract.User.id,
-        'document_update',
-        message,
-        contractId
-      );
-    } catch (error) {
-      console.error('Error creating document update notification:', error);
-      throw error;
-    }
-  }
-
-  static async getUserNotifications(userId, { page = 1, limit = 10, status = null } = {}) {
-    try {
-      const where = { userId };
-      if (status) {
-        where.status = status;
-      }
-
-      const notifications = await Notification.findAndCountAll({
-        where,
-        include: [
-          { model: Contract, attributes: ['contractNumber', 'name'] }
-        ],
-        order: [['createdAt', 'DESC']],
-        limit,
-        offset: (page - 1) * limit
-      });
-
-      return {
-        notifications: notifications.rows,
-        total: notifications.count,
-        page,
-        totalPages: Math.ceil(notifications.count / limit)
-      };
-    } catch (error) {
-      console.error('Error getting user notifications:', error);
-      throw error;
-    }
-  }
-
-  static async archiveNotification(notificationId, userId) {
-    try {
-      const notification = await Notification.findOne({
-        where: { id: notificationId, userId }
-      });
-
-      if (!notification) {
-        throw new AppError('Notificación no encontrada', 404);
-      }
-
-      await notification.update({
-        status: 'archived'
-      });
-
-      return notification;
-    } catch (error) {
-      console.error('Error archiving notification:', error);
-      throw error;
-    }
-  }
-
-  static async cleanupExpiredNotifications() {
-    try {
-      await Notification.update(
-        { status: 'archived' },
-        {
-          where: {
-            status: { [db.Sequelize.Op.ne]: 'archived' },
-            expiresAt: { [db.Sequelize.Op.lt]: new Date() }
-          }
-        }
-      );
-    } catch (error) {
-      console.error('Error cleaning up expired notifications:', error);
-      throw error;
-    }
-  }
-}
-
-export default NotificationService; 
+} 
