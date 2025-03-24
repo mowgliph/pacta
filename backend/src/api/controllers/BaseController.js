@@ -19,6 +19,8 @@ export class BaseController {
       throw new Error('Service is required for BaseController');
     }
     this.service = service;
+    this.sendResponse = this.sendResponse.bind(this);
+    this.sendError = this.sendError.bind(this);
   }
 
   /**
@@ -245,5 +247,53 @@ export class BaseController {
         next(error);
       }
     };
+  }
+
+  sendResponse(res, data, statusCode = 200, message = 'Success') {
+    res.status(statusCode).json({
+      status: 'success',
+      message,
+      data,
+    });
+  }
+
+  sendError(res, error, statusCode = 500) {
+    res.status(statusCode).json({
+      status: 'error',
+      message: error.message || 'Internal server error',
+      ...(process.env.NODE_ENV === 'development' && { stack: error.stack }),
+    });
+  }
+
+  sendPaginatedResponse(res, data, page, limit, total, message = 'Success') {
+    res.status(200).json({
+      status: 'success',
+      message,
+      data,
+      pagination: {
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    });
+  }
+
+  // Helper method for handling async operations
+  async handleAsync(req, res, next, operation) {
+    try {
+      const result = await operation();
+      return this.sendResponse(res, result);
+    } catch (error) {
+      return this.sendError(res, error);
+    }
+  }
+
+  // Helper method for handling file uploads
+  handleFileUpload(req, res, next) {
+    if (!req.file) {
+      return this.sendError(res, new Error('No file uploaded'), 400);
+    }
+    next();
   }
 }

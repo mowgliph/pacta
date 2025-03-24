@@ -79,4 +79,4 @@ export class CompanyPrismaRepository extends BasePrismaRepository {
   }
 }
 
-export default new CompanyPrismaRepository(); 
+export default new CompanyPrismaRepository();

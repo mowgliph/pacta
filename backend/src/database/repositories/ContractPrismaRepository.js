@@ -19,10 +19,7 @@ export class ContractPrismaRepository extends BasePrismaRepository {
     const skip = (page - 1) * limit;
 
     const where = {
-      OR: [
-        { title: { contains: query } },
-        { description: { contains: query } },
-      ],
+      OR: [{ title: { contains: query } }, { description: { contains: query } }],
       deletedAt: null,
     };
 
@@ -83,7 +80,7 @@ export class ContractPrismaRepository extends BasePrismaRepository {
   async updateStatus(id, status) {
     return this.prisma.contract.update({
       where: { id },
-      data: { 
+      data: {
         status,
         updatedAt: new Date(),
       },
@@ -124,4 +121,4 @@ export class ContractPrismaRepository extends BasePrismaRepository {
   }
 }
 
-export default new ContractPrismaRepository(); 
+export default new ContractPrismaRepository();

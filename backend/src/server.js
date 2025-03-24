@@ -4,96 +4,121 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import morgan from 'morgan';
-import rateLimit from 'express-rate-limit';
 import compression from 'compression';
-import config from './config/app.config.js';
-import { testConnection } from './database/prisma.js';
-import { errorHandler, notFoundHandler } from './api/middleware/errorHandler.js';
+import morgan from 'morgan';
+import { config } from 'dotenv';
+import { handleError } from './utils/errors.js';
+import { apiLimiter } from './api/middleware/rateLimit.js';
+import routes from './api/routes/index.js';
 
-// Importar rutas
-import apiRoutes from './api/routes/index.js';
+// Load environment variables
+config();
 
-// Inicializar aplicación
 const app = express();
 
-// Middlewares globales
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Security middleware
 app.use(
-  cors({
-    origin: config.corsOrigin,
-    credentials: true,
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", 'data:', 'https:'],
+      },
+    },
+    crossOriginEmbedderPolicy: true,
+    crossOriginOpenerPolicy: true,
+    crossOriginResourcePolicy: { policy: 'same-site' },
+    dnsPrefetchControl: true,
+    frameguard: { action: 'deny' },
+    hidePoweredBy: true,
+    hsts: true,
+    ieNoOpen: true,
+    noSniff: true,
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    xssFilter: true,
   }),
 );
-app.use(helmet());
-app.use(compression());
-app.use(morgan(config.nodeEnv === 'development' ? 'dev' : 'combined'));
 
-// Rate limiting
 app.use(
-  rateLimit({
-    windowMs: config.rateLimit.windowMs,
-    max: config.rateLimit.max,
-    message: {
-      success: false,
-      message: 'Too many requests, please try again later.',
-      statusCode: 429,
+  cors({
+    origin: process.env.CORS_ORIGIN || '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    maxAge: 86400,
+  }),
+);
+
+// Performance middleware
+app.use(compression());
+app.use(
+  express.json({
+    limit: '10mb',
+    verify: (req, res, buf) => {
+      req.rawBody = buf;
     },
   }),
 );
 
-// Rutas de la API
-app.use(config.apiPrefix, apiRoutes);
+app.use(
+  express.urlencoded({
+    extended: true,
+    limit: '10mb',
+  }),
+);
 
-// Ruta de verificación de salud
+// Logging middleware
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+} else {
+  app.use(morgan('combined'));
+}
+
+// Rate limiting
+app.use('/api', apiLimiter);
+
+// Routes
+app.use('/api', routes);
+
+// Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({
-    success: true,
-    message: 'Server is running',
-    timestamp: new Date(),
-    environment: config.nodeEnv,
+    status: 'success',
+    message: 'Server is healthy',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV,
   });
 });
 
-// Manejo de rutas no encontradas
-app.use(notFoundHandler);
+// 404 handler
+app.use((req, res, _next) => {
+  res.status(404).json({
+    status: 'error',
+    message: `Route ${req.originalUrl} not found`,
+    timestamp: new Date().toISOString(),
+  });
+});
 
-// Manejo centralizado de errores
-app.use(errorHandler);
+// Error handling middleware
+app.use(handleError);
 
-// Función para iniciar el servidor
-const startServer = async () => {
-  try {
-    // Conectar a la base de datos con Prisma
-    await testConnection();
-    console.log('Database connection established successfully');
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || 'localhost';
 
-    // Iniciar servidor
-    const server = app.listen(config.port, () => {
-      console.log(`Server running on port ${config.port} in ${config.nodeEnv} mode`);
-      console.log(`API available at http://${config.host}:${config.port}${config.apiPrefix}`);
-    });
+const server = app.listen(PORT, HOST, () => {
+  console.log(`Server is running on http://${HOST}:${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV}`);
+});
 
-    // Manejo de cierre adecuado
-    process.on('SIGTERM', () => {
-      console.log('SIGTERM received. Shutting down gracefully');
-      server.close(() => {
-        console.log('Server closed');
-        process.exit(0);
-      });
-    });
-
-    return server;
-  } catch (error) {
-    console.error('Unable to start server:', error);
-    process.exit(1);
-  }
-};
-
-// Iniciar el servidor si este archivo es ejecutado directamente
-if (process.argv[1] === import.meta.url) {
-  startServer();
-}
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received. Closing server...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
 
 export default app;

@@ -180,4 +180,4 @@ export class NotificationPrismaRepository extends BasePrismaRepository {
   }
 }
 
-export default new NotificationPrismaRepository(); 
+export default new NotificationPrismaRepository();

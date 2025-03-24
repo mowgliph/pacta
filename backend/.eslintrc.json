@@ -10,6 +10,7 @@
     "sourceType": "module"
   },
   "rules": {
+    "prettier/prettier": ["error", { "endOfLine": "lf" }],
     "no-console": ["warn", { "allow": ["warn", "error", "info"] }],
     "no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
     "no-var": "error",
@@ -36,13 +37,22 @@
         "ignoreComments": true,
         "ignoreUrls": true,
         "ignoreStrings": true,
-        "ignoreTemplateLiterals": true
+        "ignoreTemplateLiterals": true,
+        "ignoreRegExpLiterals": true
       }
     ],
     "object-curly-spacing": ["error", "always"],
     "arrow-parens": ["error", "as-needed"],
     "no-multiple-empty-lines": ["error", { "max": 1, "maxEOF": 1 }],
     "space-infix-ops": "error",
-    "keyword-spacing": ["error", { "before": true, "after": true }]
+    "keyword-spacing": ["error", { "before": true, "after": true }],
+    "no-trailing-spaces": "error",
+    "eol-last": ["error", "always"],
+    "no-mixed-spaces-and-tabs": "error",
+    "no-multi-spaces": "error",
+    "no-multi-assign": "error",
+    "no-return-await": "error",
+    "require-await": "error",
+    "no-await-in-loop": "error"
   }
 }
