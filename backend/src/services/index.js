@@ -1,5 +1,6 @@
 /**
  * Exportación centralizada de servicios
+ * Facilita la importación de servicios en otros archivos
  */
 
 // Servicios base
@@ -17,6 +18,11 @@ export { NotificationService } from './NotificationService.js';
 
 // Servicios de sistema
 export { SchedulerService } from './SchedulerService.js';
+export { LicenseValidatorService } from './LicenseValidatorService.js';
+
+// Servicios de análisis
+export { AnalyticsService } from './AnalyticsService.js';
+export { ReportService } from './ReportService.js';
 
 // Exportaciones específicas
 export * from './ValidationService.js'; 

@@ -1,12 +1,12 @@
 import express from 'express';
-import authRoutes from './authRoutes.js';
-import contractRoutes from './contractRoutes.js';
+import authRoutes from './auth.js';
+import contractRoutes from './contracts.js';
 import userRoutes from './userRoutes.js';
 import notificationRoutes from './notificationRoutes.js';
-import analyticsRoutes from './analyticsRoutes.js';
+import analyticsRoutes from './analytics.js';
 import companyRoutes from './companyRoutes.js';
 import { IndexController } from '../controllers/IndexController.js';
-import { validateJWT } from '../api/middleware/errorHandler.js';
+import { validateJWT } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 const indexController = new IndexController();

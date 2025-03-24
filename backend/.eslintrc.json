@@ -13,8 +13,8 @@
     "sourceType": "module"
   },
   "rules": {
-    "no-console": ["warn", { "allow": ["warn", "error"] }],
-    "no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
+    "no-console": ["warn", { "allow": ["warn", "error", "info"] }],
+    "no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
     "no-var": "error",
     "prefer-const": "error",
     "eqeqeq": ["error", "always"],
@@ -28,12 +28,18 @@
     "comma-dangle": ["error", "always-multiline"],
     "semi": ["error", "always"],
     "quotes": ["error", "single", { "avoidEscape": true }],
-    "indent": ["error", 2],
+    "indent": ["error", 2, { "SwitchCase": 1 }],
     "max-len": ["error", {
       "code": 100,
       "ignoreComments": true,
+      "ignoreUrls": true,
       "ignoreStrings": true,
       "ignoreTemplateLiterals": true
-    }]
+    }],
+    "object-curly-spacing": ["error", "always"],
+    "arrow-parens": ["error", "as-needed"],
+    "no-multiple-empty-lines": ["error", { "max": 1, "maxEOF": 1 }],
+    "space-infix-ops": "error",
+    "keyword-spacing": ["error", { "before": true, "after": true }]
   }
 } 

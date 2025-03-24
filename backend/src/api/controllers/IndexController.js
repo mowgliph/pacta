@@ -30,10 +30,10 @@ export class IndexController {
         },
         documentation: '/api/docs',
       };
-      
-      res.status(200).json(ResponseService.success(apiInfo));
+
+      return res.status(200).json(ResponseService.success(apiInfo));
     } catch (error) {
-      next(error);
+      return next(error);
     }
   };
 
@@ -53,10 +53,10 @@ export class IndexController {
         memoryUsage: process.memoryUsage(),
         environment: process.env.NODE_ENV || 'development',
       };
-      
-      res.status(200).json(ResponseService.success(healthInfo));
+
+      return res.status(200).json(ResponseService.success(healthInfo));
     } catch (error) {
-      next(error);
+      return next(error);
     }
   };
 
@@ -70,11 +70,11 @@ export class IndexController {
     try {
       // Solo permitir a administradores acceder a estas estadísticas
       if (!req.user?.isAdmin) {
-        return res.status(403).json(
-          ResponseService.error('Unauthorized: Admin access required', 403)
-        );
+        return res
+          .status(403)
+          .json(ResponseService.error('Unauthorized: Admin access required', 403));
       }
-      
+
       // En una implementación real, aquí obtendríamos estadísticas del sistema
       // Ejemplo: CPU, memoria, conexiones a BD, usuarios activos, etc.
       const stats = {
@@ -83,12 +83,10 @@ export class IndexController {
         uptime: Math.floor(process.uptime()),
         // Otras estadísticas que vendrían desde servicios dedicados
       };
-      
-      res.status(200).json(ResponseService.success(stats));
+
+      return res.status(200).json(ResponseService.success(stats));
     } catch (error) {
-      next(error);
+      return next(error);
     }
   };
-}
-
-export default new IndexController(); 
+} 
