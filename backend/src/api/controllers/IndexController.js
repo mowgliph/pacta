@@ -3,90 +3,104 @@
  * Proporciona endpoints para documentación y salud del sistema
  */
 import { ResponseService } from '../../services/ResponseService.js';
+import os from 'os';
 import { version } from '../../../package.json';
 
-export class IndexController {
+class IndexController {
   /**
-   * Punto de entrada a la API
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
+   * Obtiene información general de la API
+   * @param {Object} req - Request Express
+   * @param {Object} res - Response Express
    */
-  getApiInfo = async (req, res, next) => {
-    try {
-      const apiInfo = {
-        name: 'PACTA API',
-        version,
-        description: 'API REST para el sistema de gestión de contratos PACTA',
-        endpoints: {
-          base: '/api',
-          auth: '/api/auth',
-          users: '/api/users',
-          companies: '/api/companies',
-          contracts: '/api/contracts',
-          notifications: '/api/notifications',
-          analytics: '/api/analytics',
-          health: '/api/health',
-        },
-        documentation: '/api/docs',
-      };
+  async getApiInfo(req, res) {
+    const apiInfo = {
+      name: 'PACTA API',
+      version,
+      description: 'API para la gestión de contratos y licencias de software',
+      endpoints: {
+        auth: '/api/auth',
+        users: '/api/users',
+        companies: '/api/companies',
+        contracts: '/api/contracts',
+        notifications: '/api/notifications',
+        analytics: '/api/analytics',
+        health: '/api/health',
+        docs: '/api/docs',
+      },
+    };
 
-      return res.status(200).json(ResponseService.success(apiInfo));
-    } catch (error) {
-      return next(error);
-    }
-  };
+    return res
+      .status(200)
+      .json(ResponseService.success('API information retrieved successfully', apiInfo));
+  }
 
   /**
-   * Comprueba la salud del sistema
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
+   * Verifica el estado de salud del sistema
+   * @param {Object} req - Request Express
+   * @param {Object} res - Response Express
    */
-  healthCheck = async (req, res, next) => {
-    try {
-      const healthInfo = {
-        status: 'UP',
-        timestamp: new Date().toISOString(),
-        version,
-        uptime: Math.floor(process.uptime()),
-        memoryUsage: process.memoryUsage(),
-        environment: process.env.NODE_ENV || 'development',
-      };
+  async healthCheck(req, res) {
+    const uptime = process.uptime();
+    const memoryUsage = process.memoryUsage();
 
-      return res.status(200).json(ResponseService.success(healthInfo));
-    } catch (error) {
-      return next(error);
-    }
-  };
+    const healthInfo = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      version,
+      uptime: `${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m ${Math.floor(uptime % 60)}s`,
+      memory: {
+        rss: `${Math.round(memoryUsage.rss / 1024 / 1024)}MB`,
+        heapTotal: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`,
+        heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
+      },
+      environment: process.env.NODE_ENV || 'development',
+    };
+
+    return res
+      .status(200)
+      .json(ResponseService.success('System health check completed', healthInfo));
+  }
 
   /**
-   * Obtener estadísticas básicas del sistema
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
+   * Obtiene estadísticas del sistema (solo admin)
+   * @param {Object} req - Request Express
+   * @param {Object} res - Response Express
    */
-  getSystemStats = async (req, res, next) => {
-    try {
-      // Solo permitir a administradores acceder a estas estadísticas
-      if (!req.user?.isAdmin) {
-        return res
-          .status(403)
-          .json(ResponseService.error('Unauthorized: Admin access required', 403));
-      }
-
-      // En una implementación real, aquí obtendríamos estadísticas del sistema
-      // Ejemplo: CPU, memoria, conexiones a BD, usuarios activos, etc.
-      const stats = {
-        memoryUsage: process.memoryUsage(),
-        cpuUsage: process.cpuUsage(),
-        uptime: Math.floor(process.uptime()),
-        // Otras estadísticas que vendrían desde servicios dedicados
-      };
-
-      return res.status(200).json(ResponseService.success(stats));
-    } catch (error) {
-      return next(error);
+  async getSystemStats(req, res) {
+    // Verificar que sea admin
+    if (!req.user.isAdmin) {
+      return res
+        .status(403)
+        .json(ResponseService.error('Unauthorized: Admin access required', 403));
     }
-  };
+
+    const memoryUsage = process.memoryUsage();
+    const cpuUsage = os.cpus();
+    const uptime = process.uptime();
+
+    const systemStats = {
+      memory: {
+        total: `${Math.round(os.totalmem() / 1024 / 1024)}MB`,
+        free: `${Math.round(os.freemem() / 1024 / 1024)}MB`,
+        usage: `${Math.round((memoryUsage.rss / os.totalmem()) * 100)}%`,
+      },
+      cpu: {
+        cores: cpuUsage.length,
+        model: cpuUsage[0].model,
+        speed: `${cpuUsage[0].speed} MHz`,
+      },
+      uptime: {
+        server: `${Math.floor(uptime / 3600)}h ${Math.floor((uptime % 3600) / 60)}m ${Math.floor(uptime % 60)}s`,
+        os: `${Math.floor(os.uptime() / 3600)}h ${Math.floor((os.uptime() % 3600) / 60)}m ${Math.floor(os.uptime() % 60)}s`,
+      },
+      platform: process.platform,
+      version: process.version,
+    };
+
+    return res
+      .status(200)
+      .json(ResponseService.success('System statistics retrieved successfully', systemStats));
+  }
 }
+
+export default new IndexController();

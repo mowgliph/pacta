@@ -159,7 +159,9 @@ router.put(
       .isISO8601()
       .withMessage('La fecha de fin debe ser una fecha válida')
       .custom((value, { req }) => {
-        if (!req.body.startDate && !req.contract) return true;
+        if (!req.body.startDate && !req.contract) {
+          return true;
+        }
 
         const endDate = new Date(value);
         const startDate = new Date(req.body.startDate || req.contract.startDate);

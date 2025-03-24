@@ -77,7 +77,9 @@ export class BaseRepository {
    */
   async update(id, data, options = {}) {
     const entity = await this.findById(id);
-    if (!entity) return null;
+    if (!entity) {
+      return null;
+    }
 
     return entity.update(data, options);
   }
@@ -90,7 +92,9 @@ export class BaseRepository {
    */
   async delete(id, options = {}) {
     const entity = await this.findById(id);
-    if (!entity) return false;
+    if (!entity) {
+      return false;
+    }
 
     await entity.destroy(options);
     return true;
@@ -103,7 +107,9 @@ export class BaseRepository {
    */
   async forceDelete(id) {
     const entity = await this.findById(id);
-    if (!entity) return false;
+    if (!entity) {
+      return false;
+    }
 
     await entity.destroy({ force: true });
     return true;
@@ -116,7 +122,9 @@ export class BaseRepository {
    */
   async restore(id) {
     const entity = await this.model.findByPk(id, { paranoid: false });
-    if (!entity || !entity.deletedAt) return null;
+    if (!entity || !entity.deletedAt) {
+      return null;
+    }
 
     return entity.restore();
   }
