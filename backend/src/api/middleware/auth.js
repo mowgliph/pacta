@@ -1,15 +1,21 @@
 import jwt from 'jsonwebtoken';
+import { AuthenticationError } from '../utils/errors.js';
+import { UserRepository } from '../database/repositories/UserRepository.js';
+import { LoggingService } from '../services/LoggingService.js';
+import config from '../config/app.config.js';
 import rateLimit from 'express-rate-limit';
 import { body, validationResult } from 'express-validator';
 import { User, License } from '../models/index.js';
+
+const userRepository = new UserRepository();
+const logger = new LoggingService('AuthMiddleware');
 
 // Rate limiter para prevenir ataques de fuerza bruta
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: 5, // 5 intentos
   message: {
-    message:
-      'Demasiados intentos de inicio de sesión. Por favor, intente nuevamente en 15 minutos.',
+    message: 'Demasiados intentos de inicio de sesión. Por favor, intente nuevamente en 15 minutos.',
     status: 429,
   },
 });
@@ -42,33 +48,113 @@ export const validateLogin = [
   },
 ];
 
-// Middleware para verificar el token JWT
-export const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({
-      message: 'Token no proporcionado',
-      status: 401,
-    });
-  }
-
+// Middleware principal de autenticación
+export const authenticate = async (req, res, next) => {
   try {
-    const user = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    req.user = user;
+    // Check if authorization header exists
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      throw new AuthenticationError('Authentication token required');
+    }
+
+    // Extract token
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2 || parts[0] !== 'Bearer') {
+      throw new AuthenticationError('Invalid token format');
+    }
+
+    const token = parts[1];
+
+    // Verify token
+    let decoded;
+    try {
+      decoded = jwt.verify(token, config.jwt.secret);
+    } catch (error) {
+      if (error.name === 'TokenExpiredError') {
+        throw new AuthenticationError('Token expired');
+      }
+      throw new AuthenticationError('Invalid token');
+    }
+
+    // Get user from database
+    const user = await userRepository.findById(decoded.id);
+    if (!user) {
+      throw new AuthenticationError('User not found');
+    }
+
+    // Check if user is active
+    if (user.status !== 'active') {
+      throw new AuthenticationError('User account is not active');
+    }
+
+    // Check if user has a valid license
+    if (user.license && (!user.license.active || new Date(user.license.expiryDate) < new Date())) {
+      throw new AuthenticationError('License expired or inactive');
+    }
+
+    // Attach user to request
+    req.user = {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      licenseType: user.license?.type,
+    };
+
+    // Log authentication
+    logger.info('User authenticated', { userId: user.id, email: user.email });
+
     next();
   } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({
-        message: 'Token expirado',
-        status: 401,
-      });
+    logger.error('Authentication failed', { error: error.message });
+    next(error);
+  }
+};
+
+// Generación de tokens
+export const generateTokens = user => {
+  // Generate access token
+  const accessToken = jwt.sign(
+    { id: user.id, email: user.email, role: user.role },
+    config.jwt.secret,
+    { expiresIn: config.jwt.expiresIn },
+  );
+
+  // Generate refresh token
+  const refreshToken = jwt.sign({ id: user.id }, config.jwt.refreshSecret, {
+    expiresIn: config.jwt.refreshExpiresIn,
+  });
+
+  return { accessToken, refreshToken };
+};
+
+// Renovación de token
+export const refreshToken = async refreshToken => {
+  try {
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret);
+
+    // Get user from database
+    const user = await userRepository.findById(decoded.id);
+    if (!user) {
+      throw new AuthenticationError('User not found');
     }
-    return res.status(403).json({
-      message: 'Token inválido',
-      status: 403,
-    });
+
+    // Check if user is active
+    if (user.status !== 'active') {
+      throw new AuthenticationError('User account is not active');
+    }
+
+    // Generate new tokens
+    const tokens = generateTokens(user);
+
+    // Update refresh token in database
+    await userRepository.updateRefreshToken(user.id, tokens.refreshToken);
+
+    return tokens;
+  } catch (error) {
+    logger.error('Token refresh failed', { error: error.message });
+    throw new AuthenticationError('Invalid refresh token');
   }
 };
 
@@ -77,10 +163,7 @@ export const isAdmin = (req, res, next) => {
   if (req.user && req.user.role === 'admin') {
     next();
   } else {
-    res.status(403).json({
-      message: 'Acceso denegado. Se requieren permisos de administrador.',
-      status: 403,
-    });
+    throw new AuthenticationError('Se requieren permisos de administrador');
   }
 };
 
