@@ -2,53 +2,73 @@
  * Rate limiting middleware configuration for different API routes
  */
 import rateLimit from 'express-rate-limit';
+import { RateLimitError } from '../../utils/errors.js';
+import { logger } from '../../utils/logger.js';
+import config from '../../config/app.config.js';
 
-// Default API rate limiter
+/**
+ * Middleware general para limitar solicitudes a la API
+ */
 export const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  message: {
-    status: 'error',
-    message: 'Too many requests from this IP, please try again after 15 minutes',
+  windowMs: config.security?.rateLimit?.windowMs || 15 * 60 * 1000, // 15 minutos por defecto
+  max: config.security?.rateLimit?.max || 100, // Límite de 100 solicitudes por ventana
+  standardHeaders: true, // Encabezados estándar de rate limit (RateLimit-*)
+  legacyHeaders: false, // Desactivar encabezados X-RateLimit-*
+  handler: (req, res, next, options) => {
+    logger.warn('Rate limit exceeded', {
+      ip: req.ip,
+      path: req.originalUrl,
+      method: req.method,
+    });
+    
+    next(new RateLimitError('Demasiadas solicitudes, por favor inténtelo más tarde'));
   },
-  standardHeaders: true,
-  legacyHeaders: false,
+  keyGenerator: (req) => {
+    // Usar IP como clave, o preferiblemente una header X-Forwarded-For
+    return req.headers['x-forwarded-for'] || req.ip;
+  },
+  skip: (req) => {
+    // No aplicar límite a rutas de healthcheck o de desarrollo
+    return req.path === '/health' || req.path.startsWith('/dev/');
+  },
 });
 
-// More strict limiter for authentication routes
+/**
+ * Middleware más estricto para rutas de autenticación
+ */
 export const authLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 5, // Limit each IP to 5 requests per windowMs
-  message: {
-    status: 'error',
-    message: 'Too many login attempts from this IP, please try again after an hour',
-  },
+  windowMs: 60 * 60 * 1000, // 1 hora
+  max: 20, // 20 intentos por hora
   standardHeaders: true,
   legacyHeaders: false,
+  handler: (req, res, next, options) => {
+    logger.warn('Auth rate limit exceeded', {
+      ip: req.ip,
+      path: req.originalUrl,
+      method: req.method,
+    });
+    
+    next(new RateLimitError('Demasiados intentos de acceso, por favor inténtelo más tarde'));
+  },
 });
 
-// Lenient limiter for public routes
-export const publicLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 requests per windowMs
-  message: {
-    status: 'error',
-    message: 'Too many requests from this IP, please try again after 15 minutes',
-  },
-  standardHeaders: true,
+/**
+ * Middleware para limitar solicitudes a rutas sensibles
+ */
+export const sensitiveRouteLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000, // 5 minutos
+  max: 5, // 5 intentos por 5 minutos
+  standardHeaders: true, 
   legacyHeaders: false,
-});
-
-// Very strict limiter for sensitive operations
-export const sensitiveOpLimiter = rateLimit({
-  windowMs: 24 * 60 * 60 * 1000, // 24 hours
-  max: 3, // Limit each IP to 3 requests per windowMs
-  message: {
-    status: 'error',
-    message: 'Too many sensitive operations from this IP, please try again after 24 hours',
+  handler: (req, res, next, options) => {
+    logger.warn('Sensitive route rate limit exceeded', {
+      ip: req.ip,
+      path: req.originalUrl,
+      method: req.method,
+    });
+    
+    next(new RateLimitError('Demasiados intentos, por favor inténtelo más tarde'));
   },
-  standardHeaders: true,
-  legacyHeaders: false,
 });
 
 // Example usage:

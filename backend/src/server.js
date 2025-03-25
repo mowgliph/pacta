@@ -10,9 +10,19 @@ import { config } from 'dotenv';
 import { handleError } from './utils/errors.js';
 import { apiLimiter } from './api/middleware/rateLimit.js';
 import routes from './api/routes/index.js';
+import { logger } from './utils/logger.js';
+import { testConnection } from './database/prisma.js';
 
 // Load environment variables
 config();
+
+// Crear directorio de logs si no existe
+import fs from 'fs';
+import path from 'path';
+const logDir = path.join(process.cwd(), 'logs');
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir);
+}
 
 const app = express();
 
@@ -71,9 +81,9 @@ app.use(
 
 // Logging middleware
 if (process.env.NODE_ENV === 'development') {
-  app.use(morgan('dev'));
+  app.use(morgan('dev', { stream: { write: message => logger.http(message.trim()) } }));
 } else {
-  app.use(morgan('combined'));
+  app.use(morgan('combined', { stream: { write: message => logger.http(message.trim()) } }));
 }
 
 // Rate limiting
@@ -83,13 +93,27 @@ app.use('/api', apiLimiter);
 app.use('/api', routes);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    message: 'Server is healthy',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV,
-  });
+app.get('/health', async (req, res) => {
+  try {
+    // Verificar conexión a la base de datos
+    await testConnection();
+    
+    res.status(200).json({
+      status: 'success',
+      message: 'Server is healthy',
+      database: 'connected',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: 'Server is running but database connection failed',
+      error: error.message,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV,
+    });
+  }
 });
 
 // 404 handler
@@ -107,18 +131,36 @@ app.use(handleError);
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || 'localhost';
 
-const server = app.listen(PORT, HOST, () => {
-  console.log(`Server is running on http://${HOST}:${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV}`);
-});
+// Inicializar la base de datos y servicios antes de iniciar el servidor
+async function startServer() {
+  try {
+    // Probar conexión a la base de datos
+    await testConnection();
+    logger.info('Conexión a la base de datos establecida correctamente');
+    
+    // Iniciar el servidor
+    const server = app.listen(PORT, HOST, () => {
+      logger.info(`Servidor PACTA iniciado en http://${HOST}:${PORT}`);
+      logger.info(`Ambiente: ${process.env.NODE_ENV}`);
+    });
+    
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+      logger.info('Señal SIGTERM recibida. Cerrando servidor...');
+      server.close(async () => {
+        logger.info('Servidor cerrado');
+        process.exit(0);
+      });
+    });
+    
+    return server;
+  } catch (error) {
+    logger.error('Error al iniciar el servidor:', { error: error.message, stack: error.stack });
+    process.exit(1);
+  }
+}
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('SIGTERM signal received. Closing server...');
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
-  });
-});
+// Iniciar el servidor
+const serverInstance = startServer();
 
 export default app;

@@ -2,82 +2,141 @@
  * Custom error classes and error handling middleware for PACTA
  */
 
-// Base error class for application-specific errors
+/**
+ * Error base para todos los errores de la aplicación
+ */
 export class AppError extends Error {
-  constructor(message, statusCode = 500, isOperational = true) {
+  constructor(message, statusCode, code) {
     super(message);
-    this.statusCode = statusCode;
-    this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
-    this.isOperational = isOperational;
+    this.name = this.constructor.name;
+    this.statusCode = statusCode || 500;
+    this.code = code || 'SERVER_ERROR';
     Error.captureStackTrace(this, this.constructor);
   }
 }
 
-// Specific error types
-export class ValidationError extends AppError {
-  constructor(message) {
-    super(message, 400);
-    this.name = 'ValidationError';
-  }
-}
-
-export class AuthenticationError extends AppError {
-  constructor(message = 'Not authenticated') {
-    super(message, 401);
-    this.name = 'AuthenticationError';
-  }
-}
-
-export class AuthorizationError extends AppError {
-  constructor(message = 'Not authorized') {
-    super(message, 403);
-    this.name = 'AuthorizationError';
-  }
-}
-
+/**
+ * Error para solicitudes no encontradas (404)
+ */
 export class NotFoundError extends AppError {
   constructor(message = 'Resource not found') {
-    super(message, 404);
-    this.name = 'NotFoundError';
+    super(message, 404, 'NOT_FOUND');
   }
 }
 
+/**
+ * Error para solicitudes inválidas (400)
+ */
+export class BadRequestError extends AppError {
+  constructor(message = 'Bad request') {
+    super(message, 400, 'BAD_REQUEST');
+  }
+}
+
+/**
+ * Error para solicitudes no autorizadas (401)
+ */
+export class UnauthorizedError extends AppError {
+  constructor(message = 'Unauthorized') {
+    super(message, 401, 'UNAUTHORIZED');
+  }
+}
+
+/**
+ * Error para acceso prohibido (403)
+ */
+export class ForbiddenError extends AppError {
+  constructor(message = 'Access forbidden') {
+    super(message, 403, 'FORBIDDEN');
+  }
+}
+
+/**
+ * Error para conflicto de recursos (409)
+ */
 export class ConflictError extends AppError {
-  constructor(message) {
-    super(message, 409);
-    this.name = 'ConflictError';
+  constructor(message = 'Resource conflict') {
+    super(message, 409, 'CONFLICT');
   }
 }
 
-export class DatabaseError extends AppError {
-  constructor(message) {
-    super(message, 500);
-    this.name = 'DatabaseError';
+/**
+ * Error para validación de datos (422)
+ */
+export class ValidationError extends AppError {
+  constructor(message = 'Validation error', errors = null) {
+    super(message, 422, 'VALIDATION_ERROR');
+    this.errors = errors;
   }
 }
 
-export class ExternalServiceError extends AppError {
-  constructor(message = 'External service error', code = 'EXTERNAL_SERVICE_ERROR') {
-    super(message, 502, code);
+/**
+ * Error para operaciones no soportadas (405)
+ */
+export class NotSupportedError extends AppError {
+  constructor(message = 'Operation not supported') {
+    super(message, 405, 'NOT_SUPPORTED');
   }
 }
 
+/**
+ * Error para límite de rate excedido (429)
+ */
 export class RateLimitError extends AppError {
-  constructor(message = 'Too many requests', code = 'RATE_LIMIT_EXCEEDED') {
-    super(message, 429, code);
+  constructor(message = 'Rate limit exceeded') {
+    super(message, 429, 'RATE_LIMIT_EXCEEDED');
   }
 }
 
-// Error handling middleware
-export const handleError = (err, req, res, _next) => {
-  err.statusCode = err.statusCode || 500;
-  err.status = err.status || 'error';
-
-  if (process.env.NODE_ENV === 'development') {
-    return sendErrorDev(err, res);
+/**
+ * Error para error interno del servidor (500)
+ */
+export class ServerError extends AppError {
+  constructor(message = 'Internal server error') {
+    super(message, 500, 'SERVER_ERROR');
   }
+}
 
-  return sendErrorProd(err, res);
+/**
+ * Error para servicio no disponible (503)
+ */
+export class ServiceUnavailableError extends AppError {
+  constructor(message = 'Service unavailable') {
+    super(message, 503, 'SERVICE_UNAVAILABLE');
+  }
+}
+
+/**
+ * Middleware para manejar errores
+ */
+export const handleError = (err, req, res, next) => {
+  // Si el error ya es un AppError, usarlo directamente
+  const error = err instanceof AppError 
+    ? err 
+    : new ServerError(err.message || 'An unexpected error occurred');
+
+  // Asegurarse de que hay un mensaje de error
+  const message = error.message || 'An unexpected error occurred';
+  
+  // Crear la respuesta de error
+  const errorResponse = {
+    status: 'error',
+    code: error.code,
+    message,
+  };
+  
+  // Agregar errores de validación si existen
+  if (error instanceof ValidationError && error.errors) {
+    errorResponse.errors = error.errors;
+  }
+  
+  // Agregar información adicional en desarrollo
+  if (process.env.NODE_ENV !== 'production') {
+    errorResponse.stack = error.stack;
+  }
+  
+  // Enviar respuesta
+  res.status(error.statusCode || 500).json(errorResponse);
 };
 
 // Development error response

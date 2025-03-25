@@ -1,47 +1,36 @@
 import { AuthorizationError } from '../utils/errors.js';
 import { LoggingService } from '../services/LoggingService.js';
+import { ForbiddenError } from '../../utils/errors.js';
+import { prisma } from '../../database/prisma.js';
+import { logger } from '../../utils/logger.js';
 
-const logger = new LoggingService('AuthorizationMiddleware');
+const loggerService = new LoggingService('AuthorizationMiddleware');
 
 /**
- * Role-based authorization middleware
- * @param {Array} allowedRoles - Array of roles allowed to access the resource
- * @returns {Function} Express middleware
+ * Middleware para la autorización basada en roles
  */
-export const authorize = (allowedRoles = []) => {
+export const authorize = (roles) => {
   return (req, res, next) => {
     try {
-      // User must be authenticated first
+      // Verificar que existe un usuario autenticado
       if (!req.user) {
-        throw new AuthorizationError('User not authenticated');
+        throw new ForbiddenError('User not authenticated');
       }
-
-      // If no roles are specified, allow all authenticated users
-      if (allowedRoles.length === 0) {
-        return next();
-      }
-
-      // Check if user has required role
-      if (!allowedRoles.includes(req.user.role)) {
-        logger.warn('Unauthorized access attempt', {
+      
+      // Normalizar roles a un array
+      const allowedRoles = Array.isArray(roles) ? roles : [roles];
+      
+      // Verificar que el usuario tiene un rol permitido
+      if (allowedRoles.length > 0 && !allowedRoles.includes(req.user.role)) {
+        logger.warn('Authorization failed: insufficient permissions', {
           userId: req.user.id,
-          userRole: req.user.role,
           requiredRoles: allowedRoles,
-          path: req.originalUrl,
-          method: req.method,
+          userRole: req.user.role,
         });
-
-        throw new AuthorizationError('You do not have permission to access this resource');
+        
+        throw new ForbiddenError('Insufficient permissions');
       }
-
-      // Log authorization
-      logger.info('User authorized', {
-        userId: req.user.id,
-        role: req.user.role,
-        path: req.originalUrl,
-        method: req.method,
-      });
-
+      
       next();
     } catch (error) {
       next(error);
@@ -50,47 +39,60 @@ export const authorize = (allowedRoles = []) => {
 };
 
 /**
- * Resource ownership authorization middleware
- * @param {Function} getResourceUserId - Function to extract the user ID from the resource
- * @param {Array} bypassRoles - Array of roles that can bypass ownership check
- * @returns {Function} Express middleware
+ * Middleware para verificar que el usuario es propietario del recurso
+ * @param {String} modelName - Nombre del modelo en Prisma (ej: 'user', 'contract')
+ * @param {String} paramName - Nombre del parámetro que contiene el ID (ej: 'id', 'userId')
+ * @param {Boolean} allowAdmin - Si se permite el acceso a administradores
+ * @returns {Function} - Middleware de Express
  */
-export const authorizeOwnership = (getResourceUserId, bypassRoles = ['admin']) => {
+export const authorizeOwnership = (modelName, paramName = 'id', allowAdmin = true) => {
   return async (req, res, next) => {
     try {
-      // User must be authenticated first
+      // Verificar que existe un usuario autenticado
       if (!req.user) {
-        throw new AuthorizationError('User not authenticated');
+        throw new ForbiddenError('User not authenticated');
       }
-
-      // Allow bypass roles to access any resource
-      if (bypassRoles.includes(req.user.role)) {
+      
+      // Si el usuario es admin y está permitido, pasar
+      if (allowAdmin && req.user.role === 'ADMIN') {
         return next();
       }
-
-      // Get the user ID associated with the resource
-      const resourceUserId = await getResourceUserId(req);
-
-      // Check if user owns the resource
-      if (req.user.id !== resourceUserId) {
-        logger.warn('Unauthorized ownership access attempt', {
-          userId: req.user.id,
-          resourceUserId,
-          path: req.originalUrl,
-          method: req.method,
-        });
-
-        throw new AuthorizationError('You do not have permission to access this resource');
+      
+      // Obtener el ID del recurso
+      const resourceId = req.params[paramName];
+      
+      if (!resourceId) {
+        throw new ForbiddenError(`Resource ID not provided (${paramName})`);
       }
-
-      // Log authorization
-      logger.info('User ownership authorized', {
-        userId: req.user.id,
-        resourceUserId,
-        path: req.originalUrl,
-        method: req.method,
+      
+      // Verificar que el modelo existe en Prisma
+      if (!prisma[modelName]) {
+        logger.error(`Model ${modelName} does not exist in Prisma`);
+        throw new ForbiddenError('Invalid resource type');
+      }
+      
+      // Buscar el recurso
+      const resource = await prisma[modelName].findUnique({
+        where: { id: parseInt(resourceId) },
       });
-
+      
+      if (!resource) {
+        throw new ForbiddenError('Resource not found');
+      }
+      
+      // Verificar propiedad (userId debe estar en el recurso)
+      if (resource.userId !== req.user.id) {
+        logger.warn('Ownership authorization failed', {
+          userId: req.user.id,
+          resourceId,
+          modelName,
+        });
+        
+        throw new ForbiddenError('You do not have permission to access this resource');
+      }
+      
+      // Guardar el recurso en la solicitud para uso posterior
+      req.resource = resource;
       next();
     } catch (error) {
       next(error);

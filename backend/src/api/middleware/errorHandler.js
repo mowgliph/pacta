@@ -1,5 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { logger } from '../../utils/logger.js';
+import { AppError, NotFoundError } from '../../utils/errors.js';
+import { ValidationError } from 'sequelize';
 
 // Clase personalizada para errores de la aplicación
 export class AppError extends Error {
@@ -15,104 +17,67 @@ export class AppError extends Error {
 
 // Middleware principal de manejo de errores
 export const errorHandler = (err, req, res, next) => {
-  logger.error('Error:', {
-    message: err.message,
-    stack: err.stack,
-    path: req.path,
+  // Registrar el error
+  const errorDetails = {
+    url: req.originalUrl,
     method: req.method,
-    body: req.body,
-    query: req.query,
-    params: req.params,
-    user: req.user?.id
-  });
-
-  // Manejar errores de Prisma
-  if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    switch (err.code) {
-      case 'P2002':
-        return res.status(409).json({
-          status: 'error',
-          message: 'Ya existe un registro con estos datos',
-          field: err.meta?.target?.[0]
-        });
-      case 'P2025':
-        return res.status(404).json({
-          status: 'error',
-          message: 'Registro no encontrado'
-        });
-      case 'P2003':
-        return res.status(400).json({
-          status: 'error',
-          message: 'Referencia a registro no existente',
-          field: err.meta?.field_name
-        });
-      default:
-        return res.status(500).json({
-          status: 'error',
-          message: 'Error en la base de datos'
-        });
-    }
+    message: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+  };
+  
+  // Log de nivel adecuado según el código de estado
+  if (err.statusCode >= 500) {
+    logger.error('Error del servidor', errorDetails);
+  } else if (err.statusCode >= 400) {
+    logger.warn('Error del cliente', errorDetails);
+  } else {
+    logger.error('Error no manejado', errorDetails);
   }
-
-  // Manejar errores de validación
-  if (err.name === 'ValidationError') {
-    return res.status(400).json({
+  
+  // Si es un error de Sequelize, transformarlo a un error de validación
+  if (err instanceof ValidationError) {
+    const validationErrors = {};
+    err.errors.forEach((error) => {
+      validationErrors[error.path] = error.message;
+    });
+    
+    return res.status(422).json({
       status: 'error',
+      code: 'VALIDATION_ERROR',
       message: 'Error de validación',
-      errors: err.errors
+      errors: validationErrors
     });
   }
-
-  // Manejar errores de autenticación
-  if (err.name === 'AuthenticationError') {
-    return res.status(401).json({
-      status: 'error',
-      message: err.message
-    });
-  }
-
-  // Manejar errores de autorización
-  if (err.name === 'AuthorizationError') {
-    return res.status(403).json({
-      status: 'error',
-      message: err.message
-    });
-  }
-
-  // Manejar errores de JWT
-  if (err.name === 'JsonWebTokenError') {
-    return res.status(401).json({
-      status: 'error',
-      message: 'Token inválido'
-    });
-  }
-
-  if (err.name === 'TokenExpiredError') {
-    return res.status(401).json({
-      status: 'error',
-      message: 'Token expirado'
-    });
-  }
-
-  // Manejar errores de archivo
-  if (err.name === 'MulterError') {
-    return res.status(400).json({
-      status: 'error',
-      message: 'Error al subir archivo',
-      error: err.message
-    });
-  }
-
-  // Error por defecto
-  res.status(500).json({
+  
+  // Si no es un error de la aplicación, crear uno genérico
+  const error = err instanceof AppError
+    ? err
+    : new AppError(err.message || 'Error interno del servidor', 500, 'SERVER_ERROR');
+  
+  // Enviar respuesta al cliente
+  const statusCode = error.statusCode || 500;
+  const responseData = {
     status: 'error',
-    message: 'Error interno del servidor'
-  });
+    code: error.code || 'SERVER_ERROR',
+    message: error.message || 'Ocurrió un error inesperado',
+  };
+  
+  // Incluir errores de validación si existen
+  if (error.errors) {
+    responseData.errors = error.errors;
+  }
+  
+  // En desarrollo, incluir el stack trace
+  if (process.env.NODE_ENV === 'development') {
+    responseData.stack = error.stack;
+  }
+  
+  return res.status(statusCode).json(responseData);
 };
 
 // Middleware para manejar rutas no encontradas
 export const notFoundHandler = (req, res, next) => {
-  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+  next(new NotFoundError(`Ruta no encontrada: ${req.originalUrl}`));
 };
 
 // Middleware para validar JWT
