@@ -112,15 +112,6 @@ Motor de informes interactivos con dashboards personalizables, alertas predictiv
 ### **8. Importación y Exportación**
 Asistentes guiados para migración de registros de contratos desde otros sistemas con validación y mapeo inteligente de campos y exportación por lotes.
 
----
-
-## **Integraciones Disponibles**
-
-- **Suites Ofimáticas:** Microsoft 365, Google Workspace
-- **Sistemas ERP:** SAP, Oracle, Microsoft Dynamics
-- **CRM:** Salesforce, HubSpot, Zoho
-- **Herramientas Colaborativas:** Slack, Microsoft Teams, Asana
-- **Almacenamiento en la nube:** Dropbox, Google Drive, OneDrive
 
 ---
 
