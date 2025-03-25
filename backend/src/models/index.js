@@ -1,4 +1,5 @@
-import { User } from './User.js';
+import { prisma } from '../database/prisma.js';
+import User from './User.js';
 import { sequelize } from '../database/dbconnection.js';
 import { db } from '../database/dbconnection.js';
 import Contract from './Contract.js';
@@ -40,6 +41,23 @@ const setupAssociations = () => {
 
 // Initialize associations
 setupAssociations();
+
+// Exportar el cliente Prisma
+export { prisma };
+
+// Exportar modelos
+export { User };
+
+// Exportar tipos y enums de Prisma
+export const {
+  Role,
+  UserStatus,
+  ContractStatus,
+  ContractType,
+  RenewalType,
+  NotificationType,
+  ReportFormat,
+} = prisma;
 
 // Export models and sequelize
 export { sequelize, User, Contract, License, ActivityLog, Notification, db };

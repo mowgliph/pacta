@@ -206,6 +206,17 @@ model Report {
   expiresAt         DateTime?
 }
 
+// Cache model - Sistema de caché persistente
+model Cache {
+  id                String             @id
+  value             String             // Valor almacenado en caché (serializado como JSON)
+  expiresAt         DateTime?          // Tiempo de expiración (null para entradas sin expiración)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  @@index([expiresAt]) // Índice para optimizar la limpieza de caché expirado
+}
+
 // Enums
 enum Role {
   ADMIN             // Acceso total
