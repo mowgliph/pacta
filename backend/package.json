@@ -25,7 +25,7 @@
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
-    "better-sqlite3": "^9.4.3",
+    "sqlite3": "^5.1.7",
     "compression": "^1.8.0",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
