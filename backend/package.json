@@ -21,7 +21,13 @@
     "db:seed": "node src/database/seeders/index.js",
     "start": "node src/server.js",
     "start:prod": "NODE_ENV=production node src/server.js",
-    "validate": "npm run lint && npm run format:check && npm test"
+    "validate": "npm run lint && npm run format:check && npm test",
+    "service:install": "node src/scripts/service.js install",
+    "service:uninstall": "node src/scripts/service.js uninstall",
+    "service:start": "node src/scripts/service.js start",
+    "service:stop": "node src/scripts/service.js stop",
+    "service:restart": "node src/scripts/service.js restart",
+    "service:status": "node src/scripts/service.js status"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
