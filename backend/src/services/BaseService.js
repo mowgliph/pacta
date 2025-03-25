@@ -1,5 +1,5 @@
-import { LoggingService } from './LoggingService.js';
-import { CacheService } from './CacheService.js';
+import { Prisma } from '@prisma/client';
+import { logger } from '../utils/logger.js';
 import { ValidationError, DatabaseError, NotFoundError, ConflictError } from '../utils/errors.js';
 import repositories from '../database/repositories/index.js';
 
@@ -10,12 +10,10 @@ import repositories from '../database/repositories/index.js';
 export class BaseService {
   /**
    * Constructor del servicio base
-   * @param {Object} repository - Repositorio a utilizar (opcional)
+   * @param {Object} model - Modelo a utilizar (opcional)
    */
-  constructor(repository = null) {
-    this.repository = repository;
-    this.logger = new LoggingService(this.constructor.name);
-    this.cache = new CacheService();
+  constructor(model = null) {
+    this.model = model;
   }
 
   /**
@@ -28,7 +26,7 @@ export class BaseService {
   async getAll(query = {}, page = 1, limit = 10) {
     try {
       const options = this._buildQueryOptions(query);
-      return await this.repository.findAll(options, page, limit);
+      return await this.model.findMany(options);
     } catch (error) {
       this._handleError(error);
     }
@@ -43,7 +41,9 @@ export class BaseService {
    */
   async getById(id, options = {}) {
     try {
-      const item = await this.repository.findById(id, options);
+      const item = await this.model.findUnique({
+        where: { id }
+      });
       if (!item) {
         throw new NotFoundError(`Entity with ID ${id} not found`);
       }
@@ -61,9 +61,15 @@ export class BaseService {
   async create(data) {
     try {
       this._validateCreate(data);
-      const item = await this.repository.create(data);
-      return item;
+      return await this.model.create({
+        data
+      });
     } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2002') {
+          throw new ConflictError(`Ya existe un registro con estos datos: ${error.meta?.target?.[0]}`);
+        }
+      }
       this._handleError(error);
     }
   }
@@ -78,12 +84,19 @@ export class BaseService {
   async update(id, data) {
     try {
       this._validateUpdate(id, data);
-      const updated = await this.repository.update(id, data);
-      if (!updated) {
-        throw new NotFoundError(`Entity with ID ${id} not found`);
-      }
-      return updated;
+      return await this.model.update({
+        where: { id },
+        data
+      });
     } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundError('Registro no encontrado');
+        }
+        if (error.code === 'P2002') {
+          throw new ConflictError(`Ya existe un registro con estos datos: ${error.meta?.target?.[0]}`);
+        }
+      }
       this._handleError(error);
     }
   }
@@ -96,12 +109,15 @@ export class BaseService {
    */
   async delete(id) {
     try {
-      const result = await this.repository.delete(id);
-      if (!result) {
-        throw new NotFoundError(`Entity with ID ${id} not found`);
-      }
-      return true;
+      return await this.model.delete({
+        where: { id }
+      });
     } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new NotFoundError('Registro no encontrado');
+        }
+      }
       this._handleError(error);
     }
   }
@@ -171,13 +187,13 @@ export class BaseService {
   async findOne(options = {}) {
     try {
       const start = Date.now();
-      const result = await this.repository.findOne(options);
+      const result = await this.model.findUnique(options);
       const duration = Date.now() - start;
 
-      LoggingService.logDatabaseQuery('findOne', duration);
+      logger.logDatabaseQuery('findOne', duration);
       return result;
     } catch (error) {
-      LoggingService.error('Error finding record', { options, error: error.message });
+      logger.error('Error finding record', { options, error: error.message });
       throw new DatabaseError('Error finding record', error);
     }
   }
@@ -185,13 +201,13 @@ export class BaseService {
   async count(options = {}) {
     try {
       const start = Date.now();
-      const result = await this.repository.count(options);
+      const result = await this.model.count(options);
       const duration = Date.now() - start;
 
-      LoggingService.logDatabaseQuery('count', duration);
+      logger.logDatabaseQuery('count', duration);
       return result;
     } catch (error) {
-      LoggingService.error('Error counting records', { options, error: error.message });
+      logger.error('Error counting records', { options, error: error.message });
       throw new DatabaseError('Error counting records', error);
     }
   }
@@ -199,13 +215,13 @@ export class BaseService {
   async paginate(page = 1, limit = 10, options = {}) {
     try {
       const start = Date.now();
-      const result = await this.repository.paginate(page, limit, options);
+      const result = await this.model.findMany(options);
       const duration = Date.now() - start;
 
-      LoggingService.logDatabaseQuery('paginate', duration);
+      logger.logDatabaseQuery('paginate', duration);
       return result;
     } catch (error) {
-      LoggingService.error('Error paginating records', {
+      logger.error('Error paginating records', {
         page,
         limit,
         options,
@@ -218,13 +234,13 @@ export class BaseService {
   async bulkCreate(data, options = {}) {
     try {
       const start = Date.now();
-      const result = await this.repository.bulkCreate(data, options);
+      const result = await this.model.createMany(data);
       const duration = Date.now() - start;
 
-      LoggingService.logDatabaseQuery('bulkCreate', duration);
+      logger.logDatabaseQuery('bulkCreate', duration);
       return result;
     } catch (error) {
-      LoggingService.error('Error bulk creating records', { data, error: error.message });
+      logger.error('Error bulk creating records', { data, error: error.message });
       throw new DatabaseError('Error bulk creating records', error);
     }
   }
@@ -232,13 +248,13 @@ export class BaseService {
   async bulkUpdate(data, options = {}) {
     try {
       const start = Date.now();
-      const result = await this.repository.bulkUpdate(data, options);
+      const result = await this.model.updateMany(data);
       const duration = Date.now() - start;
 
-      LoggingService.logDatabaseQuery('bulkUpdate', duration);
+      logger.logDatabaseQuery('bulkUpdate', duration);
       return result;
     } catch (error) {
-      LoggingService.error('Error bulk updating records', { data, error: error.message });
+      logger.error('Error bulk updating records', { data, error: error.message });
       throw new DatabaseError('Error bulk updating records', error);
     }
   }
@@ -246,13 +262,13 @@ export class BaseService {
   async findOrCreate(where, defaults = {}, options = {}) {
     try {
       const start = Date.now();
-      const result = await this.repository.findOrCreate(where, defaults, options);
+      const result = await this.model.findUnique(where);
       const duration = Date.now() - start;
 
-      LoggingService.logDatabaseQuery('findOrCreate', duration);
+      logger.logDatabaseQuery('findOrCreate', duration);
       return result;
     } catch (error) {
-      LoggingService.error('Error finding or creating record', {
+      logger.error('Error finding or creating record', {
         where,
         defaults,
         error: error.message,
@@ -276,7 +292,7 @@ export class BaseService {
 
       return this.paginate(page, limit, { where });
     } catch (error) {
-      LoggingService.error('Error searching records', { options, error: error.message });
+      logger.error('Error searching records', { options, error: error.message });
       throw new DatabaseError('Error searching records', error);
     }
   }
@@ -285,7 +301,7 @@ export class BaseService {
     try {
       return await schema.parseAsync(data);
     } catch (error) {
-      LoggingService.error('Validation error', { data, error: error.message });
+      logger.error('Validation error', { data, error: error.message });
       throw new ValidationError('Validation failed', error);
     }
   }
@@ -294,7 +310,7 @@ export class BaseService {
     try {
       return await CacheService.remember(key, ttl, fn);
     } catch (error) {
-      LoggingService.error('Cache error', { key, error: error.message });
+      logger.error('Cache error', { key, error: error.message });
       return fn();
     }
   }
@@ -303,7 +319,41 @@ export class BaseService {
     try {
       await CacheService.del(key);
     } catch (error) {
-      LoggingService.error('Cache invalidation error', { key, error: error.message });
+      logger.error('Cache invalidation error', { key, error: error.message });
+    }
+  }
+
+  async softDelete(id) {
+    try {
+      return await this.model.update({
+        where: { id },
+        data: { deletedAt: new Date() }
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new Error('Registro no encontrado');
+        }
+      }
+      logger.error(`Error soft deleting ${this.model.name}:`, error);
+      throw error;
+    }
+  }
+
+  async restore(id) {
+    try {
+      return await this.model.update({
+        where: { id },
+        data: { deletedAt: null }
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === 'P2025') {
+          throw new Error('Registro no encontrado');
+        }
+      }
+      logger.error(`Error restoring ${this.model.name}:`, error);
+      throw error;
     }
   }
 }

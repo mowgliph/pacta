@@ -8,14 +8,10 @@ export { BaseRepository } from './BaseRepository.js';
 // Repositorios Prisma (principales)
 export { UserPrismaRepository } from './UserPrismaRepository.js';
 export { ContractPrismaRepository } from './ContractPrismaRepository.js';
-export { CompanyPrismaRepository } from './CompanyPrismaRepository.js';
+export { LicensePrismaRepository } from './LicensePrismaRepository.js';
+export { ActivityLogPrismaRepository } from './ActivityLogPrismaRepository.js';
 export { NotificationPrismaRepository } from './NotificationPrismaRepository.js';
-
-// Repositorios Sequelize (obsoletos)
-export { UserRepository } from './UserRepository.js';
-export { ContractRepository } from './ContractRepository.js';
-export { CompanyRepository } from './CompanyRepository.js';
-export { NotificationRepository } from './NotificationRepository.js';
+export { ReportPrismaRepository } from './ReportPrismaRepository.js';
 
 // Exportar instancias predeterminadas
 import userPrismaRepository from './UserPrismaRepository.js';
