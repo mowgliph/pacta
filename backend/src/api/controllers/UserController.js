@@ -34,6 +34,7 @@ class UserController extends BaseController {
   register = async (req, res, next) => {
     try {
       const userData = req.body;
+      // Los datos ya están validados por el middleware
       const user = await this.service.register(userData);
 
       res.status(201).json({
@@ -54,11 +55,7 @@ class UserController extends BaseController {
   login = async (req, res, next) => {
     try {
       const { email, password } = req.body;
-
-      if (!email || !password) {
-        throw new ValidationError('Email and password are required');
-      }
-
+      // Datos ya validados por el middleware
       const result = await this.service.login(email, password);
 
       res.status(200).json({
@@ -80,11 +77,7 @@ class UserController extends BaseController {
     try {
       const userId = req.user.id;
       const { firstName, lastName, email } = req.body;
-      
-      // Validar datos
-      if (!firstName && !lastName && !email) {
-        throw new ValidationError('No se proporcionaron datos para actualizar');
-      }
+      // Datos ya validados por el middleware
       
       // Verificar si el email ya existe (si se está cambiando)
       if (email && email !== req.user.email) {
@@ -145,11 +138,7 @@ class UserController extends BaseController {
     try {
       const userId = req.user.id;
       const { currentPassword, newPassword } = req.body;
-
-      // Validar datos
-      if (!currentPassword || !newPassword) {
-        throw new ValidationError('Contraseña actual y nueva son requeridas');
-      }
+      // Datos ya validados por el middleware
       
       // Buscar usuario
       const user = await prismaClient.user.findUnique({
@@ -235,15 +224,11 @@ class UserController extends BaseController {
     try {
       const { id } = req.params;
       const { role } = req.body;
-
-      // Validar rol
-      if (!role || !['USER', 'MANAGER', 'ADMIN'].includes(role)) {
-        throw new ValidationError('Rol inválido');
-      }
+      // Datos ya validados por el middleware
       
       // No permitir cambiar el rol propio
       if (parseInt(id) === req.user.id) {
-        throw new ValidationError('No puedes cambiar tu propio rol');
+        throw new ForbiddenError('No puedes cambiar tu propio rol');
       }
       
       // Verificar que el usuario existe
@@ -276,11 +261,11 @@ class UserController extends BaseController {
           action: 'UPDATE_USER_ROLE',
           entityType: 'User',
           entityId: id,
-          details: `Rol de usuario actualizado a ${role}: ${user.email}`,
+          details: `Cambio de rol: ${user.role} → ${role}`,
         },
       });
       
-      return this.sendSuccess(res, updatedUser, 200, 'Rol de usuario actualizado');
+      return this.sendSuccess(res, updatedUser, 200, 'Rol de usuario actualizado correctamente');
     } catch (error) {
       return this.handleError(error, res, 'updateUserRole');
     }
@@ -296,15 +281,11 @@ class UserController extends BaseController {
     try {
       const { id } = req.params;
       const { status } = req.body;
-
-      // Validar estado
-      if (!status || !['ACTIVE', 'INACTIVE', 'SUSPENDED'].includes(status)) {
-        throw new ValidationError('Estado inválido');
-      }
+      // Datos ya validados por el middleware
       
       // No permitir cambiar el estado propio
       if (parseInt(id) === req.user.id) {
-        throw new ValidationError('No puedes cambiar tu propio estado');
+        throw new ForbiddenError('No puedes cambiar tu propio estado');
       }
       
       // Verificar que el usuario existe
@@ -337,11 +318,11 @@ class UserController extends BaseController {
           action: 'UPDATE_USER_STATUS',
           entityType: 'User',
           entityId: id,
-          details: `Estado de usuario actualizado a ${status}: ${user.email}`,
+          details: `Cambio de estado: ${user.status} → ${status}`,
         },
       });
       
-      return this.sendSuccess(res, updatedUser, 200, 'Estado de usuario actualizado');
+      return this.sendSuccess(res, updatedUser, 200, 'Estado de usuario actualizado correctamente');
     } catch (error) {
       return this.handleError(error, res, 'updateUserStatus');
     }

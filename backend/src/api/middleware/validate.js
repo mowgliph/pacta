@@ -76,7 +76,7 @@ export const validateAll = (schemas) => {
               errors[path].push(error.message);
             });
           } else {
-            // Reemplazar con datos validados
+            // Actualizar datos validados
             req[type] = result.data;
           }
         }
@@ -95,6 +95,19 @@ export const validateAll = (schemas) => {
       }
     }
   };
+};
+
+/**
+ * Middleware para validar ID numérico en parámetros
+ * @returns {function} Middleware Express
+ */
+export const validateId = () => {
+  return validate(
+    z.object({
+      id: z.coerce.number().int().positive()
+    }),
+    'params'
+  );
 };
 
 /**
