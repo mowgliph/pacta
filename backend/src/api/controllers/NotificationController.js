@@ -5,12 +5,15 @@
 import { BaseController } from './BaseController.js';
 import { NotificationService } from '../../services/NotificationService.js';
 import { ResponseService } from '../../services/ResponseService.js';
+import { ValidationService } from '../../services/ValidationService.js';
+import { ValidationError } from '../../utils/errors.js';
 
 export class NotificationController extends BaseController {
   constructor() {
     const notificationService = new NotificationService();
     super(notificationService);
     this.notificationService = notificationService;
+    this.validationService = new ValidationService();
   }
 
   /**
@@ -22,26 +25,17 @@ export class NotificationController extends BaseController {
   getUserNotifications = async (req, res, next) => {
     try {
       const userId = req.user.id;
-      const { page = 1, limit = 10, isRead, type } = req.query;
+      
+      // Validar parámetros de consulta
+      const validatedQuery = await this.validationService.validateGetNotifications(req.query);
 
-      // Opciones de filtrado
-      const options = {
-        page: parseInt(page, 10),
-        limit: parseInt(limit, 10),
-      };
-
-      if (isRead !== undefined) {
-        options.isRead = isRead === 'true';
-      }
-
-      if (type) {
-        options.type = type;
-      }
-
-      const result = await this.notificationService.getUserNotifications(userId, options);
+      const result = await this.notificationService.getUserNotifications(userId, validatedQuery);
 
       res.status(200).json(ResponseService.paginate(result.data, result.pagination));
     } catch (error) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json(ResponseService.error('Parámetros de consulta inválidos', 400, error.details));
+      }
       next(error);
     }
   };
@@ -73,15 +67,11 @@ export class NotificationController extends BaseController {
   markAsRead = async (req, res, next) => {
     try {
       const userId = req.user.id;
-      const { ids } = req.body;
+      
+      // Validar IDs de notificaciones
+      const validatedData = await this.validationService.validateMarkAsRead(req.body);
 
-      if (!ids || (!Array.isArray(ids) && typeof ids !== 'string')) {
-        return res
-          .status(400)
-          .json(ResponseService.error('Invalid notification IDs provided', 400));
-      }
-
-      const count = await this.notificationService.markAsRead(ids, userId);
+      const count = await this.notificationService.markAsRead(validatedData.ids, userId);
 
       res.status(200).json(
         ResponseService.success({
@@ -90,6 +80,9 @@ export class NotificationController extends BaseController {
         }),
       );
     } catch (error) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json(ResponseService.error('IDs de notificación inválidos', 400, error.details));
+      }
       next(error);
     }
   };
@@ -132,12 +125,16 @@ export class NotificationController extends BaseController {
           .json(ResponseService.error('Unauthorized: Admin access required', 403));
       }
 
-      const data = req.body;
+      // Validar datos de notificación
+      const validatedData = await this.validationService.validateNotificationCreation(req.body);
 
-      const notification = await this.notificationService.createNotification(data);
+      const notification = await this.notificationService.createNotification(validatedData);
 
       res.status(201).json(ResponseService.created(notification));
     } catch (error) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json(ResponseService.error('Datos de notificación inválidos', 400, error.details));
+      }
       next(error);
     }
   };
@@ -157,10 +154,11 @@ export class NotificationController extends BaseController {
           .json(ResponseService.error('Unauthorized: Admin access required', 403));
       }
 
-      const { daysThreshold = 30 } = req.body;
+      // Validar parámetros
+      const validatedData = await this.validationService.validateExpirationNotifications(req.body);
 
       const count = await this.notificationService.createExpirationNotifications(
-        parseInt(daysThreshold, 10),
+        validatedData.daysThreshold,
       );
 
       res.status(200).json(
@@ -170,6 +168,9 @@ export class NotificationController extends BaseController {
         }),
       );
     } catch (error) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json(ResponseService.error('Parámetros inválidos', 400, error.details));
+      }
       next(error);
     }
   };

@@ -1,12 +1,16 @@
 import { z } from 'zod';
 import { ValidationError } from '../utils/errors.js';
 import * as userValidators from '../api/validators/userValidators.js';
+import * as contractValidators from '../api/validators/contractValidators.js';
+import * as notificationValidators from '../api/validators/notificationValidators.js';
 
 export class ValidationService {
   constructor() {
     // Import validators dynamically
     this.validators = {
       ...userValidators,
+      ...contractValidators,
+      ...notificationValidators,
     };
   }
 
@@ -173,5 +177,97 @@ export class ValidationService {
 
   createBulkUserUpdateSchema() {
     return this.validators.createBulkUserUpdateSchema();
+  }
+
+  // Contract specific schemas and validation methods
+  async validateContractCreation(data) {
+    const schema = this.validators.createContractSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateContractUpdate(data) {
+    const schema = this.validators.updateContractSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateContractSearch(data) {
+    const schema = this.validators.searchContractSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateContractId(data) {
+    const schema = this.validators.contractIdSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateContractStatusChange(data) {
+    const schema = this.validators.changeContractStatusSchema();
+    return this.validate(schema, data);
+  }
+
+  createContractSchema() {
+    return this.validators.createContractSchema();
+  }
+
+  updateContractSchema() {
+    return this.validators.updateContractSchema();
+  }
+
+  searchContractSchema() {
+    return this.validators.searchContractSchema();
+  }
+
+  contractIdSchema() {
+    return this.validators.contractIdSchema();
+  }
+
+  changeContractStatusSchema() {
+    return this.validators.changeContractStatusSchema();
+  }
+
+  // Notification specific schemas and validation methods
+  async validateNotificationCreation(data) {
+    const schema = this.validators.createNotificationSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateBulkNotificationCreation(data) {
+    const schema = this.validators.createBulkNotificationSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateMarkAsRead(data) {
+    const schema = this.validators.markAsReadSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateGetNotifications(data) {
+    const schema = this.validators.getNotificationsSchema();
+    return this.validate(schema, data);
+  }
+  
+  async validateExpirationNotifications(data) {
+    const schema = this.validators.createExpirationNotificationsSchema();
+    return this.validate(schema, data);
+  }
+
+  createNotificationSchema() {
+    return this.validators.createNotificationSchema();
+  }
+
+  createBulkNotificationSchema() {
+    return this.validators.createBulkNotificationSchema();
+  }
+
+  markAsReadSchema() {
+    return this.validators.markAsReadSchema();
+  }
+
+  getNotificationsSchema() {
+    return this.validators.getNotificationsSchema();
+  }
+
+  createExpirationNotificationsSchema() {
+    return this.validators.createExpirationNotificationsSchema();
   }
 }

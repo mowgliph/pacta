@@ -1,12 +1,50 @@
 import { prisma } from '../../database/prisma.js';
 import fs from 'fs';
 import { logger } from '../../utils/logger.js';
+import { ValidationService } from '../../services/ValidationService.js';
+import { ValidationError } from '../../utils/errors.js';
 
+// Instanciar el servicio de validación
+const validationService = new ValidationService();
 
 // Obtener todos los contratos (filtrados por rol de usuario)
 export const getAllContracts = async (req, res) => {
   try {
+    // Validar parámetros de consulta
+    const validatedQuery = await validationService.validateContractSearch(req.query);
+
+    const filter = {};
+    const pagination = {
+      skip: (validatedQuery.page - 1) * validatedQuery.limit,
+      take: validatedQuery.limit,
+    };
+    
+    // Aplicar filtros opcionales de estados
+    if (validatedQuery.status) {
+      filter.status = validatedQuery.status;
+    }
+    
+    // Aplicar filtros de fechas
+    if (validatedQuery.startDateFrom || validatedQuery.startDateTo) {
+      filter.startDate = {};
+      if (validatedQuery.startDateFrom) {
+        filter.startDate.gte = new Date(validatedQuery.startDateFrom);
+      }
+      if (validatedQuery.startDateTo) {
+        filter.startDate.lte = new Date(validatedQuery.startDateTo);
+      }
+    }
+    
+    // Aplicar orden
+    const orderBy = {};
+    if (validatedQuery.sortBy) {
+      orderBy[validatedQuery.sortBy] = validatedQuery.sortDirection || 'asc';
+    } else {
+      orderBy.updatedAt = 'desc';
+    }
+
     const contracts = await prisma.contract.findMany({
+      where: filter,
       include: {
         author: {
           select: {
@@ -20,17 +58,36 @@ export const getAllContracts = async (req, res) => {
         department: true,
         contractTags: true
       },
-      orderBy: {
-        updatedAt: 'desc'
-      }
+      orderBy,
+      ...pagination,
+    });
+
+    // Obtener conteo total para paginación
+    const totalContracts = await prisma.contract.count({
+      where: filter,
     });
 
     res.json({
       status: 'success',
-      data: contracts
+      data: contracts,
+      pagination: {
+        page: validatedQuery.page,
+        limit: validatedQuery.limit,
+        total: totalContracts,
+        totalPages: Math.ceil(totalContracts / validatedQuery.limit),
+      }
     });
   } catch (error) {
     logger.error('Error fetching contracts:', error);
+    
+    if (error instanceof ValidationError) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Datos de búsqueda inválidos',
+        errors: error.details,
+      });
+    }
+    
     res.status(500).json({
       status: 'error',
       message: 'Error al obtener los contratos'
@@ -41,8 +98,11 @@ export const getAllContracts = async (req, res) => {
 // Obtener contrato por ID
 export const getContractById = async (req, res) => {
   try {
+    // Validar ID
+    const { id } = await validationService.validateContractId({ id: req.params.id });
+
     const contract = await prisma.contract.findUnique({
-      where: { id: parseInt(req.params.id) },
+      where: { id },
       include: {
         author: {
           select: {
@@ -71,6 +131,15 @@ export const getContractById = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching contract:', error);
+    
+    if (error instanceof ValidationError) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'ID de contrato inválido',
+        errors: error.details,
+      });
+    }
+    
     res.status(500).json({
       status: 'error',
       message: 'Error al obtener el contrato'
@@ -81,9 +150,12 @@ export const getContractById = async (req, res) => {
 // Crear nuevo contrato
 export const createContract = async (req, res) => {
   try {
+    // Validar datos del contrato
+    const validatedData = await validationService.validateContractCreation(req.body);
+
     const contract = await prisma.contract.create({
       data: {
-        ...req.body,
+        ...validatedData,
         authorId: req.user.id
       },
       include: {
@@ -118,6 +190,15 @@ export const createContract = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error creating contract:', error);
+    
+    if (error instanceof ValidationError) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Datos de contrato inválidos',
+        errors: error.details,
+      });
+    }
+    
     res.status(500).json({
       status: 'error',
       message: 'Error al crear el contrato'
@@ -128,8 +209,14 @@ export const createContract = async (req, res) => {
 // Actualizar contrato
 export const updateContract = async (req, res) => {
   try {
+    // Validar ID
+    const { id } = await validationService.validateContractId({ id: req.params.id });
+    
+    // Validar datos de actualización
+    const validatedData = await validationService.validateContractUpdate(req.body);
+
     const contract = await prisma.contract.findUnique({
-      where: { id: parseInt(req.params.id) }
+      where: { id }
     });
 
     if (!contract) {
@@ -140,8 +227,8 @@ export const updateContract = async (req, res) => {
     }
 
     const updatedContract = await prisma.contract.update({
-      where: { id: parseInt(req.params.id) },
-      data: req.body,
+      where: { id },
+      data: validatedData,
       include: {
         author: {
           select: {
@@ -174,6 +261,15 @@ export const updateContract = async (req, res) => {
     });
   } catch (error) {
     logger.error('Error updating contract:', error);
+    
+    if (error instanceof ValidationError) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Datos de contrato inválidos',
+        errors: error.details,
+      });
+    }
+    
     res.status(500).json({
       status: 'error',
       message: 'Error al actualizar el contrato'

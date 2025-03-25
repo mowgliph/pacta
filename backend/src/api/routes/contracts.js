@@ -1,13 +1,14 @@
 import express from 'express';
-import { body, validationResult } from 'express-validator';
-import { authenticateToken, isAdmin, requiresLicense } from '../api/middleware/auth.js';
-import { prisma } from '../../database/prisma.js';
+import { authenticateToken, requiresLicense } from '../middleware/auth.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import * as contractController from '../api/controllers/contractController.js';
+import * as contractController from '../controllers/ContractController.js';
+import { validate, validateBody, validateParams } from '../middleware/validate.js';
+import { ValidationService } from '../../services/ValidationService.js';
 
 const router = express.Router();
+const validationService = new ValidationService();
 
 // Configuración de multer para la carga de archivos
 const storage = multer.diskStorage({
@@ -43,195 +44,104 @@ const upload = multer({
 router.get('/', authenticateToken, contractController.getAllContracts);
 
 // Get contract by ID - solo lectura sin licencia
-router.get('/:id', authenticateToken, contractController.getContractById);
+router.get(
+  '/:id', 
+  authenticateToken, 
+  validateParams(validationService.contractIdSchema()),
+  contractController.getContractById
+);
 
 // Create new contract - requiere licencia
 router.post(
   '/',
-  [
-    authenticateToken,
-    requiresLicense,
-    body('title')
-      .isLength({ min: 3, max: 100 })
-      .withMessage('El título debe tener entre 3 y 100 caracteres')
-      .trim()
-      .escape(),
-    body('contractNumber')
-      .notEmpty()
-      .withMessage('El número de contrato es obligatorio')
-      .trim()
-      .custom(async value => {
-        const existingContract = await prisma.contract.findUnique({ where: { contractNumber: value } });
-        if (existingContract) {
-          throw new Error('El número de contrato ya existe');
-        }
-        return true;
-      }),
-    body('description')
-      .optional()
-      .isLength({ max: 1000 })
-      .withMessage('La descripción no debe exceder los 1000 caracteres')
-      .trim(),
-    body('startDate')
-      .isISO8601()
-      .withMessage('La fecha de inicio debe ser una fecha válida')
-      .custom(value => {
-        const startDate = new Date(value);
-        const today = new Date();
-        // Para contratos, permitir fechas en el pasado o futuro
-        return true;
-      }),
-    body('endDate')
-      .isISO8601()
-      .withMessage('La fecha de fin debe ser una fecha válida')
-      .custom((value, { req }) => {
-        const endDate = new Date(value);
-        const startDate = new Date(req.body.startDate);
-        if (endDate <= startDate) {
-          throw new Error('La fecha de fin debe ser posterior a la fecha de inicio');
-        }
-        return true;
-      }),
-    body('status')
-      .isIn(['draft', 'active', 'expired', 'terminated', 'renewed'])
-      .withMessage('Estado no válido'),
-    body('amount').isFloat({ min: 0 }).withMessage('El importe debe ser mayor o igual a 0'),
-    body('currency').isIn(['CUP', 'USD', 'EUR']).withMessage('Moneda no válida'),
-    body('notificationDays')
-      .optional()
-      .isInt({ min: 1, max: 90 })
-      .withMessage('Los días de notificación deben estar entre 1 y 90'),
-  ],
+  authenticateToken,
+  requiresLicense,
   upload.single('document'),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        errors: errors.array().map(err => ({
-          field: err.param,
-          message: err.msg,
-        })),
-      });
-    }
-    contractController.createContract(req, res);
-  },
+  validateBody(validationService.createContractSchema()),
+  contractController.createContract
 );
 
 // Update contract - requiere licencia
 router.put(
   '/:id',
-  [
-    authenticateToken,
-    requiresLicense,
-    body('title')
-      .optional()
-      .isLength({ min: 3, max: 100 })
-      .withMessage('El título debe tener entre 3 y 100 caracteres')
-      .trim()
-      .escape(),
-    body('contractNumber')
-      .optional()
-      .trim()
-      .custom(async (value, { req }) => {
-        const existingContract = await prisma.contract.findUnique({
-          where: {
-            contractNumber: value,
-            id: { not: req.params.id },
-          },
-        });
-        if (existingContract) {
-          throw new Error('El número de contrato ya existe');
-        }
-        return true;
-      }),
-    body('description')
-      .optional()
-      .isLength({ max: 1000 })
-      .withMessage('La descripción no debe exceder los 1000 caracteres')
-      .trim(),
-    body('startDate')
-      .optional()
-      .isISO8601()
-      .withMessage('La fecha de inicio debe ser una fecha válida'),
-    body('endDate')
-      .optional()
-      .isISO8601()
-      .withMessage('La fecha de fin debe ser una fecha válida')
-      .custom((value, { req }) => {
-        if (!req.body.startDate && !req.contract) {
-          return true;
-        }
-
-        const endDate = new Date(value);
-        const startDate = new Date(req.body.startDate || req.contract.startDate);
-        if (endDate <= startDate) {
-          throw new Error('La fecha de fin debe ser posterior a la fecha de inicio');
-        }
-        return true;
-      }),
-    body('status')
-      .optional()
-      .isIn(['draft', 'active', 'expired', 'terminated', 'renewed'])
-      .withMessage('Estado no válido'),
-    body('amount')
-      .optional()
-      .isFloat({ min: 0 })
-      .withMessage('El importe debe ser mayor o igual a 0'),
-    body('currency').optional().isIn(['CUP', 'USD', 'EUR']).withMessage('Moneda no válida'),
-    body('notificationDays')
-      .optional()
-      .isInt({ min: 1, max: 90 })
-      .withMessage('Los días de notificación deben estar entre 1 y 90'),
-  ],
+  authenticateToken,
+  requiresLicense,
   upload.single('document'),
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        errors: errors.array().map(err => ({
-          field: err.param,
-          message: err.msg,
-        })),
-      });
-    }
-    contractController.updateContract(req, res);
-  },
+  validate({
+    body: validationService.updateContractSchema(),
+    params: validationService.contractIdSchema()
+  }),
+  contractController.updateContract
 );
 
-// Delete contract - requiere licencia
-router.delete('/:id', authenticateToken, requiresLicense, contractController.deleteContract);
+// Delete contract (soft delete) - requiere licencia
+router.delete(
+  '/:id',
+  authenticateToken,
+  requiresLicense,
+  validateParams(validationService.contractIdSchema()),
+  contractController.deleteContract
+);
 
-// Get contract document
-router.get('/:id/document', authenticateToken, contractController.getContractDocument);
+// Search contracts - solo lectura sin licencia
+router.get(
+  '/search',
+  authenticateToken,
+  validateQuery(validationService.searchContractSchema()),
+  contractController.searchContracts
+);
 
-// Advanced search with filters
-router.post('/search', authenticateToken, contractController.searchContracts);
-
-// Get contract statistics
-router.get('/statistics', authenticateToken, contractController.getContractStatistics);
-
-// Cambiar estado de un contrato - nueva ruta
+// Change contract status - requiere licencia
 router.patch(
   '/:id/status',
-  [
-    authenticateToken,
-    requiresLicense,
-    body('status')
-      .isIn(['draft', 'active', 'expired', 'terminated', 'renewed'])
-      .withMessage('Estado no válido'),
-  ],
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        errors: errors.array().map(err => ({
-          field: err.param,
-          message: err.msg,
-        })),
-      });
-    }
-    contractController.changeContractStatus(req, res);
-  },
+  authenticateToken,
+  requiresLicense,
+  validate({
+    body: validationService.changeContractStatusSchema(),
+    params: validationService.contractIdSchema()
+  }),
+  contractController.changeContractStatus
+);
+
+// Add tags to contract - requiere licencia
+router.post(
+  '/:id/tags',
+  authenticateToken,
+  requiresLicense,
+  validate({
+    body: validationService.contractTagSchema(),
+    params: validationService.contractIdSchema()
+  }),
+  contractController.addTags
+);
+
+// Remove tags from contract - requiere licencia
+router.delete(
+  '/:id/tags',
+  authenticateToken,
+  requiresLicense,
+  validate({
+    body: validationService.contractTagSchema(),
+    params: validationService.contractIdSchema()
+  }),
+  contractController.removeTags
+);
+
+// Upload document to contract - requiere licencia
+router.post(
+  '/:id/documents',
+  authenticateToken,
+  requiresLicense,
+  upload.single('document'),
+  validateParams(validationService.contractIdSchema()),
+  contractController.uploadDocument
+);
+
+// Get contract statistics - solo lectura sin licencia
+router.get(
+  '/stats',
+  authenticateToken,
+  contractController.getContractStats
 );
 
 export default router;
