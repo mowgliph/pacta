@@ -24,7 +24,7 @@ const config = {
 
   // Base de datos
   database: {
-    url: process.env.DATABASE_URL || 'file:./data/pacta.db',
+    url: process.env.DATABASE_URL || 'file:./prisma/dev.db',
     provider: process.env.DATABASE_PROVIDER || 'sqlite',
     logging: process.env.DB_LOGGING === 'true',
     sync: process.env.DB_SYNC === 'true',
