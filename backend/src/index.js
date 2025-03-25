@@ -13,11 +13,12 @@ export { default as prisma, testConnection } from './database/prisma.js';
 export * from './models/index.js';
 
 // Servicios Core
-export { LoggingService } from './services/LoggingService.js';
-export { CacheService } from './services/CacheService.js';
+export { default as logger } from './utils/logger.js';
+export { default as CacheService } from './services/CacheService.js';
 export { ResponseService } from './services/ResponseService.js';
 export { ValidationService } from './services/ValidationService.js';
 export { default as NotificationService } from './services/NotificationService.js';
+export { default as SchedulerService } from './services/SchedulerService.js';
 
 // Clases Base
 export { BaseController } from './api/controllers/BaseController.js';
@@ -37,3 +38,6 @@ export { errorHandler, notFoundHandler } from './api/middleware/errorHandler.js'
 
 // Server (por si se quiere importar la aplicación sin iniciarla)
 export { default as app } from './server.js';
+
+// Inicializar servicios
+import './services/init.js';

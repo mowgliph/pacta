@@ -6,6 +6,9 @@ import { ResponseService } from '../../services/ResponseService.js';
 import { LoggingService } from '../../services/LoggingService.js';
 import { CacheService } from '../../services/CacheService.js';
 import { AuthenticationError, ValidationError } from '../../utils/errors.js';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 /**
  * Controlador para la gestión de usuarios
@@ -373,10 +376,13 @@ export const createUser = async (req, res) => {
     const { username, email, password, role, licenseId } = req.body;
 
     // Verificar si ya existe un usuario con el mismo username o email
-    const existingUser = await User.findOne({
+    const existingUser = await prisma.user.findFirst({
       where: {
-        [Op.or]: [{ username }, { email }],
-      },
+        OR: [
+          { username },
+          { email }
+        ]
+      }
     });
 
     if (existingUser) {
@@ -442,20 +448,40 @@ export const updateUser = async (req, res) => {
 
     // Verificar si el nuevo username o email ya está en uso
     if (username || email) {
-      const existingUser = await User.findOne({
+      const existingUser = await prisma.user.findFirst({
         where: {
-          [Op.and]: [
-            { id: { [Op.ne]: id } },
+          AND: [
+            { id: { not: parseInt(id) } },
             {
-              [Op.or]: [username ? { username } : null, email ? { email } : null].filter(Boolean),
-            },
-          ],
-        },
+              OR: [
+                username ? { username } : undefined,
+                email ? { email } : undefined
+              ].filter(Boolean)
+            }
+          ]
+        }
       });
 
       if (existingUser) {
         return res.status(400).json({
           message: 'El nombre de usuario o email ya está en uso',
+          status: 400,
+        });
+      }
+    }
+
+    // Verificar si el nuevo email ya está en uso
+    if (email && email !== user.email) {
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          email,
+          id: { not: parseInt(id) }
+        }
+      });
+
+      if (existingUser) {
+        return res.status(400).json({
+          message: 'El email ya está en uso',
           status: 400,
         });
       }
@@ -602,11 +628,11 @@ export const updateProfile = async (req, res) => {
 
     // Verificar si el nuevo email ya está en uso
     if (email && email !== user.email) {
-      const existingUser = await User.findOne({
+      const existingUser = await prisma.user.findFirst({
         where: {
           email,
-          id: { [Op.ne]: userId },
-        },
+          id: { not: parseInt(userId) }
+        }
       });
 
       if (existingUser) {

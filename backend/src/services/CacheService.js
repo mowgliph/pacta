@@ -1,204 +1,245 @@
-import NodeCache from 'node-cache';
-import { LoggingService } from './LoggingService.js';
+import cacheRepository from '../database/repositories/CacheRepository.js';
+import { logger } from '../utils/logger.js';
 import config from '../config/app.config.js';
+import { prisma } from '../database/prisma.js';
 
-export class CacheService {
-  static cache = new NodeCache({
-    stdTTL: 600, // 10 minutes default TTL
-    checkperiod: 120, // Check for expired keys every 2 minutes
-    useClones: false,
-  });
+class CacheService {
+  constructor(namespace = '') {
+    this.namespace = namespace ? `${namespace}:` : '';
+    this.defaultTtl = parseInt(config.cache?.ttl || 3600);
+  }
 
-  static async get(key, fetchFn = null, ttl = 600) {
+  /**
+   * Obtiene un valor del cache
+   * @param {string} key - Clave a buscar
+   * @param {Function} fetchFn - Función para obtener el valor si no está en cache
+   * @param {number} ttl - Tiempo de vida en segundos
+   * @returns {Promise<any>} - Valor almacenado o resultado de fetchFn
+   */
+  async get(key, fetchFn = null, ttl = this.defaultTtl) {
     try {
-      const value = this.cache.get(key);
+      const fullKey = this._getFullKey(key);
+      const cachedValue = await cacheRepository.get(fullKey);
 
-      if (value !== undefined) {
-        LoggingService.logCacheOperation('get', key, true);
-        return value;
+      if (cachedValue !== null) {
+        logger.debug('Cache hit', { key: fullKey });
+        return cachedValue;
       }
+
+      logger.debug('Cache miss', { key: fullKey });
 
       if (fetchFn) {
         const freshValue = await fetchFn();
-        this.set(key, freshValue, ttl);
-        LoggingService.logCacheOperation('get', key, false);
+        await this.set(key, freshValue, ttl);
         return freshValue;
       }
 
       return null;
     } catch (error) {
-      LoggingService.error('Cache get error', { key, error: error.message });
-      return null;
+      logger.error('Cache get error', { key, error: error.message });
+      return fetchFn ? await fetchFn() : null;
     }
   }
 
-  static set(key, value, ttl = 600) {
+  /**
+   * Guarda un valor en el cache
+   * @param {string} key - Clave única
+   * @param {any} value - Valor a guardar
+   * @param {number} ttl - Tiempo de vida en segundos
+   * @returns {Promise<boolean>} - true si se guardó correctamente
+   */
+  async set(key, value, ttl = this.defaultTtl) {
     try {
-      const success = this.cache.set(key, value, ttl);
-      LoggingService.logCacheOperation('set', key, success);
-      return success;
-    } catch (error) {
-      LoggingService.error('Cache set error', { key, error: error.message });
-      return false;
-    }
-  }
-
-  static del(key) {
-    try {
-      const count = this.cache.del(key);
-      LoggingService.logCacheOperation('delete', key, count > 0);
-      return count > 0;
-    } catch (error) {
-      LoggingService.error('Cache delete error', { key, error: error.message });
-      return false;
-    }
-  }
-
-  static flush() {
-    try {
-      this.cache.flushAll();
-      LoggingService.logCacheOperation('flush', 'all', true);
+      const fullKey = this._getFullKey(key);
+      await cacheRepository.set(fullKey, value, ttl);
+      logger.debug('Cache set', { key: fullKey, ttl });
       return true;
     } catch (error) {
-      LoggingService.error('Cache flush error', { error: error.message });
+      logger.error('Cache set error', { key, error: error.message });
       return false;
     }
   }
 
-  static getStats() {
-    return this.cache.getStats();
-  }
-
-  static keys() {
-    return this.cache.keys();
-  }
-
-  static has(key) {
-    return this.cache.has(key);
-  }
-
-  static mget(keys) {
+  /**
+   * Elimina un valor del cache
+   * @param {string} key - Clave a eliminar
+   * @returns {Promise<boolean>} - true si se eliminó correctamente
+   */
+  async invalidate(key) {
     try {
-      return this.cache.mget(keys);
+      const fullKey = this._getFullKey(key);
+      const result = await cacheRepository.delete(fullKey);
+      logger.debug('Cache delete', { key: fullKey, success: result });
+      return result;
     } catch (error) {
-      LoggingService.error('Cache mget error', { keys, error: error.message });
-      return {};
-    }
-  }
-
-  static mset(items, ttl = 600) {
-    try {
-      return this.cache.mset(
-        items.map(item => ({
-          key: item.key,
-          val: item.value,
-          ttl,
-        })),
-      );
-    } catch (error) {
-      LoggingService.error('Cache mset error', { items, error: error.message });
+      logger.error('Cache delete error', { key, error: error.message });
       return false;
     }
   }
 
-  static mdel(keys) {
+  /**
+   * Elimina múltiples valores del cache por patrón
+   * @param {string} pattern - Patrón de clave (e.j. "user:*")
+   * @returns {Promise<number>} - Número de entradas eliminadas
+   */
+  async invalidatePattern(pattern) {
     try {
-      return this.cache.del(keys);
+      const fullPattern = this._getFullKey(pattern);
+      const count = await cacheRepository.deletePattern(fullPattern);
+      logger.debug('Cache delete pattern', { pattern: fullPattern, count });
+      return count;
     } catch (error) {
-      LoggingService.error('Cache mdel error', { keys, error: error.message });
+      logger.error('Cache delete pattern error', { pattern, error: error.message });
       return 0;
     }
   }
 
-  static wrap(key, fn, ttl = 600) {
-    return async (...args) => {
-      const cached = await this.get(key);
-      if (cached !== undefined) {
-        return cached;
+  /**
+   * Elimina todas las entradas del cache
+   * @returns {Promise<boolean>} - true si se vació correctamente
+   */
+  async flush() {
+    try {
+      if (this.namespace) {
+        // Solo vaciar las entradas del namespace
+        const count = await cacheRepository.deletePattern(`${this.namespace}*`);
+        logger.info(`Cache namespace flushed: ${this.namespace}`, { count });
+        return true;
+      } else {
+        // Vaciar todo el cache
+        const count = await cacheRepository.flush();
+        logger.info('Cache flushed completely', { count });
+        return true;
       }
+    } catch (error) {
+      logger.error('Cache flush error', { namespace: this.namespace, error: error.message });
+      return false;
+    }
+  }
 
-      const result = await fn(...args);
-      this.set(key, result, ttl);
-      return result;
+  /**
+   * Elimina entradas expiradas del cache
+   * @returns {Promise<number>} - Número de entradas eliminadas
+   */
+  async clearExpired() {
+    try {
+      const count = await cacheRepository.clearExpired();
+      if (count > 0) {
+        logger.info('Expired cache entries cleared', { count });
+      }
+      return count;
+    } catch (error) {
+      logger.error('Clear expired cache error', { error: error.message });
+      return 0;
+    }
+  }
+
+  /**
+   * Obtiene una función que usa el cache
+   * @param {string} key - Clave para cachear
+   * @param {Function} fn - Función a ejecutar si no hay cache
+   * @param {number} ttl - Tiempo de vida en segundos
+   * @returns {Function} - Función envuelta con cache
+   */
+  wrap(key, fn, ttl = this.defaultTtl) {
+    return async (...args) => {
+      const cacheKey = `${key}:${JSON.stringify(args)}`;
+      return this.get(cacheKey, () => fn(...args), ttl);
     };
   }
 
-  static async remember(key, ttl, fn) {
-    const cached = await this.get(key);
-    if (cached !== undefined) {
-      return cached;
-    }
-
-    const result = await fn();
-    this.set(key, result, ttl);
-    return result;
+  /**
+   * Obtiene un valor o lo guarda en cache
+   * @param {string} key - Clave para cachear
+   * @param {Function} fn - Función para obtener el valor
+   * @param {number} ttl - Tiempo de vida en segundos
+   * @returns {Promise<any>} - Valor del cache o de la función
+   */
+  async remember(key, fn, ttl = this.defaultTtl) {
+    return this.get(key, fn, ttl);
   }
 
-  static async rememberForever(key, fn) {
-    return this.remember(key, 0, fn);
+  /**
+   * Añade un prefijo a la clave basado en el namespace
+   * @param {string} key - Clave original
+   * @returns {string} - Clave con prefijo
+   * @private
+   */
+  _getFullKey(key) {
+    return `${this.namespace}${key}`;
   }
 
-  static async tags(tags) {
-    const keys = this.keys();
-    return keys.filter(key => {
-      const keyTags = this.cache.get(`${key}:tags`);
-      return keyTags && tags.every(tag => keyTags.includes(tag));
-    });
-  }
-
-  static async tagged(tags, key, value, ttl = 600) {
-    this.set(key, value, ttl);
-    this.set(`${key}:tags`, tags, ttl);
-  }
-
-  static async flushTagged(tags) {
-    const keys = await this.tags(tags);
-    return this.mdel(keys);
-  }
-
-  // Métodos específicos para el negocio
-  static async getCachedUser(userId) {
+  // Métodos específicos para modelos
+  
+  /**
+   * Obtiene un usuario del cache o la base de datos
+   * @param {number} userId - ID del usuario
+   * @returns {Promise<Object>} - Usuario
+   */
+  async getCachedUser(userId) {
     return this.get(`user:${userId}`, async () => {
-      const { User } = await import('../models/index.js');
-      return User.findByPk(userId);
-    });
-  }
-
-  static async getCachedContract(contractId) {
-    return this.get(`contract:${contractId}`, async () => {
-      const { Contract } = await import('../models/index.js');
-      return Contract.findByPk(contractId, {
-        include: ['User', 'License'],
+      return prisma.user.findUnique({
+        where: { id: parseInt(userId) },
       });
     });
   }
 
-  static async getCachedNotifications(userId) {
+  /**
+   * Obtiene un contrato del cache o la base de datos
+   * @param {number} contractId - ID del contrato
+   * @returns {Promise<Object>} - Contrato con relaciones
+   */
+  async getCachedContract(contractId) {
+    return this.get(`contract:${contractId}`, async () => {
+      return prisma.contract.findUnique({
+        where: { id: parseInt(contractId) },
+        include: {
+          user: true,
+          license: true,
+        },
+      });
+    });
+  }
+
+  /**
+   * Obtiene notificaciones del cache o la base de datos
+   * @param {number} userId - ID del usuario
+   * @returns {Promise<Array>} - Lista de notificaciones
+   */
+  async getCachedNotifications(userId) {
     return this.get(
       `notifications:${userId}`,
       async () => {
-        const { Notification } = await import('../models/index.js');
-        return Notification.findAll({
-          where: { userId },
-          order: [['createdAt', 'DESC']],
-          limit: 10,
+        return prisma.notification.findMany({
+          where: { userId: parseInt(userId) },
+          orderBy: { createdAt: 'desc' },
+          take: 10,
         });
       },
-      300,
-    ); // 5 minutos para notificaciones
+      300 // 5 minutos para notificaciones
+    );
   }
 
-  static async invalidateUserCache(userId) {
-    this.del(`user:${userId}`);
-  }
-
-  static async invalidateContractCache(contractId) {
-    this.del(`contract:${contractId}`);
-  }
-
-  static async invalidateNotificationsCache(userId) {
-    this.del(`notifications:${userId}`);
+  /**
+   * Inicializa el proceso de limpieza periódica del cache
+   * @returns {NodeJS.Timeout} - Timer ID
+   */
+  static initCleanupTask() {
+    const interval = parseInt(config.cache?.checkPeriod || 600) * 1000;
+    logger.info(`Initializing cache cleanup task with interval ${interval/1000} seconds`);
+    
+    return setInterval(async () => {
+      try {
+        const repository = cacheRepository;
+        const count = await repository.clearExpired();
+        if (count > 0) {
+          logger.info(`Cache cleanup: removed ${count} expired entries`);
+        }
+      } catch (error) {
+        logger.error('Error in cache cleanup task', { error: error.message });
+      }
+    }, interval);
   }
 }
 
-export default new CacheService();
+export default CacheService;

@@ -2,17 +2,13 @@
  * Servicio de notificaciones para la aplicación PACTA
  * Gestiona la creación, consulta y actualización de notificaciones
  */
-import { BaseService } from './BaseService.js';
-import repositories from '../database/repositories/index.js';
+import { prisma } from '../database/prisma.js';
 import { ValidationError, NotFoundError } from '../utils/errors.js';
-import { LoggingService } from './LoggingService.js';
+import { logger } from '../utils/logger.js';
 import { CacheService } from './CacheService.js';
 
-export class NotificationService extends BaseService {
+class NotificationService {
   constructor() {
-    super(repositories.notification);
-    this.notificationRepository = repositories.notification;
-    this.logger = new LoggingService('NotificationService');
     this.cacheService = new CacheService('notifications');
   }
 
@@ -25,6 +21,7 @@ export class NotificationService extends BaseService {
   async getUserNotifications(userId, options = {}) {
     try {
       const { page = 1, limit = 10, isRead, type } = options;
+      const skip = (page - 1) * limit;
 
       // Clave de cache
       const cacheKey = `notifications:user:${userId}:${JSON.stringify(options)}`;
@@ -35,13 +32,33 @@ export class NotificationService extends BaseService {
         return cached;
       }
 
-      const filterOptions = { isRead, type };
-      const result = await this.notificationRepository.findUserNotifications(
-        userId,
-        filterOptions,
-        page,
-        limit,
-      );
+      // Construir filtro para Prisma
+      const where = {
+        userId: parseInt(userId),
+        ...(isRead !== undefined && { isRead: isRead === 'true' || isRead === true }),
+        ...(type && { type }),
+      };
+
+      // Obtener total de registros para paginación
+      const total = await prisma.notification.count({ where });
+
+      // Obtener notificaciones
+      const notifications = await prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      });
+
+      const result = {
+        data: notifications,
+        meta: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total,
+          pages: Math.ceil(total / limit),
+        },
+      };
 
       // Guardar en cache por tiempo breve (30 segundos)
       // Las notificaciones cambian frecuentemente
@@ -49,12 +66,12 @@ export class NotificationService extends BaseService {
 
       return result;
     } catch (error) {
-      LoggingService.error('Error getting user notifications', {
+      logger.error('Error getting user notifications', {
         userId,
         options,
         error: error.message,
       });
-      this._handleError(error);
+      throw error;
     }
   }
 
@@ -73,19 +90,23 @@ export class NotificationService extends BaseService {
         return cached;
       }
 
-      const options = { isRead: false };
-      const result = await this.notificationRepository.findUserNotifications(userId, options, 1, 1);
+      const total = await prisma.notification.count({
+        where: {
+          userId: parseInt(userId),
+          isRead: false,
+        },
+      });
 
       // Guardar en cache por tiempo breve (15 segundos)
-      await this.cacheService.set(cacheKey, result.meta.total, 15);
+      await this.cacheService.set(cacheKey, total, 15);
 
-      return result.meta.total;
+      return total;
     } catch (error) {
-      LoggingService.error('Error getting unread notifications count', {
+      logger.error('Error getting unread notifications count', {
         userId,
         error: error.message,
       });
-      this._handleError(error);
+      throw error;
     }
   }
 
@@ -97,26 +118,41 @@ export class NotificationService extends BaseService {
    */
   async markAsRead(notificationIds, userId) {
     try {
-      const result = await this.notificationRepository.markAsRead(notificationIds, userId);
+      // Asegurar que notificationIds sea un array
+      const ids = Array.isArray(notificationIds) 
+        ? notificationIds.map(id => parseInt(id)) 
+        : [parseInt(notificationIds)];
+
+      // Actualizar notificaciones
+      const result = await prisma.notification.updateMany({
+        where: {
+          id: { in: ids },
+          userId: parseInt(userId),
+        },
+        data: {
+          isRead: true,
+          updatedAt: new Date(),
+        },
+      });
 
       // Invalidar caches relacionados
       await this.cacheService.invalidate(`notifications:unread:${userId}`);
       await this.cacheService.invalidatePattern(`notifications:user:${userId}:*`);
 
-      LoggingService.info('Notifications marked as read', {
+      logger.info('Notifications marked as read', {
         notificationIds,
         userId,
-        count: result,
+        count: result.count,
       });
 
-      return result;
+      return result.count;
     } catch (error) {
-      LoggingService.error('Error marking notifications as read', {
+      logger.error('Error marking notifications as read', {
         notificationIds,
         userId,
         error: error.message,
       });
-      this._handleError(error);
+      throw error;
     }
   }
 
@@ -127,21 +163,33 @@ export class NotificationService extends BaseService {
    */
   async markAllAsRead(userId) {
     try {
-      const result = await this.notificationRepository.markAllAsRead(userId);
+      const result = await prisma.notification.updateMany({
+        where: {
+          userId: parseInt(userId),
+          isRead: false,
+        },
+        data: {
+          isRead: true,
+          updatedAt: new Date(),
+        },
+      });
 
       // Invalidar caches relacionados
       await this.cacheService.invalidate(`notifications:unread:${userId}`);
       await this.cacheService.invalidatePattern(`notifications:user:${userId}:*`);
 
-      LoggingService.info('All notifications marked as read', { userId, count: result });
+      logger.info('All notifications marked as read', { 
+        userId, 
+        count: result.count 
+      });
 
-      return result;
+      return result.count;
     } catch (error) {
-      LoggingService.error('Error marking all notifications as read', {
+      logger.error('Error marking all notifications as read', {
         userId,
         error: error.message,
       });
-      this._handleError(error);
+      throw error;
     }
   }
 
@@ -154,42 +202,101 @@ export class NotificationService extends BaseService {
     try {
       this._validateNotificationData(data);
 
-      const notification = await this.notificationRepository.create(data);
+      const notification = await prisma.notification.create({
+        data: {
+          ...data,
+          userId: parseInt(data.userId),
+          isRead: false,
+        },
+      });
 
       // Invalidar caches relacionados
       await this.cacheService.invalidate(`notifications:unread:${data.userId}`);
       await this.cacheService.invalidatePattern(`notifications:user:${data.userId}:*`);
 
-      LoggingService.info('Notification created', {
+      logger.info('Notification created', {
         notificationId: notification.id,
         userId: data.userId,
       });
 
       return notification;
     } catch (error) {
-      LoggingService.error('Error creating notification', { data, error: error.message });
-      this._handleError(error);
+      logger.error('Error creating notification', { data, error: error.message });
+      throw error;
     }
   }
 
   /**
-   * Crea notificaciones para contratos próximos a vencer
-   * @param {Number} daysThreshold - Días umbral para considerar vencimiento próximo
-   * @returns {Promise<Number>} - Número de notificaciones creadas
+   * Crea una notificación relacionada con una licencia
+   * @param {Number} userId - ID del usuario
+   * @param {String} severity - Severidad (INFO, WARNING, ERROR)
+   * @param {String} message - Mensaje de la notificación
+   * @param {Object} metadata - Metadatos adicionales
+   * @returns {Promise<Object>} - Notificación creada
    */
-  async createExpirationNotifications(daysThreshold = 30) {
+  static async createLicenseNotification(userId, severity, message, metadata = {}) {
     try {
-      const count = await this.notificationRepository.createExpirationNotifications(daysThreshold);
+      const notification = await prisma.notification.create({
+        data: {
+          userId: parseInt(userId),
+          title: `License ${severity === 'ERROR' ? 'Alert' : 'Notification'}`,
+          message,
+          type: 'LICENSE',
+          severity,
+          isRead: false,
+          metadata,
+        },
+      });
 
-      LoggingService.info('Contract expiration notifications created', { count, daysThreshold });
+      logger.info('License notification created', {
+        notificationId: notification.id,
+        userId,
+        severity,
+      });
 
-      return count;
+      return notification;
     } catch (error) {
-      LoggingService.error('Error creating expiration notifications', {
-        daysThreshold,
+      logger.error('Error creating license notification', {
+        userId,
+        severity,
+        message,
         error: error.message,
       });
-      this._handleError(error);
+      throw error;
+    }
+  }
+
+  /**
+   * Elimina notificaciones antiguas
+   * @param {Number} days - Días de antigüedad para eliminar (default: 90)
+   * @returns {Promise<Number>} - Número de notificaciones eliminadas
+   */
+  static async cleanupOldNotifications(days = 90) {
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - days);
+
+      const result = await prisma.notification.deleteMany({
+        where: {
+          createdAt: {
+            lt: cutoffDate,
+          },
+          isRead: true,
+        },
+      });
+
+      logger.info('Old notifications cleaned up', {
+        days,
+        count: result.count,
+      });
+
+      return result.count;
+    } catch (error) {
+      logger.error('Error cleaning up old notifications', {
+        days,
+        error: error.message,
+      });
+      throw error;
     }
   }
 
@@ -215,9 +322,12 @@ export class NotificationService extends BaseService {
       'COMMENT_ADDED',
       'ASSIGNMENT',
       'SYSTEM',
+      'LICENSE',
     ];
     if (!validTypes.includes(data.type)) {
       throw new ValidationError(`Invalid notification type: ${data.type}`);
     }
   }
 }
+
+export default NotificationService;

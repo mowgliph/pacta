@@ -1,18 +1,17 @@
 import fs from 'fs/promises';
-import path from 'path';
-import { License, ActivityLog } from '../models/associations.js';
+import { License } from '../models/index.js';
+import { prisma } from '../database/prisma.js';
+
 
 const TRIAL_CODES = {
-  DEMOPACTA: {
-    days: 30,
-    type: 'DEMO',
-  },
-  TRYPACTA: {
-    days: 14,
-    type: 'TRIAL',
-  },
+  'TRYPATOOL': { days: 7, features: ['BASIC', 'REPORTS'] },
+  'TRIALPATOOL': { days: 14, features: ['BASIC', 'REPORTS', 'ANALYTICS'] },
+  'TRYFULL': { days: 30, features: ['BASIC', 'REPORTS', 'ANALYTICS', 'EXPORT'] },
 };
 
+/**
+ * Servicio para validar licencias
+ */
 class LicenseValidator {
   static async validateLicenseFile(filePath, userId) {
     try {
@@ -29,7 +28,7 @@ class LicenseValidator {
         throw new Error('Invalid license key format');
       }
 
-      // Check expiration
+      // Check if license has expired
       if (this.isExpired(licenseData.expiryDate)) {
         throw new Error('License has expired');
       }
@@ -38,7 +37,7 @@ class LicenseValidator {
       const license = await License.create({
         licenseKey: licenseData.licenseKey,
         type: licenseData.type || 'FULL',
-        startDate: new Date(),
+        userId: userId,
         expiryDate: new Date(licenseData.expiryDate),
         active: true,
         maxUsers: licenseData.maxUsers || 1,
@@ -50,12 +49,14 @@ class LicenseValidator {
       });
 
       // Log the license activation
-      await ActivityLog.create({
-        userId,
-        action: 'LICENSE_ACTIVATION',
-        entityType: 'License',
-        entityId: license.id,
-        details: `License activated for ${licenseData.customerName}`,
+      await prisma.activityLog.create({
+        data: {
+          userId: userId,
+          action: 'LICENSE_ACTIVATION',
+          entityType: 'License',
+          entityId: license.id,
+          details: `License activated for ${licenseData.customerName}`
+        }
       });
 
       return license;
@@ -66,15 +67,18 @@ class LicenseValidator {
 
   static isValidLicenseStructure(data) {
     const requiredFields = ['licenseKey', 'customerName', 'expiryDate', 'renewalDate'];
-    return requiredFields.every(field => data.hasOwnProperty(field));
+    return requiredFields.every(field => data[field]);
   }
 
   static isValidLicenseKey(key) {
-    return /^\d{14}$/.test(key);
+    // Formato: LICENSE-timestamp-random
+    const pattern = /^LICENSE-\d{13}-\d{4}$/;
+    return pattern.test(key);
   }
 
-  static isExpired(expiryDate) {
-    return new Date(expiryDate) <= new Date();
+  static isExpired(dateString) {
+    const expiryDate = new Date(dateString);
+    return expiryDate < new Date();
   }
 
   static async getCurrentLicenseStatus() {
@@ -84,6 +88,7 @@ class LicenseValidator {
         isValid: false,
         status: 'NO_LICENSE',
         message: 'No valid license found',
+        license: null,
       };
     }
 
@@ -93,6 +98,7 @@ class LicenseValidator {
         status: 'EXPIRED',
         message: 'License has expired',
         expiryDate: license.expiryDate,
+        license,
       };
     }
 
@@ -103,6 +109,10 @@ class LicenseValidator {
         message: 'License will expire soon',
         expiryDate: license.expiryDate,
         renewalDate: license.metadata.renewalDate,
+        daysRemaining: Math.ceil(
+          (new Date(license.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)
+        ),
+        license,
       };
     }
 
@@ -113,110 +123,106 @@ class LicenseValidator {
       expiryDate: license.expiryDate,
       renewalDate: license.metadata.renewalDate,
       customerName: license.metadata.customerName,
+      license,
     };
   }
 
-  static async validateTrialCode(code, userId) {
-    try {
-      // Validate code format
-      const trialCode = TRIAL_CODES[code.toUpperCase()];
-      if (!trialCode) {
-        throw new Error('Invalid trial code');
-      }
+  static async activateTrialWithCode(code, userId) {
+    if (!TRIAL_CODES[code]) {
+      throw new Error('Invalid trial code');
+    }
 
-      // Check if code was already used
-      const existingTrial = await License.findOne({
-        where: {
-          metadata: {
-            trialCode: code.toUpperCase(),
-          },
-        },
-      });
+    const { days, features } = TRIAL_CODES[code];
 
-      if (existingTrial) {
-        throw new Error('Trial code has already been used');
-      }
+    // Check if the user already has a trial license
+    const existingTrial = await License.findOne({
+      where: {
+        userId: userId,
+        type: 'TRIAL',
+      },
+    });
 
-      // Create trial license
-      const now = new Date();
-      const expiryDate = new Date(now.setDate(now.getDate() + trialCode.days));
+    if (existingTrial) {
+      throw new Error('User already has an active trial license');
+    }
 
-      const license = await License.create({
-        licenseKey: `TRIAL-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-        type: trialCode.type,
-        startDate: new Date(),
-        expiryDate,
-        active: true,
-        maxUsers: 1,
-        features: {
-          fullAccess: true,
-        },
-        metadata: {
-          trialCode: code.toUpperCase(),
-          customerName: 'Trial User',
-          renewalDate: expiryDate,
-        },
-      });
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + days);
 
-      // Log the trial activation
-      await ActivityLog.create({
+    // Create trial license
+    const timestamp = Date.now();
+    const randomKey = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    
+    const license = await License.create({
+      licenseKey: `TRIAL-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      type: 'TRIAL',
+      userId: userId,
+      expiryDate,
+      active: true,
+      maxUsers: 1,
+      features: features || [],
+      metadata: {
+        trialCode: code,
+        activationDate: new Date().toISOString(),
+      },
+    });
+
+    // Log activity
+    await prisma.activityLog.create({
+      data: {
         userId,
         action: 'TRIAL_ACTIVATION',
         entityType: 'License',
         entityId: license.id,
-        details: `Trial license activated with code ${code}`,
-      });
+        details: `Trial license activated with code ${code}`
+      }
+    });
 
-      return {
-        success: true,
-        license: {
-          type: license.type,
-          expiryDate: license.expiryDate,
-          daysRemaining: trialCode.days,
-        },
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.message,
-      };
-    }
+    return {
+      success: true,
+      message: 'Trial license activated successfully',
+      license: {
+        type: license.type,
+        expiryDate: license.expiryDate,
+        days: days,
+        features: features,
+      },
+    };
   }
 
-  static async checkTrialStatus(userId) {
+  static async requiresFullLicense(feature) {
+    // Check if the requested feature requires a full license
     const license = await License.getCurrentLicense();
 
     if (!license) {
       return {
-        status: 'NO_TRIAL',
-        message: 'No active trial found',
+        requiresUpgrade: true,
+        status: 'NO_LICENSE',
+        message: 'No active license found',
       };
     }
 
     if (license.type !== 'DEMO' && license.type !== 'TRIAL') {
       return {
+        requiresUpgrade: false,
         status: 'FULL_LICENSE',
         message: 'Full license active',
       };
     }
 
-    const now = new Date();
-    const daysRemaining = Math.ceil((new Date(license.expiryDate) - now) / (1000 * 60 * 60 * 24));
-
-    if (daysRemaining <= 0) {
+    // For trial/demo licenses, check if the feature is included
+    if (license.features && Array.isArray(license.features) && license.features.includes(feature)) {
       return {
-        status: 'EXPIRED',
-        message: 'Trial period has expired',
-        expiryDate: license.expiryDate,
+        requiresUpgrade: false,
+        status: 'FEATURE_INCLUDED',
+        message: 'Feature included in current license',
       };
     }
 
     return {
-      status: 'ACTIVE',
-      message: `Trial active - ${daysRemaining} days remaining`,
-      type: license.type,
-      expiryDate: license.expiryDate,
-      daysRemaining,
+      requiresUpgrade: true,
+      status: 'FEATURE_REQUIRES_UPGRADE',
+      message: 'This feature requires a full license',
     };
   }
 }

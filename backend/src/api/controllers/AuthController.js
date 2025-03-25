@@ -135,11 +135,11 @@ export const verifyResetToken = async (req, res) => {
     const { token } = req.body;
 
     // Buscar usuario con el token y que no haya expirado
-    const user = await User.findOne({
+    const user = await prisma.user.findFirst({
       where: {
         resetToken: token,
-        resetTokenExpiry: { [Op.gt]: new Date() },
-      },
+        resetTokenExpiry: { gt: new Date() }
+      }
     });
 
     if (!user) {
@@ -159,11 +159,11 @@ export const resetPassword = async (req, res) => {
     const { token, password } = req.body;
 
     // Buscar usuario con el token y que no haya expirado
-    const user = await User.findOne({
+    const user = await prisma.user.findFirst({
       where: {
         resetToken: token,
-        resetTokenExpiry: { [Op.gt]: new Date() },
-      },
+        resetTokenExpiry: { gt: new Date() }
+      }
     });
 
     if (!user) {
