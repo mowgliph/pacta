@@ -1,19 +1,29 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
-import { authenticateToken, isAdmin } from '../api/middleware/auth.js';
-import { User, Contract, License, Notification, ActivityLog } from '../models/index.js';
-import { Op } from 'sequelize';
+import { authenticateToken, isAdmin } from '../middleware/auth.js';
+import { prisma } from '../../database/prisma.js';
 import multer from 'multer';
 import LicenseValidator from '../services/licenseValidator.js';
-import { db } from '../database/dbconnection.js';
 
 const router = express.Router();
 
 // Protected routes for all authenticated users
 router.get('/profile', authenticateToken, async (req, res) => {
   try {
-    const user = await User.findByPk(req.user.id, {
-      attributes: { exclude: ['password'] },
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+        status: true,
+        profileImage: true,
+        lastLogin: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
     res.json(user);
   } catch (error) {
@@ -24,8 +34,31 @@ router.get('/profile', authenticateToken, async (req, res) => {
 // Admin only routes
 router.get('/users', authenticateToken, isAdmin, async (req, res) => {
   try {
-    const users = await User.findAll({
-      attributes: { exclude: ['password', 'resetToken', 'resetTokenExpiry'] },
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+        status: true,
+        profileImage: true,
+        lastLogin: true,
+        createdAt: true,
+        updatedAt: true,
+        department: {
+          select: {
+            id: true,
+            name: true,
+            company: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
     });
     res.json(users);
   } catch (error) {
@@ -40,9 +73,14 @@ router.post(
   authenticateToken,
   isAdmin,
   [
-    body('username')
-      .isLength({ min: 3, max: 50 })
-      .withMessage('El nombre de usuario debe tener entre 3 y 50 caracteres')
+    body('firstName')
+      .isLength({ min: 2, max: 50 })
+      .withMessage('El nombre debe tener entre 2 y 50 caracteres')
+      .trim()
+      .escape(),
+    body('lastName')
+      .isLength({ min: 2, max: 50 })
+      .withMessage('El apellido debe tener entre 2 y 50 caracteres')
       .trim()
       .escape(),
     body('email')
@@ -50,13 +88,15 @@ router.post(
       .withMessage('Debe proporcionar un correo electrónico válido')
       .normalizeEmail(),
     body('password')
-      .isLength({ min: 6 })
-      .withMessage('La contraseña debe tener al menos 6 caracteres')
-      .matches(/^(?=.*[A-Za-z])(?=.*\d)/)
-      .withMessage('La contraseña debe contener al menos una letra y un número'),
+      .isLength({ min: 8 })
+      .withMessage('La contraseña debe tener al menos 8 caracteres'),
     body('role')
-      .isIn(['admin', 'advanced', 'readonly'])
-      .withMessage('El rol debe ser admin, advanced o readonly'),
+      .isIn(['ADMIN', 'MANAGER', 'USER', 'VIEWER'])
+      .withMessage('Rol de usuario inválido'),
+    body('departmentId')
+      .optional()
+      .isUUID()
+      .withMessage('ID de departamento inválido'),
   ],
   async (req, res) => {
     try {
@@ -65,60 +105,99 @@ router.post(
         return res.status(400).json({ errors: errors.array() });
       }
 
-      const { username, email, password, role } = req.body;
+      const { firstName, lastName, email, password, role, departmentId } = req.body;
 
-      // Comprobar si el usuario ya existe
-      const existingUser = await User.findOne({
-        where: {
-          [Op.or]: [{ username }, { email }],
-        },
+      // Verificar si el email ya existe
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
       });
 
       if (existingUser) {
-        return res.status(400).json({
-          message: 'El nombre de usuario o email ya está en uso',
-        });
+        return res.status(400).json({ message: 'El correo electrónico ya está registrado' });
       }
 
-      // Crear nuevo usuario
-      const newUser = await User.create({
-        username,
-        email,
-        password,
-        role,
-        firstLogin: true,
-        active: true,
+      // Crear el usuario
+      const user = await prisma.user.create({
+        data: {
+          firstName,
+          lastName,
+          email,
+          password, // La contraseña será hasheada por el modelo
+          role,
+          departmentId,
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+          status: true,
+          profileImage: true,
+          lastLogin: true,
+          createdAt: true,
+          updatedAt: true,
+          department: {
+            select: {
+              id: true,
+              name: true,
+              company: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
       });
 
       // Registrar actividad
-      await ActivityLog.create({
-        userId: req.user.id,
-        action: 'USER_CREATION',
-        entityType: 'User',
-        entityId: newUser.id,
-        details: `Usuario ${username} creado con rol ${role}`,
+      await prisma.activity.create({
+        data: {
+          action: 'CREATE_USER',
+          description: `Usuario ${user.email} creado`,
+          userId: req.user.id,
+        },
       });
 
-      // Devolver el usuario creado sin la contraseña
-      const userResponse = newUser.toJSON();
-      delete userResponse.password;
-
-      res.status(201).json({
-        message: 'Usuario creado exitosamente',
-        user: userResponse,
-      });
+      res.status(201).json(user);
     } catch (error) {
       console.error('Error creating user:', error);
-      res.status(500).json({ message: 'Error al crear usuario' });
+      res.status(500).json({ message: 'Error al crear el usuario' });
     }
-  },
+  }
 );
 
 // Obtener un usuario específico
 router.get('/users/:id', authenticateToken, isAdmin, async (req, res) => {
   try {
-    const user = await User.findByPk(req.params.id, {
-      attributes: { exclude: ['password', 'resetToken', 'resetTokenExpiry'] },
+    const user = await prisma.user.findUnique({
+      where: { id: req.params.id },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+        status: true,
+        profileImage: true,
+        lastLogin: true,
+        createdAt: true,
+        updatedAt: true,
+        department: {
+          select: {
+            id: true,
+            name: true,
+            company: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!user) {
@@ -138,10 +217,16 @@ router.put(
   authenticateToken,
   isAdmin,
   [
-    body('username')
+    body('firstName')
       .optional()
-      .isLength({ min: 3, max: 50 })
-      .withMessage('El nombre de usuario debe tener entre 3 y 50 caracteres')
+      .isLength({ min: 2, max: 50 })
+      .withMessage('El nombre debe tener entre 2 y 50 caracteres')
+      .trim()
+      .escape(),
+    body('lastName')
+      .optional()
+      .isLength({ min: 2, max: 50 })
+      .withMessage('El apellido debe tener entre 2 y 50 caracteres')
       .trim()
       .escape(),
     body('email')
@@ -151,15 +236,20 @@ router.put(
       .normalizeEmail(),
     body('password')
       .optional()
-      .isLength({ min: 6 })
-      .withMessage('La contraseña debe tener al menos 6 caracteres')
-      .matches(/^(?=.*[A-Za-z])(?=.*\d)/)
-      .withMessage('La contraseña debe contener al menos una letra y un número'),
+      .isLength({ min: 8 })
+      .withMessage('La contraseña debe tener al menos 8 caracteres'),
     body('role')
       .optional()
-      .isIn(['admin', 'advanced', 'readonly'])
-      .withMessage('El rol debe ser admin, advanced o readonly'),
-    body('active').optional().isBoolean().withMessage('El campo active debe ser booleano'),
+      .isIn(['ADMIN', 'MANAGER', 'USER', 'VIEWER'])
+      .withMessage('Rol de usuario inválido'),
+    body('departmentId')
+      .optional()
+      .isUUID()
+      .withMessage('ID de departamento inválido'),
+    body('status')
+      .optional()
+      .isBoolean()
+      .withMessage('El campo status debe ser booleano'),
   ],
   async (req, res) => {
     try {
@@ -169,17 +259,19 @@ router.put(
       }
 
       const userId = req.params.id;
-      const { username, email, password, role, active } = req.body;
+      const { firstName, lastName, email, password, role, departmentId, status } = req.body;
 
       // Verificar que el usuario existe
-      const user = await User.findByPk(userId);
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+      });
       if (!user) {
         return res.status(404).json({ message: 'Usuario no encontrado' });
       }
 
       // Verificar si se está intentando actualizar el último administrador
-      if ((user.role === 'admin' && role === 'readonly') || role === 'advanced') {
-        const adminCount = await User.count({ where: { role: 'admin' } });
+      if ((user.role === 'ADMIN' && role === 'VIEWER') || role === 'MANAGER') {
+        const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
         if (adminCount <= 1) {
           return res.status(400).json({
             message: 'No se puede cambiar el rol del último administrador',
@@ -187,57 +279,68 @@ router.put(
         }
       }
 
-      // Si se actualiza username o email, verificar que no exista ya
-      if (username || email) {
-        const existingUser = await User.findOne({
-          where: {
-            [Op.and]: [
-              { id: { [Op.ne]: userId } },
-              {
-                [Op.or]: [username ? { username } : null, email ? { email } : null].filter(
-                  condition => condition !== null,
-                ),
-              },
-            ],
-          },
+      // Si se actualiza email, verificar que no exista ya
+      if (email) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email },
         });
 
         if (existingUser) {
           return res.status(400).json({
-            message: 'El nombre de usuario o email ya está en uso por otro usuario',
+            message: 'El correo electrónico ya está registrado por otro usuario',
           });
         }
       }
 
       // Actualizar el usuario
       const updateData = {};
-      if (username) updateData.username = username;
+      if (firstName) updateData.firstName = firstName;
+      if (lastName) updateData.lastName = lastName;
       if (email) updateData.email = email;
       if (password) updateData.password = password;
       if (role) updateData.role = role;
-      if (active !== undefined) updateData.active = active;
+      if (departmentId) updateData.departmentId = departmentId;
+      if (status !== undefined) updateData.status = status;
 
-      await user.update(updateData);
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+          status: true,
+          profileImage: true,
+          lastLogin: true,
+          createdAt: true,
+          updatedAt: true,
+          department: {
+            select: {
+              id: true,
+              name: true,
+              company: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      });
 
       // Registrar actividad
-      await ActivityLog.create({
-        userId: req.user.id,
-        action: 'USER_UPDATE',
-        entityType: 'User',
-        entityId: user.id,
-        details: `Usuario ID ${userId} actualizado`,
+      await prisma.activity.create({
+        data: {
+          action: 'UPDATE_USER',
+          description: `Usuario ID ${userId} actualizado`,
+          userId: req.user.id,
+        },
       });
 
-      // Devolver el usuario actualizado sin la contraseña
-      const userResponse = user.toJSON();
-      delete userResponse.password;
-      delete userResponse.resetToken;
-      delete userResponse.resetTokenExpiry;
-
-      res.json({
-        message: 'Usuario actualizado exitosamente',
-        user: userResponse,
-      });
+      res.json(updatedUser);
     } catch (error) {
       console.error('Error updating user:', error);
       res.status(500).json({ message: 'Error al actualizar usuario' });
@@ -257,14 +360,16 @@ router.delete('/users/:id', authenticateToken, isAdmin, async (req, res) => {
       });
     }
 
-    const user = await User.findByPk(userId);
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
     if (!user) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
     // Verificar si es el último administrador
-    if (user.role === 'admin') {
-      const adminCount = await User.count({ where: { role: 'admin' } });
+    if (user.role === 'ADMIN') {
+      const adminCount = await prisma.user.count({ where: { role: 'ADMIN' } });
       if (adminCount <= 1) {
         return res.status(400).json({
           message: 'No se puede eliminar el último administrador del sistema',
@@ -273,16 +378,18 @@ router.delete('/users/:id', authenticateToken, isAdmin, async (req, res) => {
     }
 
     // Registrar actividad antes de eliminar
-    await ActivityLog.create({
-      userId: req.user.id,
-      action: 'USER_DELETION',
-      entityType: 'User',
-      entityId: user.id,
-      details: `Usuario ${user.username} con rol ${user.role} eliminado`,
+    await prisma.activity.create({
+      data: {
+        action: 'DELETE_USER',
+        description: `Usuario ${user.email} con rol ${user.role} eliminado`,
+        userId: req.user.id,
+      },
     });
 
     // Eliminar el usuario
-    await user.destroy();
+    await prisma.user.delete({
+      where: { id: userId },
+    });
 
     res.json({
       message: 'Usuario eliminado exitosamente',
@@ -297,8 +404,8 @@ router.delete('/users/:id', authenticateToken, isAdmin, async (req, res) => {
 // Contract management routes
 router.get('/contracts', authenticateToken, async (req, res) => {
   try {
-    const contracts = await Contract.findAll({
-      where: req.user.role === 'admin' ? {} : { createdBy: req.user.id },
+    const contracts = await prisma.contract.findMany({
+      where: req.user.role === 'ADMIN' ? {} : { createdBy: req.user.id },
     });
     res.json(contracts);
   } catch (error) {
@@ -309,7 +416,7 @@ router.get('/contracts', authenticateToken, async (req, res) => {
 // License management routes
 router.get('/licenses', authenticateToken, isAdmin, async (req, res) => {
   try {
-    const licenses = await License.findAll();
+    const licenses = await prisma.license.findMany();
     res.json(licenses);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -323,9 +430,9 @@ router.post(
   [
     body('currentPassword').notEmpty(),
     body('newPassword')
-      .isLength({ min: 6 })
+      .isLength({ min: 8 })
       .matches(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]/)
-      .withMessage('Password must be at least 6 characters and contain letters and numbers'),
+      .withMessage('Password must be at least 8 characters and contain letters and numbers'),
   ],
   async (req, res) => {
     try {
@@ -335,7 +442,9 @@ router.post(
       }
 
       const { currentPassword, newPassword } = req.body;
-      const user = await User.findByPk(req.user.id);
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+      });
 
       // Verify current password
       const isValidPassword = await user.validatePassword(currentPassword);
@@ -344,9 +453,45 @@ router.post(
       }
 
       // Update password
-      await user.update({
-        password: newPassword,
-        firstLogin: false,
+      const updatedUser = await prisma.user.update({
+        where: { id: req.user.id },
+        data: {
+          password: newPassword,
+          firstLogin: false,
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          role: true,
+          status: true,
+          profileImage: true,
+          lastLogin: true,
+          createdAt: true,
+          updatedAt: true,
+          department: {
+            select: {
+              id: true,
+              name: true,
+              company: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      // Registrar actividad
+      await prisma.activity.create({
+        data: {
+          action: 'UPDATE_PASSWORD',
+          description: `Usuario ID ${req.user.id} actualizó su contraseña`,
+          userId: req.user.id,
+        },
       });
 
       res.json({ message: 'Password updated successfully' });
@@ -360,15 +505,18 @@ router.post(
 // Get user notifications
 router.get('/notifications', authenticateToken, async (req, res) => {
   try {
-    const notifications = await Notification.findAll({
+    const notifications = await prisma.notification.findMany({
       where: { userId: req.user.id },
-      include: [
-        {
-          model: Contract,
-          attributes: ['contractNumber', 'title', 'endDate'],
+      include: {
+        contract: {
+          select: {
+            contractNumber: true,
+            title: true,
+            endDate: true,
+          },
         },
-      ],
-      order: [['createdAt', 'DESC']],
+      },
+      orderBy: { createdAt: 'desc' },
     });
     res.json(notifications);
   } catch (error) {
@@ -379,7 +527,7 @@ router.get('/notifications', authenticateToken, async (req, res) => {
 // Mark notification as read
 router.put('/notifications/:id/read', authenticateToken, async (req, res) => {
   try {
-    const notification = await Notification.findOne({
+    const notification = await prisma.notification.findUnique({
       where: {
         id: req.params.id,
         userId: req.user.id,
@@ -390,7 +538,10 @@ router.put('/notifications/:id/read', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Notification not found' });
     }
 
-    await notification.update({ read: true });
+    await prisma.notification.update({
+      where: { id: req.params.id },
+      data: { read: true },
+    });
     res.json({ message: 'Notification marked as read' });
   } catch (error) {
     res.status(500).json({ message: 'Error updating notification' });
@@ -405,12 +556,12 @@ router.post('/validate-license', authenticateToken, isAdmin, async (req, res) =>
     // Simulate external API validation delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    const license = await License.findOne({
+    const license = await prisma.license.findUnique({
       where: {
         licenseKey,
         active: true,
         expiryDate: {
-          [Op.gt]: new Date(),
+          gt: new Date(),
         },
       },
     });
@@ -423,12 +574,12 @@ router.post('/validate-license', authenticateToken, isAdmin, async (req, res) =>
     }
 
     // Log license validation
-    await ActivityLog.create({
-      userId: req.user.id,
-      action: 'LICENSE_VALIDATION',
-      entityType: 'License',
-      entityId: license.id,
-      details: `License key ${licenseKey} validated successfully`,
+    await prisma.activity.create({
+      data: {
+        action: 'LICENSE_VALIDATION',
+        description: `License key ${licenseKey} validated successfully`,
+        userId: req.user.id,
+      },
     });
 
     res.json({
@@ -463,20 +614,22 @@ router.post(
       const { type, durationDays } = req.body;
       const licenseKey = `PACTA-${type}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
-      const license = await License.create({
-        licenseKey,
-        type,
-        startDate: new Date(),
-        expiryDate: new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000),
-        active: true,
+      const license = await prisma.license.create({
+        data: {
+          licenseKey,
+          type,
+          startDate: new Date(),
+          expiryDate: new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000),
+          active: true,
+        },
       });
 
-      await ActivityLog.create({
-        userId: req.user.id,
-        action: 'LICENSE_GENERATION',
-        entityType: 'License',
-        entityId: license.id,
-        details: `Generated ${type} license key: ${licenseKey}`,
+      await prisma.activity.create({
+        data: {
+          action: 'LICENSE_GENERATION',
+          description: `Generated ${type} license key: ${licenseKey}`,
+          userId: req.user.id,
+        },
       });
 
       res.status(201).json({

@@ -1,25 +1,25 @@
-import { Contract, User, License, ActivityLog } from '../models/index.js';
-import { Op } from 'sequelize';
+import { prisma } from '../../database/prisma.js';
 import fs from 'fs';
+import { Op } from 'sequelize';
 import { db } from '../database/dbconnection.js';
 
 // Obtener todos los contratos (filtrados por rol de usuario)
 export const getAllContracts = async (req, res) => {
   try {
-    const contracts = await Contract.findAll({
-      where: req.user.role === 'admin' ? {} : { createdBy: req.user.id },
-      include: [
-        {
-          model: User,
-          as: 'creator',
-          attributes: ['username', 'email'],
+    const contracts = await prisma.contract.findMany({
+      where: req.user.role === 'admin' ? {} : { authorId: req.user.id },
+      include: {
+        author: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
         },
-        {
-          model: License,
-          attributes: ['name', 'type'],
-        },
-      ],
-      order: [['updatedAt', 'DESC']],
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
     });
     res.json(contracts);
   } catch (error) {
@@ -31,31 +31,34 @@ export const getAllContracts = async (req, res) => {
 // Obtener contrato por ID
 export const getContractById = async (req, res) => {
   try {
-    const contract = await Contract.findOne({
+    const contract = await prisma.contract.findUnique({
       where: {
         id: req.params.id,
-        ...(req.user.role !== 'admin' && { createdBy: req.user.id }),
+        ...(req.user.role !== 'admin' && { authorId: req.user.id }),
       },
-      include: [
-        {
-          model: User,
-          as: 'creator',
-          attributes: ['id', 'username', 'email'],
+      include: {
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
         },
-        {
-          model: User,
-          as: 'modifier',
-          attributes: ['id', 'username', 'email'],
+        company: true,
+        department: true,
+        contractTags: {
+          include: {
+            tag: true,
+          },
         },
-        {
-          model: License,
-          attributes: ['name', 'type'],
-        },
-      ],
+      },
     });
+
     if (!contract) {
       return res.status(404).json({ message: 'Contrato no encontrado' });
     }
+
     res.json(contract);
   } catch (error) {
     console.error('Error fetching contract:', error);
@@ -66,26 +69,33 @@ export const getContractById = async (req, res) => {
 // Crear nuevo contrato
 export const createContract = async (req, res) => {
   try {
-    const contractData = {
-      ...req.body,
-      createdBy: req.user.id,
-      lastModifiedBy: req.user.id,
-    };
+    const contract = await prisma.contract.create({
+      data: {
+        ...req.body,
+        authorId: req.user.id,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        company: true,
+        department: true,
+      },
+    });
 
-    // Si se ha subido un documento, guardar la ruta
-    if (req.file) {
-      contractData.documentPath = req.file.path;
-    }
-
-    const contract = await Contract.create(contractData);
-
-    // Log activity
-    await ActivityLog.create({
-      userId: req.user.id,
-      action: 'CREATE',
-      entityType: 'Contract',
-      entityId: contract.id,
-      details: `Contrato ${contract.contractNumber} creado`,
+    // Registrar actividad
+    await prisma.activity.create({
+      data: {
+        action: 'CREATE_CONTRACT',
+        description: `Contrato ${contract.title} creado`,
+        userId: req.user.id,
+        contractId: contract.id,
+      },
     });
 
     res.status(201).json(contract);
@@ -98,10 +108,10 @@ export const createContract = async (req, res) => {
 // Actualizar contrato
 export const updateContract = async (req, res) => {
   try {
-    const contract = await Contract.findOne({
+    const contract = await prisma.contract.findUnique({
       where: {
         id: req.params.id,
-        ...(req.user.role !== 'admin' && { createdBy: req.user.id }),
+        ...(req.user.role !== 'admin' && { authorId: req.user.id }),
       },
     });
 
@@ -109,50 +119,47 @@ export const updateContract = async (req, res) => {
       return res.status(404).json({ message: 'Contrato no encontrado' });
     }
 
-    // Guardamos la ruta del documento anterior por si hay que eliminarla
-    const oldDocumentPath = contract.documentPath;
-
-    // Preparamos los datos a actualizar
-    const updateData = {
-      ...req.body,
-      lastModifiedBy: req.user.id,
-    };
-
-    // Si se ha subido un nuevo documento, actualizamos la ruta
-    if (req.file) {
-      updateData.documentPath = req.file.path;
-    }
-
-    await contract.update(updateData);
-
-    // Si se ha subido un nuevo documento y existía uno anterior, lo eliminamos
-    if (req.file && oldDocumentPath && fs.existsSync(oldDocumentPath)) {
-      fs.unlinkSync(oldDocumentPath);
-    }
-
-    // Log activity
-    await ActivityLog.create({
-      userId: req.user.id,
-      action: 'UPDATE',
-      entityType: 'Contract',
-      entityId: contract.id,
-      details: `Contrato ${contract.contractNumber} actualizado`,
+    const updatedContract = await prisma.contract.update({
+      where: { id: req.params.id },
+      data: req.body,
+      include: {
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        company: true,
+        department: true,
+      },
     });
 
-    res.json(contract);
+    // Registrar actividad
+    await prisma.activity.create({
+      data: {
+        action: 'UPDATE_CONTRACT',
+        description: `Contrato ${updatedContract.title} actualizado`,
+        userId: req.user.id,
+        contractId: updatedContract.id,
+      },
+    });
+
+    res.json(updatedContract);
   } catch (error) {
     console.error('Error updating contract:', error);
     res.status(500).json({ message: 'Error al actualizar el contrato', error: error.message });
   }
 };
 
-// Eliminar contrato
+// Eliminar contrato (soft delete)
 export const deleteContract = async (req, res) => {
   try {
-    const contract = await Contract.findOne({
+    const contract = await prisma.contract.findUnique({
       where: {
         id: req.params.id,
-        ...(req.user.role !== 'admin' && { createdBy: req.user.id }),
+        ...(req.user.role !== 'admin' && { authorId: req.user.id }),
       },
     });
 
@@ -160,33 +167,22 @@ export const deleteContract = async (req, res) => {
       return res.status(404).json({ message: 'Contrato no encontrado' });
     }
 
-    // Guardamos información del contrato para el log
-    const contractInfo = {
-      id: contract.id,
-      contractNumber: contract.contractNumber,
-      title: contract.title,
-    };
-
-    // Si el contrato tiene un documento asociado, lo eliminamos
-    if (contract.documentPath && fs.existsSync(contract.documentPath)) {
-      fs.unlinkSync(contract.documentPath);
-    }
-
-    await contract.destroy();
-
-    // Log activity
-    await ActivityLog.create({
-      userId: req.user.id,
-      action: 'DELETE',
-      entityType: 'Contract',
-      entityId: contractInfo.id,
-      details: `Contrato ${contractInfo.contractNumber} eliminado`,
+    await prisma.contract.update({
+      where: { id: req.params.id },
+      data: { deletedAt: new Date() },
     });
 
-    res.json({
-      message: 'Contrato eliminado correctamente',
-      contract: contractInfo,
+    // Registrar actividad
+    await prisma.activity.create({
+      data: {
+        action: 'DELETE_CONTRACT',
+        description: `Contrato ${contract.title} eliminado`,
+        userId: req.user.id,
+        contractId: contract.id,
+      },
     });
+
+    res.json({ message: 'Contrato eliminado correctamente' });
   } catch (error) {
     console.error('Error deleting contract:', error);
     res.status(500).json({ message: 'Error al eliminar el contrato', error: error.message });
@@ -196,10 +192,10 @@ export const deleteContract = async (req, res) => {
 // Obtener documento del contrato
 export const getContractDocument = async (req, res) => {
   try {
-    const contract = await Contract.findOne({
+    const contract = await prisma.contract.findUnique({
       where: {
         id: req.params.id,
-        ...(req.user.role !== 'admin' && { createdBy: req.user.id }),
+        ...(req.user.role !== 'admin' && { authorId: req.user.id }),
       },
     });
 
@@ -215,13 +211,14 @@ export const getContractDocument = async (req, res) => {
       return res.status(404).json({ message: 'El documento no se encuentra en el servidor' });
     }
 
-    // Log activity
-    await ActivityLog.create({
-      userId: req.user.id,
-      action: 'VIEW',
-      entityType: 'Contract_Document',
-      entityId: contract.id,
-      details: `Documento del contrato ${contract.contractNumber} visualizado`,
+    // Registrar actividad
+    await prisma.activity.create({
+      data: {
+        action: 'VIEW_CONTRACT_DOCUMENT',
+        description: `Documento del contrato ${contract.title} visualizado`,
+        userId: req.user.id,
+        contractId: contract.id,
+      },
     });
 
     res.download(contract.documentPath);
@@ -250,22 +247,22 @@ export const searchContracts = async (req, res) => {
       searchQuery,
     } = req.body;
 
-    const where = req.user.role === 'admin' ? {} : { createdBy: req.user.id };
+    const where = req.user.role === 'admin' ? {} : { authorId: req.user.id };
 
     // Filtro de título
     if (title) {
-      where.title = { [Op.iLike]: `%${title}%` };
+      where.title = { contains: title, mode: 'insensitive' };
     }
 
     // Filtro de número de contrato
     if (contractNumber) {
-      where.contractNumber = { [Op.iLike]: `%${contractNumber}%` };
+      where.contractNumber = { contains: contractNumber, mode: 'insensitive' };
     }
 
     // Filtro de estado
     if (status) {
       if (Array.isArray(status) && status.length > 0) {
-        where.status = { [Op.in]: status };
+        where.status = { in: status };
       } else if (typeof status === 'string') {
         where.status = status;
       }
@@ -273,35 +270,26 @@ export const searchContracts = async (req, res) => {
 
     // Filtros de fecha de inicio
     if (startDateFrom || startDateTo) {
-      where.startDate = {};
-      if (startDateFrom) {
-        where.startDate[Op.gte] = new Date(startDateFrom);
-      }
-      if (startDateTo) {
-        where.startDate[Op.lte] = new Date(startDateTo);
-      }
+      where.startDate = {
+        gte: startDateFrom ? new Date(startDateFrom) : undefined,
+        lte: startDateTo ? new Date(startDateTo) : undefined,
+      };
     }
 
     // Filtros de fecha de fin
     if (endDateFrom || endDateTo) {
-      where.endDate = {};
-      if (endDateFrom) {
-        where.endDate[Op.gte] = new Date(endDateFrom);
-      }
-      if (endDateTo) {
-        where.endDate[Op.lte] = new Date(endDateTo);
-      }
+      where.endDate = {
+        gte: endDateFrom ? new Date(endDateFrom) : undefined,
+        lte: endDateTo ? new Date(endDateTo) : undefined,
+      };
     }
 
     // Filtros de importe
     if (minAmount !== undefined || maxAmount !== undefined) {
-      where.amount = {};
-      if (minAmount !== undefined) {
-        where.amount[Op.gte] = minAmount;
-      }
-      if (maxAmount !== undefined) {
-        where.amount[Op.lte] = maxAmount;
-      }
+      where.amount = {
+        gte: minAmount,
+        lte: maxAmount,
+      };
     }
 
     // Filtro de moneda
@@ -311,27 +299,27 @@ export const searchContracts = async (req, res) => {
 
     // Búsqueda general
     if (searchQuery) {
-      where[Op.or] = [
-        { title: { [Op.iLike]: `%${searchQuery}%` } },
-        { contractNumber: { [Op.iLike]: `%${searchQuery}%` } },
-        { description: { [Op.iLike]: `%${searchQuery}%` } },
+      where.OR = [
+        { title: { contains: searchQuery, mode: 'insensitive' } },
+        { contractNumber: { contains: searchQuery, mode: 'insensitive' } },
+        { description: { contains: searchQuery, mode: 'insensitive' } },
       ];
     }
 
-    const contracts = await Contract.findAll({
+    const contracts = await prisma.contract.findMany({
       where,
-      include: [
-        {
-          model: User,
-          as: 'creator',
-          attributes: ['username', 'email'],
+      include: {
+        author: {
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
         },
-        {
-          model: License,
-          attributes: ['name', 'type'],
-        },
-      ],
-      order: [['updatedAt', 'DESC']],
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
     });
 
     res.json(contracts);
@@ -344,12 +332,11 @@ export const searchContracts = async (req, res) => {
 // Obtener estadísticas de contratos
 export const getContractStatistics = async (req, res) => {
   try {
-    const _sequelize = db.sequelize;
     const today = new Date();
 
     // Consultar todos los contratos del usuario o todos si es admin
-    const contracts = await Contract.findAll({
-      where: req.user.role === 'admin' ? {} : { createdBy: req.user.id },
+    const contracts = await prisma.contract.findMany({
+      where: req.user.role === 'admin' ? {} : { authorId: req.user.id },
     });
 
     // Estadísticas básicas
@@ -435,10 +422,10 @@ export const changeContractStatus = async (req, res) => {
       return res.status(400).json({ message: 'Estado no válido' });
     }
 
-    const contract = await Contract.findOne({
+    const contract = await prisma.contract.findUnique({
       where: {
         id,
-        ...(req.user.role !== 'admin' && { createdBy: req.user.id }),
+        ...(req.user.role !== 'admin' && { authorId: req.user.id }),
       },
     });
 
@@ -446,22 +433,37 @@ export const changeContractStatus = async (req, res) => {
       return res.status(404).json({ message: 'Contrato no encontrado' });
     }
 
-    // Actualizar solo el estado y lastModifiedBy
-    await contract.update({
-      status,
-      lastModifiedBy: req.user.id,
+    const updatedContract = await prisma.contract.update({
+      where: { id },
+      data: {
+        status,
+        lastModifiedBy: req.user.id,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+        company: true,
+        department: true,
+      },
     });
 
-    // Log activity
-    await ActivityLog.create({
-      userId: req.user.id,
-      action: 'UPDATE_STATUS',
-      entityType: 'Contract',
-      entityId: contract.id,
-      details: `Estado del contrato ${contract.contractNumber} cambiado a ${status}`,
+    // Registrar actividad
+    await prisma.activity.create({
+      data: {
+        action: 'UPDATE_CONTRACT_STATUS',
+        description: `Estado del contrato ${updatedContract.title} cambiado a ${status}`,
+        userId: req.user.id,
+        contractId: updatedContract.id,
+      },
     });
 
-    res.json(contract);
+    res.json(updatedContract);
   } catch (error) {
     console.error('Error changing contract status:', error);
     res
