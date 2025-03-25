@@ -24,27 +24,37 @@ const config = {
 
   // Base de datos
   database: {
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '3306', 10),
-    name: process.env.DB_NAME || 'pacta',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    dialect: process.env.DB_DIALECT || 'mysql',
+    url: process.env.DATABASE_URL || 'file:./data/pacta.db',
+    provider: process.env.DATABASE_PROVIDER || 'sqlite',
     logging: process.env.DB_LOGGING === 'true',
     sync: process.env.DB_SYNC === 'true',
-    pool: {
-      max: parseInt(process.env.DB_POOL_MAX || '5', 10),
-      min: parseInt(process.env.DB_POOL_MIN || '0', 10),
-      acquire: parseInt(process.env.DB_POOL_ACQUIRE || '30000', 10),
-      idle: parseInt(process.env.DB_POOL_IDLE || '10000', 10),
-    },
+    backup: {
+      enabled: process.env.DB_BACKUP_ENABLED === 'true',
+      path: process.env.DB_BACKUP_PATH || './data/backups',
+      interval: parseInt(process.env.DB_BACKUP_INTERVAL || '86400', 10), // 24 horas
+      keepDays: parseInt(process.env.DB_BACKUP_KEEP_DAYS || '7', 10),
+    }
+  },
+
+  // Modo Offline
+  offline: {
+    enabled: process.env.IS_OFFLINE_MODE === 'true',
+    syncInterval: process.env.SYNC_INTERVAL || '30m',
+    maxOfflineDays: parseInt(process.env.MAX_OFFLINE_DAYS || '30', 10),
+    storage: {
+      path: process.env.LOCAL_STORAGE_PATH || './data/storage',
+      maxSize: process.env.STORAGE_MAX_SIZE || '1gb',
+      compressFiles: process.env.STORAGE_COMPRESS_FILES === 'true',
+    }
   },
 
   // JWT
-  jwtSecret: process.env.JWT_SECRET || 'your-jwt-secret',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '1h',
-  jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
-  jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+  jwt: {
+    secret: process.env.JWT_SECRET || 'your-jwt-secret',
+    expiresIn: process.env.JWT_EXPIRATION || '24h',
+    refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRATION || '7d',
+  },
 
   // Cors
   corsOrigin: process.env.CORS_ORIGIN || '*',
@@ -58,94 +68,59 @@ const config = {
   // Logs
   logs: {
     level: process.env.LOG_LEVEL || 'info',
-    file: process.env.LOG_FILE || './logs/app.log',
+    file: process.env.LOG_FILE || './data/logs/app.log',
     maxSize: process.env.LOG_MAX_SIZE || '5m',
     maxFiles: parseInt(process.env.LOG_MAX_FILES || '5', 10),
     console: process.env.LOG_CONSOLE !== 'false',
   },
 
-  // Cache
-  cache: {
-    ttl: parseInt(process.env.CACHE_TTL || '3600', 10), // 1 hora en segundos
-    checkPeriod: parseInt(process.env.CACHE_CHECK_PERIOD || '600', 10), // 10 minutos en segundos
+  // Archivos
+  files: {
+    uploadDir: process.env.UPLOAD_DIR || './data/uploads',
+    maxSize: parseInt(process.env.UPLOAD_MAX_SIZE || '10485760', 10), // 10MB
+    allowedTypes: (process.env.ALLOWED_FILE_TYPES || 'pdf,doc,docx,txt').split(','),
+    compression: {
+      enabled: process.env.FILE_COMPRESSION_ENABLED === 'true',
+      level: parseInt(process.env.FILE_COMPRESSION_LEVEL || '6', 10),
+    }
   },
 
-  // Uploads
-  uploads: {
-    directory: process.env.UPLOAD_DIR || './uploads',
-    maxSize: parseInt(process.env.UPLOAD_MAX_SIZE || '5000000', 10), // 5MB
-    allowedTypes: process.env.UPLOAD_ALLOWED_TYPES?.split(',') || [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'application/pdf',
-    ],
-  },
-
-  // Email Configuration
-  email: {
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT, 10) || 587,
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-    from: process.env.SMTP_FROM,
-  },
-
-  // Logging
-  logging: {
-    level: process.env.LOG_LEVEL || 'info',
-    filePath: process.env.LOG_FILE_PATH || path.join(__dirname, '../logs/app.log'),
-  },
-
-  // Cache Configuration
-  cache: {
-    ttl: parseInt(process.env.CACHE_TTL, 10) || 600,
-    checkPeriod: parseInt(process.env.CACHE_CHECK_PERIOD, 10) || 120,
-  },
-
-  // Security
+  // Seguridad
   security: {
+    encryptionKey: process.env.ENCRYPTION_KEY,
+    saltRounds: parseInt(process.env.SALT_ROUNDS || '10', 10),
+    sessionSecret: process.env.SESSION_SECRET,
     enableHttps: process.env.ENABLE_HTTPS === 'true',
     sslKeyPath: process.env.SSL_KEY_PATH,
     sslCertPath: process.env.SSL_CERT_PATH,
   },
 
-  // Feature Flags
-  features: {
-    enableSwagger: process.env.ENABLE_SWAGGER === 'true',
-    enableRateLimit: process.env.ENABLE_RATE_LIMIT === 'true',
-    enableCompression: process.env.ENABLE_COMPRESSION === 'true',
-    enableCache: process.env.ENABLE_CACHE === 'true',
-    enableLogging: process.env.ENABLE_LOGGING === 'true',
-  },
-
-  // External Services
-  external: {
-    apiKey: process.env.EXTERNAL_API_KEY,
-    apiUrl: process.env.EXTERNAL_API_URL,
-  },
-
-  // Monitoring
+  // Monitoreo
   monitoring: {
-    sentryDsn: process.env.SENTRY_DSN,
-    newRelicLicenseKey: process.env.NEW_RELIC_LICENSE_KEY,
+    enabled: process.env.MONITORING_ENABLED === 'true',
+    interval: parseInt(process.env.MONITORING_INTERVAL || '60000', 10), // 1 minuto
+    metrics: {
+      cpu: process.env.MONITOR_CPU === 'true',
+      memory: process.env.MONITOR_MEMORY === 'true',
+      storage: process.env.MONITOR_STORAGE === 'true',
+    }
   },
 
-  // Development Tools
-  development: {
-    enableDebugTools: process.env.ENABLE_DEBUG_TOOLS === 'true',
-    enableTestRoutes: process.env.ENABLE_TEST_ROUTES === 'true',
-  },
+  // Sincronización
+  sync: {
+    enabled: process.env.SYNC_ENABLED === 'true',
+    retryAttempts: parseInt(process.env.SYNC_RETRY_ATTEMPTS || '3', 10),
+    retryDelay: parseInt(process.env.SYNC_RETRY_DELAY || '300000', 10), // 5 minutos
+    conflictResolution: process.env.SYNC_CONFLICT_RESOLUTION || 'latest', // latest, manual
+  }
 };
 
 // Validate required configuration
 const requiredConfig = [
+  'security.encryptionKey',
+  'security.sessionSecret',
   'jwt.secret',
-  'jwt.refreshSecret',
-  'email.host',
-  'email.user',
-  'email.pass',
-  'email.from',
+  'jwt.refreshSecret'
 ];
 
 const missingConfig = requiredConfig.filter(key => {

@@ -42,7 +42,6 @@
     "zod": "^3.22.4",
     "node-windows": "^1.0.0",
     "electron-builder": "^24.13.3",
-    "better-sqlite3": "^9.4.3",
     "lokijs": "^1.5.12",
     "node-machine-id": "^1.1.12"
   },
