@@ -6,6 +6,9 @@ import * as notificationValidators from '../api/validators/notificationValidator
 import * as companyValidators from '../api/validators/companyValidators.js';
 import * as licenseValidators from '../api/validators/licenseValidators.js';
 import * as dashboardValidators from '../api/validators/dashboardValidators.js';
+import * as analyticsValidators from '../api/validators/analyticsValidators.js';
+import * as documentValidators from '../api/validators/documentValidators.js';
+import * as authValidators from '../api/validators/authValidators.js';
 
 export class ValidationService {
   constructor() {
@@ -17,6 +20,9 @@ export class ValidationService {
       ...companyValidators,
       ...licenseValidators,
       ...dashboardValidators,
+      ...analyticsValidators,
+      ...documentValidators,
+      ...authValidators,
     };
   }
 
@@ -458,5 +464,224 @@ export class ValidationService {
 
   reportOptionsSchema() {
     return this.validators.reportOptionsSchema();
+  }
+
+  // Analytics specific schemas and validation methods
+  async validateAnalyticsPeriod(data) {
+    const schema = this.validators.analyticsPeriodSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateAnalyticsFilter(data) {
+    const schema = this.validators.analyticsFilterSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateContractAnalytics(data) {
+    const schema = this.validators.contractAnalyticsSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateUserActivityAnalytics(data) {
+    const schema = this.validators.userActivityAnalyticsSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateFinancialAnalytics(data) {
+    const schema = this.validators.financialAnalyticsSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateExportAnalytics(data) {
+    const schema = this.validators.exportAnalyticsSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateSummaryAnalytics(data) {
+    const schema = this.validators.summaryAnalyticsSchema();
+    return this.validate(schema, data);
+  }
+
+  analyticsPeriodSchema() {
+    return this.validators.analyticsPeriodSchema();
+  }
+
+  analyticsFilterSchema() {
+    return this.validators.analyticsFilterSchema();
+  }
+
+  contractAnalyticsSchema() {
+    return this.validators.contractAnalyticsSchema();
+  }
+
+  userActivityAnalyticsSchema() {
+    return this.validators.userActivityAnalyticsSchema();
+  }
+
+  financialAnalyticsSchema() {
+    return this.validators.financialAnalyticsSchema();
+  }
+
+  exportAnalyticsSchema() {
+    return this.validators.exportAnalyticsSchema();
+  }
+
+  summaryAnalyticsSchema() {
+    return this.validators.summaryAnalyticsSchema();
+  }
+
+  // Document specific schemas and validation methods
+  async validateDocumentCreation(data) {
+    const schema = this.validators.createDocumentSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateDocumentUpdate(data) {
+    const schema = this.validators.updateDocumentSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateDocumentSearch(data) {
+    const schema = this.validators.searchDocumentSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateDocumentId(data) {
+    const schema = this.validators.documentIdSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateDocumentUpload(data) {
+    const schema = this.validators.uploadDocumentSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateDocumentPermission(data) {
+    const schema = this.validators.documentPermissionSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateDocumentPermissionUpdate(data) {
+    const schema = this.validators.updateDocumentPermissionSchema();
+    return this.validate(schema, data);
+  }
+
+  createDocumentSchema() {
+    return this.validators.createDocumentSchema();
+  }
+
+  updateDocumentSchema() {
+    return this.validators.updateDocumentSchema();
+  }
+
+  searchDocumentSchema() {
+    return this.validators.searchDocumentSchema();
+  }
+
+  documentIdSchema() {
+    return this.validators.documentIdSchema();
+  }
+
+  uploadDocumentSchema() {
+    return this.validators.uploadDocumentSchema();
+  }
+
+  documentPermissionSchema() {
+    return this.validators.documentPermissionSchema();
+  }
+
+  updateDocumentPermissionSchema() {
+    return this.validators.updateDocumentPermissionSchema();
+  }
+
+  // Auth specific schemas and validation methods
+  async validateLogin(data) {
+    const schema = this.validators.loginSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateRegistration(data) {
+    const schema = this.validators.registrationSchema();
+    return this.validate(schema, data);
+  }
+
+  async validatePasswordResetRequest(data) {
+    const schema = this.validators.passwordResetRequestSchema();
+    return this.validate(schema, data);
+  }
+
+  async validatePasswordReset(data) {
+    const schema = this.validators.passwordResetSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateEmailVerification(data) {
+    const schema = this.validators.emailVerificationSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateChangePassword(data) {
+    const schema = this.validators.changePasswordSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateRefreshToken(data) {
+    const schema = this.validators.refreshTokenSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateTwoFactorSetup(data) {
+    const schema = this.validators.twoFactorSetupSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateTwoFactorVerify(data) {
+    const schema = this.validators.twoFactorVerifySchema();
+    return this.validate(schema, data);
+  }
+
+  async validateOauthLogin(data) {
+    const schema = this.validators.oauthLoginSchema();
+    return this.validate(schema, data);
+  }
+
+  loginSchema() {
+    return this.validators.loginSchema();
+  }
+
+  registrationSchema() {
+    return this.validators.registrationSchema();
+  }
+
+  passwordResetRequestSchema() {
+    return this.validators.passwordResetRequestSchema();
+  }
+
+  passwordResetSchema() {
+    return this.validators.passwordResetSchema();
+  }
+
+  emailVerificationSchema() {
+    return this.validators.emailVerificationSchema();
+  }
+
+  changePasswordSchema() {
+    return this.validators.changePasswordSchema();
+  }
+
+  refreshTokenSchema() {
+    return this.validators.refreshTokenSchema();
+  }
+
+  twoFactorSetupSchema() {
+    return this.validators.twoFactorSetupSchema();
+  }
+
+  twoFactorVerifySchema() {
+    return this.validators.twoFactorVerifySchema();
+  }
+
+  oauthLoginSchema() {
+    return this.validators.oauthLoginSchema();
   }
 }

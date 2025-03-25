@@ -2,47 +2,99 @@ import { ValidationError } from '../../utils/errors.js';
 import { z } from 'zod';
 
 /**
- * Middleware de validación de datos con Zod
- * @param {object} options - Opciones de validación
- * @param {z.ZodSchema} options.body - Esquema para validar req.body
- * @param {z.ZodSchema} options.query - Esquema para validar req.query
- * @param {z.ZodSchema} options.params - Esquema para validar req.params
- * @returns {Function} Middleware para Express
+ * Middleware para validar datos de solicitud usando Zod
+ * 
+ * @param {object} schema - Esquema Zod para validación
+ * @param {string} type - Tipo de datos a validar: 'body' (default), 'query', 'params'
+ * @returns {function} Middleware Express
  */
-export const validate = (options) => async (req, res, next) => {
-  try {
-    const schema = z.object({
-      body: options.body ? options.body : z.any(),
-      query: options.query ? options.query : z.any(),
-      params: options.params ? options.params : z.any(),
-    });
-
-    const data = {
-      body: req.body,
-      query: req.query,
-      params: req.params,
-    };
-
-    const validatedData = await schema.parseAsync(data);
-
-    // Replace request data with validated data
-    req.body = validatedData.body;
-    req.query = validatedData.query;
-    req.params = validatedData.params;
-
-    next();
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      const validationErrors = error.errors.map(err => ({
-        field: err.path.join('.'),
-        message: err.message,
-      }));
-
-      next(new ValidationError('Validation failed', validationErrors));
-    } else {
-      next(error);
+export const validate = (schema, type = 'body') => {
+  return (req, res, next) => {
+    try {
+      // Seleccionar el origen de datos adecuado
+      const data = req[type];
+      
+      // Validar datos con el esquema Zod
+      const result = schema.safeParse(data);
+      
+      if (!result.success) {
+        // Formatear errores de Zod
+        const formattedErrors = {};
+        
+        result.error.errors.forEach((error) => {
+          const path = error.path.join('.');
+          if (!formattedErrors[path]) {
+            formattedErrors[path] = [];
+          }
+          formattedErrors[path].push(error.message);
+        });
+        
+        throw new ValidationError('Error de validación', formattedErrors);
+      }
+      
+      // Reemplazar los datos con los validados y transformados por Zod
+      req[type] = result.data;
+      next();
+    } catch (error) {
+      // Si ya es un error de validación, pásalo directamente
+      if (error instanceof ValidationError) {
+        next(error);
+      } else {
+        // Otros errores (como los de tipo sintáctico)
+        next(new ValidationError('Error de validación', { general: [error.message] }));
+      }
     }
-  }
+  };
+};
+
+/**
+ * Middleware para validar múltiples fuentes de datos usando Zod
+ * 
+ * @param {object} schemas - Objeto con esquemas para cada tipo: { body, query, params }
+ * @returns {function} Middleware Express
+ */
+export const validateAll = (schemas) => {
+  return (req, res, next) => {
+    try {
+      const errors = {};
+      let hasErrors = false;
+      
+      // Validar cada tipo de datos si hay un esquema para él
+      ['body', 'query', 'params'].forEach(type => {
+        if (schemas[type]) {
+          const result = schemas[type].safeParse(req[type]);
+          
+          if (!result.success) {
+            hasErrors = true;
+            
+            // Formatear errores
+            result.error.errors.forEach((error) => {
+              const path = `${type}.${error.path.join('.')}`;
+              if (!errors[path]) {
+                errors[path] = [];
+              }
+              errors[path].push(error.message);
+            });
+          } else {
+            // Reemplazar con datos validados
+            req[type] = result.data;
+          }
+        }
+      });
+      
+      if (hasErrors) {
+        throw new ValidationError('Error de validación', errors);
+      }
+      
+      next();
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        next(error);
+      } else {
+        next(new ValidationError('Error de validación', { general: [error.message] }));
+      }
+    }
+  };
 };
 
 /**
@@ -50,21 +102,21 @@ export const validate = (options) => async (req, res, next) => {
  * @param {z.ZodSchema} bodySchema - Esquema para validar req.body
  * @returns {Function} Middleware para Express
  */
-export const validateBody = (bodySchema) => validate({ body: bodySchema });
+export const validateBody = (bodySchema) => validate(bodySchema, 'body');
 
 /**
  * Forma abreviada para validar solo los parámetros de la solicitud
  * @param {z.ZodSchema} paramsSchema - Esquema para validar req.params
  * @returns {Function} Middleware para Express
  */
-export const validateParams = (paramsSchema) => validate({ params: paramsSchema });
+export const validateParams = (paramsSchema) => validate(paramsSchema, 'params');
 
 /**
  * Forma abreviada para validar solo los parámetros de consulta
  * @param {z.ZodSchema} querySchema - Esquema para validar req.query
  * @returns {Function} Middleware para Express
  */
-export const validateQuery = (querySchema) => validate({ query: querySchema });
+export const validateQuery = (querySchema) => validate(querySchema, 'query');
 
 // Ejemplo de uso:
 /*

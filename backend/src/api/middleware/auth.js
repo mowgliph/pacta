@@ -6,18 +6,24 @@ import config from '../config/app.config.js';
 import rateLimit from 'express-rate-limit';
 import { body, validationResult } from 'express-validator';
 import { User, License } from '../models/index.js';
+import { prisma } from '../../database/prisma.js';
+import { logger } from '../../utils/logger.js';
+import { UnauthorizedError, ForbiddenError } from '../../utils/errors.js';
 
 const userRepository = new UserRepository();
-const logger = new LoggingService('AuthMiddleware');
+const loggerService = new LoggingService('AuthMiddleware');
 
 // Rate limiter para prevenir ataques de fuerza bruta
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: 5, // 5 intentos
   message: {
-    message: 'Demasiados intentos de inicio de sesión. Por favor, intente nuevamente en 15 minutos.',
-    status: 429,
+    status: 'error',
+    message: 'Demasiados intentos de inicio de sesión. Por favor, intenta nuevamente en 15 minutos.',
+    code: 429
   },
+  standardHeaders: true,
+  legacyHeaders: false
 });
 
 // Validación de credenciales
@@ -48,122 +54,202 @@ export const validateLogin = [
   },
 ];
 
-// Middleware principal de autenticación
-export const authenticate = async (req, res, next) => {
+/**
+ * Middleware para verificar token JWT
+ */
+export const authenticateToken = async (req, res, next) => {
   try {
-    // Check if authorization header exists
+    // Verificar si existe header de autorización
     const authHeader = req.headers.authorization;
     if (!authHeader) {
-      throw new AuthenticationError('Authentication token required');
+      throw new UnauthorizedError('Se requiere token de autenticación');
     }
 
-    // Extract token
+    // Extraer token
     const parts = authHeader.split(' ');
     if (parts.length !== 2 || parts[0] !== 'Bearer') {
-      throw new AuthenticationError('Invalid token format');
+      throw new UnauthorizedError('Formato de token inválido');
     }
 
     const token = parts[1];
 
-    // Verify token
-    let decoded;
+    // Verificar token
     try {
-      decoded = jwt.verify(token, config.jwt.secret);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+      // Buscar usuario
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          status: true,
+          firstName: true,
+          lastName: true
+        }
+      });
+
+      if (!user) {
+        throw new UnauthorizedError('Usuario no encontrado');
+      }
+
+      // Verificar si el usuario está activo
+      if (user.status !== 'ACTIVE') {
+        throw new UnauthorizedError('Cuenta de usuario inactiva o suspendida');
+      }
+
+      // Adjuntar usuario a la request
+      req.user = user;
+      
+      next();
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
-        throw new AuthenticationError('Token expired');
+        throw new UnauthorizedError('Token expirado');
+      } else if (error.name === 'JsonWebTokenError') {
+        throw new UnauthorizedError('Token inválido');
       }
-      throw new AuthenticationError('Invalid token');
+      throw error;
     }
-
-    // Get user from database
-    const user = await userRepository.findById(decoded.id);
-    if (!user) {
-      throw new AuthenticationError('User not found');
-    }
-
-    // Check if user is active
-    if (user.status !== 'active') {
-      throw new AuthenticationError('User account is not active');
-    }
-
-    // Check if user has a valid license
-    if (user.license && (!user.license.active || new Date(user.license.expiryDate) < new Date())) {
-      throw new AuthenticationError('License expired or inactive');
-    }
-
-    // Attach user to request
-    req.user = {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      status: user.status,
-      licenseType: user.license?.type,
-    };
-
-    // Log authentication
-    logger.info('User authenticated', { userId: user.id, email: user.email });
-
-    next();
   } catch (error) {
-    logger.error('Authentication failed', { error: error.message });
+    logger.error('Error de autenticación', { error: error.message });
     next(error);
   }
 };
 
-// Generación de tokens
-export const generateTokens = user => {
-  // Generate access token
+/**
+ * Middleware para verificar rol de administrador
+ */
+export const isAdmin = (req, res, next) => {
+  if (!req.user) {
+    return next(new UnauthorizedError('Se requiere autenticación'));
+  }
+
+  if (req.user.role !== 'ADMIN') {
+    return next(new ForbiddenError('Se requieren permisos de administrador'));
+  }
+
+  next();
+};
+
+/**
+ * Middleware para verificar que el usuario sea dueño del recurso o administrador
+ * @param {Function} getResourceOwnerId - Función que devuelve el ID del propietario del recurso
+ */
+export const isOwnerOrAdmin = (getResourceOwnerId) => {
+  return async (req, res, next) => {
+    if (!req.user) {
+      return next(new UnauthorizedError('Se requiere autenticación'));
+    }
+
+    // Si es admin, permitir acceso
+    if (req.user.role === 'ADMIN') {
+      return next();
+    }
+
+    try {
+      // Obtener ID del propietario
+      const ownerId = await getResourceOwnerId(req);
+      
+      // Verificar si el usuario es propietario
+      if (req.user.id === ownerId) {
+        return next();
+      }
+      
+      // Si no es propietario ni admin, denegar acceso
+      return next(new ForbiddenError('No tienes permiso para acceder a este recurso'));
+    } catch (error) {
+      logger.error('Error al verificar propiedad', { error: error.message });
+      return next(error);
+    }
+  };
+};
+
+/**
+ * Middleware para verificar permisos según roles
+ * @param {Array<string>} allowedRoles - Roles permitidos
+ */
+export const hasRole = (allowedRoles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return next(new UnauthorizedError('Se requiere autenticación'));
+    }
+
+    if (!allowedRoles.includes(req.user.role)) {
+      return next(new ForbiddenError('No tienes los permisos necesarios'));
+    }
+
+    next();
+  };
+};
+
+/**
+ * Genera tokens de acceso y refresco
+ * @param {Object} user - Usuario
+ * @returns {Object} Tokens generados
+ */
+export const generateTokens = (user) => {
+  // Token de acceso (duración corta)
   const accessToken = jwt.sign(
-    { id: user.id, email: user.email, role: user.role },
-    config.jwt.secret,
-    { expiresIn: config.jwt.expiresIn },
+    { 
+      id: user.id,
+      email: user.email,
+      role: user.role 
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' }
   );
 
-  // Generate refresh token
-  const refreshToken = jwt.sign({ id: user.id }, config.jwt.refreshSecret, {
-    expiresIn: config.jwt.refreshExpiresIn,
-  });
+  // Token de refresco (duración larga)
+  const refreshToken = jwt.sign(
+    { id: user.id },
+    process.env.JWT_REFRESH_SECRET,
+    { expiresIn: '7d' }
+  );
 
   return { accessToken, refreshToken };
 };
 
-// Renovación de token
-export const refreshToken = async refreshToken => {
+/**
+ * Refresca el token de acceso
+ * @param {string} refreshToken - Token de refresco
+ * @returns {Object} Nuevo par de tokens
+ */
+export const refreshToken = async (refreshToken) => {
   try {
-    // Verify refresh token
-    const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret);
+    // Verificar token de refresco
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
-    // Get user from database
-    const user = await userRepository.findById(decoded.id);
+    // Buscar usuario
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        status: true
+      }
+    });
+
     if (!user) {
-      throw new AuthenticationError('User not found');
+      throw new UnauthorizedError('Usuario no encontrado');
     }
 
-    // Check if user is active
-    if (user.status !== 'active') {
-      throw new AuthenticationError('User account is not active');
+    // Verificar si el usuario está activo
+    if (user.status !== 'ACTIVE') {
+      throw new UnauthorizedError('Cuenta de usuario inactiva o suspendida');
     }
 
-    // Generate new tokens
-    const tokens = generateTokens(user);
-
-    // Update refresh token in database
-    await userRepository.updateRefreshToken(user.id, tokens.refreshToken);
-
-    return tokens;
+    // Generar nuevos tokens
+    return generateTokens(user);
   } catch (error) {
-    logger.error('Token refresh failed', { error: error.message });
-    throw new AuthenticationError('Invalid refresh token');
-  }
-};
-
-// Middleware para verificar rol de administrador
-export const isAdmin = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
-    next();
-  } else {
-    throw new AuthenticationError('Se requieren permisos de administrador');
+    logger.error('Error al refrescar token', { error: error.message });
+    if (error.name === 'TokenExpiredError') {
+      throw new UnauthorizedError('Token de refresco expirado');
+    } else if (error.name === 'JsonWebTokenError') {
+      throw new UnauthorizedError('Token de refresco inválido');
+    }
+    throw error;
   }
 };
 

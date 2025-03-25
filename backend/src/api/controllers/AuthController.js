@@ -5,11 +5,17 @@ import { BaseController } from './BaseController.js';
 import { generateTokens, refreshToken as refresh } from '../middleware/authMiddleware.js';
 import { compareSync, hashSync } from 'bcrypt';
 import { ValidationError, UnauthorizedError, NotFoundError } from '../../utils/errors.js';
+import { ValidationService } from '../../services/ValidationService.js';
 
 /**
  * Controlador para gestionar la autenticación de usuarios
  */
 class AuthController extends BaseController {
+  constructor() {
+    super();
+    this.validationService = new ValidationService();
+  }
+
   /**
    * Inicia sesión de un usuario
    * @param {Object} req - Objeto de solicitud
@@ -17,12 +23,9 @@ class AuthController extends BaseController {
    */
   async login(req, res) {
     try {
-      const { email, password } = req.body;
-      
-      // Validar datos de entrada
-      if (!email || !password) {
-        throw new ValidationError('Email y contraseña son requeridos');
-      }
+      // Validar datos con Zod
+      const validatedData = this.validationService.validateLogin(req.body);
+      const { email, password } = validatedData;
       
       // Buscar usuario por email
       const user = await prisma.user.findUnique({
@@ -81,12 +84,9 @@ class AuthController extends BaseController {
    */
   async register(req, res) {
     try {
-      const { firstName, lastName, email, password } = req.body;
-      
-      // Validar datos de entrada
-      if (!firstName || !lastName || !email || !password) {
-        throw new ValidationError('Todos los campos son requeridos');
-      }
+      // Validar datos con Zod
+      const validatedData = this.validationService.validateRegistration(req.body);
+      const { firstName, lastName, email, password } = validatedData;
       
       // Verificar si el email ya está registrado
       const existingUser = await prisma.user.findUnique({
@@ -147,11 +147,9 @@ class AuthController extends BaseController {
    */
   async refreshToken(req, res) {
     try {
-      const { refreshToken: token } = req.body;
-      
-      if (!token) {
-        throw new ValidationError('Token de refresco requerido');
-      }
+      // Validar datos con Zod
+      const validatedData = this.validationService.validateRefreshToken(req.body);
+      const { refreshToken: token } = validatedData;
       
       // Refrescar token
       const tokens = await refresh(token);
@@ -169,11 +167,9 @@ class AuthController extends BaseController {
    */
   async forgotPassword(req, res) {
     try {
-      const { email } = req.body;
-      
-      if (!email) {
-        throw new ValidationError('Email requerido');
-      }
+      // Validar datos con Zod
+      const validatedData = this.validationService.validatePasswordResetRequest(req.body);
+      const { email } = validatedData;
       
       // Verificar si el usuario existe
       const user = await prisma.user.findUnique({
@@ -218,11 +214,9 @@ class AuthController extends BaseController {
    */
   async resetPassword(req, res) {
     try {
-      const { token, password } = req.body;
-      
-      if (!token || !password) {
-        throw new ValidationError('Token y nueva contraseña son requeridos');
-      }
+      // Validar datos con Zod
+      const validatedData = this.validationService.validatePasswordReset(req.body);
+      const { token, newPassword: password } = validatedData;
       
       // Buscar usuario con token válido
       const user = await prisma.user.findFirst({
@@ -276,11 +270,9 @@ class AuthController extends BaseController {
    */
   async verifyEmail(req, res) {
     try {
-      const { token } = req.params;
-      
-      if (!token) {
-        throw new ValidationError('Token requerido');
-      }
+      // Validar datos con Zod
+      const validatedData = this.validationService.validateEmailVerification(req.params);
+      const { token } = validatedData;
       
       // Buscar usuario con token
       const user = await prisma.user.findFirst({
@@ -317,6 +309,60 @@ class AuthController extends BaseController {
       });
     } catch (error) {
       return this.handleError(error, res, 'verifyEmail');
+    }
+  }
+
+  /**
+   * Cambia la contraseña del usuario actual
+   * @param {Object} req - Objeto de solicitud
+   * @param {Object} res - Objeto de respuesta
+   */
+  async changePassword(req, res) {
+    try {
+      // Validar datos con Zod
+      const validatedData = this.validationService.validateChangePassword(req.body);
+      const { currentPassword, newPassword } = validatedData;
+      
+      // Obtener usuario actual
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+      });
+      
+      if (!user) {
+        throw new NotFoundError('Usuario no encontrado');
+      }
+      
+      // Verificar contraseña actual
+      if (!compareSync(currentPassword, user.password)) {
+        throw new UnauthorizedError('Contraseña actual incorrecta');
+      }
+      
+      // Actualizar contraseña
+      const hashedPassword = hashSync(newPassword, 10);
+      
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          password: hashedPassword,
+        },
+      });
+      
+      // Registrar actividad
+      await prisma.activityLog.create({
+        data: {
+          userId: user.id,
+          action: 'CHANGE_PASSWORD',
+          entityType: 'User',
+          entityId: user.id.toString(),
+          details: 'Cambio de contraseña',
+        },
+      });
+      
+      return this.sendSuccess(res, {
+        message: 'Contraseña actualizada correctamente',
+      });
+    } catch (error) {
+      return this.handleError(error, res, 'changePassword');
     }
   }
 }
