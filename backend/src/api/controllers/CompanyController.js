@@ -6,12 +6,14 @@ import { BaseController } from './BaseController.js';
 import { CompanyService } from '../../services/CompanyService.js';
 import { ResponseService } from '../../services/ResponseService.js';
 import { ValidationService } from '../../services/ValidationService.js';
+import { ValidationError } from '../../utils/errors.js';
 
 export class CompanyController extends BaseController {
   constructor() {
     const companyService = new CompanyService();
     super(companyService);
     this.companyService = companyService;
+    this.validationService = new ValidationService();
   }
 
   /**
@@ -22,48 +24,22 @@ export class CompanyController extends BaseController {
    */
   getAllCompanies = async (req, res, next) => {
     try {
-      const {
-        page = 1,
-        limit = 10,
-        search,
-        industry,
-        status,
-        sortBy,
-        sortOrder,
-        ...filters
-      } = req.query;
-
-      // Conversión de tipos
-      const pageNum = parseInt(page, 10);
-      const limitNum = parseInt(limit, 10);
-
-      // Preparar filtros
-      const queryFilters = { ...filters };
-
-      if (search) {
-        queryFilters.search = search;
-      }
-
-      if (industry) {
-        queryFilters.industry = industry;
-      }
-
-      if (status) {
-        queryFilters.status = status;
-      }
-
-      // Opciones de ordenamiento
-      if (sortBy) {
-        queryFilters.sortBy = sortBy;
-        queryFilters.sortOrder = sortOrder || 'asc';
-      }
+      // Validar parámetros de consulta
+      const validatedQuery = await this.validationService.validateCompanySearch(req.query);
 
       // Obtener datos
-      const result = await this.companyService.getCompanies(queryFilters, pageNum, limitNum);
+      const result = await this.companyService.getCompanies(
+        validatedQuery, 
+        validatedQuery.page || 1, 
+        validatedQuery.limit || 10
+      );
 
       // Responder
       res.status(200).json(ResponseService.paginate(result.data, result.pagination));
     } catch (error) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json(ResponseService.error('Parámetros de consulta inválidos', 400, error.details));
+      }
       next(error);
     }
   };
@@ -76,7 +52,9 @@ export class CompanyController extends BaseController {
    */
   getCompanyById = async (req, res, next) => {
     try {
-      const { id } = req.params;
+      // Validar ID
+      const { id } = await this.validationService.validateCompanyId({ id: req.params.id });
+      
       const result = await this.companyService.getById(id);
 
       if (!result) {
@@ -85,6 +63,9 @@ export class CompanyController extends BaseController {
 
       res.status(200).json(ResponseService.success(result));
     } catch (error) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json(ResponseService.error('ID de compañía inválido', 400, error.details));
+      }
       next(error);
     }
   };
@@ -97,32 +78,17 @@ export class CompanyController extends BaseController {
    */
   createCompany = async (req, res, next) => {
     try {
-      const data = req.body;
-
       // Validar datos
-      const schema = {
-        name: { type: 'string', required: true },
-        taxId: { type: 'string', optional: true },
-        industry: { type: 'string', optional: true },
-        address: { type: 'string', optional: true },
-        city: { type: 'string', optional: true },
-        state: { type: 'string', optional: true },
-        country: { type: 'string', optional: true },
-        postalCode: { type: 'string', optional: true },
-        contactName: { type: 'string', optional: true },
-        contactEmail: { type: 'string', optional: true },
-        contactPhone: { type: 'string', optional: true },
-        status: { type: 'string', optional: true },
-        notes: { type: 'string', optional: true },
-      };
-
-      await ValidationService.validate(schema, data);
+      const validatedData = await this.validationService.validateCompanyCreation(req.body);
 
       // Crear compañía
-      const result = await this.companyService.createCompany(data);
+      const result = await this.companyService.createCompany(validatedData);
 
       res.status(201).json(ResponseService.created(result));
     } catch (error) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json(ResponseService.error('Datos de compañía inválidos', 400, error.details));
+      }
       next(error);
     }
   };
@@ -135,33 +101,51 @@ export class CompanyController extends BaseController {
    */
   updateCompany = async (req, res, next) => {
     try {
-      const { id } = req.params;
-      const data = req.body;
-
+      // Validar ID
+      const { id } = await this.validationService.validateCompanyId({ id: req.params.id });
+      
       // Validar datos
-      const schema = {
-        name: { type: 'string', optional: true },
-        taxId: { type: 'string', optional: true },
-        industry: { type: 'string', optional: true },
-        address: { type: 'string', optional: true },
-        city: { type: 'string', optional: true },
-        state: { type: 'string', optional: true },
-        country: { type: 'string', optional: true },
-        postalCode: { type: 'string', optional: true },
-        contactName: { type: 'string', optional: true },
-        contactEmail: { type: 'string', optional: true },
-        contactPhone: { type: 'string', optional: true },
-        status: { type: 'string', optional: true },
-        notes: { type: 'string', optional: true },
-      };
-
-      await ValidationService.validate(schema, data);
+      const validatedData = await this.validationService.validateCompanyUpdate(req.body);
 
       // Actualizar compañía
-      const result = await this.companyService.updateCompany(id, data);
+      const result = await this.companyService.updateCompany(id, validatedData);
+
+      if (!result) {
+        return res.status(404).json(ResponseService.error('Company not found', 404));
+      }
 
       res.status(200).json(ResponseService.updated(result));
     } catch (error) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json(ResponseService.error('Datos de actualización inválidos', 400, error.details));
+      }
+      next(error);
+    }
+  };
+
+  /**
+   * Elimina una compañía
+   * @param {Object} req - Express request
+   * @param {Object} res - Express response
+   * @param {Function} next - Express next
+   */
+  deleteCompany = async (req, res, next) => {
+    try {
+      // Validar ID
+      const { id } = await this.validationService.validateCompanyId({ id: req.params.id });
+      
+      // Eliminar compañía
+      const result = await this.companyService.deleteCompany(id);
+
+      if (!result) {
+        return res.status(404).json(ResponseService.error('Company not found', 404));
+      }
+
+      res.status(200).json(ResponseService.success({ message: 'Company deleted successfully' }));
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json(ResponseService.error('ID de compañía inválido', 400, error.details));
+      }
       next(error);
     }
   };
@@ -200,6 +184,86 @@ export class CompanyController extends BaseController {
 
       res.status(200).json(ResponseService.success(result));
     } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Crea un nuevo departamento para una compañía
+   * @param {Object} req - Express request
+   * @param {Object} res - Express response
+   * @param {Function} next - Express next
+   */
+  createDepartment = async (req, res, next) => {
+    try {
+      // Validar datos
+      const validatedData = await this.validationService.validateDepartmentCreation(req.body);
+
+      // Crear departamento
+      const result = await this.companyService.createDepartment(validatedData);
+
+      res.status(201).json(ResponseService.created(result));
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json(ResponseService.error('Datos de departamento inválidos', 400, error.details));
+      }
+      next(error);
+    }
+  };
+
+  /**
+   * Actualiza un departamento existente
+   * @param {Object} req - Express request
+   * @param {Object} res - Express response
+   * @param {Function} next - Express next
+   */
+  updateDepartment = async (req, res, next) => {
+    try {
+      // Validar ID
+      const { id } = await this.validationService.validateDepartmentId({ id: req.params.id });
+      
+      // Validar datos
+      const validatedData = await this.validationService.validateDepartmentUpdate(req.body);
+
+      // Actualizar departamento
+      const result = await this.companyService.updateDepartment(id, validatedData);
+
+      if (!result) {
+        return res.status(404).json(ResponseService.error('Department not found', 404));
+      }
+
+      res.status(200).json(ResponseService.updated(result));
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json(ResponseService.error('Datos de actualización inválidos', 400, error.details));
+      }
+      next(error);
+    }
+  };
+
+  /**
+   * Elimina un departamento
+   * @param {Object} req - Express request
+   * @param {Object} res - Express response
+   * @param {Function} next - Express next
+   */
+  deleteDepartment = async (req, res, next) => {
+    try {
+      // Validar ID
+      const { id } = await this.validationService.validateDepartmentId({ id: req.params.id });
+      
+      // Eliminar departamento
+      const result = await this.companyService.deleteDepartment(id);
+
+      if (!result) {
+        return res.status(404).json(ResponseService.error('Department not found', 404));
+      }
+
+      res.status(200).json(ResponseService.success({ message: 'Department deleted successfully' }));
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        return res.status(400).json(ResponseService.error('ID de departamento inválido', 400, error.details));
+      }
       next(error);
     }
   };

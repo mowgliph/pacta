@@ -3,6 +3,9 @@ import { ValidationError } from '../utils/errors.js';
 import * as userValidators from '../api/validators/userValidators.js';
 import * as contractValidators from '../api/validators/contractValidators.js';
 import * as notificationValidators from '../api/validators/notificationValidators.js';
+import * as companyValidators from '../api/validators/companyValidators.js';
+import * as licenseValidators from '../api/validators/licenseValidators.js';
+import * as dashboardValidators from '../api/validators/dashboardValidators.js';
 
 export class ValidationService {
   constructor() {
@@ -11,6 +14,9 @@ export class ValidationService {
       ...userValidators,
       ...contractValidators,
       ...notificationValidators,
+      ...companyValidators,
+      ...licenseValidators,
+      ...dashboardValidators,
     };
   }
 
@@ -269,5 +275,188 @@ export class ValidationService {
 
   createExpirationNotificationsSchema() {
     return this.validators.createExpirationNotificationsSchema();
+  }
+
+  // Company specific schemas and validation methods
+  async validateCompanyCreation(data) {
+    const schema = this.validators.createCompanySchema();
+    return this.validate(schema, data);
+  }
+
+  async validateCompanyUpdate(data) {
+    const schema = this.validators.updateCompanySchema();
+    return this.validate(schema, data);
+  }
+
+  async validateCompanySearch(data) {
+    const schema = this.validators.searchCompanySchema();
+    return this.validate(schema, data);
+  }
+
+  async validateCompanyId(data) {
+    const schema = this.validators.companyIdSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateDepartmentCreation(data) {
+    const schema = this.validators.createDepartmentSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateDepartmentUpdate(data) {
+    const schema = this.validators.updateDepartmentSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateDepartmentId(data) {
+    const schema = this.validators.departmentIdSchema();
+    return this.validate(schema, data);
+  }
+
+  createCompanySchema() {
+    return this.validators.createCompanySchema();
+  }
+
+  updateCompanySchema() {
+    return this.validators.updateCompanySchema();
+  }
+
+  searchCompanySchema() {
+    return this.validators.searchCompanySchema();
+  }
+
+  companyIdSchema() {
+    return this.validators.companyIdSchema();
+  }
+
+  createDepartmentSchema() {
+    return this.validators.createDepartmentSchema();
+  }
+
+  updateDepartmentSchema() {
+    return this.validators.updateDepartmentSchema();
+  }
+
+  departmentIdSchema() {
+    return this.validators.departmentIdSchema();
+  }
+
+  // License specific schemas and validation methods
+  async validateLicenseCreation(data) {
+    const schema = this.validators.createLicenseSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateLicenseUpdate(data) {
+    const schema = this.validators.updateLicenseSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateLicenseSearch(data) {
+    const schema = this.validators.searchLicenseSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateLicenseId(data) {
+    const schema = this.validators.licenseIdSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateLicenseKey(data) {
+    const schema = this.validators.licenseKeySchema();
+    return this.validate(schema, data);
+  }
+
+  async validateLicenseActivation(data) {
+    const schema = this.validators.activateLicenseSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateTrialActivation(data) {
+    const schema = this.validators.activateTrialSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateLicenseStats(data) {
+    const schema = this.validators.licenseStatsSchema();
+    return this.validate(schema, data);
+  }
+
+  createLicenseSchema() {
+    return this.validators.createLicenseSchema();
+  }
+
+  updateLicenseSchema() {
+    return this.validators.updateLicenseSchema();
+  }
+
+  searchLicenseSchema() {
+    return this.validators.searchLicenseSchema();
+  }
+
+  licenseIdSchema() {
+    return this.validators.licenseIdSchema();
+  }
+
+  licenseKeySchema() {
+    return this.validators.licenseKeySchema();
+  }
+
+  activateLicenseSchema() {
+    return this.validators.activateLicenseSchema();
+  }
+
+  activateTrialSchema() {
+    return this.validators.activateTrialSchema();
+  }
+
+  licenseStatsSchema() {
+    return this.validators.licenseStatsSchema();
+  }
+
+  // Dashboard specific schemas and validation methods
+  async validateTimeRange(data) {
+    const schema = this.validators.timeRangeSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateDashboardFilter(data) {
+    const schema = this.validators.dashboardFilterSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateKpiOptions(data) {
+    const schema = this.validators.kpiOptionsSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateDashboardConfig(data) {
+    const schema = this.validators.dashboardConfigSchema();
+    return this.validate(schema, data);
+  }
+
+  async validateReportOptions(data) {
+    const schema = this.validators.reportOptionsSchema();
+    return this.validate(schema, data);
+  }
+
+  timeRangeSchema() {
+    return this.validators.timeRangeSchema();
+  }
+
+  dashboardFilterSchema() {
+    return this.validators.dashboardFilterSchema();
+  }
+
+  kpiOptionsSchema() {
+    return this.validators.kpiOptionsSchema();
+  }
+
+  dashboardConfigSchema() {
+    return this.validators.dashboardConfigSchema();
+  }
+
+  reportOptionsSchema() {
+    return this.validators.reportOptionsSchema();
   }
 }
