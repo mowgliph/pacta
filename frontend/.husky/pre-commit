@@ -1,0 +1,13 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo '🏗️ Ejecutando validaciones pre-commit en el frontend...'
+
+# Ejecutar lint-staged para los archivos modificados
+npm run lint-staged
+
+# Verificar tipos
+npm run type-check
+
+# Si todo está bien, permitir el commit
+echo '✅ Las validaciones pre-commit del frontend han pasado exitosamente!' 
