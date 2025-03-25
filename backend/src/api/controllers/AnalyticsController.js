@@ -1,7 +1,4 @@
 import moment from 'moment';
-import { Contract, User, ActivityLog } from '../models/index.js';
-import { Op } from 'sequelize';
-import sequelize from 'sequelize';
 import { prisma } from '../../database/prisma.js';
 import { logger } from '../../utils/logger.js';
 import { ContractStatus, ContractType } from '@prisma/client';
@@ -31,82 +28,77 @@ export const getAnalyticsData = async (req, res) => {
     const endDate = moment().toDate();
 
     // Métricas de contratos
-    const totalContracts = await Contract.count();
+    const totalContracts = await prisma.contract.count();
 
-    const activeContracts = await Contract.count({
+    const activeContracts = await prisma.contract.count({
       where: {
         status: 'active',
-        endDate: { [Op.gte]: new Date() },
+        endDate: { gte: new Date() },
       },
     });
 
-    const previousActiveCount = await Contract.count({
+    const previousActiveCount = await prisma.contract.count({
       where: {
         status: 'active',
         endDate: {
-          [Op.gte]: moment()
-            .subtract(_period * 2, 'days')
-            .toDate(),
-          [Op.lte]: startDate,
+          gte: moment().subtract(_period * 2, 'days').toDate(),
+          lte: startDate,
         },
       },
     });
 
-    const signedThisPeriod = await Contract.count({
+    const signedThisPeriod = await prisma.contract.count({
       where: {
         createdAt: {
-          [Op.between]: [startDate, endDate],
+          gte: startDate,
+          lte: endDate,
         },
       },
     });
 
-    const previousSignedCount = await Contract.count({
+    const previousSignedCount = await prisma.contract.count({
       where: {
         createdAt: {
-          [Op.gte]: moment()
-            .subtract(_period * 2, 'days')
-            .toDate(),
-          [Op.lte]: startDate,
+          gte: moment().subtract(_period * 2, 'days').toDate(),
+          lte: startDate,
         },
       },
     });
 
-    const atRiskContracts = await Contract.count({
+    const atRiskContracts = await prisma.contract.count({
       where: {
         status: 'active',
-        riskLevel: { [Op.in]: ['high', 'medium'] },
+        riskLevel: { in: ['high', 'medium'] },
       },
     });
 
-    const previousRiskCount = await Contract.count({
+    const previousRiskCount = await prisma.contract.count({
       where: {
         status: 'active',
-        riskLevel: { [Op.in]: ['high', 'medium'] },
+        riskLevel: { in: ['high', 'medium'] },
         updatedAt: {
-          [Op.gte]: moment()
-            .subtract(_period * 2, 'days')
-            .toDate(),
-          [Op.lte]: startDate,
+          gte: moment().subtract(_period * 2, 'days').toDate(),
+          lte: startDate,
         },
       },
     });
 
-    const expiringSoon = await Contract.count({
+    const expiringSoon = await prisma.contract.count({
       where: {
         status: 'active',
         endDate: {
-          [Op.gte]: new Date(),
-          [Op.lte]: moment().add(30, 'days').toDate(),
+          gte: new Date(),
+          lte: moment().add(30, 'days').toDate(),
         },
       },
     });
 
-    const previousExpiringCount = await Contract.count({
+    const previousExpiringCount = await prisma.contract.count({
       where: {
         status: 'active',
         endDate: {
-          [Op.gte]: startDate,
-          [Op.lte]: moment().subtract(_period, 'days').add(30, 'days').toDate(),
+          gte: startDate,
+          lte: moment().subtract(_period, 'days').add(30, 'days').toDate(),
         },
       },
     });
@@ -168,10 +160,11 @@ export const getAnalyticsData = async (req, res) => {
     ];
 
     // Obtener distribución real de contratos por categoría
-    const contractCategoriesData = await Contract.findAll({
-      attributes: ['category', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
-      group: ['category'],
-      raw: true,
+    const contractCategoriesData = await prisma.contract.groupBy({
+      by: ['category'],
+      _count: {
+        category: true
+      }
     });
 
     // Colores para las categorías
@@ -189,8 +182,8 @@ export const getAnalyticsData = async (req, res) => {
       const category = cat.category || 'Otros';
       return {
         category,
-        count: parseInt(cat.count),
-        percentage: Math.round((cat.count / (totalContracts || 1)) * 100),
+        count: cat._count.category,
+        percentage: Math.round((cat._count.category / (totalContracts || 1)) * 100),
         color: categoryColors[category] || '#6B7280',
       };
     });
@@ -299,7 +292,7 @@ export const getAnalyticsData = async (req, res) => {
 
     res.json(analyticsData);
   } catch (error) {
-    console.error('Error al obtener datos de analytics:', error);
+    logger.error('Error al obtener datos de analytics:', error);
     res.status(500).json({
       success: false,
       message: 'Error al obtener datos de analytics',
@@ -333,34 +326,7 @@ export const getHistoricalData = async (req, res) => {
       });
     }
 
-    // Configurar el formato para agrupar por granularidad
-    let _formatterPattern = '';
-    let timeGrouping = '';
-
-    switch (granularity) {
-      case 'day':
-        _formatterPattern = '%Y-%m-%d';
-        timeGrouping = 'DATE(createdAt)';
-        break;
-      case 'week':
-        _formatterPattern = '%Y-W%v';
-        timeGrouping = "CONCAT(YEAR(createdAt), '-W', WEEK(createdAt))";
-        break;
-      case 'month':
-        _formatterPattern = '%Y-%m';
-        timeGrouping = "DATE_FORMAT(createdAt, '%Y-%m')";
-        break;
-      case 'quarter':
-        _formatterPattern = '%Y-Q%q';
-        timeGrouping = "CONCAT(YEAR(createdAt), '-Q', QUARTER(createdAt))";
-        break;
-      case 'year':
-        _formatterPattern = '%Y';
-        timeGrouping = 'YEAR(createdAt)';
-        break;
-    }
-
-    // Procesar diferentes tipos de datos
+    // Utilizamos SQL nativo para obtener datos agrupados
     let labels = [];
     let datasets = [];
 
@@ -375,28 +341,24 @@ export const getHistoricalData = async (req, res) => {
         };
 
         const statuses = ['active', 'pending', 'expired', 'cancelled'];
-
-        // Consultar datos agrupados por período y estado
-        const historicalData = await Contract.findAll({
-          attributes: [
-            [sequelize.literal(timeGrouping), 'period'],
-            'status',
-            [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
-          ],
-          where: {
-            createdAt: {
-              [Op.between]: [parsedStartDate, parsedEndDate],
-            },
-          },
-          group: ['period', 'status'],
-          order: [[sequelize.literal('period'), 'ASC']],
-        });
+        
+        // Para SQLite, usamos consulta nativa con prisma.$queryRaw
+        const historicalData = await prisma.$queryRaw`
+          SELECT 
+            strftime('%Y-%m', createdAt) as period,
+            status,
+            COUNT(*) as count
+          FROM Contract
+          WHERE createdAt BETWEEN ${parsedStartDate} AND ${parsedEndDate}
+          GROUP BY period, status
+          ORDER BY period ASC
+        `;
 
         // Procesar y organizar datos
         const groupedByPeriod = {};
 
         historicalData.forEach(record => {
-          const { period, status, count } = record.dataValues;
+          const { period, status, count } = record;
 
           if (!groupedByPeriod[period]) {
             groupedByPeriod[period] = {
@@ -427,25 +389,21 @@ export const getHistoricalData = async (req, res) => {
 
       case 'value': {
         // Obtener datos para gráfico de valor de contratos
-        const historicalData = await Contract.findAll({
-          attributes: [
-            [sequelize.literal(timeGrouping), 'period'],
-            [sequelize.fn('SUM', sequelize.col('value')), 'totalValue'],
-          ],
-          where: {
-            createdAt: {
-              [Op.between]: [parsedStartDate, parsedEndDate],
-            },
-          },
-          group: ['period'],
-          order: [[sequelize.literal('period'), 'ASC']],
-        });
+        const historicalData = await prisma.$queryRaw`
+          SELECT 
+            strftime('%Y-%m', createdAt) as period,
+            SUM(value) as totalValue
+          FROM Contract
+          WHERE createdAt BETWEEN ${parsedStartDate} AND ${parsedEndDate}
+          GROUP BY period
+          ORDER BY period ASC
+        `;
 
-        labels = historicalData.map(record => record.dataValues.period);
+        labels = historicalData.map(record => record.period);
         datasets = [
           {
             label: 'Valor Total de Contratos',
-            data: historicalData.map(record => parseFloat(record.dataValues.totalValue) || 0),
+            data: historicalData.map(record => parseFloat(record.totalValue) || 0),
             borderColor: '#3b82f6',
             backgroundColor: 'rgba(59, 130, 246, 0.1)',
             borderWidth: 2,
@@ -466,29 +424,24 @@ export const getHistoricalData = async (req, res) => {
 
         const riskLevels = ['high', 'medium', 'low'];
 
-        const historicalData = await Contract.findAll({
-          attributes: [
-            [sequelize.literal(timeGrouping), 'period'],
-            'riskLevel',
-            [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
-          ],
-          where: {
-            createdAt: {
-              [Op.between]: [parsedStartDate, parsedEndDate],
-            },
-            riskLevel: {
-              [Op.in]: riskLevels,
-            },
-          },
-          group: ['period', 'riskLevel'],
-          order: [[sequelize.literal('period'), 'ASC']],
-        });
+        const historicalData = await prisma.$queryRaw`
+          SELECT 
+            strftime('%Y-%m', createdAt) as period,
+            riskLevel,
+            COUNT(*) as count
+          FROM Contract
+          WHERE 
+            createdAt BETWEEN ${parsedStartDate} AND ${parsedEndDate}
+            AND riskLevel IN ('high', 'medium', 'low')
+          GROUP BY period, riskLevel
+          ORDER BY period ASC
+        `;
 
         // Procesar y organizar datos
         const groupedByPeriod = {};
 
         historicalData.forEach(record => {
-          const { period, riskLevel, count } = record.dataValues;
+          const { period, riskLevel, count } = record;
 
           if (!groupedByPeriod[period]) {
             groupedByPeriod[period] = {
@@ -528,7 +481,7 @@ export const getHistoricalData = async (req, res) => {
       datasets,
     });
   } catch (error) {
-    console.error('Error getting historical data:', error);
+    logger.error('Error getting historical data:', error);
     res.status(500).json({
       success: false,
       message: 'Error al obtener datos históricos',
@@ -565,7 +518,7 @@ export const generateReport = async (req, res) => {
       });
     }, 2000); // Simulación de tiempo de generación
   } catch (error) {
-    console.error(`Error generando reporte ${req.params.format}:`, error);
+    logger.error(`Error generando reporte ${req.params.format}:`, error);
     res.status(500).json({
       success: false,
       message: 'Error al generar el reporte',
@@ -593,47 +546,62 @@ export const getSpecificAnalysis = async (req, res) => {
 
     switch (analysisType) {
       case 'contracts':
-        // En una implementación real, estos datos vendrían de la base de datos
+        // Utilizamos Prisma para obtener los datos de análisis
+        const totalCount = await prisma.contract.count();
+        const activeContracts = await prisma.contract.count({ where: { status: 'active' } });
+        const pendingContracts = await prisma.contract.count({ where: { status: 'pending' } });
+        const expiredContracts = await prisma.contract.count({ where: { status: 'expired' } });
+        
+        // Valor promedio con Prisma
+        const avgValueResult = await prisma.contract.aggregate({
+          _avg: {
+            value: true
+          }
+        });
+        
+        // Categorías con Prisma
+        const categoriesResult = await prisma.contract.groupBy({
+          by: ['category'],
+          _count: {
+            id: true
+          }
+        });
+        
+        const categories = {};
+        categoriesResult.forEach(item => {
+          categories[item.category || 'Otros'] = item._count.id;
+        });
+        
+        // Estados con Prisma
+        const statusesResult = await prisma.contract.groupBy({
+          by: ['status'],
+          _count: {
+            id: true
+          }
+        });
+        
+        const statuses = {};
+        statusesResult.forEach(item => {
+          statuses[item.status || 'undefined'] = item._count.id;
+        });
+        
         data = {
-          totalCount: await Contract.count(),
-          activeContracts: await Contract.count({ where: { status: 'active' } }),
-          pendingContracts: await Contract.count({ where: { status: 'pending' } }),
-          expiredContracts: await Contract.count({ where: { status: 'expired' } }),
-          averageValue: await Contract.findOne({
-            attributes: [[sequelize.fn('AVG', sequelize.col('value')), 'avgValue']],
-            raw: true,
-          }).then(result => result.avgValue || 0),
-          categories: await Contract.findAll({
-            attributes: ['category', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
-            group: ['category'],
-            raw: true,
-          }).then(results => {
-            const categories = {};
-            results.forEach(item => {
-              categories[item.category || 'Otros'] = parseInt(item.count);
-            });
-            return categories;
-          }),
-          statuses: await Contract.findAll({
-            attributes: ['status', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
-            group: ['status'],
-            raw: true,
-          }).then(results => {
-            const statuses = {};
-            results.forEach(item => {
-              statuses[item.status || 'undefined'] = parseInt(item.count);
-            });
-            return statuses;
-          }),
+          totalCount,
+          activeContracts,
+          pendingContracts,
+          expiredContracts,
+          averageValue: avgValueResult._avg.value || 0,
+          categories,
+          statuses
         };
         break;
 
       case 'risks':
-        // En una implementación real, estos datos vendrían de la base de datos
+        // Obtener datos de riesgos con Prisma
         data = {
-          highRiskCount: await Contract.count({ where: { riskLevel: 'high' } }),
-          mediumRiskCount: await Contract.count({ where: { riskLevel: 'medium' } }),
-          lowRiskCount: await Contract.count({ where: { riskLevel: 'low' } }),
+          highRiskCount: await prisma.contract.count({ where: { riskLevel: 'high' } }),
+          mediumRiskCount: await prisma.contract.count({ where: { riskLevel: 'medium' } }),
+          lowRiskCount: await prisma.contract.count({ where: { riskLevel: 'low' } }),
           // Estos datos podrían provenir de un análisis real de riesgos
           topRiskFactors: [
             { factor: 'Cláusulas de terminación', count: 8 },
@@ -671,7 +639,7 @@ export const getSpecificAnalysis = async (req, res) => {
       data,
     });
   } catch (error) {
-    console.error('Error getting specific analysis:', error);
+    logger.error('Error getting specific analysis:', error);
     res.status(500).json({
       success: false,
       message: 'Error al obtener análisis específico',
@@ -685,19 +653,26 @@ export const getSpecificAnalysis = async (req, res) => {
  */
 export const getRiskContracts = async (req, res) => {
   try {
-    const riskContracts = await Contract.findAll({
+    const riskContracts = await prisma.contract.findMany({
       where: {
         status: 'active',
         riskLevel: {
-          [Op.in]: ['high', 'medium'],
+          in: ['high', 'medium'],
         },
       },
-      attributes: ['id', 'name', 'category', 'riskLevel', 'endDate', 'status'],
-      order: [
-        ['riskLevel', 'ASC'],
-        ['endDate', 'ASC'],
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        riskLevel: true,
+        endDate: true,
+        status: true
+      },
+      orderBy: [
+        { riskLevel: 'asc' },
+        { endDate: 'asc' },
       ],
-      limit: 10,
+      take: 10,
     });
 
     res.json({
@@ -705,7 +680,7 @@ export const getRiskContracts = async (req, res) => {
       data: riskContracts,
     });
   } catch (error) {
-    console.error('Error al obtener contratos en riesgo:', error);
+    logger.error('Error al obtener contratos en riesgo:', error);
     res.status(500).json({
       success: false,
       message: 'Error al obtener contratos en riesgo',
@@ -718,16 +693,26 @@ export const getRiskContracts = async (req, res) => {
 export const getGeneralStats = async (req, res) => {
   try {
     const [totalUsers, totalContracts, activeContracts, recentActivities] = await Promise.all([
-      User.count(),
-      Contract.count(),
-      Contract.count({ where: { status: 'active' } }),
-      ActivityLog.findAll({
-        include: [
-          { model: User, attributes: ['username'] },
-          { model: Contract, attributes: ['contractNumber'] },
-        ],
-        order: [['timestamp', 'DESC']],
-        limit: 10,
+      prisma.user.count(),
+      prisma.contract.count(),
+      prisma.contract.count({ where: { status: 'active' } }),
+      prisma.activityLog.findMany({
+        include: {
+          user: {
+            select: {
+              username: true
+            }
+          },
+          contract: {
+            select: {
+              contractNumber: true
+            }
+          }
+        },
+        orderBy: {
+          timestamp: 'desc'
+        },
+        take: 10
       }),
     ]);
 
@@ -738,7 +723,7 @@ export const getGeneralStats = async (req, res) => {
       recentActivities,
     });
   } catch (error) {
-    console.error('Error getting general stats:', error);
+    logger.error('Error getting general stats:', error);
     res.status(500).json({ message: 'Error al obtener estadísticas generales' });
   }
 };
@@ -749,23 +734,30 @@ export const getActivityStats = async (req, res) => {
     const { startDate, endDate } = req.query;
     const where = {
       timestamp: {
-        [Op.between]: [
-          startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-          endDate ? new Date(endDate) : new Date(),
-        ],
+        gte: startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        lte: endDate ? new Date(endDate) : new Date(),
       },
     };
 
-    const activities = await ActivityLog.findAll({
+    const activities = await prisma.activityLog.groupBy({
+      by: ['action'],
       where,
-      attributes: ['action', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
-      group: ['action'],
-      order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']],
+      _count: {
+        id: true
+      },
+      orderBy: {
+        _count: {
+          id: 'desc'
+        }
+      }
     });
 
-    res.json(activities);
+    res.json(activities.map(item => ({
+      action: item.action,
+      count: item._count.id
+    })));
   } catch (error) {
-    console.error('Error getting activity stats:', error);
+    logger.error('Error getting activity stats:', error);
     res.status(500).json({ message: 'Error al obtener estadísticas de actividad' });
   }
 };
@@ -773,14 +765,19 @@ export const getActivityStats = async (req, res) => {
 // Obtener estadísticas de contratos por estado
 export const getContractStats = async (req, res) => {
   try {
-    const stats = await Contract.findAll({
-      attributes: ['status', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
-      group: ['status'],
+    const stats = await prisma.contract.groupBy({
+      by: ['status'],
+      _count: {
+        id: true
+      }
     });
 
-    res.json(stats);
+    res.json(stats.map(item => ({
+      status: item.status,
+      count: item._count.id
+    })));
   } catch (error) {
-    console.error('Error getting contract stats:', error);
+    logger.error('Error getting contract stats:', error);
     res.status(500).json({ message: 'Error al obtener estadísticas de contratos' });
   }
 };
@@ -789,19 +786,30 @@ export const getContractStats = async (req, res) => {
 export const getUserActivity = async (req, res) => {
   try {
     const { userId } = req.params;
-    const activities = await ActivityLog.findAll({
-      where: { userId },
-      include: [
-        { model: User, attributes: ['username'] },
-        { model: Contract, attributes: ['contractNumber'] },
-      ],
-      order: [['timestamp', 'DESC']],
-      limit: 20,
+    const activities = await prisma.activityLog.findMany({
+      where: { userId: parseInt(userId) },
+      include: {
+        user: {
+          select: {
+            username: true
+          }
+        },
+        contract: {
+          select: {
+            contractNumber: true
+          }
+        }
+      },
+      orderBy: {
+        timestamp: 'desc'
+      },
+      take: 20
     });
 
     res.json(activities);
   } catch (error) {
-    console.error('Error getting user activity:', error);
+    logger.error('Error getting user activity:', error);
     res.status(500).json({ message: 'Error al obtener actividad del usuario' });
   }
 };
+

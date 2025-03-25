@@ -287,9 +287,9 @@ export class BaseService {
       const where = {};
 
       if (query && fields) {
-        where[Op.or] = fields.map(field => ({
+        where.OR = fields.map(field => ({
           [field]: {
-            [Op.like]: `%${query}%`,
+            contains: query
           },
         }));
       }
