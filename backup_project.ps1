@@ -1,4 +1,4 @@
- # Script de backup para el proyecto PACTA
+# Script de backup para el proyecto PACTA
 # Autor: Jelvys Triana
 # Fecha: 25/03/2025
 
@@ -39,6 +39,23 @@ do {
 $selectedDrive = $usbDrives[$selection - 1]
 $destinationPath = Join-Path $selectedDrive.DeviceID $backupName
 
+# Verificar si el directorio de backup ya existe
+if (Test-Path $destinationPath) {
+    Write-ColorMessage "`n¡ADVERTENCIA! El directorio de backup ya existe:" "Yellow"
+    Write-ColorMessage $destinationPath "White"
+    $overwrite = Read-Host "¿Desea sobreescribir? (S/N)"
+    
+    if ($overwrite -eq "S" -or $overwrite -eq "s") {
+        Write-ColorMessage "Eliminando directorio existente..." "Yellow"
+        Remove-Item -Path $destinationPath -Recurse -Force
+    } else {
+        $timestamp = Get-Date -Format "HHmmss"
+        $backupName = "${projectName}_backup_${date}_${timestamp}"
+        $destinationPath = Join-Path $selectedDrive.DeviceID $backupName
+        Write-ColorMessage "Usando nuevo nombre de directorio: $backupName" "Cyan"
+    }
+}
+
 # Crear directorio de backup
 Write-ColorMessage "`nCreando directorio de backup en $destinationPath..." "Yellow"
 New-Item -ItemType Directory -Path $destinationPath -Force | Out-Null
@@ -68,10 +85,20 @@ function Copy-ProjectFiles {
         if ($_.PSIsContainer) {
             # Si es un directorio, verificar si está en la lista de exclusión
             if ($exclude -notcontains $_.Name) {
+                if (Test-Path $destinationItem) {
+                    Write-ColorMessage "Actualizando directorio: $($_.Name)" "Cyan"
+                } else {
+                    Write-ColorMessage "Creando directorio: $($_.Name)" "White"
+                }
                 New-Item -ItemType Directory -Path $destinationItem -Force | Out-Null
                 Copy-ProjectFiles -source $_.FullName -destination $destinationItem -exclude $exclude
             }
         } else {
+            if (Test-Path $destinationItem) {
+                Write-ColorMessage "Actualizando archivo: $($_.Name)" "Cyan"
+            } else {
+                Write-ColorMessage "Copiando archivo: $($_.Name)" "White"
+            }
             Copy-Item $_.FullName -Destination $destinationItem -Force
         }
     }
@@ -83,22 +110,30 @@ $startTime = Get-Date
 
 try {
     # Copiar archivos del frontend
-    Write-ColorMessage "Copiando frontend..." "Cyan"
+    Write-ColorMessage "`nCopiando frontend..." "Cyan"
     $frontendSource = "frontend"
     $frontendDest = Join-Path $destinationPath "frontend"
     New-Item -ItemType Directory -Path $frontendDest -Force | Out-Null
     Copy-ProjectFiles -source $frontendSource -destination $frontendDest -exclude $excludedItems
 
     # Copiar archivos del backend
-    Write-ColorMessage "Copiando backend..." "Cyan"
+    Write-ColorMessage "`nCopiando backend..." "Cyan"
     $backendSource = "backend"
     $backendDest = Join-Path $destinationPath "backend"
     New-Item -ItemType Directory -Path $backendDest -Force | Out-Null
     Copy-ProjectFiles -source $backendSource -destination $backendDest -exclude $excludedItems
 
     # Copiar archivos de la raíz del proyecto
-    Write-ColorMessage "Copiando archivos de configuración..." "Cyan"
-    Get-ChildItem -Path "." -File | Copy-Item -Destination $destinationPath
+    Write-ColorMessage "`nCopiando archivos de configuración..." "Cyan"
+    Get-ChildItem -Path "." -File | ForEach-Object {
+        $destFile = Join-Path $destinationPath $_.Name
+        if (Test-Path $destFile) {
+            Write-ColorMessage "Actualizando archivo: $($_.Name)" "Cyan"
+        } else {
+            Write-ColorMessage "Copiando archivo: $($_.Name)" "White"
+        }
+        Copy-Item $_.FullName -Destination $destFile -Force
+    }
 
     $endTime = Get-Date
     $duration = $endTime - $startTime
@@ -113,7 +148,7 @@ Ubicación: $destinationPath
 Elementos excluidos: $($excludedItems -join ", ")
 "@
 
-    $infoContent | Out-File -FilePath (Join-Path $destinationPath "backup-info.txt")
+    $infoContent | Out-File -FilePath (Join-Path $destinationPath "backup-info.txt") -Force
 
     Write-ColorMessage "`n¡Backup completado exitosamente!" "Green"
     Write-ColorMessage "Ubicación: $destinationPath" "White"
@@ -135,6 +170,23 @@ $createZip = Read-Host "`n¿Desea crear un archivo ZIP del backup? (S/N)"
 if ($createZip -eq "S" -or $createZip -eq "s") {
     Write-ColorMessage "Creando archivo ZIP..." "Yellow"
     $zipPath = "$destinationPath.zip"
+    
+    # Verificar si el archivo ZIP ya existe
+    if (Test-Path $zipPath) {
+        Write-ColorMessage "¡ADVERTENCIA! El archivo ZIP ya existe:" "Yellow"
+        Write-ColorMessage $zipPath "White"
+        $overwriteZip = Read-Host "¿Desea sobreescribir? (S/N)"
+        
+        if ($overwriteZip -eq "S" -or $overwriteZip -eq "s") {
+            Write-ColorMessage "Sobreescribiendo archivo ZIP existente..." "Yellow"
+            Remove-Item -Path $zipPath -Force
+        } else {
+            $timestamp = Get-Date -Format "HHmmss"
+            $zipPath = "$destinationPath_$timestamp.zip"
+            Write-ColorMessage "Usando nuevo nombre para ZIP: $([System.IO.Path]::GetFileName($zipPath))" "Cyan"
+        }
+    }
+    
     Compress-Archive -Path $destinationPath -DestinationPath $zipPath -Force
     Write-ColorMessage "Archivo ZIP creado en: $zipPath" "Green"
     
@@ -148,4 +200,4 @@ if ($createZip -eq "S" -or $createZip -eq "s") {
 
 Write-ColorMessage "`n¡Proceso de backup completado!" "Green"
 Write-ColorMessage "Presione cualquier tecla para salir..."
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown") 
