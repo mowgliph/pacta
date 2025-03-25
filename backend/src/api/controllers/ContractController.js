@@ -1,30 +1,40 @@
 import { prisma } from '../../database/prisma.js';
 import fs from 'fs';
-import { Op } from 'sequelize';
-import { db } from '../database/dbconnection.js';
+import { logger } from '../../utils/logger.js';
+
 
 // Obtener todos los contratos (filtrados por rol de usuario)
 export const getAllContracts = async (req, res) => {
   try {
     const contracts = await prisma.contract.findMany({
-      where: req.user.role === 'admin' ? {} : { authorId: req.user.id },
       include: {
         author: {
           select: {
+            id: true,
             firstName: true,
             lastName: true,
-            email: true,
-          },
+            email: true
+          }
         },
+        company: true,
+        department: true,
+        contractTags: true
       },
       orderBy: {
-        updatedAt: 'desc',
-      },
+        updatedAt: 'desc'
+      }
     });
-    res.json(contracts);
+
+    res.json({
+      status: 'success',
+      data: contracts
+    });
   } catch (error) {
-    console.error('Error fetching contracts:', error);
-    res.status(500).json({ message: 'Error al obtener los contratos', error: error.message });
+    logger.error('Error fetching contracts:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Error al obtener los contratos'
+    });
   }
 };
 
@@ -32,37 +42,39 @@ export const getAllContracts = async (req, res) => {
 export const getContractById = async (req, res) => {
   try {
     const contract = await prisma.contract.findUnique({
-      where: {
-        id: req.params.id,
-        ...(req.user.role !== 'admin' && { authorId: req.user.id }),
-      },
+      where: { id: parseInt(req.params.id) },
       include: {
         author: {
           select: {
             id: true,
             firstName: true,
             lastName: true,
-            email: true,
-          },
+            email: true
+          }
         },
         company: true,
         department: true,
-        contractTags: {
-          include: {
-            tag: true,
-          },
-        },
-      },
+        contractTags: true
+      }
     });
 
     if (!contract) {
-      return res.status(404).json({ message: 'Contrato no encontrado' });
+      return res.status(404).json({
+        status: 'error',
+        message: 'Contrato no encontrado'
+      });
     }
 
-    res.json(contract);
+    res.json({
+      status: 'success',
+      data: contract
+    });
   } catch (error) {
-    console.error('Error fetching contract:', error);
-    res.status(500).json({ message: 'Error al obtener el contrato', error: error.message });
+    logger.error('Error fetching contract:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Error al obtener el contrato'
+    });
   }
 };
 
@@ -72,7 +84,7 @@ export const createContract = async (req, res) => {
     const contract = await prisma.contract.create({
       data: {
         ...req.body,
-        authorId: req.user.id,
+        authorId: req.user.id
       },
       include: {
         author: {
@@ -80,28 +92,36 @@ export const createContract = async (req, res) => {
             id: true,
             firstName: true,
             lastName: true,
-            email: true,
-          },
+            email: true
+          }
         },
         company: true,
         department: true,
-      },
+        contractTags: true
+      }
     });
 
     // Registrar actividad
-    await prisma.activity.create({
+    await prisma.activityLog.create({
       data: {
-        action: 'CREATE_CONTRACT',
-        description: `Contrato ${contract.title} creado`,
         userId: req.user.id,
-        contractId: contract.id,
-      },
+        action: 'CREATE',
+        entityType: 'CONTRACT',
+        entityId: contract.id,
+        details: 'Creación de nuevo contrato'
+      }
     });
 
-    res.status(201).json(contract);
+    res.status(201).json({
+      status: 'success',
+      data: contract
+    });
   } catch (error) {
-    console.error('Error creating contract:', error);
-    res.status(500).json({ message: 'Error al crear el contrato', error: error.message });
+    logger.error('Error creating contract:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Error al crear el contrato'
+    });
   }
 };
 
@@ -109,18 +129,18 @@ export const createContract = async (req, res) => {
 export const updateContract = async (req, res) => {
   try {
     const contract = await prisma.contract.findUnique({
-      where: {
-        id: req.params.id,
-        ...(req.user.role !== 'admin' && { authorId: req.user.id }),
-      },
+      where: { id: parseInt(req.params.id) }
     });
 
     if (!contract) {
-      return res.status(404).json({ message: 'Contrato no encontrado' });
+      return res.status(404).json({
+        status: 'error',
+        message: 'Contrato no encontrado'
+      });
     }
 
     const updatedContract = await prisma.contract.update({
-      where: { id: req.params.id },
+      where: { id: parseInt(req.params.id) },
       data: req.body,
       include: {
         author: {
@@ -128,28 +148,36 @@ export const updateContract = async (req, res) => {
             id: true,
             firstName: true,
             lastName: true,
-            email: true,
-          },
+            email: true
+          }
         },
         company: true,
         department: true,
-      },
+        contractTags: true
+      }
     });
 
     // Registrar actividad
-    await prisma.activity.create({
+    await prisma.activityLog.create({
       data: {
-        action: 'UPDATE_CONTRACT',
-        description: `Contrato ${updatedContract.title} actualizado`,
         userId: req.user.id,
-        contractId: updatedContract.id,
-      },
+        action: 'UPDATE',
+        entityType: 'CONTRACT',
+        entityId: updatedContract.id,
+        details: 'Actualización de contrato'
+      }
     });
 
-    res.json(updatedContract);
+    res.json({
+      status: 'success',
+      data: updatedContract
+    });
   } catch (error) {
-    console.error('Error updating contract:', error);
-    res.status(500).json({ message: 'Error al actualizar el contrato', error: error.message });
+    logger.error('Error updating contract:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Error al actualizar el contrato'
+    });
   }
 };
 
@@ -157,35 +185,42 @@ export const updateContract = async (req, res) => {
 export const deleteContract = async (req, res) => {
   try {
     const contract = await prisma.contract.findUnique({
-      where: {
-        id: req.params.id,
-        ...(req.user.role !== 'admin' && { authorId: req.user.id }),
-      },
+      where: { id: parseInt(req.params.id) }
     });
 
     if (!contract) {
-      return res.status(404).json({ message: 'Contrato no encontrado' });
+      return res.status(404).json({
+        status: 'error',
+        message: 'Contrato no encontrado'
+      });
     }
 
     await prisma.contract.update({
-      where: { id: req.params.id },
-      data: { deletedAt: new Date() },
+      where: { id: parseInt(req.params.id) },
+      data: { deletedAt: new Date() }
     });
 
     // Registrar actividad
-    await prisma.activity.create({
+    await prisma.activityLog.create({
       data: {
-        action: 'DELETE_CONTRACT',
-        description: `Contrato ${contract.title} eliminado`,
         userId: req.user.id,
-        contractId: contract.id,
-      },
+        action: 'DELETE',
+        entityType: 'CONTRACT',
+        entityId: contract.id,
+        details: 'Eliminación de contrato'
+      }
     });
 
-    res.json({ message: 'Contrato eliminado correctamente' });
+    res.json({
+      status: 'success',
+      message: 'Contrato eliminado correctamente'
+    });
   } catch (error) {
-    console.error('Error deleting contract:', error);
-    res.status(500).json({ message: 'Error al eliminar el contrato', error: error.message });
+    logger.error('Error deleting contract:', error);
+    res.status(500).json({
+      status: 'error',
+      message: 'Error al eliminar el contrato'
+    });
   }
 };
 
