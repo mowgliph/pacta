@@ -2,7 +2,7 @@
 
 Este documento establece el orden de implementación recomendado para el desarrollo de PACTA, basado en el análisis del código existente y las dependencias entre módulos. Se incluyen puntos de revisión (checkpoints) periódicos para garantizar la coherencia y calidad del proyecto.
 
-## Fecha de última actualización: [Fecha actual]
+## Fecha de última actualización: [25/03/2024]
 
 ---
 
@@ -17,17 +17,51 @@ Este documento establece el orden de implementación recomendado para el desarro
 
 ---
 
-## Fase 1: Fundamentos (Base del proyecto)
+## Fase 0: Preparación para Instalador Windows
 
-### 1.1 Infraestructura Básica
+### 0.1 Estructura del Instalador
 | Tarea | Estado | Observaciones |
 |-------|--------|---------------|
-| ✅ Configuración del repositorio Git | Completado | Estructura base establecida con frontend y backend |
-| ✅ Estructura de carpetas del proyecto | Completado | Organización modular implementada |
-| ✅ Configuración del entorno de desarrollo | Completado | Scripts de npm y dependencias configuradas |
-| ✅ Configuración de linters y formatters | Completado | ESLint y Prettier implementados |
+| ⏳ Configuración de electron-builder | Pendiente | Para empaquetado de aplicación |
+| ⏳ Estructura de instalador Windows | Pendiente | Scripts de instalación |
+| ⏳ Configuración de servicio Windows | Pendiente | Usando node-windows |
+| ⏳ Scripts de post-instalación | Pendiente | PowerShell scripts |
 
-### 1.2 Backend Base
+### 0.2 Preparación de Componentes
+| Tarea | Estado | Observaciones |
+|-------|--------|---------------|
+| ⏳ Asistente de instalación | Pendiente | Interfaz de configuración |
+| ⏳ Validación de requisitos | Pendiente | Verificación de sistema |
+| ⏳ Gestión de permisos | Pendiente | Accesos y directorios |
+| ⏳ Scripts de rollback | Pendiente | Manejo de errores |
+
+### 🔍 **CHECKPOINT 0: Revisión de Instalador**
+- Verificar estructura del instalador
+- Comprobar scripts de instalación
+- Validar permisos y requisitos
+- Revisar proceso de rollback
+
+---
+
+## Fase 1: Adaptación a Modo Offline
+
+### 1.1 Base de Datos Local
+| Tarea | Estado | Observaciones |
+|-------|--------|---------------|
+| 🔄 Migración a SQLite | En progreso | Adaptación de modelos |
+| ⏳ Sistema de backup local | Pendiente | Respaldos automáticos |
+| ⏳ Índices de búsqueda | Pendiente | Optimización queries |
+| ⏳ Gestión de archivos | Pendiente | Almacenamiento local |
+
+### 1.2 Autenticación Local
+| Tarea | Estado | Observaciones |
+|-------|--------|---------------|
+| 🔄 Adaptación JWT | En progreso | Tokens locales |
+| ⏳ Gestión de usuarios local | Pendiente | Solo admin puede crear |
+| ⏳ Permisos offline | Pendiente | RBAC local |
+| ⏳ Auditoría local | Pendiente | Logs de acceso |
+
+### 1.3 Backend Base
 | Tarea | Estado | Observaciones |
 |-------|--------|---------------|
 | ✅ Configuración del servidor Express | Completado | Servidor básico funcionando |
@@ -35,7 +69,7 @@ Este documento establece el orden de implementación recomendado para el desarro
 | ✅ Estructura básica de API | Completado | Rutas principales definidas |
 | ✅ Sistema de logging | Completado | Registro de errores y actividad |
 
-### 1.3 Frontend Base
+### 1.4 Frontend Base
 | Tarea | Estado | Observaciones |
 |-------|--------|---------------|
 | ✅ Configuración de Vue.js | Completado | Vue 3 con Composition API |
@@ -307,47 +341,47 @@ Este documento establece el orden de implementación recomendado para el desarro
 
 ---
 
-## Fase 10: Despliegue y Producción
+## Fase 10: Empaquetado y Distribución
 
-### 10.1 Preparación para Producción
+### 10.1 Preparación de Distribución
 | Tarea | Estado | Observaciones |
 |-------|--------|---------------|
-| ⏳ Configuración de entorno de producción | Pendiente | Variables de entorno y configs |
-| ⏳ Optimización de builds | Pendiente | Minificación y bundling |
-| ⏳ Estrategia de despliegue | Pendiente | CI/CD planificado |
-| ⏳ Pruebas pre-lanzamiento | Pendiente | Checklist de verificación |
+| ⏳ Empaquetado con electron-builder | Pendiente | Generación de .exe |
+| ⏳ Scripts de instalación | Pendiente | PowerShell y batch |
+| ⏳ Documentación de instalación | Pendiente | Manual técnico |
+| ⏳ Guías de usuario | Pendiente | Manual de uso |
 
-### 10.2 Monitoreo y Mantenimiento
+### 10.2 Testing de Instalación
 | Tarea | Estado | Observaciones |
 |-------|--------|---------------|
-| ⏳ Sistema de logs centralizado | Pendiente | Agregación de logs |
-| ⏳ Monitoreo de aplicación | Pendiente | Alertas y dashboards |
-| ⏳ Gestión de errores | Pendiente | Captura y notificación |
-| ⏳ Actualizaciones y parches | Pendiente | Procedimiento definido |
+| ⏳ Pruebas en diferentes Windows | Pendiente | Win 10/11 |
+| ⏳ Validación de permisos | Pendiente | UAC y admin |
+| ⏳ Pruebas de actualización | Pendiente | Upgrade path |
+| ⏳ Pruebas de desinstalación | Pendiente | Cleanup |
 
 ### 10.3 Documentación Final
 | Tarea | Estado | Observaciones |
 |-------|--------|---------------|
-| ⏳ Manual de usuario | Pendiente | Guías por funcionalidad |
-| ⏳ Documentación técnica | Pendiente | Arquitectura y componentes |
-| ⏳ Documentación de API | Pendiente | Referencia completa |
-| ⏳ Guías de administración | Pendiente | Operaciones y mantenimiento |
+| ⏳ Manual de instalación | Pendiente | Guía paso a paso |
+| ⏳ Guía de troubleshooting | Pendiente | Solución problemas |
+| ⏳ Manual de mantenimiento | Pendiente | Backups y updates |
+| ⏳ Documentación técnica | Pendiente | Arquitectura local |
 
-### 🔍 **CHECKPOINT FINAL: Revisión de Lanzamiento**
-- Verificar todos los requisitos funcionales
-- Comprobar calidad general del código
+### 🔍 **CHECKPOINT FINAL: Revisión de Distribución**
+- Verificar proceso de instalación
+- Comprobar funcionamiento offline
 - Validar documentación completa
-- Revisar plan de soporte y mantenimiento
-- Verificar cumplimiento de objetivos del proyecto
+- Revisar proceso de mantenimiento
 
 ---
 
 ## Estado Actual del Proyecto
 
 ### Progreso General
-- Fase 1: ✅ Completada (100%)
+- Fase 0: ⏳ Pendiente (0%)
+- Fase 1: 🔄 En progreso (30%)
 - Fase 2: 🔄 En progreso (85%)
-- Fase 3: 🔄 En progreso (65%)
+- Fase 3: �� En progreso (65%)
 - Fase 4: 🔄 En progreso (50%)
 - Fase 5: 🔄 En progreso (40%)
 - Fase 6: 🔄 En progreso (30%)
@@ -356,28 +390,27 @@ Este documento establece el orden de implementación recomendado para el desarro
 - Fase 9: ⏳ Pendiente (5%)
 - Fase 10: ⏳ Pendiente (0%)
 
-### Progreso Global: Aproximadamente 42%
+### Progreso Global: Aproximadamente 35%
 
 ---
 
 ## Próximas Acciones Prioritarias
 
-1. Completar la implementación del módulo de autenticación (Fase 2)
-   - Finalizar recuperación de contraseña
-   - Completar gestión de perfiles de usuario
+1. Iniciar desarrollo del instalador Windows
+   - Configurar electron-builder
+   - Crear scripts de instalación
+   - Desarrollar asistente de configuración
 
-2. Avanzar en el core de gestión de contratos (Fase 3)
-   - Optimizar carga y almacenamiento de documentos
-   - Completar interfaz de visualización de contratos
+2. Completar adaptación a modo offline
+   - Finalizar migración a SQLite
+   - Implementar sistema de backup local
+   - Adaptar autenticación local
 
-3. Desarrollar sistema de notificaciones (Fase 4)
-   - Integrar con servicio de email
-   - Implementar centro de notificaciones en frontend
-
-4. Implementar dashboard básico (Fase 5)
-   - Completar widgets principales
-   - Implementar gráficos estadísticos esenciales
+3. Desarrollar sistema de mantenimiento
+   - Backups automáticos
+   - Logs locales
+   - Herramientas de diagnóstico
 
 ---
 
-*Este plan de implementación será actualizado periódicamente para reflejar el progreso actual y ajustar prioridades según las necesidades del proyecto.* 
+*Este plan de implementación será actualizado semanalmente para reflejar el progreso y ajustar prioridades según las necesidades del proyecto.* 

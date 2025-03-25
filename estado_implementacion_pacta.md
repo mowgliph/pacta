@@ -4,7 +4,7 @@ Este documento registra el estado actual de desarrollo e implementación de la P
 
 > **Nota importante:** Para un desglose detallado por módulos funcionales, consulte el documento [modulos_implementacion_pacta.md](./modulos_implementacion_pacta.md) que proporciona información específica sobre el progreso de cada componente tanto en el frontend como en el backend.
 
-## Fecha de última actualización: [Fecha actual]
+## Fecha de última actualización: [25/03/2024]
 
 ---
 
@@ -12,10 +12,10 @@ Este documento registra el estado actual de desarrollo e implementación de la P
 
 | Componente | Progreso | Estado |
 |------------|----------|--------|
-| Frontend   | 🟡 En progreso | Implementación de interfaz de usuario y componentes principales |
-| Backend    | 🟡 En progreso | Desarrollo de API y lógica de negocio |
-| Base de datos | 🟡 En progreso | Estructura inicial implementada |
-| Despliegue | 🔴 No iniciado | Pendiente |
+| Frontend   | 🟡 En progreso | Implementación de interfaz de usuario y adaptación para modo offline |
+| Backend    | 🟡 En progreso | Desarrollo de API local y sistema de almacenamiento offline |
+| Base de datos | 🟡 En progreso | Migración a SQLite para soporte offline |
+| Instalador | 🔴 No iniciado | Pendiente desarrollo del instalador Windows |
 
 ---
 
@@ -28,16 +28,20 @@ Este documento registra el estado actual de desarrollo e implementación de la P
 - [x] Dashboard principal
 - [x] Formulario de carga de contratos existentes
 - [ ] Visualizador de documentos contractuales
-- [ ] Sistema de notificaciones
-- [ ] Panel de administración de usuarios
-- [ ] Módulo de reportes y estadísticas
+- [ ] Sistema de notificaciones local
+- [ ] Panel de administración de usuarios local
+- [ ] Módulo de reportes y estadísticas offline
+- [ ] Sistema de caché local
+- [ ] Sincronización diferida (cuando hay conexión)
+- [ ] Gestión de estado offline
 
 ### Tecnologías Utilizadas
 - Vue.js como framework principal
-- Vuex para gestión de estado
+- Pinia para gestión de estado
 - Vue Router para navegación
-- Axios para comunicación con API
+- IndexedDB para caché local
 - Tailwind CSS para estilos
+- Electron para empaquetado de escritorio
 
 ---
 
@@ -45,20 +49,23 @@ Este documento registra el estado actual de desarrollo e implementación de la P
 
 ### Funcionalidades Implementadas
 - [x] Estructura base de la API
-- [x] Sistema de autenticación y autorización
+- [x] Sistema de autenticación local
 - [x] CRUD básico para gestión de contratos
-- [x] Almacenamiento de documentos
-- [ ] Sistema de notificaciones automáticas para vencimientos
-- [ ] Motor de búsqueda avanzada para contratos
-- [ ] Generación de informes y estadísticas
-- [ ] Exportación de datos en múltiples formatos
+- [x] Almacenamiento de documentos local
+- [ ] Sistema de notificaciones locales
+- [ ] Motor de búsqueda offline
+- [ ] Generación de informes sin conexión
+- [ ] Sistema de backup local
+- [ ] Servicio de Windows
+- [ ] Instalador .exe
 
 ### Tecnologías Utilizadas
 - Node.js como entorno de ejecución
 - Express para framework de API
-- SQLite para base de datos
+- SQLite para base de datos local
 - JWT para autenticación
-- Bcrypt para encriptación
+- node-windows para servicio de Windows
+- electron-builder para empaquetado
 
 ---
 
@@ -70,9 +77,24 @@ Este documento registra el estado actual de desarrollo e implementación de la P
 - [x] Contratos
 - [x] Documentos
 - [ ] Metadatos de contratos
-- [ ] Notificaciones
-- [ ] Historial de accesos
-- [ ] Logs de auditoría
+- [ ] Notificaciones locales
+- [ ] Historial de accesos offline
+- [ ] Logs de auditoría local
+- [ ] Configuración local
+- [ ] Caché de búsqueda
+
+---
+
+## Instalador Windows
+
+### Componentes
+- [ ] Instalador .exe unificado
+- [ ] Configuración de servicio de Windows
+- [ ] Instalación de base de datos local
+- [ ] Configuración de permisos
+- [ ] Creación de directorios necesarios
+- [ ] Registro de servicio
+- [ ] Scripts de post-instalación
 
 ---
 
@@ -83,40 +105,39 @@ Este documento registra el estado actual de desarrollo e implementación de la P
 | Unitarias      | 🟡 Parcial | 40% |
 | Integración    | 🔴 No iniciado | 0% |
 | E2E            | 🔴 No iniciado | 0% |
-| Seguridad      | 🔴 No iniciado | 0% |
+| Offline        | 🔴 No iniciado | 0% |
+| Instalación    | 🔴 No iniciado | 0% |
 
 ---
 
 ## Próximos Pasos
 
 ### Prioridades a Corto Plazo (1-2 semanas)
-1. Completar módulo de visualización de contratos existentes
-2. Implementar sistema básico de notificaciones para vencimientos próximos
-3. Mejorar cobertura de pruebas unitarias
+1. Desarrollar estructura base del instalador Windows
+2. Implementar sistema de almacenamiento local
+3. Adaptar autenticación para modo offline
+4. Configurar servicio de Windows
 
 ### Objetivos a Mediano Plazo (1-2 meses)
-1. Implementar sistema avanzado de búsqueda y filtrado de contratos
-2. Desarrollar módulo completo de reportes y estadísticas
-3. Optimizar rendimiento del sistema con grandes volúmenes de contratos
+1. Completar sistema de caché local
+2. Implementar sincronización diferida
+3. Desarrollar sistema de backup local
+4. Pruebas de instalación y offline
 
 ### Metas a Largo Plazo (3+ meses)
-1. Implementar análisis predictivo para vencimientos y renovaciones automáticas
-2. Desarrollar versión móvil de la aplicación para consultas rápidas
-3. Añadir integraciones con sistemas de almacenamiento en la nube
+1. Optimización de rendimiento offline
+2. Sistema de actualización local
+3. Mejoras en seguridad local
+4. Documentación de instalación y mantenimiento
 
 ---
 
 ## Registro de Cambios
 
-### Versión 0.1.0 (Fecha)
-- Implementación inicial del proyecto
-- Estructura base de frontend y backend
-- Configuración de base de datos
-
-### Versión 0.2.0 (Fecha)
-- Implementación de autenticación
-- CRUD básico para contratos
-- Dashboard inicial
+### Versión 0.1.0 (25/03/2024)
+- Migración a arquitectura offline
+- Configuración inicial de SQLite
+- Preparación para instalador Windows
 
 ---
 
@@ -124,10 +145,10 @@ Este documento registra el estado actual de desarrollo e implementación de la P
 
 | Métrica | Valor Actual | Objetivo |
 |---------|--------------|----------|
-| Funcionalidades completadas | 35% | 100% |
+| Funcionalidades offline | 20% | 100% |
 | Cobertura de pruebas | 25% | 80% |
-| Errores críticos | 5 | 0 |
-| Rendimiento (tiempo de respuesta) | 1.2s | <0.5s |
+| Errores críticos | 8 | 0 |
+| Rendimiento offline | 2.5s | <1s |
 
 ---
 

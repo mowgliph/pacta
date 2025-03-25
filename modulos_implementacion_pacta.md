@@ -2,7 +2,7 @@
 
 Este documento detalla el estado actual de desarrollo de cada módulo funcional de la Plataforma de Automatización y Control de Contratos Empresariales (PACTA), mostrando el progreso tanto en el backend como en el frontend.
 
-## Fecha de última actualización: [Fecha actual]
+## Fecha de última actualización: [25/03/2024]
 
 ---
 
@@ -17,15 +17,37 @@ Este documento detalla el estado actual de desarrollo de cada módulo funcional 
 
 ---
 
+## 0. Módulo de Instalación y Configuración Local
+
+| Componente | Backend | Frontend | Observaciones |
+|------------|---------|----------|---------------|
+| Instalador Windows | 🔴 0% | 🔴 0% | Pendiente desarrollo completo |
+| Servicio de Windows | 🔴 0% | N/A | Configuración como servicio local |
+| Configuración inicial | 🔴 0% | 🔴 0% | Asistente de primera configuración |
+| Gestión de archivos locales | 🟠 20% | 🟠 10% | Estructura de directorios básica |
+
+**Tecnologías Backend:**
+- electron-builder para empaquetado
+- node-windows para servicio
+- SQLite para base de datos local
+- Scripts de instalación PowerShell
+
+**Tecnologías Frontend:**
+- Electron para interfaz de instalación
+- Vue.js para asistente de configuración
+- Componentes de progreso de instalación
+
+---
+
 ## 1. Módulo de Autenticación y Usuarios
 
 | Componente | Backend | Frontend | Observaciones |
 |------------|---------|----------|---------------|
-| Registro de usuarios | 🟢 90% | 🟢 95% | Falta implementar validación de correo electrónico |
-| Inicio de sesión | 🟢 100% | 🟢 100% | Completamente funcional con JWT |
-| Gestión de perfiles | 🟡 60% | 🟡 50% | En desarrollo la edición de perfiles |
-| Recuperación de contraseña | 🟡 70% | 🟡 80% | Pendiente integración con servicio de correo |
-| Roles y permisos | 🟡 75% | 🟠 30% | Backend con RBAC implementado, frontend en diseño |
+| Registro de usuarios | 🟢 90% | 🟢 95% | Solo administradores pueden crear usuarios |
+| Inicio de sesión | 🟢 100% | 🟢 100% | Autenticación local implementada |
+| Gestión de perfiles | 🟡 60% | 🟡 50% | Solo edición local de perfiles |
+| Recuperación de contraseña | 🔴 0% | 🔴 0% | Deshabilitado - solo admin local |
+| Roles y permisos | 🟡 75% | 🟠 30% | Permisos locales implementados |
 
 **Tecnologías Backend:**
 - JWT para autenticación
@@ -193,16 +215,36 @@ Este documento detalla el estado actual de desarrollo de cada módulo funcional 
 
 ---
 
+## 9. Módulo de Sincronización (Opcional)
+
+| Componente | Backend | Frontend | Observaciones |
+|------------|---------|----------|---------------|
+| Detección de conexión | 🔴 0% | 🔴 0% | Monitor de estado de red |
+| Sincronización diferida | 🔴 0% | 🔴 0% | Cola de cambios pendientes |
+| Resolución de conflictos | 🔴 0% | 🔴 0% | Estrategia de merge |
+| Backup en la nube | 🔴 0% | 🔴 0% | Respaldo cuando hay conexión |
+
+**Tecnologías Backend:**
+- Sistema de colas local
+- Detección de cambios
+- Resolución de conflictos
+- API de sincronización
+
+**Tecnologías Frontend:**
+- Indicadores de estado de conexión
+- Interfaz de resolución de conflictos
+- Monitor de sincronización
+
+---
+
 ## Estado de Integración entre Módulos
 
 | Integración | Estado | Observaciones |
 |-------------|--------|---------------|
-| Autenticación - Todos los módulos | 🟢 95% | Completa integración con sistema de permisos |
-| Contratos - Notificaciones | 🟡 70% | Eventos de vencimiento implementados |
-| Contratos - Búsqueda | 🟡 75% | Indexación básica funcional |
-| Contratos - Reportes | 🟠 60% | Datos disponibles para reportes principales |
-| Usuarios - Auditoría | 🟡 80% | Seguimiento de acciones de usuario |
-| Reportes - Exportación | 🟠 55% | Exportación de reportes básicos |
+| Instalador - Sistema Base | 🔴 0% | Pendiente desarrollo |
+| Autenticación Local - Todos los módulos | 🟡 70% | En proceso de adaptación |
+| Base de Datos Local - Módulos | 🟡 60% | Migración a SQLite en proceso |
+| Caché Local - Búsqueda | 🟠 30% | Diseño de estructura local |
 
 ---
 
@@ -210,17 +252,20 @@ Este documento detalla el estado actual de desarrollo de cada módulo funcional 
 
 ### Prioridades para Sprint Actual
 
-1. **Módulo de Contratos:**
-   - Finalizar implementación de metadatos personalizados
-   - Optimizar carga de documentos grandes
+1. **Módulo de Instalación:**
+   - Desarrollar estructura base del instalador
+   - Implementar scripts de configuración inicial
+   - Crear asistente de instalación
 
-2. **Módulo de Notificaciones:**
-   - Completar integración con servicio de correo
-   - Implementar centro de notificaciones en frontend
+2. **Módulo de Base de Datos Local:**
+   - Completar migración a SQLite
+   - Implementar sistema de backup local
+   - Configurar índices de búsqueda local
 
-3. **Módulo de Búsqueda:**
-   - Finalizar filtros avanzados
-   - Mejorar rendimiento de búsqueda
+3. **Módulo de Autenticación:**
+   - Adaptar para funcionamiento offline
+   - Implementar gestión local de usuarios
+   - Deshabilitar funciones online
 
 ---
 
