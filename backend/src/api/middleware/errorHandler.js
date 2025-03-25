@@ -1,5 +1,3 @@
-import { AppError } from '../utils/errors.js';
-import { ValidationError } from 'sequelize';
 import { Prisma } from '@prisma/client';
 import { logger } from '../../utils/logger.js';
 
@@ -14,49 +12,6 @@ export class AppError extends Error {
     Error.captureStackTrace(this, this.constructor);
   }
 }
-
-// Middleware para manejar errores de Sequelize
-export const handleSequelizeError = (err, req, res, next) => {
-  if (err instanceof ValidationError) {
-    const errors = err.errors.map(error => ({
-      field: error.path,
-      message: error.message,
-    }));
-
-    return res.status(400).json({
-      status: 'fail',
-      code: 'VALIDATION_ERROR',
-      message: 'Validation failed',
-      errors,
-    });
-  }
-
-  if (err.name === 'SequelizeUniqueConstraintError') {
-    return res.status(409).json({
-      status: 'fail',
-      code: 'UNIQUE_CONSTRAINT_ERROR',
-      message: 'Duplicate entry',
-      errors: err.errors.map(error => ({
-        field: error.path,
-        message: error.message,
-      })),
-    });
-  }
-
-  if (err.name === 'SequelizeForeignKeyConstraintError') {
-    return res.status(400).json({
-      status: 'fail',
-      code: 'FOREIGN_KEY_ERROR',
-      message: 'Invalid reference to related record',
-      errors: err.errors.map(error => ({
-        field: error.path,
-        message: error.message,
-      })),
-    });
-  }
-
-  next(err);
-};
 
 // Middleware principal de manejo de errores
 export const errorHandler = (err, req, res, next) => {

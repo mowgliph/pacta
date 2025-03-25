@@ -1,6 +1,5 @@
 import { User, License, ActivityLog } from '../models/index.js';
 import bcrypt from 'bcryptjs';
-import { Op } from 'sequelize';
 import { BaseController } from './BaseController.js';
 import UserService from '../../services/UserService.js';
 import { ValidationService } from '../../services/ValidationService.js';
@@ -8,6 +7,8 @@ import { ResponseService } from '../../services/ResponseService.js';
 import { LoggingService } from '../../services/LoggingService.js';
 import { CacheService } from '../../services/CacheService.js';
 import { AuthenticationError, ValidationError } from '../../utils/errors.js';
+import { prisma } from '../../database/prisma.js';
+import { logger } from '../../utils/logger.js';
 
 /**
  * Controlador para la gestión de usuarios

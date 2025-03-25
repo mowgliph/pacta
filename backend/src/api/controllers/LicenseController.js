@@ -1,6 +1,5 @@
-import License from '../models/License.js';
 import NotificationService from '../services/NotificationService.js';
-import { Op } from 'sequelize';
+import License from '../models/License.js';
 
 class LicenseController {
   // Obtener el estado de la licencia actual

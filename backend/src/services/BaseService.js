@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { logger } from '../utils/logger.js';
 import { ValidationError, DatabaseError, NotFoundError, ConflictError } from '../utils/errors.js';
-import repositories from '../database/repositories/index.js';
+
 
 /**
  * Clase base para todos los servicios
@@ -163,11 +163,15 @@ export class BaseService {
    * @protected
    */
   _handleError(error) {
-    if (
-      error.name === 'SequelizeValidationError' ||
-      error.name === 'SequelizeUniqueConstraintError'
-    ) {
-      throw new ValidationError(error.message, error.errors);
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') {
+        throw new ValidationError('Validation error', [{
+          path: error.meta?.target?.[0],
+          message: `Ya existe un registro con este ${error.meta?.target?.[0]}`
+        }]);
+      } else if (error.code === 'P2025') {
+        throw new NotFoundError('Registro no encontrado');
+      }
     }
 
     // Re-lanzar errores conocidos

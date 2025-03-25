@@ -1,8 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { authenticateToken, isAdmin, requiresLicense } from '../api/middleware/auth.js';
-import { Contract } from '../models/index.js';
-import { Op } from 'sequelize';
+import { prisma } from '../../database/prisma.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -62,7 +61,7 @@ router.post(
       .withMessage('El número de contrato es obligatorio')
       .trim()
       .custom(async value => {
-        const existingContract = await Contract.findOne({ where: { contractNumber: value } });
+        const existingContract = await prisma.contract.findUnique({ where: { contractNumber: value } });
         if (existingContract) {
           throw new Error('El número de contrato ya existe');
         }
@@ -134,10 +133,10 @@ router.put(
       .optional()
       .trim()
       .custom(async (value, { req }) => {
-        const existingContract = await Contract.findOne({
+        const existingContract = await prisma.contract.findUnique({
           where: {
             contractNumber: value,
-            id: { [Op.ne]: req.params.id },
+            id: { not: req.params.id },
           },
         });
         if (existingContract) {

@@ -1,24 +1,21 @@
 import jwt from 'jsonwebtoken';
 import { User, License } from '../models/index.js';
-import { Op } from 'sequelize';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
+import { prisma } from '../../database/prisma.js';
+import { logger } from '../../utils/logger.js';
 
 // Controller para login
 export const login = async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // Buscar usuario usando Sequelize
-    const foundUser = await User.findOne({
+    // Buscar usuario usando Prisma
+    const foundUser = await prisma.user.findUnique({
       where: { username },
-      include: [
-        {
-          model: License,
-          as: 'license',
-          required: false,
-        },
-      ],
+      include: {
+        license: true
+      }
     });
 
     if (!foundUser) {

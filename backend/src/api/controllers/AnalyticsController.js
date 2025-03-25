@@ -2,6 +2,9 @@ import moment from 'moment';
 import { Contract, User, ActivityLog } from '../models/index.js';
 import { Op } from 'sequelize';
 import sequelize from 'sequelize';
+import { prisma } from '../../database/prisma.js';
+import { logger } from '../../utils/logger.js';
+import { ContractStatus, ContractType } from '@prisma/client';
 
 /**
  * Calcular tendencias para períodos anteriores
