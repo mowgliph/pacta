@@ -12,6 +12,7 @@ import {
   ConflictError as _ConflictError,
   AuthenticationError as _AuthenticationError,
 } from '../../utils/errors.js';
+import { logger } from '../../utils/logger.js';
 
 export class BaseController {
   constructor(service) {
@@ -295,5 +296,90 @@ export class BaseController {
       return this.sendError(res, new Error('No file uploaded'), 400);
     }
     next();
+  }
+
+  /**
+   * Método para responder con éxito
+   * @param {Object} res - Objeto de respuesta de Express
+   * @param {any} data - Datos a enviar
+   * @param {number} statusCode - Código de estado HTTP (default: 200)
+   * @param {string} message - Mensaje opcional
+   */
+  sendSuccess(res, data, statusCode = 200, message = '') {
+    const response = {
+      status: 'success',
+      message,
+    };
+
+    // Solo incluir datos si no es undefined
+    if (data !== undefined) {
+      response.data = data;
+    }
+
+    return res.status(statusCode).json(response);
+  }
+
+  /**
+   * Método para responder con error
+   * @param {Object} res - Objeto de respuesta de Express
+   * @param {string} message - Mensaje de error
+   * @param {number} statusCode - Código de estado HTTP (default: 400)
+   * @param {string} code - Código de error (default: ERROR)
+   * @param {Object} errors - Errores de validación
+   */
+  sendError(res, message, statusCode = 400, code = 'ERROR', errors = null) {
+    const response = {
+      status: 'error',
+      code,
+      message,
+    };
+
+    // Solo incluir errores si hay
+    if (errors) {
+      response.errors = errors;
+    }
+
+    return res.status(statusCode).json(response);
+  }
+
+  /**
+   * Método para manejar excepciones en controladores
+   * @param {Error} error - Error capturado
+   * @param {Object} res - Objeto de respuesta de Express
+   * @param {string} context - Contexto del error
+   */
+  handleError(error, res, context = '') {
+    logger.error(`Error en ${context || this.constructor.name}`, {
+      message: error.message,
+      stack: error.stack,
+    });
+
+    // Usar código de estado del error si está disponible
+    const statusCode = error.statusCode || 500;
+    const errorCode = error.code || 'SERVER_ERROR';
+    const message = error.message || 'Error interno del servidor';
+    const errors = error.errors || null;
+
+    return this.sendError(res, message, statusCode, errorCode, errors);
+  }
+
+  /**
+   * Método para enviar una paginación
+   * @param {Object} res - Objeto de respuesta de Express
+   * @param {Object} result - Resultado con data y metadata
+   * @param {number} statusCode - Código de estado HTTP (default: 200)
+   * @param {string} message - Mensaje opcional
+   */
+  sendPaginated(res, result, statusCode = 200, message = '') {
+    const { data, meta } = result;
+    
+    const response = {
+      status: 'success',
+      message,
+      data,
+      meta,
+    };
+
+    return res.status(statusCode).json(response);
   }
 }

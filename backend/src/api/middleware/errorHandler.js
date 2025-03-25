@@ -1,19 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { logger } from '../../utils/logger.js';
-import { AppError, NotFoundError } from '../../utils/errors.js';
-import { ValidationError } from 'sequelize';
-
-// Clase personalizada para errores de la aplicación
-export class AppError extends Error {
-  constructor(message, statusCode) {
-    super(message);
-    this.statusCode = statusCode;
-    this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
-    this.isOperational = true;
-
-    Error.captureStackTrace(this, this.constructor);
-  }
-}
+import { AppError, NotFoundError, ValidationError } from '../../utils/errors.js';
 
 // Middleware principal de manejo de errores
 export const errorHandler = (err, req, res, next) => {
@@ -32,6 +19,39 @@ export const errorHandler = (err, req, res, next) => {
     logger.warn('Error del cliente', errorDetails);
   } else {
     logger.error('Error no manejado', errorDetails);
+  }
+  
+  // Manejar errores de Prisma
+  if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    switch (err.code) {
+      case 'P2002': // Clave única violada
+        return res.status(409).json({
+          status: 'error',
+          code: 'CONFLICT',
+          message: 'Ya existe un registro con estos datos',
+          fields: err.meta?.target
+        });
+      case 'P2025': // Registro no encontrado
+        return res.status(404).json({
+          status: 'error',
+          code: 'NOT_FOUND',
+          message: 'Registro no encontrado'
+        });
+      case 'P2003': // Restricción de clave foránea
+        return res.status(400).json({
+          status: 'error',
+          code: 'FOREIGN_KEY_CONSTRAINT',
+          message: 'Referencia a registro no existente',
+          field: err.meta?.field_name
+        });
+      default:
+        logger.error('Prisma error', { code: err.code, message: err.message });
+        return res.status(500).json({
+          status: 'error',
+          code: 'DATABASE_ERROR',
+          message: 'Error en la base de datos'
+        });
+    }
   }
   
   // Si es un error de Sequelize, transformarlo a un error de validación

@@ -1,251 +1,325 @@
-import jwt from 'jsonwebtoken';
 import { User, License } from '../models/index.js';
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
 import { prisma } from '../../database/prisma.js';
 import { logger } from '../../utils/logger.js';
+import { BaseController } from './BaseController.js';
+import { generateTokens, refreshToken as refresh } from '../middleware/authMiddleware.js';
+import { compareSync, hashSync } from 'bcrypt';
+import { ValidationError, UnauthorizedError, NotFoundError } from '../../utils/errors.js';
 
-// Controller para login
-export const login = async (req, res) => {
-  try {
-    const { username, password } = req.body;
-
-    // Buscar usuario usando Prisma
-    const foundUser = await prisma.user.findUnique({
-      where: { username },
-      include: {
-        license: true
+/**
+ * Controlador para gestionar la autenticación de usuarios
+ */
+class AuthController extends BaseController {
+  /**
+   * Inicia sesión de un usuario
+   * @param {Object} req - Objeto de solicitud
+   * @param {Object} res - Objeto de respuesta
+   */
+  async login(req, res) {
+    try {
+      const { email, password } = req.body;
+      
+      // Validar datos de entrada
+      if (!email || !password) {
+        throw new ValidationError('Email y contraseña son requeridos');
       }
-    });
-
-    if (!foundUser) {
-      return res.status(401).json({
-        message: 'Usuario no encontrado',
-        status: 401,
+      
+      // Buscar usuario por email
+      const user = await prisma.user.findUnique({
+        where: { email },
       });
-    }
-
-    // Verificar contraseña
-    const validPassword = await foundUser.validatePassword(password);
-    if (!validPassword) {
-      return res.status(401).json({
-        message: 'Contraseña incorrecta',
-        status: 401,
-      });
-    }
-
-    // Generar token JWT
-    const token = jwt.sign(
-      {
-        id: foundUser.id,
-        username: foundUser.username,
-        role: foundUser.role,
-      },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' },
-    );
-
-    // Enviar respuesta
-    res.json({
-      message: 'Inicio de sesión exitoso',
-      user: {
-        id: foundUser.id,
-        username: foundUser.username,
-        role: foundUser.role,
-      },
-      license: foundUser.license,
-      token,
-    });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({
-      message: 'Error interno del servidor',
-      status: 500,
-    });
-  }
-};
-
-// Controller para olvido de contraseña
-export const forgotPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    // Buscar usuario por email
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      // No indicamos si el email existe o no por razones de seguridad
-      return res.status(200).json({
-        message: 'Si el correo existe, recibirás instrucciones para restablecer tu contraseña.',
-      });
-    }
-
-    // Generar token aleatorio
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hora de validez
-
-    // Guardar token y su expiración en la base de datos
-    await user.update({
-      resetToken,
-      resetTokenExpiry,
-    });
-
-    // Configurar el transporte de correo
-    const transporter = nodemailer.createTransport({
-      host: process.env.MAIL_HOST || 'smtp.example.com',
-      port: process.env.MAIL_PORT || 587,
-      secure: process.env.MAIL_SECURE === 'true',
-      auth: {
-        user: process.env.MAIL_USER || 'user@example.com',
-        pass: process.env.MAIL_PASSWORD || 'password',
-      },
-    });
-
-    // URL para restablecer contraseña (frontend)
-    const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password/${resetToken}`;
-
-    // Configurar el email
-    const mailOptions = {
-      from: process.env.MAIL_FROM || '"PACTA System" <noreply@example.com>',
-      to: user.email,
-      subject: 'Restablecimiento de contraseña - PACTA',
-      html: `
-        <p>Has solicitado restablecer tu contraseña.</p>
-        <p>Haz clic en el siguiente enlace para establecer una nueva contraseña:</p>
-        <a href="${resetUrl}">Restablecer contraseña</a>
-        <p>Este enlace es válido por 1 hora.</p>
-        <p>Si no solicitaste este cambio, puedes ignorar este correo.</p>
-      `,
-    };
-
-    // Enviar el email
-    await transporter.sendMail(mailOptions);
-
-    res.status(200).json({
-      message: 'Si el correo existe, recibirás instrucciones para restablecer tu contraseña.',
-    });
-  } catch (error) {
-    console.error('Forgot password error:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
-  }
-};
-
-// Controller para verificar token de restablecimiento
-export const verifyResetToken = async (req, res) => {
-  try {
-    const { token } = req.body;
-
-    // Buscar usuario con el token y que no haya expirado
-    const user = await prisma.user.findFirst({
-      where: {
-        resetToken: token,
-        resetTokenExpiry: { gt: new Date() }
+      
+      // Verificar si el usuario existe
+      if (!user) {
+        throw new UnauthorizedError('Credenciales inválidas');
       }
-    });
-
-    if (!user) {
-      return res.status(400).json({ message: 'Token inválido o expirado' });
-    }
-
-    res.status(200).json({ valid: true });
-  } catch (error) {
-    console.error('Token verification error:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
-  }
-};
-
-// Controller para restablecer contraseña
-export const resetPassword = async (req, res) => {
-  try {
-    const { token, password } = req.body;
-
-    // Buscar usuario con el token y que no haya expirado
-    const user = await prisma.user.findFirst({
-      where: {
-        resetToken: token,
-        resetTokenExpiry: { gt: new Date() }
+      
+      // Verificar si la cuenta está activa
+      if (user.status !== 'ACTIVE') {
+        throw new UnauthorizedError('Cuenta inactiva o suspendida');
       }
-    });
-
-    if (!user) {
-      return res.status(400).json({ message: 'Token inválido o expirado' });
+      
+      // Verificar contraseña
+      if (!compareSync(password, user.password)) {
+        // Registrar intento fallido
+        logger.warn('Intento de login fallido', { email });
+        throw new UnauthorizedError('Credenciales inválidas');
+      }
+      
+      // Generar tokens
+      const tokens = generateTokens(user);
+      
+      // Actualizar último login
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { lastLogin: new Date() },
+      });
+      
+      // Registrar login exitoso
+      logger.info('Login exitoso', { userId: user.id });
+      
+      // Responder con tokens
+      return this.sendSuccess(res, {
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,
+        },
+        ...tokens,
+      });
+    } catch (error) {
+      return this.handleError(error, res, 'login');
     }
-
-    // Actualizar contraseña y limpiar tokens
-    await user.update({
-      password: password,
-      resetToken: null,
-      resetTokenExpiry: null,
-    });
-
-    res.status(200).json({ message: 'Contraseña restablecida correctamente' });
-  } catch (error) {
-    console.error('Password reset error:', error);
-    res.status(500).json({ message: 'Error interno del servidor' });
   }
-};
-
-// Controller para activar licencia
-export const activateLicense = async (req, res) => {
-  try {
-    const { licenseCode } = req.body;
-    const userId = req.user.id;
-
-    // Validar código de promoción
-    if (!['DEMOPACTA', 'TRYPACTA'].includes(licenseCode)) {
-      return res.status(400).json({
-        message: 'Código de promoción inválido',
-        status: 400,
+  
+  /**
+   * Registra un nuevo usuario
+   * @param {Object} req - Objeto de solicitud
+   * @param {Object} res - Objeto de respuesta
+   */
+  async register(req, res) {
+    try {
+      const { firstName, lastName, email, password } = req.body;
+      
+      // Validar datos de entrada
+      if (!firstName || !lastName || !email || !password) {
+        throw new ValidationError('Todos los campos son requeridos');
+      }
+      
+      // Verificar si el email ya está registrado
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
       });
-    }
-
-    // Buscar usuario
-    const user = await User.findByPk(userId);
-    if (!user) {
-      return res.status(404).json({
-        message: 'Usuario no encontrado',
-        status: 404,
+      
+      if (existingUser) {
+        throw new ValidationError('El email ya está registrado');
+      }
+      
+      // Crear usuario
+      const hashedPassword = hashSync(password, 10);
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      
+      const user = await prisma.user.create({
+        data: {
+          firstName,
+          lastName,
+          email,
+          password: hashedPassword,
+          role: 'USER',
+          status: 'PENDING',
+          verificationToken,
+        },
       });
-    }
-
-    // Calcular fecha de expiración
-    const expirationDate = new Date();
-    expirationDate.setDate(expirationDate.getDate() + (licenseCode === 'DEMOPACTA' ? 30 : 7));
-
-    // Crear o actualizar licencia
-    const licenseType = licenseCode === 'DEMOPACTA' ? 'DEMO' : 'TRIAL';
-
-    const [license, created] = await License.findOrCreate({
-      where: { licenseKey: licenseCode },
-      defaults: {
-        userId: userId,
-        licenseType: licenseType,
-        description: `Licencia ${licenseType} activada el ${new Date().toLocaleDateString()}`,
-        active: true,
-        expiryDate: expirationDate,
-      },
-    });
-
-    // Si no se creó porque ya existía, actualizarla
-    if (!created) {
-      await license.update({
-        userId: userId,
-        licenseType: licenseType,
-        description: `Licencia ${licenseType} renovada el ${new Date().toLocaleDateString()}`,
-        active: true,
-        expiryDate: expirationDate,
+      
+      // Registrar actividad
+      await prisma.activityLog.create({
+        data: {
+          userId: user.id,
+          action: 'REGISTER',
+          entityType: 'User',
+          entityId: user.id.toString(),
+          details: 'Registro de usuario',
+        },
       });
+      
+      // Enviar email de verificación (aquí iría el código)
+      
+      // Responder exitosamente
+      return this.sendSuccess(
+        res,
+        {
+          message: 'Usuario registrado correctamente. Por favor verifica tu email.',
+          userId: user.id,
+        },
+        201
+      );
+    } catch (error) {
+      return this.handleError(error, res, 'register');
     }
-
-    res.status(200).json({
-      message: `Licencia ${licenseType} activada correctamente`,
-      license: license,
-      status: 200,
-    });
-  } catch (error) {
-    console.error('License activation error:', error);
-    res.status(500).json({
-      message: 'Error al activar la licencia',
-      status: 500,
-    });
   }
-};
+  
+  /**
+   * Refresca el token de acceso
+   * @param {Object} req - Objeto de solicitud
+   * @param {Object} res - Objeto de respuesta
+   */
+  async refreshToken(req, res) {
+    try {
+      const { refreshToken: token } = req.body;
+      
+      if (!token) {
+        throw new ValidationError('Token de refresco requerido');
+      }
+      
+      // Refrescar token
+      const tokens = await refresh(token);
+      
+      return this.sendSuccess(res, tokens);
+    } catch (error) {
+      return this.handleError(error, res, 'refreshToken');
+    }
+  }
+  
+  /**
+   * Solicita restablecimiento de contraseña
+   * @param {Object} req - Objeto de solicitud
+   * @param {Object} res - Objeto de respuesta
+   */
+  async forgotPassword(req, res) {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        throw new ValidationError('Email requerido');
+      }
+      
+      // Verificar si el usuario existe
+      const user = await prisma.user.findUnique({
+        where: { email },
+      });
+      
+      if (!user) {
+        // No revelar si el usuario existe o no
+        return this.sendSuccess(res, {
+          message: 'Si el email está registrado, recibirás instrucciones para restablecer tu contraseña',
+        });
+      }
+      
+      // Generar token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpiry = new Date();
+      resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1); // 1 hora
+      
+      // Guardar token
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          resetToken,
+          resetTokenExpiry,
+        },
+      });
+      
+      // Enviar email (aquí iría el código)
+      
+      return this.sendSuccess(res, {
+        message: 'Si el email está registrado, recibirás instrucciones para restablecer tu contraseña',
+      });
+    } catch (error) {
+      return this.handleError(error, res, 'forgotPassword');
+    }
+  }
+  
+  /**
+   * Restablece la contraseña
+   * @param {Object} req - Objeto de solicitud
+   * @param {Object} res - Objeto de respuesta
+   */
+  async resetPassword(req, res) {
+    try {
+      const { token, password } = req.body;
+      
+      if (!token || !password) {
+        throw new ValidationError('Token y nueva contraseña son requeridos');
+      }
+      
+      // Buscar usuario con token válido
+      const user = await prisma.user.findFirst({
+        where: {
+          resetToken: token,
+          resetTokenExpiry: {
+            gt: new Date(),
+          },
+        },
+      });
+      
+      if (!user) {
+        throw new UnauthorizedError('Token inválido o expirado');
+      }
+      
+      // Actualizar contraseña
+      const hashedPassword = hashSync(password, 10);
+      
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          password: hashedPassword,
+          resetToken: null,
+          resetTokenExpiry: null,
+        },
+      });
+      
+      // Registrar actividad
+      await prisma.activityLog.create({
+        data: {
+          userId: user.id,
+          action: 'RESET_PASSWORD',
+          entityType: 'User',
+          entityId: user.id.toString(),
+          details: 'Restablecimiento de contraseña',
+        },
+      });
+      
+      return this.sendSuccess(res, {
+        message: 'Contraseña restablecida correctamente',
+      });
+    } catch (error) {
+      return this.handleError(error, res, 'resetPassword');
+    }
+  }
+  
+  /**
+   * Verifica el email de un usuario
+   * @param {Object} req - Objeto de solicitud
+   * @param {Object} res - Objeto de respuesta
+   */
+  async verifyEmail(req, res) {
+    try {
+      const { token } = req.params;
+      
+      if (!token) {
+        throw new ValidationError('Token requerido');
+      }
+      
+      // Buscar usuario con token
+      const user = await prisma.user.findFirst({
+        where: { verificationToken: token },
+      });
+      
+      if (!user) {
+        throw new NotFoundError('Token inválido');
+      }
+      
+      // Activar cuenta
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          status: 'ACTIVE',
+          verificationToken: null,
+          emailVerified: true,
+        },
+      });
+      
+      // Registrar actividad
+      await prisma.activityLog.create({
+        data: {
+          userId: user.id,
+          action: 'VERIFY_EMAIL',
+          entityType: 'User',
+          entityId: user.id.toString(),
+          details: 'Verificación de email',
+        },
+      });
+      
+      return this.sendSuccess(res, {
+        message: 'Email verificado correctamente',
+      });
+    } catch (error) {
+      return this.handleError(error, res, 'verifyEmail');
+    }
+  }
+}
+
+export default AuthController;
