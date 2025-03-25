@@ -1,4 +1,3 @@
-import { User, License } from '../models/index.js';
 import crypto from 'crypto';
 import { prisma } from '../../database/prisma.js';
 import { logger } from '../../utils/logger.js';
