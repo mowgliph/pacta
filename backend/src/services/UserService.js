@@ -10,13 +10,11 @@ import {
   NotFoundError,
   AuthenticationError,
 } from '../utils/errors.js';
-import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import config from '../config/app.config.js';
 import { LoggingService } from './LoggingService.js';
 import { CacheService } from './CacheService.js';
 import { ValidationService } from './ValidationService.js';
-import { ResponseService } from './ResponseService.js';
 
 export class UserService extends BaseService {
   constructor() {
@@ -36,27 +34,15 @@ export class UserService extends BaseService {
    */
   async register(userData) {
     try {
-      // Validate user data
       const validatedData = await this.validation.validateUserRegistration(userData);
-
-      // Check if user already exists
       const existingUser = await this.userRepository.findByEmail(validatedData.email);
       if (existingUser) {
         throw new ConflictError('Email already registered');
       }
-
-      // Create user
       const user = await this.userRepository.create(validatedData);
-
-      // Generate verification token
       await this.userRepository.updateEmailVerification(user.id, false);
-
-      // Log registration
       this.logger.info('User registered', { userId: user.id, email: user.email });
-
-      // Invalidate cache
       await this.cacheService.invalidateUserCache(user.id);
-
       return user;
     } catch (error) {
       this.logger.error('User registration failed', { error });
@@ -73,35 +59,21 @@ export class UserService extends BaseService {
    */
   async login(email, password) {
     try {
-      // Find user
       const user = await this.userRepository.findByEmail(email);
       if (!user) {
         throw new AuthenticationError('Invalid credentials');
       }
-
-      // Check password
       const isValidPassword = await user.validatePassword(password);
       if (!isValidPassword) {
         throw new AuthenticationError('Invalid credentials');
       }
-
-      // Check user status
       if (user.status !== 'active') {
         throw new AuthenticationError('Account is not active');
       }
-
-      // Update last login
       await this.userRepository.updateLastLogin(user.id);
-
-      // Log login
       this.logger.info('User logged in', { userId: user.id, email: user.email });
-
-      // Invalidate cache
       await this.cacheService.invalidateUserCache(user.id);
-
-      // Generate tokens
       const tokens = this._generateTokens(user);
-
       return {
         user: user.toJSON(),
         ...tokens,
@@ -125,19 +97,10 @@ export class UserService extends BaseService {
       if (!user) {
         throw new NotFoundError('User not found');
       }
-
-      // Validate profile data
       const validatedData = await this.validation.validateUserProfile(userData);
-
-      // Update profile
       await this.userRepository.updateProfile(userId, validatedData);
-
-      // Log profile update
       this.logger.info('User profile updated', { userId });
-
-      // Invalidate cache
       await this.cacheService.invalidateUserCache(userId);
-
       return await this.userRepository.findById(userId);
     } catch (error) {
       this.logger.error('Profile update failed', { error });
@@ -155,21 +118,14 @@ export class UserService extends BaseService {
    * @throws {AuthenticationError} - Si la contraseña actual es incorrecta
    */
   async changePassword(userId, currentPassword, newPassword) {
-    // Validar nueva contraseña
     if (!newPassword || newPassword.length < 8) {
       throw new ValidationError('Password must be at least 8 characters');
     }
-
-    // Obtener usuario
     const user = await this.getById(userId);
-
-    // Verificar contraseña actual
     const isPasswordValid = await user.comparePassword(currentPassword);
     if (!isPasswordValid) {
       throw new AuthenticationError('Current password is incorrect');
     }
-
-    // Actualizar contraseña
     await this.update(userId, { password: newPassword });
     return true;
   }
@@ -186,20 +142,12 @@ export class UserService extends BaseService {
       if (!user) {
         throw new NotFoundError('User not found');
       }
-
-      // Validate role
       if (!['admin', 'user', 'moderator'].includes(role)) {
         throw new ValidationError('Invalid role');
       }
-
       await this.userRepository.updateRole(userId, role);
-
-      // Log role update
       this.logger.info('User role updated', { userId, role });
-
-      // Invalidate cache
       await this.cacheService.invalidateUserCache(userId);
-
       return await this.userRepository.findById(userId);
     } catch (error) {
       this.logger.error('Role update failed', { error });
@@ -219,20 +167,12 @@ export class UserService extends BaseService {
       if (!user) {
         throw new NotFoundError('User not found');
       }
-
-      // Validate status
       if (!['active', 'inactive', 'suspended'].includes(status)) {
         throw new ValidationError('Invalid status');
       }
-
       await this.userRepository.updateStatus(userId, status);
-
-      // Log status update
       this.logger.info('User status updated', { userId, status });
-
-      // Invalidate cache
       await this.cacheService.invalidateUserCache(userId);
-
       return await this.userRepository.findById(userId);
     } catch (error) {
       this.logger.error('Status update failed', { error });
@@ -263,13 +203,10 @@ export class UserService extends BaseService {
       email: user.email,
       role: user.role,
     };
-
     const accessToken = jwt.sign(userData, config.jwtSecret, { expiresIn: config.jwtExpiresIn });
-
     const refreshToken = jwt.sign(userData, config.jwtRefreshSecret, {
       expiresIn: config.jwtRefreshExpiresIn,
     });
-
     return {
       accessToken,
       refreshToken,
@@ -287,10 +224,18 @@ export class UserService extends BaseService {
     const errors = [];
 
     // Validar campos requeridos
-    if (!data.email) errors.push('Email is required');
-    if (!data.password) errors.push('Password is required');
-    if (!data.firstName) errors.push('First name is required');
-    if (!data.lastName) errors.push('Last name is required');
+    if (!data.email) {
+      errors.push('Email is required');
+    }
+    if (!data.password) {
+      errors.push('Password is required');
+    }
+    if (!data.firstName) {
+      errors.push('First name is required');
+    }
+    if (!data.lastName) {
+      errors.push('Last name is required');
+    }
 
     // Validar formato de email
     if (data.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email)) {
@@ -313,16 +258,10 @@ export class UserService extends BaseService {
       if (!user) {
         throw new NotFoundError('User not found');
       }
-
       const refreshToken = this.userRepository.generateToken();
       await this.userRepository.updateRefreshToken(userId, refreshToken);
-
-      // Log token refresh
       this.logger.info('User token refreshed', { userId });
-
-      // Invalidate cache
       await this.cacheService.invalidateUserCache(userId);
-
       return refreshToken;
     } catch (error) {
       this.logger.error('Token refresh failed', { error });
@@ -336,15 +275,9 @@ export class UserService extends BaseService {
       if (!user) {
         throw new ValidationError('Invalid verification token');
       }
-
       await this.userRepository.updateEmailVerification(user.id, true);
-
-      // Log email verification
       this.logger.info('User email verified', { userId: user.id });
-
-      // Invalidate cache
       await this.cacheService.invalidateUserCache(user.id);
-
       return user;
     } catch (error) {
       this.logger.error('Email verification failed', { error });
@@ -358,15 +291,9 @@ export class UserService extends BaseService {
       if (!user) {
         throw new NotFoundError('User not found');
       }
-
       await this.userRepository.updatePasswordResetToken(user.id);
-
-      // Log password reset request
       this.logger.info('Password reset requested', { userId: user.id });
-
-      // Invalidate cache
       await this.cacheService.invalidateUserCache(user.id);
-
       return user;
     } catch (error) {
       this.logger.error('Password reset request failed', { error });
@@ -380,20 +307,11 @@ export class UserService extends BaseService {
       if (!user) {
         throw new ValidationError('Invalid or expired reset token');
       }
-
-      // Validate new password
       const validatedPassword = await this.validation.validatePassword(newPassword);
-
-      // Update password
       await this.userRepository.update(user.id, { password: validatedPassword });
       await this.userRepository.clearPasswordResetToken(user.id);
-
-      // Log password reset
       this.logger.info('User password reset', { userId: user.id });
-
-      // Invalidate cache
       await this.cacheService.invalidateUserCache(user.id);
-
       return user;
     } catch (error) {
       this.logger.error('Password reset failed', { error });
@@ -408,10 +326,8 @@ export class UserService extends BaseService {
       if (cachedUsers) {
         return cachedUsers;
       }
-
       const users = await this.userRepository.findActiveUsers();
-      await this.cacheService.set(cacheKey, users, 300); // Cache for 5 minutes
-
+      await this.cacheService.set(cacheKey, users, 300); // Cache por 5 minutos
       return users;
     } catch (error) {
       this.logger.error('Failed to get active users', { error });
@@ -426,10 +342,8 @@ export class UserService extends BaseService {
       if (cachedUsers) {
         return cachedUsers;
       }
-
       const users = await this.userRepository.findInactiveUsers();
-      await this.cacheService.set(cacheKey, users, 300); // Cache for 5 minutes
-
+      await this.cacheService.set(cacheKey, users, 300); // Cache por 5 minutos
       return users;
     } catch (error) {
       this.logger.error('Failed to get inactive users', { error });
@@ -444,10 +358,8 @@ export class UserService extends BaseService {
       if (cachedUsers) {
         return cachedUsers;
       }
-
       const users = await this.userRepository.findSuspendedUsers();
-      await this.cacheService.set(cacheKey, users, 300); // Cache for 5 minutes
-
+      await this.cacheService.set(cacheKey, users, 300); // Cache por 5 minutos
       return users;
     } catch (error) {
       this.logger.error('Failed to get suspended users', { error });
@@ -462,10 +374,8 @@ export class UserService extends BaseService {
       if (cachedUsers) {
         return cachedUsers;
       }
-
       const users = await this.userRepository.findUnverifiedUsers();
-      await this.cacheService.set(cacheKey, users, 300); // Cache for 5 minutes
-
+      await this.cacheService.set(cacheKey, users, 300); // Cache por 5 minutos
       return users;
     } catch (error) {
       this.logger.error('Failed to get unverified users', { error });
