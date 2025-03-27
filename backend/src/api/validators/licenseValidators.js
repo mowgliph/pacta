@@ -18,13 +18,10 @@ const licenseBaseSchema = z.object({
 
 // License creation schema
 export const createLicenseSchema = () => {
-  return licenseBaseSchema.refine(
-    data => new Date(data.startDate) < new Date(data.expiryDate),
-    {
-      message: 'La fecha de inicio debe ser anterior a la fecha de expiración',
-      path: ['expiryDate'],
-    }
-  );
+  return licenseBaseSchema.refine(data => new Date(data.startDate) < new Date(data.expiryDate), {
+    message: 'La fecha de inicio debe ser anterior a la fecha de expiración',
+    path: ['expiryDate'],
+  });
 };
 
 // License update schema
@@ -40,7 +37,7 @@ export const updateLicenseSchema = () => {
     {
       message: 'La fecha de inicio debe ser anterior a la fecha de expiración',
       path: ['expiryDate'],
-    }
+    },
   );
 };
 
@@ -54,12 +51,18 @@ export const searchLicenseSchema = () => {
     expiryDateTo: z.string().datetime().optional(),
     customerId: z.string().uuid('ID de cliente inválido').optional(),
     contactEmail: z.string().email('Email inválido').optional(),
-    page: z.number().int().positive().optional().or(
-      z.string().transform(val => parseInt(val, 10))
-    ),
-    limit: z.number().int().positive().optional().or(
-      z.string().transform(val => parseInt(val, 10))
-    ),
+    page: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .or(z.string().transform(val => parseInt(val, 10))),
+    limit: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .or(z.string().transform(val => parseInt(val, 10))),
     sortBy: z.string().optional(),
     sortDirection: z.enum(['asc', 'desc']).optional(),
   });
@@ -68,9 +71,10 @@ export const searchLicenseSchema = () => {
 // License ID schema
 export const licenseIdSchema = () => {
   return z.object({
-    id: z.string().uuid('ID de licencia inválido').or(
-      z.number().int().positive('ID de licencia inválido')
-    ),
+    id: z
+      .string()
+      .uuid('ID de licencia inválido')
+      .or(z.number().int().positive('ID de licencia inválido')),
   });
 };
 
@@ -120,5 +124,5 @@ export const licenseValidators = {
   licenseKeySchema,
   activateLicenseSchema,
   activateTrialSchema,
-  licenseStatsSchema
-}; 
+  licenseStatsSchema,
+};

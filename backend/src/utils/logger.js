@@ -20,13 +20,13 @@ const consoleFormat = winston.format.combine(
   winston.format.printf(({ level, message, timestamp, ...meta }) => {
     const metaStr = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
     return `${timestamp} ${level}: ${message}${metaStr}`;
-  })
+  }),
 );
 
 // Formato para logs en archivos (producción)
 const fileFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  winston.format.json()
+  winston.format.json(),
 );
 
 // Configurar transports
@@ -54,7 +54,7 @@ if (config.env === 'production' || config.logging?.files) {
       ...dailyRotateFileConfig,
       filename: 'error-%DATE%.log',
       level: 'error',
-    })
+    }),
   );
 
   // Archivo para todos los logs
@@ -62,7 +62,7 @@ if (config.env === 'production' || config.logging?.files) {
     new winston.transports.DailyRotateFile({
       ...dailyRotateFileConfig,
       filename: 'combined-%DATE%.log',
-    })
+    }),
   );
 
   // Archivo específico para accesos/peticiones HTTP
@@ -71,7 +71,7 @@ if (config.env === 'production' || config.logging?.files) {
       ...dailyRotateFileConfig,
       filename: 'http-%DATE%.log',
       level: 'http',
-    })
+    }),
   );
 
   // Archivo específico para información de debug (solo en desarrollo)
@@ -81,7 +81,7 @@ if (config.env === 'production' || config.logging?.files) {
         ...dailyRotateFileConfig,
         filename: 'debug-%DATE%.log',
         level: 'debug',
-      })
+      }),
     );
   }
 
@@ -91,7 +91,7 @@ if (config.env === 'production' || config.logging?.files) {
       ...dailyRotateFileConfig,
       filename: 'warn-%DATE%.log',
       level: 'warn',
-    })
+    }),
   );
 }
 
@@ -146,17 +146,17 @@ logger.logDatabase = (operation, duration, metadata = {}) => {
 };
 
 // En caso de que Winston no capture un error no manejado
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', error => {
   logger.error('Uncaught exception', { error: error.message, stack: error.stack });
   if (config.env === 'production') {
     process.exit(1); // Salir en producción para que el servicio se reinicie
   }
 });
 
-process.on('unhandledRejection', (reason) => {
-  logger.error('Unhandled rejection', { 
+process.on('unhandledRejection', reason => {
+  logger.error('Unhandled rejection', {
     reason: reason instanceof Error ? reason.message : reason,
-    stack: reason instanceof Error ? reason.stack : 'No stack trace' 
+    stack: reason instanceof Error ? reason.stack : 'No stack trace',
   });
 });
 

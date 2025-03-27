@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 /**
  * Middleware para validar datos de solicitud usando Zod
- * 
+ *
  * @param {object} schema - Esquema Zod para validación
  * @param {string} type - Tipo de datos a validar: 'body' (default), 'query', 'params'
  * @returns {function} Middleware Express
@@ -13,25 +13,25 @@ export const validate = (schema, type = 'body') => {
     try {
       // Seleccionar el origen de datos adecuado
       const data = req[type];
-      
+
       // Validar datos con el esquema Zod
       const result = schema.safeParse(data);
-      
+
       if (!result.success) {
         // Formatear errores de Zod
         const formattedErrors = {};
-        
-        result.error.errors.forEach((error) => {
+
+        result.error.errors.forEach(error => {
           const path = error.path.join('.');
           if (!formattedErrors[path]) {
             formattedErrors[path] = [];
           }
           formattedErrors[path].push(error.message);
         });
-        
+
         throw new ValidationError('Error de validación', formattedErrors);
       }
-      
+
       // Reemplazar los datos con los validados y transformados por Zod
       req[type] = result.data;
       next();
@@ -49,26 +49,26 @@ export const validate = (schema, type = 'body') => {
 
 /**
  * Middleware para validar múltiples fuentes de datos usando Zod
- * 
+ *
  * @param {object} schemas - Objeto con esquemas para cada tipo: { body, query, params }
  * @returns {function} Middleware Express
  */
-export const validateAll = (schemas) => {
+export const validateAll = schemas => {
   return (req, res, next) => {
     try {
       const errors = {};
       let hasErrors = false;
-      
+
       // Validar cada tipo de datos si hay un esquema para él
       ['body', 'query', 'params'].forEach(type => {
         if (schemas[type]) {
           const result = schemas[type].safeParse(req[type]);
-          
+
           if (!result.success) {
             hasErrors = true;
-            
+
             // Formatear errores
-            result.error.errors.forEach((error) => {
+            result.error.errors.forEach(error => {
               const path = `${type}.${error.path.join('.')}`;
               if (!errors[path]) {
                 errors[path] = [];
@@ -81,11 +81,11 @@ export const validateAll = (schemas) => {
           }
         }
       });
-      
+
       if (hasErrors) {
         throw new ValidationError('Error de validación', errors);
       }
-      
+
       next();
     } catch (error) {
       if (error instanceof ValidationError) {
@@ -104,9 +104,9 @@ export const validateAll = (schemas) => {
 export const validateId = () => {
   return validate(
     z.object({
-      id: z.coerce.number().int().positive()
+      id: z.coerce.number().int().positive(),
     }),
-    'params'
+    'params',
   );
 };
 
@@ -115,21 +115,21 @@ export const validateId = () => {
  * @param {z.ZodSchema} bodySchema - Esquema para validar req.body
  * @returns {Function} Middleware para Express
  */
-export const validateBody = (bodySchema) => validate(bodySchema, 'body');
+export const validateBody = bodySchema => validate(bodySchema, 'body');
 
 /**
  * Forma abreviada para validar solo los parámetros de la solicitud
  * @param {z.ZodSchema} paramsSchema - Esquema para validar req.params
  * @returns {Function} Middleware para Express
  */
-export const validateParams = (paramsSchema) => validate(paramsSchema, 'params');
+export const validateParams = paramsSchema => validate(paramsSchema, 'params');
 
 /**
  * Forma abreviada para validar solo los parámetros de consulta
  * @param {z.ZodSchema} querySchema - Esquema para validar req.query
  * @returns {Function} Middleware para Express
  */
-export const validateQuery = (querySchema) => validate(querySchema, 'query');
+export const validateQuery = querySchema => validate(querySchema, 'query');
 
 // Ejemplo de uso:
 /*

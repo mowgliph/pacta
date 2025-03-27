@@ -2,11 +2,10 @@ import fs from 'fs/promises';
 import { License } from '../models/index.js';
 import { prisma } from '../database/prisma.js';
 
-
 const TRIAL_CODES = {
-  'TRYPATOOL': { days: 7, features: ['BASIC', 'REPORTS'] },
-  'TRIALPATOOL': { days: 14, features: ['BASIC', 'REPORTS', 'ANALYTICS'] },
-  'TRYFULL': { days: 30, features: ['BASIC', 'REPORTS', 'ANALYTICS', 'EXPORT'] },
+  TRYPATOOL: { days: 7, features: ['BASIC', 'REPORTS'] },
+  TRIALPATOOL: { days: 14, features: ['BASIC', 'REPORTS', 'ANALYTICS'] },
+  TRYFULL: { days: 30, features: ['BASIC', 'REPORTS', 'ANALYTICS', 'EXPORT'] },
 };
 
 /**
@@ -55,8 +54,8 @@ class LicenseValidator {
           action: 'LICENSE_ACTIVATION',
           entityType: 'License',
           entityId: license.id,
-          details: `License activated for ${licenseData.customerName}`
-        }
+          details: `License activated for ${licenseData.customerName}`,
+        },
       });
 
       return license;
@@ -110,7 +109,7 @@ class LicenseValidator {
         expiryDate: license.expiryDate,
         renewalDate: license.metadata.renewalDate,
         daysRemaining: Math.ceil(
-          (new Date(license.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)
+          (new Date(license.expiryDate) - new Date()) / (1000 * 60 * 60 * 24),
         ),
         license,
       };
@@ -151,8 +150,10 @@ class LicenseValidator {
 
     // Create trial license
     const timestamp = Date.now();
-    const randomKey = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    
+    const randomKey = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, '0');
+
     const license = await License.create({
       licenseKey: `TRIAL-${Date.now()}-${Math.random().toString(36).substring(7)}`,
       type: 'TRIAL',
@@ -174,8 +175,8 @@ class LicenseValidator {
         action: 'TRIAL_ACTIVATION',
         entityType: 'License',
         entityId: license.id,
-        details: `Trial license activated with code ${code}`
-      }
+        details: `Trial license activated with code ${code}`,
+      },
     });
 
     return {

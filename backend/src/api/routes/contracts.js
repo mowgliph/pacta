@@ -4,7 +4,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import * as contractController from '../controllers/ContractController.js';
-import { validate, validateBody, validateParams } from '../middleware/validate.js';
+import { validate, validateAll } from '../middleware/validate.js';
 import { ValidationService } from '../../services/ValidationService.js';
 
 const router = express.Router();
@@ -41,14 +41,19 @@ const upload = multer({
 });
 
 // Get all contracts (filtered by user role) - solo lectura sin licencia
-router.get('/', authenticateToken, contractController.getAllContracts);
+router.get(
+  '/',
+  authenticateToken,
+  validate(validationService.validators.contract.contractQuerySchema, 'query'),
+  contractController.getAllContracts,
+);
 
 // Get contract by ID - solo lectura sin licencia
 router.get(
-  '/:id', 
-  authenticateToken, 
-  validateParams(validationService.contractIdSchema()),
-  contractController.getContractById
+  '/:id',
+  authenticateToken,
+  validate(validationService.validators.contract.contractIdSchema, 'params'),
+  contractController.getContractById,
 );
 
 // Create new contract - requiere licencia
@@ -57,8 +62,8 @@ router.post(
   authenticateToken,
   requiresLicense,
   upload.single('document'),
-  validateBody(validationService.createContractSchema()),
-  contractController.createContract
+  validate(validationService.validators.contract.contractCreateSchema),
+  contractController.createContract,
 );
 
 // Update contract - requiere licencia
@@ -67,11 +72,11 @@ router.put(
   authenticateToken,
   requiresLicense,
   upload.single('document'),
-  validate({
-    body: validationService.updateContractSchema(),
-    params: validationService.contractIdSchema()
+  validateAll({
+    body: validationService.validators.contract.contractUpdateSchema,
+    params: validationService.validators.contract.contractIdSchema,
   }),
-  contractController.updateContract
+  contractController.updateContract,
 );
 
 // Delete contract (soft delete) - requiere licencia
@@ -79,16 +84,16 @@ router.delete(
   '/:id',
   authenticateToken,
   requiresLicense,
-  validateParams(validationService.contractIdSchema()),
-  contractController.deleteContract
+  validate(validationService.validators.contract.contractIdSchema, 'params'),
+  contractController.deleteContract,
 );
 
 // Search contracts - solo lectura sin licencia
 router.get(
   '/search',
   authenticateToken,
-  validateQuery(validationService.searchContractSchema()),
-  contractController.searchContracts
+  validate(validationService.validators.contract.contractSearchSchema, 'query'),
+  contractController.searchContracts,
 );
 
 // Change contract status - requiere licencia
@@ -96,11 +101,11 @@ router.patch(
   '/:id/status',
   authenticateToken,
   requiresLicense,
-  validate({
-    body: validationService.changeContractStatusSchema(),
-    params: validationService.contractIdSchema()
+  validateAll({
+    body: validationService.validators.contract.contractStatusSchema,
+    params: validationService.validators.contract.contractIdSchema,
   }),
-  contractController.changeContractStatus
+  contractController.changeContractStatus,
 );
 
 // Add tags to contract - requiere licencia
@@ -108,11 +113,11 @@ router.post(
   '/:id/tags',
   authenticateToken,
   requiresLicense,
-  validate({
-    body: validationService.contractTagSchema(),
-    params: validationService.contractIdSchema()
+  validateAll({
+    body: validationService.validators.contract.contractTagsSchema,
+    params: validationService.validators.contract.contractIdSchema,
   }),
-  contractController.addTags
+  contractController.addTags,
 );
 
 // Remove tags from contract - requiere licencia
@@ -120,11 +125,11 @@ router.delete(
   '/:id/tags',
   authenticateToken,
   requiresLicense,
-  validate({
-    body: validationService.contractTagSchema(),
-    params: validationService.contractIdSchema()
+  validateAll({
+    body: validationService.validators.contract.contractTagsSchema,
+    params: validationService.validators.contract.contractIdSchema,
   }),
-  contractController.removeTags
+  contractController.removeTags,
 );
 
 // Upload document to contract - requiere licencia
@@ -133,15 +138,16 @@ router.post(
   authenticateToken,
   requiresLicense,
   upload.single('document'),
-  validateParams(validationService.contractIdSchema()),
-  contractController.uploadDocument
+  validate(validationService.validators.contract.contractIdSchema, 'params'),
+  contractController.uploadDocument,
 );
 
 // Get contract statistics - solo lectura sin licencia
 router.get(
   '/stats',
   authenticateToken,
-  contractController.getContractStats
+  validate(validationService.validators.contract.contractStatsQuerySchema, 'query'),
+  contractController.getContractStats,
 );
 
 export default router;

@@ -41,7 +41,9 @@ export const getAnalyticsData = async (req, res) => {
       where: {
         status: 'active',
         endDate: {
-          gte: moment().subtract(_period * 2, 'days').toDate(),
+          gte: moment()
+            .subtract(_period * 2, 'days')
+            .toDate(),
           lte: startDate,
         },
       },
@@ -59,7 +61,9 @@ export const getAnalyticsData = async (req, res) => {
     const previousSignedCount = await prisma.contract.count({
       where: {
         createdAt: {
-          gte: moment().subtract(_period * 2, 'days').toDate(),
+          gte: moment()
+            .subtract(_period * 2, 'days')
+            .toDate(),
           lte: startDate,
         },
       },
@@ -77,7 +81,9 @@ export const getAnalyticsData = async (req, res) => {
         status: 'active',
         riskLevel: { in: ['high', 'medium'] },
         updatedAt: {
-          gte: moment().subtract(_period * 2, 'days').toDate(),
+          gte: moment()
+            .subtract(_period * 2, 'days')
+            .toDate(),
           lte: startDate,
         },
       },
@@ -163,8 +169,8 @@ export const getAnalyticsData = async (req, res) => {
     const contractCategoriesData = await prisma.contract.groupBy({
       by: ['category'],
       _count: {
-        category: true
-      }
+        category: true,
+      },
     });
 
     // Colores para las categorías
@@ -341,7 +347,7 @@ export const getHistoricalData = async (req, res) => {
         };
 
         const statuses = ['active', 'pending', 'expired', 'cancelled'];
-        
+
         // Para SQLite, usamos consulta nativa con prisma.$queryRaw
         const historicalData = await prisma.$queryRaw`
           SELECT 
@@ -551,40 +557,40 @@ export const getSpecificAnalysis = async (req, res) => {
         const activeContracts = await prisma.contract.count({ where: { status: 'active' } });
         const pendingContracts = await prisma.contract.count({ where: { status: 'pending' } });
         const expiredContracts = await prisma.contract.count({ where: { status: 'expired' } });
-        
+
         // Valor promedio con Prisma
         const avgValueResult = await prisma.contract.aggregate({
           _avg: {
-            value: true
-          }
+            value: true,
+          },
         });
-        
+
         // Categorías con Prisma
         const categoriesResult = await prisma.contract.groupBy({
           by: ['category'],
           _count: {
-            id: true
-          }
+            id: true,
+          },
         });
-        
+
         const categories = {};
         categoriesResult.forEach(item => {
           categories[item.category || 'Otros'] = item._count.id;
         });
-        
+
         // Estados con Prisma
         const statusesResult = await prisma.contract.groupBy({
           by: ['status'],
           _count: {
-            id: true
-          }
+            id: true,
+          },
         });
-        
+
         const statuses = {};
         statusesResult.forEach(item => {
           statuses[item.status || 'undefined'] = item._count.id;
         });
-        
+
         data = {
           totalCount,
           activeContracts,
@@ -592,7 +598,7 @@ export const getSpecificAnalysis = async (req, res) => {
           expiredContracts,
           averageValue: avgValueResult._avg.value || 0,
           categories,
-          statuses
+          statuses,
         };
         break;
 
@@ -666,12 +672,9 @@ export const getRiskContracts = async (req, res) => {
         category: true,
         riskLevel: true,
         endDate: true,
-        status: true
+        status: true,
       },
-      orderBy: [
-        { riskLevel: 'asc' },
-        { endDate: 'asc' },
-      ],
+      orderBy: [{ riskLevel: 'asc' }, { endDate: 'asc' }],
       take: 10,
     });
 
@@ -700,19 +703,19 @@ export const getGeneralStats = async (req, res) => {
         include: {
           user: {
             select: {
-              username: true
-            }
+              username: true,
+            },
           },
           contract: {
             select: {
-              contractNumber: true
-            }
-          }
+              contractNumber: true,
+            },
+          },
         },
         orderBy: {
-          timestamp: 'desc'
+          timestamp: 'desc',
         },
-        take: 10
+        take: 10,
       }),
     ]);
 
@@ -743,19 +746,21 @@ export const getActivityStats = async (req, res) => {
       by: ['action'],
       where,
       _count: {
-        id: true
+        id: true,
       },
       orderBy: {
         _count: {
-          id: 'desc'
-        }
-      }
+          id: 'desc',
+        },
+      },
     });
 
-    res.json(activities.map(item => ({
-      action: item.action,
-      count: item._count.id
-    })));
+    res.json(
+      activities.map(item => ({
+        action: item.action,
+        count: item._count.id,
+      })),
+    );
   } catch (error) {
     logger.error('Error getting activity stats:', error);
     res.status(500).json({ message: 'Error al obtener estadísticas de actividad' });
@@ -768,14 +773,16 @@ export const getContractStats = async (req, res) => {
     const stats = await prisma.contract.groupBy({
       by: ['status'],
       _count: {
-        id: true
-      }
+        id: true,
+      },
     });
 
-    res.json(stats.map(item => ({
-      status: item.status,
-      count: item._count.id
-    })));
+    res.json(
+      stats.map(item => ({
+        status: item.status,
+        count: item._count.id,
+      })),
+    );
   } catch (error) {
     logger.error('Error getting contract stats:', error);
     res.status(500).json({ message: 'Error al obtener estadísticas de contratos' });
@@ -791,19 +798,19 @@ export const getUserActivity = async (req, res) => {
       include: {
         user: {
           select: {
-            username: true
-          }
+            username: true,
+          },
         },
         contract: {
           select: {
-            contractNumber: true
-          }
-        }
+            contractNumber: true,
+          },
+        },
       },
       orderBy: {
-        timestamp: 'desc'
+        timestamp: 'desc',
       },
-      take: 20
+      take: 20,
     });
 
     res.json(activities);
@@ -812,4 +819,3 @@ export const getUserActivity = async (req, res) => {
     res.status(500).json({ message: 'Error al obtener actividad del usuario' });
   }
 };
-

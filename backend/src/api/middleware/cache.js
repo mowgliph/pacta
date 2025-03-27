@@ -21,16 +21,16 @@ export const cacheMiddleware = (duration = 300) => {
       await prisma.cache.deleteMany({
         where: {
           expiry: {
-            lt: now
-          }
-        }
+            lt: now,
+          },
+        },
       });
 
       // Intentar obtener del caché
       const cached = await prisma.cache.findUnique({
-        where: { key }
+        where: { key },
       });
-      
+
       if (cached && cached.expiry > now) {
         return res.json(JSON.parse(cached.value));
       }
@@ -40,19 +40,19 @@ export const cacheMiddleware = (duration = 300) => {
 
       // Override json method to cache response
       res.json = async function (data) {
-        const expiry = now + (duration * 1000);
-        
+        const expiry = now + duration * 1000;
+
         await prisma.cache.upsert({
           where: { key },
           update: {
             value: JSON.stringify(data),
-            expiry
+            expiry,
           },
           create: {
             key,
             value: JSON.stringify(data),
-            expiry
-          }
+            expiry,
+          },
         });
 
         return originalJson.call(this, data);
@@ -73,9 +73,9 @@ export const clearCache = async (pattern = null) => {
       await prisma.cache.deleteMany({
         where: {
           key: {
-            contains: pattern
-          }
-        }
+            contains: pattern,
+          },
+        },
       });
     } else {
       await prisma.cache.deleteMany();

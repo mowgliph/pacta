@@ -21,13 +21,10 @@ const contractBaseSchema = z.object({
 
 // Contract creation schema
 export const createContractSchema = () => {
-  return contractBaseSchema.refine(
-    data => new Date(data.startDate) < new Date(data.endDate),
-    {
-      message: 'La fecha de inicio debe ser anterior a la fecha de finalización',
-      path: ['endDate'],
-    }
-  );
+  return contractBaseSchema.refine(data => new Date(data.startDate) < new Date(data.endDate), {
+    message: 'La fecha de inicio debe ser anterior a la fecha de finalización',
+    path: ['endDate'],
+  });
 };
 
 // Contract update schema
@@ -43,7 +40,7 @@ export const updateContractSchema = () => {
     {
       message: 'La fecha de inicio debe ser anterior a la fecha de finalización',
       path: ['endDate'],
-    }
+    },
   );
 };
 
@@ -59,12 +56,18 @@ export const searchContractSchema = () => {
     companyId: z.number().int().optional(),
     departmentId: z.number().int().optional(),
     tags: z.array(z.string()).optional(),
-    page: z.number().int().positive().optional().or(
-      z.string().transform(val => parseInt(val, 10))
-    ),
-    limit: z.number().int().positive().optional().or(
-      z.string().transform(val => parseInt(val, 10))
-    ),
+    page: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .or(z.string().transform(val => parseInt(val, 10))),
+    limit: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .or(z.string().transform(val => parseInt(val, 10))),
     sortBy: z.string().optional(),
     sortDirection: z.enum(['asc', 'desc']).optional(),
   });
@@ -73,9 +76,10 @@ export const searchContractSchema = () => {
 // Contract ID schema
 export const contractIdSchema = () => {
   return z.object({
-    id: z.string().or(z.number()).transform(val => 
-      typeof val === 'string' ? parseInt(val, 10) : val
-    ),
+    id: z
+      .string()
+      .or(z.number())
+      .transform(val => (typeof val === 'string' ? parseInt(val, 10) : val)),
   });
 };
 
@@ -102,4 +106,4 @@ export const contractValidators = {
   contractIdSchema,
   changeContractStatusSchema,
   contractTagSchema,
-}; 
+};

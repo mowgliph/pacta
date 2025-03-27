@@ -25,7 +25,7 @@ export class NotificationController extends BaseController {
   getUserNotifications = async (req, res, next) => {
     try {
       const userId = req.user.id;
-      
+
       // Validar parámetros de consulta
       const validatedQuery = await this.validationService.validateGetNotifications(req.query);
 
@@ -34,7 +34,9 @@ export class NotificationController extends BaseController {
       res.status(200).json(ResponseService.paginate(result.data, result.pagination));
     } catch (error) {
       if (error instanceof ValidationError) {
-        return res.status(400).json(ResponseService.error('Parámetros de consulta inválidos', 400, error.details));
+        return res
+          .status(400)
+          .json(ResponseService.error('Parámetros de consulta inválidos', 400, error.details));
       }
       next(error);
     }
@@ -67,7 +69,7 @@ export class NotificationController extends BaseController {
   markAsRead = async (req, res, next) => {
     try {
       const userId = req.user.id;
-      
+
       // Validar IDs de notificaciones
       const validatedData = await this.validationService.validateMarkAsRead(req.body);
 
@@ -81,7 +83,9 @@ export class NotificationController extends BaseController {
       );
     } catch (error) {
       if (error instanceof ValidationError) {
-        return res.status(400).json(ResponseService.error('IDs de notificación inválidos', 400, error.details));
+        return res
+          .status(400)
+          .json(ResponseService.error('IDs de notificación inválidos', 400, error.details));
       }
       next(error);
     }
@@ -133,7 +137,9 @@ export class NotificationController extends BaseController {
       res.status(201).json(ResponseService.created(notification));
     } catch (error) {
       if (error instanceof ValidationError) {
-        return res.status(400).json(ResponseService.error('Datos de notificación inválidos', 400, error.details));
+        return res
+          .status(400)
+          .json(ResponseService.error('Datos de notificación inválidos', 400, error.details));
       }
       next(error);
     }
@@ -169,7 +175,9 @@ export class NotificationController extends BaseController {
       );
     } catch (error) {
       if (error instanceof ValidationError) {
-        return res.status(400).json(ResponseService.error('Parámetros inválidos', 400, error.details));
+        return res
+          .status(400)
+          .json(ResponseService.error('Parámetros inválidos', 400, error.details));
       }
       next(error);
     }

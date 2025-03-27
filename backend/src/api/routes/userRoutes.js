@@ -18,26 +18,28 @@ class UserRoutes extends BaseRoute {
   initializeRoutes() {
     // Rutas públicas de autenticación (ahora se manejan en auth.js)
     // Las dejamos aquí por compatibilidad
-    this.post('/auth/register', validate(this.validationService.validators.user.userCreateSchema), this.controller.register);
-    this.post('/auth/login', validate(this.validationService.validators.auth.loginSchema), this.controller.login);
+    this.post(
+      '/auth/register',
+      validate(this.validationService.validators.user.userCreateSchema),
+      this.controller.register,
+    );
+    this.post(
+      '/auth/login',
+      validate(this.validationService.validators.auth.loginSchema),
+      this.controller.login,
+    );
 
     // Rutas protegidas de perfil (requieren autenticación)
     this.get('/profile', authenticateToken, this.controller.getProfile);
     this.put(
-      '/profile', 
-      [
-        authenticateToken,
-        validate(this.validationService.validators.user.userProfileSchema)
-      ], 
-      this.controller.updateProfile
+      '/profile',
+      [authenticateToken, validate(this.validationService.validators.user.userProfileSchema)],
+      this.controller.updateProfile,
     );
     this.post(
-      '/profile/change-password', 
-      [
-        authenticateToken,
-        validate(this.validationService.validators.user.changePasswordSchema)
-      ], 
-      this.controller.changePassword
+      '/profile/change-password',
+      [authenticateToken, validate(this.validationService.validators.user.changePasswordSchema)],
+      this.controller.changePassword,
     );
 
     // Rutas de administración (requieren rol admin)
@@ -46,76 +48,80 @@ class UserRoutes extends BaseRoute {
       [
         authenticateToken,
         isAdmin,
-        validate(this.validationService.validators.user.userQuerySchema, 'query')
+        validate(this.validationService.validators.user.userQuerySchema, 'query'),
       ],
-      this.controller.getAllUsers
+      this.controller.getAllUsers,
     );
-    
+
     this.get(
       '/users/:id',
       [
         authenticateToken,
         isAdmin,
-        validate(this.validationService.validators.user.userIdSchema, 'params')
+        validate(this.validationService.validators.user.userIdSchema, 'params'),
       ],
-      this.controller.getUserById
+      this.controller.getUserById,
     );
-    
+
     this.post(
       '/users',
       [
         authenticateToken,
         isAdmin,
-        validate(this.validationService.validators.user.userCreateSchema)
+        validate(this.validationService.validators.user.userCreateSchema),
       ],
-      this.controller.createUser
+      this.controller.createUser,
     );
-    
+
     this.put(
       '/users/:id',
       [
         authenticateToken,
         isAdmin,
         validate(this.validationService.validators.user.userIdSchema, 'params'),
-        validate(this.validationService.validators.user.userUpdateSchema)
+        validate(this.validationService.validators.user.userUpdateSchema),
       ],
-      this.controller.updateUser
+      this.controller.updateUser,
     );
-    
+
     this.delete(
       '/users/:id',
       [
         authenticateToken,
         isAdmin,
-        validate(this.validationService.validators.user.userIdSchema, 'params')
+        validate(this.validationService.validators.user.userIdSchema, 'params'),
       ],
-      this.controller.deleteUser
+      this.controller.deleteUser,
     );
-    
+
     this.put(
       '/users/:id/role',
       [
         authenticateToken,
         isAdmin,
         validate(this.validationService.validators.user.userIdSchema, 'params'),
-        validate(z.object({
-          role: z.enum(['USER', 'ADMIN', 'MANAGER'])
-        }))
+        validate(
+          z.object({
+            role: z.enum(['USER', 'ADMIN', 'MANAGER']),
+          }),
+        ),
       ],
-      this.controller.updateUserRole
+      this.controller.updateUserRole,
     );
-    
+
     this.put(
       '/users/:id/status',
       [
         authenticateToken,
         isAdmin,
         validate(this.validationService.validators.user.userIdSchema, 'params'),
-        validate(z.object({
-          status: z.enum(['ACTIVE', 'INACTIVE', 'PENDING', 'SUSPENDED'])
-        }))
+        validate(
+          z.object({
+            status: z.enum(['ACTIVE', 'INACTIVE', 'PENDING', 'SUSPENDED']),
+          }),
+        ),
       ],
-      this.controller.updateUserStatus
+      this.controller.updateUserStatus,
     );
 
     // Búsqueda de usuarios
@@ -124,25 +130,18 @@ class UserRoutes extends BaseRoute {
       [
         authenticateToken,
         isAdmin,
-        validate(this.validationService.validators.user.userQuerySchema, 'query')
+        validate(this.validationService.validators.user.userQuerySchema, 'query'),
       ],
-      this.controller.searchUsers
+      this.controller.searchUsers,
     );
 
     // Preferencias de usuario
-    this.get(
-      '/profile/preferences',
-      authenticateToken,
-      this.controller.getUserPreferences
-    );
-    
+    this.get('/profile/preferences', authenticateToken, this.controller.getUserPreferences);
+
     this.put(
       '/profile/preferences',
-      [
-        authenticateToken,
-        validate(this.validationService.validators.user.userPreferencesSchema)
-      ],
-      this.controller.updateUserPreferences
+      [authenticateToken, validate(this.validationService.validators.user.userPreferencesSchema)],
+      this.controller.updateUserPreferences,
     );
   }
 }

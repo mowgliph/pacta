@@ -119,8 +119,8 @@ class NotificationService {
   async markAsRead(notificationIds, userId) {
     try {
       // Asegurar que notificationIds sea un array
-      const ids = Array.isArray(notificationIds) 
-        ? notificationIds.map(id => parseInt(id)) 
+      const ids = Array.isArray(notificationIds)
+        ? notificationIds.map(id => parseInt(id))
         : [parseInt(notificationIds)];
 
       // Actualizar notificaciones
@@ -178,9 +178,9 @@ class NotificationService {
       await this.cacheService.invalidate(`notifications:unread:${userId}`);
       await this.cacheService.invalidatePattern(`notifications:user:${userId}:*`);
 
-      logger.info('All notifications marked as read', { 
-        userId, 
-        count: result.count 
+      logger.info('All notifications marked as read', {
+        userId,
+        count: result.count,
       });
 
       return result.count;

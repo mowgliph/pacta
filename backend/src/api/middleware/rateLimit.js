@@ -20,14 +20,14 @@ export const apiLimiter = rateLimit({
       path: req.originalUrl,
       method: req.method,
     });
-    
+
     next(new RateLimitError('Demasiadas solicitudes, por favor inténtelo más tarde'));
   },
-  keyGenerator: (req) => {
+  keyGenerator: req => {
     // Usar IP como clave, o preferiblemente una header X-Forwarded-For
     return req.headers['x-forwarded-for'] || req.ip;
   },
-  skip: (req) => {
+  skip: req => {
     // No aplicar límite a rutas de healthcheck o de desarrollo
     return req.path === '/health' || req.path.startsWith('/dev/');
   },
@@ -47,7 +47,7 @@ export const authLimiter = rateLimit({
       path: req.originalUrl,
       method: req.method,
     });
-    
+
     next(new RateLimitError('Demasiados intentos de acceso, por favor inténtelo más tarde'));
   },
 });
@@ -58,7 +58,7 @@ export const authLimiter = rateLimit({
 export const sensitiveRouteLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutos
   max: 5, // 5 intentos por 5 minutos
-  standardHeaders: true, 
+  standardHeaders: true,
   legacyHeaders: false,
   handler: (req, res, next, options) => {
     logger.warn('Sensitive route rate limit exceeded', {
@@ -66,7 +66,7 @@ export const sensitiveRouteLimiter = rateLimit({
       path: req.originalUrl,
       method: req.method,
     });
-    
+
     next(new RateLimitError('Demasiados intentos, por favor inténtelo más tarde'));
   },
 });

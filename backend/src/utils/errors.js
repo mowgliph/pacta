@@ -111,30 +111,29 @@ export class ServiceUnavailableError extends AppError {
  */
 export const handleError = (err, req, res, next) => {
   // Si el error ya es un AppError, usarlo directamente
-  const error = err instanceof AppError 
-    ? err 
-    : new ServerError(err.message || 'An unexpected error occurred');
+  const error =
+    err instanceof AppError ? err : new ServerError(err.message || 'An unexpected error occurred');
 
   // Asegurarse de que hay un mensaje de error
   const message = error.message || 'An unexpected error occurred';
-  
+
   // Crear la respuesta de error
   const errorResponse = {
     status: 'error',
     code: error.code,
     message,
   };
-  
+
   // Agregar errores de validación si existen
   if (error instanceof ValidationError && error.errors) {
     errorResponse.errors = error.errors;
   }
-  
+
   // Agregar información adicional en desarrollo
   if (process.env.NODE_ENV !== 'production') {
     errorResponse.stack = error.stack;
   }
-  
+
   // Enviar respuesta
   res.status(error.statusCode || 500).json(errorResponse);
 };

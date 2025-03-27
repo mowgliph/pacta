@@ -18,12 +18,12 @@ export const getAllContracts = async (req, res) => {
       skip: (validatedQuery.page - 1) * validatedQuery.limit,
       take: validatedQuery.limit,
     };
-    
+
     // Aplicar filtros opcionales de estados
     if (validatedQuery.status) {
       filter.status = validatedQuery.status;
     }
-    
+
     // Aplicar filtros de fechas
     if (validatedQuery.startDateFrom || validatedQuery.startDateTo) {
       filter.startDate = {};
@@ -34,7 +34,7 @@ export const getAllContracts = async (req, res) => {
         filter.startDate.lte = new Date(validatedQuery.startDateTo);
       }
     }
-    
+
     // Aplicar orden
     const orderBy = {};
     if (validatedQuery.sortBy) {
@@ -51,12 +51,12 @@ export const getAllContracts = async (req, res) => {
             id: true,
             firstName: true,
             lastName: true,
-            email: true
-          }
+            email: true,
+          },
         },
         company: true,
         department: true,
-        contractTags: true
+        contractTags: true,
       },
       orderBy,
       ...pagination,
@@ -75,11 +75,11 @@ export const getAllContracts = async (req, res) => {
         limit: validatedQuery.limit,
         total: totalContracts,
         totalPages: Math.ceil(totalContracts / validatedQuery.limit),
-      }
+      },
     });
   } catch (error) {
     logger.error('Error fetching contracts:', error);
-    
+
     if (error instanceof ValidationError) {
       return res.status(400).json({
         status: 'error',
@@ -87,10 +87,10 @@ export const getAllContracts = async (req, res) => {
         errors: error.details,
       });
     }
-    
+
     res.status(500).json({
       status: 'error',
-      message: 'Error al obtener los contratos'
+      message: 'Error al obtener los contratos',
     });
   }
 };
@@ -109,29 +109,29 @@ export const getContractById = async (req, res) => {
             id: true,
             firstName: true,
             lastName: true,
-            email: true
-          }
+            email: true,
+          },
         },
         company: true,
         department: true,
-        contractTags: true
-      }
+        contractTags: true,
+      },
     });
 
     if (!contract) {
       return res.status(404).json({
         status: 'error',
-        message: 'Contrato no encontrado'
+        message: 'Contrato no encontrado',
       });
     }
 
     res.json({
       status: 'success',
-      data: contract
+      data: contract,
     });
   } catch (error) {
     logger.error('Error fetching contract:', error);
-    
+
     if (error instanceof ValidationError) {
       return res.status(400).json({
         status: 'error',
@@ -139,10 +139,10 @@ export const getContractById = async (req, res) => {
         errors: error.details,
       });
     }
-    
+
     res.status(500).json({
       status: 'error',
-      message: 'Error al obtener el contrato'
+      message: 'Error al obtener el contrato',
     });
   }
 };
@@ -156,7 +156,7 @@ export const createContract = async (req, res) => {
     const contract = await prisma.contract.create({
       data: {
         ...validatedData,
-        authorId: req.user.id
+        authorId: req.user.id,
       },
       include: {
         author: {
@@ -164,13 +164,13 @@ export const createContract = async (req, res) => {
             id: true,
             firstName: true,
             lastName: true,
-            email: true
-          }
+            email: true,
+          },
         },
         company: true,
         department: true,
-        contractTags: true
-      }
+        contractTags: true,
+      },
     });
 
     // Registrar actividad
@@ -180,17 +180,17 @@ export const createContract = async (req, res) => {
         action: 'CREATE',
         entityType: 'CONTRACT',
         entityId: contract.id,
-        details: 'Creación de nuevo contrato'
-      }
+        details: 'Creación de nuevo contrato',
+      },
     });
 
     res.status(201).json({
       status: 'success',
-      data: contract
+      data: contract,
     });
   } catch (error) {
     logger.error('Error creating contract:', error);
-    
+
     if (error instanceof ValidationError) {
       return res.status(400).json({
         status: 'error',
@@ -198,10 +198,10 @@ export const createContract = async (req, res) => {
         errors: error.details,
       });
     }
-    
+
     res.status(500).json({
       status: 'error',
-      message: 'Error al crear el contrato'
+      message: 'Error al crear el contrato',
     });
   }
 };
@@ -211,18 +211,18 @@ export const updateContract = async (req, res) => {
   try {
     // Validar ID
     const { id } = await validationService.validateContractId({ id: req.params.id });
-    
+
     // Validar datos de actualización
     const validatedData = await validationService.validateContractUpdate(req.body);
 
     const contract = await prisma.contract.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!contract) {
       return res.status(404).json({
         status: 'error',
-        message: 'Contrato no encontrado'
+        message: 'Contrato no encontrado',
       });
     }
 
@@ -235,13 +235,13 @@ export const updateContract = async (req, res) => {
             id: true,
             firstName: true,
             lastName: true,
-            email: true
-          }
+            email: true,
+          },
         },
         company: true,
         department: true,
-        contractTags: true
-      }
+        contractTags: true,
+      },
     });
 
     // Registrar actividad
@@ -251,17 +251,17 @@ export const updateContract = async (req, res) => {
         action: 'UPDATE',
         entityType: 'CONTRACT',
         entityId: updatedContract.id,
-        details: 'Actualización de contrato'
-      }
+        details: 'Actualización de contrato',
+      },
     });
 
     res.json({
       status: 'success',
-      data: updatedContract
+      data: updatedContract,
     });
   } catch (error) {
     logger.error('Error updating contract:', error);
-    
+
     if (error instanceof ValidationError) {
       return res.status(400).json({
         status: 'error',
@@ -269,10 +269,10 @@ export const updateContract = async (req, res) => {
         errors: error.details,
       });
     }
-    
+
     res.status(500).json({
       status: 'error',
-      message: 'Error al actualizar el contrato'
+      message: 'Error al actualizar el contrato',
     });
   }
 };
@@ -281,19 +281,19 @@ export const updateContract = async (req, res) => {
 export const deleteContract = async (req, res) => {
   try {
     const contract = await prisma.contract.findUnique({
-      where: { id: parseInt(req.params.id) }
+      where: { id: parseInt(req.params.id) },
     });
 
     if (!contract) {
       return res.status(404).json({
         status: 'error',
-        message: 'Contrato no encontrado'
+        message: 'Contrato no encontrado',
       });
     }
 
     await prisma.contract.update({
       where: { id: parseInt(req.params.id) },
-      data: { deletedAt: new Date() }
+      data: { deletedAt: new Date() },
     });
 
     // Registrar actividad
@@ -303,19 +303,19 @@ export const deleteContract = async (req, res) => {
         action: 'DELETE',
         entityType: 'CONTRACT',
         entityId: contract.id,
-        details: 'Eliminación de contrato'
-      }
+        details: 'Eliminación de contrato',
+      },
     });
 
     res.json({
       status: 'success',
-      message: 'Contrato eliminado correctamente'
+      message: 'Contrato eliminado correctamente',
     });
   } catch (error) {
     logger.error('Error deleting contract:', error);
     res.status(500).json({
       status: 'error',
-      message: 'Error al eliminar el contrato'
+      message: 'Error al eliminar el contrato',
     });
   }
 };

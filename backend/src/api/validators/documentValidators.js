@@ -9,7 +9,11 @@ const documentBaseSchema = z.object({
   tags: z.array(z.string()).optional(),
   contractId: z.string().uuid('ID de contrato inválido').or(z.number().int().positive()).optional(),
   companyId: z.string().uuid('ID de compañía inválido').or(z.number().int().positive()).optional(),
-  departmentId: z.string().uuid('ID de departamento inválido').or(z.number().int().positive()).optional(),
+  departmentId: z
+    .string()
+    .uuid('ID de departamento inválido')
+    .or(z.number().int().positive())
+    .optional(),
   isPublic: z.boolean().default(false),
   expiryDate: z.string().datetime('Fecha de expiración inválida').optional(),
   metadata: z.record(z.unknown()).optional(),
@@ -29,23 +33,44 @@ export const updateDocumentSchema = () => {
 export const searchDocumentSchema = () => {
   return z.object({
     query: z.string().optional(),
-    fileType: z.enum(['PDF', 'DOC', 'DOCX', 'XLS', 'XLSX', 'TXT', 'JPG', 'PNG', 'ZIP']).array().optional(),
+    fileType: z
+      .enum(['PDF', 'DOC', 'DOCX', 'XLS', 'XLSX', 'TXT', 'JPG', 'PNG', 'ZIP'])
+      .array()
+      .optional(),
     tags: z.array(z.string()).optional(),
-    contractId: z.string().uuid('ID de contrato inválido').or(z.number().int().positive()).optional(),
-    companyId: z.string().uuid('ID de compañía inválido').or(z.number().int().positive()).optional(),
-    departmentId: z.string().uuid('ID de departamento inválido').or(z.number().int().positive()).optional(),
+    contractId: z
+      .string()
+      .uuid('ID de contrato inválido')
+      .or(z.number().int().positive())
+      .optional(),
+    companyId: z
+      .string()
+      .uuid('ID de compañía inválido')
+      .or(z.number().int().positive())
+      .optional(),
+    departmentId: z
+      .string()
+      .uuid('ID de departamento inválido')
+      .or(z.number().int().positive())
+      .optional(),
     isPublic: z.boolean().optional(),
     uploadedBy: z.string().uuid('ID de usuario inválido').optional(),
     minSize: z.number().int().nonnegative().optional(),
     maxSize: z.number().int().positive().optional(),
     uploadedAfter: z.string().datetime().optional(),
     uploadedBefore: z.string().datetime().optional(),
-    page: z.number().int().positive().optional().or(
-      z.string().transform(val => parseInt(val, 10))
-    ),
-    limit: z.number().int().positive().optional().or(
-      z.string().transform(val => parseInt(val, 10))
-    ),
+    page: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .or(z.string().transform(val => parseInt(val, 10))),
+    limit: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .or(z.string().transform(val => parseInt(val, 10))),
     sortBy: z.string().optional(),
     sortDirection: z.enum(['asc', 'desc']).optional(),
   });
@@ -54,9 +79,10 @@ export const searchDocumentSchema = () => {
 // Document ID schema
 export const documentIdSchema = () => {
   return z.object({
-    id: z.string().uuid('ID de documento inválido').or(
-      z.number().int().positive('ID de documento inválido')
-    ),
+    id: z
+      .string()
+      .uuid('ID de documento inválido')
+      .or(z.number().int().positive('ID de documento inválido')),
   });
 };
 
@@ -66,9 +92,21 @@ export const uploadDocumentSchema = () => {
     title: z.string().min(2, 'El título debe tener al menos 2 caracteres'),
     description: z.string().optional(),
     tags: z.array(z.string()).optional(),
-    contractId: z.string().uuid('ID de contrato inválido').or(z.number().int().positive()).optional(),
-    companyId: z.string().uuid('ID de compañía inválido').or(z.number().int().positive()).optional(),
-    departmentId: z.string().uuid('ID de departamento inválido').or(z.number().int().positive()).optional(),
+    contractId: z
+      .string()
+      .uuid('ID de contrato inválido')
+      .or(z.number().int().positive())
+      .optional(),
+    companyId: z
+      .string()
+      .uuid('ID de compañía inválido')
+      .or(z.number().int().positive())
+      .optional(),
+    departmentId: z
+      .string()
+      .uuid('ID de departamento inválido')
+      .or(z.number().int().positive())
+      .optional(),
     isPublic: z.boolean().default(false),
     expiryDate: z.string().datetime('Fecha de expiración inválida').optional(),
     metadata: z.record(z.unknown()).optional(),
@@ -104,5 +142,5 @@ export const documentValidators = {
   documentIdSchema,
   uploadDocumentSchema,
   documentPermissionSchema,
-  updateDocumentPermissionSchema
-}; 
+  updateDocumentPermissionSchema,
+};

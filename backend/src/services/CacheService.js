@@ -170,7 +170,7 @@ class CacheService {
   }
 
   // Métodos específicos para modelos
-  
+
   /**
    * Obtiene un usuario del cache o la base de datos
    * @param {number} userId - ID del usuario
@@ -216,7 +216,7 @@ class CacheService {
           take: 10,
         });
       },
-      300 // 5 minutos para notificaciones
+      300, // 5 minutos para notificaciones
     );
   }
 
@@ -226,8 +226,8 @@ class CacheService {
    */
   static initCleanupTask() {
     const interval = parseInt(config.cache?.checkPeriod || 600) * 1000;
-    logger.info(`Initializing cache cleanup task with interval ${interval/1000} seconds`);
-    
+    logger.info(`Initializing cache cleanup task with interval ${interval / 1000} seconds`);
+
     return setInterval(async () => {
       try {
         const repository = cacheRepository;

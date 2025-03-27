@@ -9,17 +9,17 @@ const loggerService = new LoggingService('AuthorizationMiddleware');
 /**
  * Middleware para la autorización basada en roles
  */
-export const authorize = (roles) => {
+export const authorize = roles => {
   return (req, res, next) => {
     try {
       // Verificar que existe un usuario autenticado
       if (!req.user) {
         throw new ForbiddenError('User not authenticated');
       }
-      
+
       // Normalizar roles a un array
       const allowedRoles = Array.isArray(roles) ? roles : [roles];
-      
+
       // Verificar que el usuario tiene un rol permitido
       if (allowedRoles.length > 0 && !allowedRoles.includes(req.user.role)) {
         logger.warn('Authorization failed: insufficient permissions', {
@@ -27,10 +27,10 @@ export const authorize = (roles) => {
           requiredRoles: allowedRoles,
           userRole: req.user.role,
         });
-        
+
         throw new ForbiddenError('Insufficient permissions');
       }
-      
+
       next();
     } catch (error) {
       next(error);
@@ -52,34 +52,34 @@ export const authorizeOwnership = (modelName, paramName = 'id', allowAdmin = tru
       if (!req.user) {
         throw new ForbiddenError('User not authenticated');
       }
-      
+
       // Si el usuario es admin y está permitido, pasar
       if (allowAdmin && req.user.role === 'ADMIN') {
         return next();
       }
-      
+
       // Obtener el ID del recurso
       const resourceId = req.params[paramName];
-      
+
       if (!resourceId) {
         throw new ForbiddenError(`Resource ID not provided (${paramName})`);
       }
-      
+
       // Verificar que el modelo existe en Prisma
       if (!prisma[modelName]) {
         logger.error(`Model ${modelName} does not exist in Prisma`);
         throw new ForbiddenError('Invalid resource type');
       }
-      
+
       // Buscar el recurso
       const resource = await prisma[modelName].findUnique({
         where: { id: parseInt(resourceId) },
       });
-      
+
       if (!resource) {
         throw new ForbiddenError('Resource not found');
       }
-      
+
       // Verificar propiedad (userId debe estar en el recurso)
       if (resource.userId !== req.user.id) {
         logger.warn('Ownership authorization failed', {
@@ -87,10 +87,10 @@ export const authorizeOwnership = (modelName, paramName = 'id', allowAdmin = tru
           resourceId,
           modelName,
         });
-        
+
         throw new ForbiddenError('You do not have permission to access this resource');
       }
-      
+
       // Guardar el recurso en la solicitud para uso posterior
       req.resource = resource;
       next();

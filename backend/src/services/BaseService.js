@@ -2,7 +2,6 @@ import { Prisma } from '@prisma/client';
 import { logger } from '../utils/logger.js';
 import { ValidationError, DatabaseError, NotFoundError, ConflictError } from '../utils/errors.js';
 
-
 /**
  * Clase base para todos los servicios
  * Implementa la lógica de negocio genérica y manejo de errores
@@ -42,7 +41,7 @@ export class BaseService {
   async getById(id, options = {}) {
     try {
       const item = await this.model.findUnique({
-        where: { id }
+        where: { id },
       });
       if (!item) {
         throw new NotFoundError(`Entity with ID ${id} not found`);
@@ -62,12 +61,14 @@ export class BaseService {
     try {
       this._validateCreate(data);
       return await this.model.create({
-        data
+        data,
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
-          throw new ConflictError(`Ya existe un registro con estos datos: ${error.meta?.target?.[0]}`);
+          throw new ConflictError(
+            `Ya existe un registro con estos datos: ${error.meta?.target?.[0]}`,
+          );
         }
       }
       this._handleError(error);
@@ -86,7 +87,7 @@ export class BaseService {
       this._validateUpdate(id, data);
       return await this.model.update({
         where: { id },
-        data
+        data,
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -94,7 +95,9 @@ export class BaseService {
           throw new NotFoundError('Registro no encontrado');
         }
         if (error.code === 'P2002') {
-          throw new ConflictError(`Ya existe un registro con estos datos: ${error.meta?.target?.[0]}`);
+          throw new ConflictError(
+            `Ya existe un registro con estos datos: ${error.meta?.target?.[0]}`,
+          );
         }
       }
       this._handleError(error);
@@ -110,7 +113,7 @@ export class BaseService {
   async delete(id) {
     try {
       return await this.model.delete({
-        where: { id }
+        where: { id },
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -165,10 +168,12 @@ export class BaseService {
   _handleError(error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2002') {
-        throw new ValidationError('Validation error', [{
-          path: error.meta?.target?.[0],
-          message: `Ya existe un registro con este ${error.meta?.target?.[0]}`
-        }]);
+        throw new ValidationError('Validation error', [
+          {
+            path: error.meta?.target?.[0],
+            message: `Ya existe un registro con este ${error.meta?.target?.[0]}`,
+          },
+        ]);
       } else if (error.code === 'P2025') {
         throw new NotFoundError('Registro no encontrado');
       }
@@ -289,7 +294,7 @@ export class BaseService {
       if (query && fields) {
         where.OR = fields.map(field => ({
           [field]: {
-            contains: query
+            contains: query,
           },
         }));
       }
@@ -331,7 +336,7 @@ export class BaseService {
     try {
       return await this.model.update({
         where: { id },
-        data: { deletedAt: new Date() }
+        data: { deletedAt: new Date() },
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -348,7 +353,7 @@ export class BaseService {
     try {
       return await this.model.update({
         where: { id },
-        data: { deletedAt: null }
+        data: { deletedAt: null },
       });
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {

@@ -19,11 +19,12 @@ export const loginLimiter = rateLimit({
   max: 5, // 5 intentos
   message: {
     status: 'error',
-    message: 'Demasiados intentos de inicio de sesión. Por favor, intenta nuevamente en 15 minutos.',
-    code: 429
+    message:
+      'Demasiados intentos de inicio de sesión. Por favor, intenta nuevamente en 15 minutos.',
+    code: 429,
   },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 // Validación de credenciales
@@ -76,7 +77,7 @@ export const authenticateToken = async (req, res, next) => {
     // Verificar token
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      
+
       // Buscar usuario
       const user = await prisma.user.findUnique({
         where: { id: decoded.id },
@@ -86,8 +87,8 @@ export const authenticateToken = async (req, res, next) => {
           role: true,
           status: true,
           firstName: true,
-          lastName: true
-        }
+          lastName: true,
+        },
       });
 
       if (!user) {
@@ -101,7 +102,7 @@ export const authenticateToken = async (req, res, next) => {
 
       // Adjuntar usuario a la request
       req.user = user;
-      
+
       next();
     } catch (error) {
       if (error.name === 'TokenExpiredError') {
@@ -136,7 +137,7 @@ export const isAdmin = (req, res, next) => {
  * Middleware para verificar que el usuario sea dueño del recurso o administrador
  * @param {Function} getResourceOwnerId - Función que devuelve el ID del propietario del recurso
  */
-export const isOwnerOrAdmin = (getResourceOwnerId) => {
+export const isOwnerOrAdmin = getResourceOwnerId => {
   return async (req, res, next) => {
     if (!req.user) {
       return next(new UnauthorizedError('Se requiere autenticación'));
@@ -150,12 +151,12 @@ export const isOwnerOrAdmin = (getResourceOwnerId) => {
     try {
       // Obtener ID del propietario
       const ownerId = await getResourceOwnerId(req);
-      
+
       // Verificar si el usuario es propietario
       if (req.user.id === ownerId) {
         return next();
       }
-      
+
       // Si no es propietario ni admin, denegar acceso
       return next(new ForbiddenError('No tienes permiso para acceder a este recurso'));
     } catch (error) {
@@ -169,7 +170,7 @@ export const isOwnerOrAdmin = (getResourceOwnerId) => {
  * Middleware para verificar permisos según roles
  * @param {Array<string>} allowedRoles - Roles permitidos
  */
-export const hasRole = (allowedRoles) => {
+export const hasRole = allowedRoles => {
   return (req, res, next) => {
     if (!req.user) {
       return next(new UnauthorizedError('Se requiere autenticación'));
@@ -188,24 +189,22 @@ export const hasRole = (allowedRoles) => {
  * @param {Object} user - Usuario
  * @returns {Object} Tokens generados
  */
-export const generateTokens = (user) => {
+export const generateTokens = user => {
   // Token de acceso (duración corta)
   const accessToken = jwt.sign(
-    { 
+    {
       id: user.id,
       email: user.email,
-      role: user.role 
+      role: user.role,
     },
     process.env.JWT_SECRET,
-    { expiresIn: '1h' }
+    { expiresIn: '1h' },
   );
 
   // Token de refresco (duración larga)
-  const refreshToken = jwt.sign(
-    { id: user.id },
-    process.env.JWT_REFRESH_SECRET,
-    { expiresIn: '7d' }
-  );
+  const refreshToken = jwt.sign({ id: user.id }, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: '7d',
+  });
 
   return { accessToken, refreshToken };
 };
@@ -215,7 +214,7 @@ export const generateTokens = (user) => {
  * @param {string} refreshToken - Token de refresco
  * @returns {Object} Nuevo par de tokens
  */
-export const refreshToken = async (refreshToken) => {
+export const refreshToken = async refreshToken => {
   try {
     // Verificar token de refresco
     const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
@@ -227,8 +226,8 @@ export const refreshToken = async (refreshToken) => {
         id: true,
         email: true,
         role: true,
-        status: true
-      }
+        status: true,
+      },
     });
 
     if (!user) {

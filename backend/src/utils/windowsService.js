@@ -18,7 +18,8 @@ const __dirname = path.dirname(__filename);
 
 // Configuración del servicio
 const SERVICE_NAME = process.env.SERVICE_NAME || 'PACTA-Backend';
-const SERVICE_DESCRIPTION = process.env.SERVICE_DESCRIPTION || 'Servicio de backend para la plataforma PACTA';
+const SERVICE_DESCRIPTION =
+  process.env.SERVICE_DESCRIPTION || 'Servicio de backend para la plataforma PACTA';
 const SCRIPT_PATH = path.join(__dirname, '../../src/server.js');
 
 /**
@@ -30,27 +31,24 @@ function createServiceInstance() {
     name: SERVICE_NAME,
     description: SERVICE_DESCRIPTION,
     script: SCRIPT_PATH,
-    nodeOptions: [
-      '--harmony',
-      '--max_old_space_size=4096'
-    ],
+    nodeOptions: ['--harmony', '--max_old_space_size=4096'],
     // Configuraciones adicionales
     workingDirectory: path.join(__dirname, '../..'),
     allowServiceLogon: true,
     env: [
       {
         name: 'NODE_ENV',
-        value: process.env.NODE_ENV || 'production'
+        value: process.env.NODE_ENV || 'production',
       },
       {
         name: 'PORT',
-        value: process.env.PORT || '3000'
+        value: process.env.PORT || '3000',
       },
       {
         name: 'HOST',
-        value: process.env.HOST || 'localhost'
-      }
-    ]
+        value: process.env.HOST || 'localhost',
+      },
+    ],
   });
 
   return svc;
@@ -72,7 +70,7 @@ function installService() {
     logger.info(`Servicio ${SERVICE_NAME} iniciado correctamente`);
   });
 
-  svc.on('error', (error) => {
+  svc.on('error', error => {
     logger.error(`Error en el servicio ${SERVICE_NAME}:`, { error: error.message });
   });
 
@@ -90,7 +88,7 @@ function uninstallService() {
     logger.info(`Servicio ${SERVICE_NAME} desinstalado correctamente`);
   });
 
-  svc.on('error', (error) => {
+  svc.on('error', error => {
     logger.error(`Error al desinstalar el servicio ${SERVICE_NAME}:`, { error: error.message });
   });
 
@@ -108,7 +106,7 @@ function startService() {
     logger.info(`Servicio ${SERVICE_NAME} iniciado correctamente`);
   });
 
-  svc.on('error', (error) => {
+  svc.on('error', error => {
     logger.error(`Error al iniciar el servicio ${SERVICE_NAME}:`, { error: error.message });
   });
 
@@ -126,7 +124,7 @@ function stopService() {
     logger.info(`Servicio ${SERVICE_NAME} detenido correctamente`);
   });
 
-  svc.on('error', (error) => {
+  svc.on('error', error => {
     logger.error(`Error al detener el servicio ${SERVICE_NAME}:`, { error: error.message });
   });
 
@@ -149,7 +147,7 @@ function restartService() {
     logger.info(`Servicio ${SERVICE_NAME} reiniciado correctamente`);
   });
 
-  svc.on('error', (error) => {
+  svc.on('error', error => {
     logger.error(`Error al reiniciar el servicio ${SERVICE_NAME}:`, { error: error.message });
   });
 
@@ -162,14 +160,16 @@ function restartService() {
  */
 function checkServiceStatus() {
   const svc = createServiceInstance();
-  
-  svc.on('error', (error) => {
-    logger.error(`Error al verificar el estado del servicio ${SERVICE_NAME}:`, { error: error.message });
+
+  svc.on('error', error => {
+    logger.error(`Error al verificar el estado del servicio ${SERVICE_NAME}:`, {
+      error: error.message,
+    });
   });
 
   logger.info(`Verificando estado del servicio ${SERVICE_NAME}...`);
-  return new Promise((resolve) => {
-    svc.on('status', (status) => {
+  return new Promise(resolve => {
+    svc.on('status', status => {
       logger.info(`Estado del servicio ${SERVICE_NAME}: ${status}`);
       resolve(status);
     });
@@ -183,5 +183,5 @@ export {
   startService,
   stopService,
   restartService,
-  checkServiceStatus
-}; 
+  checkServiceStatus,
+};

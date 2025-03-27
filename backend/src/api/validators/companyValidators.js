@@ -8,13 +8,16 @@ const companyBaseSchema = z.object({
   email: z.string().email('Email inválido').optional().nullable(),
   phone: z.string().optional().nullable(),
   website: z.string().url('URL inválida').optional().nullable(),
-  address: z.object({
-    street: z.string().optional(),
-    city: z.string().optional(),
-    state: z.string().optional(),
-    zipCode: z.string().optional(),
-    country: z.string().optional(),
-  }).optional().nullable(),
+  address: z
+    .object({
+      street: z.string().optional(),
+      city: z.string().optional(),
+      state: z.string().optional(),
+      zipCode: z.string().optional(),
+      country: z.string().optional(),
+    })
+    .optional()
+    .nullable(),
   industry: z.string().optional().nullable(),
   size: z.enum(['SMALL', 'MEDIUM', 'LARGE']).optional(),
   foundedYear: z.number().int().min(1800).max(new Date().getFullYear()).optional(),
@@ -40,12 +43,18 @@ export const searchCompanySchema = () => {
     industry: z.string().optional(),
     status: z.enum(['ACTIVE', 'INACTIVE']).optional(),
     size: z.enum(['SMALL', 'MEDIUM', 'LARGE']).optional(),
-    page: z.number().int().positive().optional().or(
-      z.string().transform(val => parseInt(val, 10))
-    ),
-    limit: z.number().int().positive().optional().or(
-      z.string().transform(val => parseInt(val, 10))
-    ),
+    page: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .or(z.string().transform(val => parseInt(val, 10))),
+    limit: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .or(z.string().transform(val => parseInt(val, 10))),
     sortBy: z.string().optional(),
     sortDirection: z.enum(['asc', 'desc']).optional(),
   });
@@ -54,9 +63,10 @@ export const searchCompanySchema = () => {
 // Company ID schema
 export const companyIdSchema = () => {
   return z.object({
-    id: z.string().uuid('ID de compañía inválido').or(
-      z.number().int().positive('ID de compañía inválido')
-    ),
+    id: z
+      .string()
+      .uuid('ID de compañía inválido')
+      .or(z.number().int().positive('ID de compañía inválido')),
   });
 };
 
@@ -65,12 +75,16 @@ export const createDepartmentSchema = () => {
   return z.object({
     name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres'),
     description: z.string().optional(),
-    companyId: z.string().uuid('ID de compañía inválido').or(
-      z.number().int().positive('ID de compañía inválido')
-    ),
-    parentDepartmentId: z.string().uuid('ID de departamento inválido').or(
-      z.number().int().positive('ID de departamento inválido')
-    ).optional().nullable(),
+    companyId: z
+      .string()
+      .uuid('ID de compañía inválido')
+      .or(z.number().int().positive('ID de compañía inválido')),
+    parentDepartmentId: z
+      .string()
+      .uuid('ID de departamento inválido')
+      .or(z.number().int().positive('ID de departamento inválido'))
+      .optional()
+      .nullable(),
     managerUserId: z.string().uuid('ID de usuario inválido').optional().nullable(),
   });
 };
@@ -80,9 +94,12 @@ export const updateDepartmentSchema = () => {
   return z.object({
     name: z.string().min(2, 'El nombre debe tener al menos 2 caracteres').optional(),
     description: z.string().optional(),
-    parentDepartmentId: z.string().uuid('ID de departamento inválido').or(
-      z.number().int().positive('ID de departamento inválido')
-    ).optional().nullable(),
+    parentDepartmentId: z
+      .string()
+      .uuid('ID de departamento inválido')
+      .or(z.number().int().positive('ID de departamento inválido'))
+      .optional()
+      .nullable(),
     managerUserId: z.string().uuid('ID de usuario inválido').optional().nullable(),
   });
 };
@@ -90,9 +107,10 @@ export const updateDepartmentSchema = () => {
 // Department ID schema
 export const departmentIdSchema = () => {
   return z.object({
-    id: z.string().uuid('ID de departamento inválido').or(
-      z.number().int().positive('ID de departamento inválido')
-    ),
+    id: z
+      .string()
+      .uuid('ID de departamento inválido')
+      .or(z.number().int().positive('ID de departamento inválido')),
   });
 };
 
@@ -104,5 +122,5 @@ export const companyValidators = {
   companyIdSchema,
   createDepartmentSchema,
   updateDepartmentSchema,
-  departmentIdSchema
-}; 
+  departmentIdSchema,
+};

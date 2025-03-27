@@ -97,7 +97,7 @@ app.get('/health', async (req, res) => {
   try {
     // Verificar conexión a la base de datos
     await testConnection();
-    
+
     res.status(200).json({
       status: 'success',
       message: 'Server is healthy',
@@ -137,13 +137,13 @@ async function startServer() {
     // Probar conexión a la base de datos
     await testConnection();
     logger.info('Conexión a la base de datos establecida correctamente');
-    
+
     // Iniciar el servidor
     const server = app.listen(PORT, HOST, () => {
       logger.info(`Servidor PACTA iniciado en http://${HOST}:${PORT}`);
       logger.info(`Ambiente: ${process.env.NODE_ENV}`);
     });
-    
+
     // Graceful shutdown
     process.on('SIGTERM', () => {
       logger.info('Señal SIGTERM recibida. Cerrando servidor...');
@@ -152,7 +152,7 @@ async function startServer() {
         process.exit(0);
       });
     });
-    
+
     return server;
   } catch (error) {
     logger.error('Error al iniciar el servidor:', { error: error.message, stack: error.stack });

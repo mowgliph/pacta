@@ -372,7 +372,7 @@ export class BaseController {
    */
   sendPaginated(res, result, statusCode = 200, message = '') {
     const { data, meta } = result;
-    
+
     const response = {
       status: 'success',
       message,

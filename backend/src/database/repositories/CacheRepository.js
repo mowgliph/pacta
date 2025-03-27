@@ -12,19 +12,17 @@ class CacheRepository {
   async set(key, value, ttl = 3600) {
     try {
       // Convertir a string si no lo es
-      const stringValue = typeof value === 'string' 
-        ? value 
-        : JSON.stringify(value);
-      
+      const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
+
       // Calcular fecha de expiración
       const expiresAt = new Date();
       expiresAt.setSeconds(expiresAt.getSeconds() + ttl);
-      
+
       // Buscar si ya existe la clave
       const existingCache = await prisma.cache.findUnique({
-        where: { key }
+        where: { key },
       });
-      
+
       // Actualizar o crear según corresponda
       if (existingCache) {
         return prisma.cache.update({
@@ -32,16 +30,16 @@ class CacheRepository {
           data: {
             value: stringValue,
             expiresAt,
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          },
         });
       } else {
         return prisma.cache.create({
           data: {
             key,
             value: stringValue,
-            expiresAt
-          }
+            expiresAt,
+          },
         });
       }
     } catch (error) {
@@ -49,7 +47,7 @@ class CacheRepository {
       throw error;
     }
   }
-  
+
   /**
    * Obtiene un valor del cache
    * @param {string} key - Clave del valor a obtener
@@ -58,9 +56,9 @@ class CacheRepository {
   async get(key) {
     try {
       const cache = await prisma.cache.findUnique({
-        where: { key }
+        where: { key },
       });
-      
+
       // Si no existe o ha expirado, retornar null
       if (!cache || new Date() > new Date(cache.expiresAt)) {
         if (cache && new Date() > new Date(cache.expiresAt)) {
@@ -69,7 +67,7 @@ class CacheRepository {
         }
         return null;
       }
-      
+
       // Intentar parsear el valor como JSON
       try {
         return JSON.parse(cache.value);
@@ -82,7 +80,7 @@ class CacheRepository {
       return null;
     }
   }
-  
+
   /**
    * Elimina una entrada del cache
    * @param {string} key - Clave a eliminar
@@ -90,17 +88,19 @@ class CacheRepository {
    */
   async delete(key) {
     try {
-      const result = await prisma.cache.delete({
-        where: { key }
-      }).catch(() => null);
-      
+      const result = await prisma.cache
+        .delete({
+          where: { key },
+        })
+        .catch(() => null);
+
       return !!result;
     } catch (error) {
       logger.error('Error deleting cache', { key, error: error.message });
       return false;
     }
   }
-  
+
   /**
    * Elimina múltiples entradas del cache por patrón
    * @param {string} pattern - Patrón de clave a eliminar (e.j. "user:*")
@@ -109,22 +109,22 @@ class CacheRepository {
   async deletePattern(pattern) {
     try {
       const wildcardPattern = pattern.replace('*', '%');
-      
+
       const result = await prisma.cache.deleteMany({
         where: {
           key: {
-            contains: wildcardPattern
-          }
-        }
+            contains: wildcardPattern,
+          },
+        },
       });
-      
+
       return result.count;
     } catch (error) {
       logger.error('Error deleting cache pattern', { pattern, error: error.message });
       return 0;
     }
   }
-  
+
   /**
    * Elimina todas las entradas expiradas del cache
    * @returns {Promise<number>} - Número de entradas eliminadas
@@ -132,26 +132,26 @@ class CacheRepository {
   async clearExpired() {
     try {
       const now = new Date();
-      
+
       const result = await prisma.cache.deleteMany({
         where: {
           expiresAt: {
-            lt: now
-          }
-        }
+            lt: now,
+          },
+        },
       });
-      
+
       if (result.count > 0) {
         logger.info(`Cleared ${result.count} expired cache entries`);
       }
-      
+
       return result.count;
     } catch (error) {
       logger.error('Error clearing expired cache', { error: error.message });
       return 0;
     }
   }
-  
+
   /**
    * Vacía completamente el cache
    * @returns {Promise<number>} - Número de entradas eliminadas
@@ -159,9 +159,9 @@ class CacheRepository {
   async flush() {
     try {
       const result = await prisma.cache.deleteMany({});
-      
+
       logger.info(`Flushed ${result.count} cache entries`);
-      
+
       return result.count;
     } catch (error) {
       logger.error('Error flushing cache', { error: error.message });
@@ -170,4 +170,4 @@ class CacheRepository {
   }
 }
 
-export default new CacheRepository(); 
+export default new CacheRepository();

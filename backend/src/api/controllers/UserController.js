@@ -5,7 +5,12 @@ import { ValidationService } from '../../services/ValidationService.js';
 import { ResponseService } from '../../services/ResponseService.js';
 import { LoggingService } from '../../services/LoggingService.js';
 import { CacheService } from '../../services/CacheService.js';
-import { AuthenticationError, ValidationError, NotFoundError, ForbiddenError } from '../../utils/errors.js';
+import {
+  AuthenticationError,
+  ValidationError,
+  NotFoundError,
+  ForbiddenError,
+} from '../../utils/errors.js';
 import { PrismaClient } from '@prisma/client';
 import { compareSync, hashSync } from 'bcrypt';
 import { prisma } from '../../database/prisma.js';
@@ -78,18 +83,18 @@ class UserController extends BaseController {
       const userId = req.user.id;
       const { firstName, lastName, email } = req.body;
       // Datos ya validados por el middleware
-      
+
       // Verificar si el email ya existe (si se está cambiando)
       if (email && email !== req.user.email) {
         const existingUser = await prismaClient.user.findUnique({
           where: { email },
         });
-        
+
         if (existingUser) {
           throw new ValidationError('El email ya está en uso');
         }
       }
-      
+
       // Actualizar usuario
       const updatedUser = await prismaClient.user.update({
         where: { id: userId },
@@ -110,7 +115,7 @@ class UserController extends BaseController {
           updatedAt: true,
         },
       });
-      
+
       // Registrar actividad
       await prismaClient.activityLog.create({
         data: {
@@ -121,7 +126,7 @@ class UserController extends BaseController {
           details: 'Actualización de perfil',
         },
       });
-      
+
       return this.sendSuccess(res, updatedUser, 200, 'Perfil actualizado correctamente');
     } catch (error) {
       return this.handleError(error, res, 'updateProfile');
@@ -139,29 +144,29 @@ class UserController extends BaseController {
       const userId = req.user.id;
       const { currentPassword, newPassword } = req.body;
       // Datos ya validados por el middleware
-      
+
       // Buscar usuario
       const user = await prismaClient.user.findUnique({
         where: { id: userId },
       });
-      
+
       if (!user) {
         throw new NotFoundError('Usuario no encontrado');
       }
-      
+
       // Verificar contraseña actual
       if (!compareSync(currentPassword, user.password)) {
         throw new ValidationError('Contraseña actual incorrecta');
       }
-      
+
       // Actualizar contraseña
       const hashedPassword = hashSync(newPassword, 10);
-      
+
       await prismaClient.user.update({
         where: { id: userId },
         data: { password: hashedPassword },
       });
-      
+
       // Registrar actividad
       await prismaClient.activityLog.create({
         data: {
@@ -172,7 +177,7 @@ class UserController extends BaseController {
           details: 'Cambio de contraseña',
         },
       });
-      
+
       return this.sendSuccess(res, null, 200, 'Contraseña actualizada correctamente');
     } catch (error) {
       return this.handleError(error, res, 'changePassword');
@@ -188,7 +193,7 @@ class UserController extends BaseController {
   getProfile = async (req, res, next) => {
     try {
       const userId = req.user.id;
-      
+
       const user = await prismaClient.user.findUnique({
         where: { id: userId },
         select: {
@@ -203,11 +208,11 @@ class UserController extends BaseController {
           updatedAt: true,
         },
       });
-      
+
       if (!user) {
         throw new NotFoundError('Usuario no encontrado');
       }
-      
+
       return this.sendSuccess(res, user);
     } catch (error) {
       return this.handleError(error, res, 'getProfile');
@@ -225,21 +230,21 @@ class UserController extends BaseController {
       const { id } = req.params;
       const { role } = req.body;
       // Datos ya validados por el middleware
-      
+
       // No permitir cambiar el rol propio
       if (parseInt(id) === req.user.id) {
         throw new ForbiddenError('No puedes cambiar tu propio rol');
       }
-      
+
       // Verificar que el usuario existe
       const user = await prismaClient.user.findUnique({
         where: { id: parseInt(id) },
       });
-      
+
       if (!user) {
         throw new NotFoundError('Usuario no encontrado');
       }
-      
+
       // Actualizar rol
       const updatedUser = await prismaClient.user.update({
         where: { id: parseInt(id) },
@@ -253,7 +258,7 @@ class UserController extends BaseController {
           status: true,
         },
       });
-      
+
       // Registrar actividad
       await prismaClient.activityLog.create({
         data: {
@@ -264,7 +269,7 @@ class UserController extends BaseController {
           details: `Cambio de rol: ${user.role} → ${role}`,
         },
       });
-      
+
       return this.sendSuccess(res, updatedUser, 200, 'Rol de usuario actualizado correctamente');
     } catch (error) {
       return this.handleError(error, res, 'updateUserRole');
@@ -282,21 +287,21 @@ class UserController extends BaseController {
       const { id } = req.params;
       const { status } = req.body;
       // Datos ya validados por el middleware
-      
+
       // No permitir cambiar el estado propio
       if (parseInt(id) === req.user.id) {
         throw new ForbiddenError('No puedes cambiar tu propio estado');
       }
-      
+
       // Verificar que el usuario existe
       const user = await prismaClient.user.findUnique({
         where: { id: parseInt(id) },
       });
-      
+
       if (!user) {
         throw new NotFoundError('Usuario no encontrado');
       }
-      
+
       // Actualizar estado
       const updatedUser = await prismaClient.user.update({
         where: { id: parseInt(id) },
@@ -310,7 +315,7 @@ class UserController extends BaseController {
           status: true,
         },
       });
-      
+
       // Registrar actividad
       await prismaClient.activityLog.create({
         data: {
@@ -321,7 +326,7 @@ class UserController extends BaseController {
           details: `Cambio de estado: ${user.status} → ${status}`,
         },
       });
-      
+
       return this.sendSuccess(res, updatedUser, 200, 'Estado de usuario actualizado correctamente');
     } catch (error) {
       return this.handleError(error, res, 'updateUserStatus');
@@ -453,7 +458,7 @@ class UserController extends BaseController {
       if (!['MANAGER', 'ADMIN'].includes(req.user.role)) {
         throw new ForbiddenError('No tienes permisos para ver estos datos');
       }
-      
+
       // Obtener usuarios del equipo
       const users = await prismaClient.user.findMany({
         select: {
@@ -468,7 +473,7 @@ class UserController extends BaseController {
         },
         orderBy: { lastName: 'asc' },
       });
-      
+
       // Obtener estadísticas de contratos por usuario
       const contractStats = await prismaClient.contract.groupBy({
         by: ['userId'],
@@ -476,7 +481,7 @@ class UserController extends BaseController {
           id: true,
         },
       });
-      
+
       // Combinar datos
       const teamData = users.map(user => {
         const userStats = contractStats.find(stat => stat.userId === user.id);
@@ -485,13 +490,13 @@ class UserController extends BaseController {
           contractCount: userStats ? userStats._count.id : 0,
         };
       });
-      
+
       return this.sendSuccess(res, teamData);
     } catch (error) {
       return this.handleError(error, res, 'getTeamData');
     }
   }
-  
+
   /**
    * Obtiene todos los usuarios
    * @param {Object} req - Objeto de solicitud
@@ -501,7 +506,7 @@ class UserController extends BaseController {
     try {
       const { page = 1, limit = 10, search } = req.query;
       const skip = (page - 1) * limit;
-      
+
       // Construir filtro de búsqueda
       const where = {};
       if (search) {
@@ -511,10 +516,10 @@ class UserController extends BaseController {
           { email: { contains: search, mode: 'insensitive' } },
         ];
       }
-      
+
       // Contar total
       const total = await prismaClient.user.count({ where });
-      
+
       // Obtener usuarios
       const users = await prismaClient.user.findMany({
         where,
@@ -533,7 +538,7 @@ class UserController extends BaseController {
         skip,
         take: parseInt(limit),
       });
-      
+
       return this.sendPaginated(res, {
         data: users,
         meta: {
@@ -547,15 +552,15 @@ class UserController extends BaseController {
       return this.handleError(error, res, 'getAllUsers');
     }
   }
-  
+
   /**
    * Obtiene un usuario por ID
    * @param {Object} req - Objeto de solicitud
    * @param {Object} res - Objeto de respuesta
    */
   async getUserById(req, res) {
-  try {
-    const { id } = req.params;
+    try {
+      const { id } = req.params;
 
       const user = await prismaClient.user.findUnique({
         where: { id: parseInt(id) },
@@ -571,20 +576,20 @@ class UserController extends BaseController {
           updatedAt: true,
         },
       });
-      
+
       if (!user) {
         throw new NotFoundError('Usuario no encontrado');
       }
-      
+
       // Obtener estadísticas adicionales
       const contractCount = await prismaClient.contract.count({
         where: { userId: parseInt(id) },
       });
-      
+
       const licenseCount = await prismaClient.license.count({
         where: { userId: parseInt(id) },
       });
-      
+
       return this.sendSuccess(res, {
         ...user,
         statistics: {
@@ -596,7 +601,7 @@ class UserController extends BaseController {
       return this.handleError(error, res, 'getUserById');
     }
   }
-  
+
   /**
    * Crea un nuevo usuario
    * @param {Object} req - Objeto de solicitud
@@ -605,24 +610,24 @@ class UserController extends BaseController {
   async createUser(req, res) {
     try {
       const { firstName, lastName, email, password, role } = req.body;
-      
+
       // Validar datos
       if (!firstName || !lastName || !email || !password) {
         throw new ValidationError('Todos los campos son requeridos');
       }
-      
+
       // Verificar email único
       const existingUser = await prismaClient.user.findUnique({
         where: { email },
       });
-      
+
       if (existingUser) {
         throw new ValidationError('El email ya está registrado');
       }
-      
+
       // Crear usuario
       const hashedPassword = hashSync(password, 10);
-      
+
       const user = await prismaClient.user.create({
         data: {
           firstName,
@@ -654,13 +659,13 @@ class UserController extends BaseController {
           details: `Usuario creado por administrador: ${user.email}`,
         },
       });
-      
+
       return this.sendSuccess(res, user, 201, 'Usuario creado correctamente');
     } catch (error) {
       return this.handleError(error, res, 'createUser');
     }
   }
-  
+
   /**
    * Actualiza un usuario
    * @param {Object} req - Objeto de solicitud
@@ -670,32 +675,32 @@ class UserController extends BaseController {
     try {
       const { id } = req.params;
       const { firstName, lastName, email, role, status } = req.body;
-      
+
       // Validar datos
       if (!firstName && !lastName && !email && !role && !status) {
         throw new ValidationError('No se proporcionaron datos para actualizar');
       }
-      
+
       // Verificar que el usuario existe
       const existingUser = await prismaClient.user.findUnique({
         where: { id: parseInt(id) },
       });
-      
+
       if (!existingUser) {
         throw new NotFoundError('Usuario no encontrado');
       }
-      
+
       // Verificar email único si se está cambiando
       if (email && email !== existingUser.email) {
         const duplicateEmail = await prismaClient.user.findUnique({
           where: { email },
         });
-        
+
         if (duplicateEmail) {
           throw new ValidationError('El email ya está en uso');
         }
       }
-      
+
       // Actualizar usuario
       const updatedUser = await prismaClient.user.update({
         where: { id: parseInt(id) },
@@ -719,7 +724,7 @@ class UserController extends BaseController {
         },
       });
 
-    // Registrar actividad
+      // Registrar actividad
       await prismaClient.activityLog.create({
         data: {
           userId: req.user.id,
@@ -729,36 +734,36 @@ class UserController extends BaseController {
           details: `Usuario actualizado por administrador: ${updatedUser.email}`,
         },
       });
-      
+
       return this.sendSuccess(res, updatedUser, 200, 'Usuario actualizado correctamente');
-  } catch (error) {
+    } catch (error) {
       return this.handleError(error, res, 'updateUser');
     }
   }
-  
+
   /**
    * Elimina un usuario
    * @param {Object} req - Objeto de solicitud
    * @param {Object} res - Objeto de respuesta
    */
   async deleteUser(req, res) {
-  try {
-    const { id } = req.params;
+    try {
+      const { id } = req.params;
 
       // No permitir eliminar el propio usuario
       if (parseInt(id) === req.user.id) {
         throw new ValidationError('No puedes eliminar tu propio usuario');
       }
-      
+
       // Verificar que el usuario existe
       const user = await prismaClient.user.findUnique({
         where: { id: parseInt(id) },
       });
-      
+
       if (!user) {
         throw new NotFoundError('Usuario no encontrado');
       }
-      
+
       // Eliminar usuario (opcionalmente hacer un soft delete)
       await prismaClient.user.update({
         where: { id: parseInt(id) },
@@ -768,19 +773,19 @@ class UserController extends BaseController {
         },
       });
 
-    // Registrar actividad
+      // Registrar actividad
       await prismaClient.activityLog.create({
         data: {
-      userId: req.user.id,
+          userId: req.user.id,
           action: 'DELETE_USER',
           entityType: 'User',
           entityId: id,
           details: `Usuario eliminado: ${user.email}`,
         },
       });
-      
+
       return this.sendSuccess(res, null, 200, 'Usuario eliminado correctamente');
-  } catch (error) {
+    } catch (error) {
       return this.handleError(error, res, 'deleteUser');
     }
   }

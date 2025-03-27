@@ -33,7 +33,7 @@ const config = {
       path: process.env.DB_BACKUP_PATH || './data/backups',
       interval: parseInt(process.env.DB_BACKUP_INTERVAL || '86400', 10), // 24 horas
       keepDays: parseInt(process.env.DB_BACKUP_KEEP_DAYS || '7', 10),
-    }
+    },
   },
 
   // Modo Offline
@@ -45,7 +45,7 @@ const config = {
       path: process.env.LOCAL_STORAGE_PATH || './data/storage',
       maxSize: process.env.STORAGE_MAX_SIZE || '1gb',
       compressFiles: process.env.STORAGE_COMPRESS_FILES === 'true',
-    }
+    },
   },
 
   // JWT
@@ -82,7 +82,7 @@ const config = {
     compression: {
       enabled: process.env.FILE_COMPRESSION_ENABLED === 'true',
       level: parseInt(process.env.FILE_COMPRESSION_LEVEL || '6', 10),
-    }
+    },
   },
 
   // Seguridad
@@ -103,7 +103,7 @@ const config = {
       cpu: process.env.MONITOR_CPU === 'true',
       memory: process.env.MONITOR_MEMORY === 'true',
       storage: process.env.MONITOR_STORAGE === 'true',
-    }
+    },
   },
 
   // Sincronización
@@ -112,7 +112,7 @@ const config = {
     retryAttempts: parseInt(process.env.SYNC_RETRY_ATTEMPTS || '3', 10),
     retryDelay: parseInt(process.env.SYNC_RETRY_DELAY || '300000', 10), // 5 minutos
     conflictResolution: process.env.SYNC_CONFLICT_RESOLUTION || 'latest', // latest, manual
-  }
+  },
 };
 
 // Validate required configuration
@@ -120,7 +120,7 @@ const requiredConfig = [
   'security.encryptionKey',
   'security.sessionSecret',
   'jwt.secret',
-  'jwt.refreshSecret'
+  'jwt.refreshSecret',
 ];
 
 const missingConfig = requiredConfig.filter(key => {

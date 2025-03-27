@@ -257,7 +257,7 @@ export class ValidationService {
     const schema = this.validators.getNotificationsSchema();
     return this.validate(schema, data);
   }
-  
+
   async validateExpirationNotifications(data) {
     const schema = this.validators.createExpirationNotificationsSchema();
     return this.validate(schema, data);

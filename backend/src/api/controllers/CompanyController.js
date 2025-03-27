@@ -29,16 +29,18 @@ export class CompanyController extends BaseController {
 
       // Obtener datos
       const result = await this.companyService.getCompanies(
-        validatedQuery, 
-        validatedQuery.page || 1, 
-        validatedQuery.limit || 10
+        validatedQuery,
+        validatedQuery.page || 1,
+        validatedQuery.limit || 10,
       );
 
       // Responder
       res.status(200).json(ResponseService.paginate(result.data, result.pagination));
     } catch (error) {
       if (error instanceof ValidationError) {
-        return res.status(400).json(ResponseService.error('Parámetros de consulta inválidos', 400, error.details));
+        return res
+          .status(400)
+          .json(ResponseService.error('Parámetros de consulta inválidos', 400, error.details));
       }
       next(error);
     }
@@ -54,7 +56,7 @@ export class CompanyController extends BaseController {
     try {
       // Validar ID
       const { id } = await this.validationService.validateCompanyId({ id: req.params.id });
-      
+
       const result = await this.companyService.getById(id);
 
       if (!result) {
@@ -64,7 +66,9 @@ export class CompanyController extends BaseController {
       res.status(200).json(ResponseService.success(result));
     } catch (error) {
       if (error instanceof ValidationError) {
-        return res.status(400).json(ResponseService.error('ID de compañía inválido', 400, error.details));
+        return res
+          .status(400)
+          .json(ResponseService.error('ID de compañía inválido', 400, error.details));
       }
       next(error);
     }
@@ -87,7 +91,9 @@ export class CompanyController extends BaseController {
       res.status(201).json(ResponseService.created(result));
     } catch (error) {
       if (error instanceof ValidationError) {
-        return res.status(400).json(ResponseService.error('Datos de compañía inválidos', 400, error.details));
+        return res
+          .status(400)
+          .json(ResponseService.error('Datos de compañía inválidos', 400, error.details));
       }
       next(error);
     }
@@ -103,7 +109,7 @@ export class CompanyController extends BaseController {
     try {
       // Validar ID
       const { id } = await this.validationService.validateCompanyId({ id: req.params.id });
-      
+
       // Validar datos
       const validatedData = await this.validationService.validateCompanyUpdate(req.body);
 
@@ -117,7 +123,9 @@ export class CompanyController extends BaseController {
       res.status(200).json(ResponseService.updated(result));
     } catch (error) {
       if (error instanceof ValidationError) {
-        return res.status(400).json(ResponseService.error('Datos de actualización inválidos', 400, error.details));
+        return res
+          .status(400)
+          .json(ResponseService.error('Datos de actualización inválidos', 400, error.details));
       }
       next(error);
     }
@@ -133,7 +141,7 @@ export class CompanyController extends BaseController {
     try {
       // Validar ID
       const { id } = await this.validationService.validateCompanyId({ id: req.params.id });
-      
+
       // Eliminar compañía
       const result = await this.companyService.deleteCompany(id);
 
@@ -144,7 +152,9 @@ export class CompanyController extends BaseController {
       res.status(200).json(ResponseService.success({ message: 'Company deleted successfully' }));
     } catch (error) {
       if (error instanceof ValidationError) {
-        return res.status(400).json(ResponseService.error('ID de compañía inválido', 400, error.details));
+        return res
+          .status(400)
+          .json(ResponseService.error('ID de compañía inválido', 400, error.details));
       }
       next(error);
     }
@@ -205,7 +215,9 @@ export class CompanyController extends BaseController {
       res.status(201).json(ResponseService.created(result));
     } catch (error) {
       if (error instanceof ValidationError) {
-        return res.status(400).json(ResponseService.error('Datos de departamento inválidos', 400, error.details));
+        return res
+          .status(400)
+          .json(ResponseService.error('Datos de departamento inválidos', 400, error.details));
       }
       next(error);
     }
@@ -221,7 +233,7 @@ export class CompanyController extends BaseController {
     try {
       // Validar ID
       const { id } = await this.validationService.validateDepartmentId({ id: req.params.id });
-      
+
       // Validar datos
       const validatedData = await this.validationService.validateDepartmentUpdate(req.body);
 
@@ -235,7 +247,9 @@ export class CompanyController extends BaseController {
       res.status(200).json(ResponseService.updated(result));
     } catch (error) {
       if (error instanceof ValidationError) {
-        return res.status(400).json(ResponseService.error('Datos de actualización inválidos', 400, error.details));
+        return res
+          .status(400)
+          .json(ResponseService.error('Datos de actualización inválidos', 400, error.details));
       }
       next(error);
     }
@@ -251,7 +265,7 @@ export class CompanyController extends BaseController {
     try {
       // Validar ID
       const { id } = await this.validationService.validateDepartmentId({ id: req.params.id });
-      
+
       // Eliminar departamento
       const result = await this.companyService.deleteDepartment(id);
 
@@ -262,7 +276,9 @@ export class CompanyController extends BaseController {
       res.status(200).json(ResponseService.success({ message: 'Department deleted successfully' }));
     } catch (error) {
       if (error instanceof ValidationError) {
-        return res.status(400).json(ResponseService.error('ID de departamento inválido', 400, error.details));
+        return res
+          .status(400)
+          .json(ResponseService.error('ID de departamento inválido', 400, error.details));
       }
       next(error);
     }

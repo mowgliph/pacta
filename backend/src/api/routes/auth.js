@@ -13,42 +13,42 @@ router.post(
   '/login',
   loginLimiter,
   validate(validationService.validators.auth.loginSchema),
-  authController.login.bind(authController)
+  authController.login.bind(authController),
 );
 
 // Registro de usuario
 router.post(
   '/register',
   validate(validationService.validators.auth.registrationSchema),
-  authController.register.bind(authController)
+  authController.register.bind(authController),
 );
 
 // Endpoint para solicitar restablecimiento de contraseña
 router.post(
   '/forgot-password',
   validate(validationService.validators.auth.passwordResetRequestSchema),
-  authController.forgotPassword.bind(authController)
+  authController.forgotPassword.bind(authController),
 );
 
 // Establecer nueva contraseña
 router.post(
   '/reset-password',
   validate(validationService.validators.auth.passwordResetSchema),
-  authController.resetPassword.bind(authController)
+  authController.resetPassword.bind(authController),
 );
 
 // Verificar email
 router.get(
   '/verify-email/:token',
   validate(validationService.validators.auth.emailVerificationSchema, 'params'),
-  authController.verifyEmail.bind(authController)
+  authController.verifyEmail.bind(authController),
 );
 
 // Refrescar token
 router.post(
   '/refresh-token',
   validate(validationService.validators.auth.refreshTokenSchema),
-  authController.refreshToken.bind(authController)
+  authController.refreshToken.bind(authController),
 );
 
 // Cambiar contraseña (requiere autenticación)
@@ -56,7 +56,7 @@ router.post(
   '/change-password',
   authenticateToken,
   validate(validationService.validators.auth.changePasswordSchema),
-  authController.changePassword.bind(authController)
+  authController.changePassword.bind(authController),
 );
 
 // Verificar 2FA

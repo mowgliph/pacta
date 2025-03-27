@@ -19,7 +19,7 @@ class SchedulerService {
   static scheduleBackup(frequency = 'daily') {
     try {
       let cronExpression;
-      
+
       switch (frequency) {
         case 'hourly':
           cronExpression = '0 * * * *';
@@ -33,11 +33,11 @@ class SchedulerService {
         default:
           cronExpression = '0 0 * * *'; // Diario por defecto
       }
-      
+
       schedule.scheduleJob(cronExpression, async () => {
         await this.runBackup();
       });
-      
+
       logger.info(`Backups programados con frecuencia ${frequency}`);
     } catch (error) {
       logger.error('Error al programar backups:', error);
@@ -51,8 +51,8 @@ class SchedulerService {
           active: true,
         },
         include: {
-          user: true
-        }
+          user: true,
+        },
       });
 
       for (const license of licenses) {
@@ -67,7 +67,7 @@ class SchedulerService {
             {
               licenseId: license.id,
               status: 'EXPIRED',
-            }
+            },
           );
         } else if (daysUntilExpiry <= 30) {
           // La licencia expirará pronto
@@ -79,7 +79,7 @@ class SchedulerService {
               licenseId: license.id,
               status: 'EXPIRING_SOON',
               daysRemaining: daysUntilExpiry,
-            }
+            },
           );
         }
       }
@@ -87,20 +87,20 @@ class SchedulerService {
       logger.error('Error in checkLicenses:', error);
     }
   }
-  
+
   static async runBackup() {
     try {
       // Implementación del backup (usando child_process o alguna biblioteca de respaldo)
       logger.info('Ejecutando backup programado');
-      
+
       // Registro de la actividad
       await prisma.activityLog.create({
         data: {
           userId: 1, // Usuario del sistema
           action: 'SCHEDULED_BACKUP',
           entityType: 'System',
-          details: 'Scheduled backup executed'
-        }
+          details: 'Scheduled backup executed',
+        },
       });
     } catch (error) {
       logger.error('Error durante el backup programado:', error);

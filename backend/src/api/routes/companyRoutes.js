@@ -13,80 +13,84 @@ const validationService = new ValidationService();
 
 // Obtener todas las compañías con filtros y paginación
 router.get(
-  '/', 
+  '/',
   authenticateToken,
   validateQuery(validationService.searchCompanySchema()),
-  controller.getAllCompanies
+  controller.getAllCompanies,
 );
 
 // Obtener una compañía por ID
 router.get(
-  '/:id', 
+  '/:id',
   authenticateToken,
   validateParams(validationService.companyIdSchema()),
-  controller.getCompanyById
+  controller.getCompanyById,
 );
 
 // Crear una nueva compañía
 router.post(
-  '/', 
+  '/',
   authenticateToken,
   isAdmin,
   validateBody(validationService.createCompanySchema()),
-  controller.createCompany
+  controller.createCompany,
 );
 
 // Actualizar una compañía existente
 router.put(
-  '/:id', 
+  '/:id',
   authenticateToken,
   isAdmin,
   validate({
     params: validationService.companyIdSchema(),
-    body: validationService.updateCompanySchema()
+    body: validationService.updateCompanySchema(),
   }),
-  controller.updateCompany
+  controller.updateCompany,
 );
 
 // Eliminar una compañía
 router.delete(
-  '/:id', 
+  '/:id',
   authenticateToken,
   isAdmin,
   validateParams(validationService.companyIdSchema()),
-  controller.deleteCompany
+  controller.deleteCompany,
 );
 
 // Rutas para departamentos
 router.post(
-  '/departments', 
+  '/departments',
   authenticateToken,
   isAdmin,
   validateBody(validationService.createDepartmentSchema()),
-  controller.createDepartment
+  controller.createDepartment,
 );
 
 router.put(
-  '/departments/:id', 
+  '/departments/:id',
   authenticateToken,
   isAdmin,
   validate({
     params: validationService.departmentIdSchema(),
-    body: validationService.updateDepartmentSchema()
+    body: validationService.updateDepartmentSchema(),
   }),
-  controller.updateDepartment
+  controller.updateDepartment,
 );
 
 router.delete(
-  '/departments/:id', 
+  '/departments/:id',
   authenticateToken,
   isAdmin,
   validateParams(validationService.departmentIdSchema()),
-  controller.deleteDepartment
+  controller.deleteDepartment,
 );
 
 // Rutas para análisis y consultas específicas
 router.get('/top/by-contracts', authenticateToken, controller.getTopCompaniesByContracts);
-router.get('/with-expiring-contracts', authenticateToken, controller.getCompaniesWithExpiringContracts);
+router.get(
+  '/with-expiring-contracts',
+  authenticateToken,
+  controller.getCompaniesWithExpiringContracts,
+);
 
 export default router;

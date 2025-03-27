@@ -51,7 +51,9 @@ class License {
 
   static async generateLicenseKey() {
     const timestamp = Date.now().toString();
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    const random = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, '0');
     return `LICENSE-${timestamp}-${random}`;
   }
 
@@ -80,9 +82,9 @@ class License {
         metadata: {
           ...this.metadata,
           activationDate: new Date().toISOString(),
-          ...activationData
-        }
-      }
+          ...activationData,
+        },
+      },
     });
   }
 
@@ -90,16 +92,16 @@ class License {
   async update(data) {
     return prisma.license.update({
       where: { id: this.id },
-      data
+      data,
     });
   }
 
   async save() {
     return prisma.license.update({
       where: { id: this.id },
-      data: this
+      data: this,
     });
   }
 }
 
-export default License; 
+export default License;
