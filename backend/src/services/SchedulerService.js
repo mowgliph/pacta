@@ -4,6 +4,7 @@ import { differenceInDays } from 'date-fns';
 import NotificationService from './NotificationService.js';
 import { logger } from '../utils/logger.js';
 import backupService from './BackupService.js';
+import purgeService from './PurgeService.js';
 
 class SchedulerService {
   static init() {
@@ -97,6 +98,29 @@ class SchedulerService {
     } catch (error) {
       logger.error('Scheduled backup failed:', error);
     }
+  }
+
+  /**
+   * Ejecuta la limpieza programada de backups
+   */
+  static async runPurge() {
+    try {
+      logger.info('Starting scheduled purge');
+      await purgeService.executePurge();
+      logger.info('Scheduled purge completed');
+    } catch (error) {
+      logger.error('Scheduled purge failed:', error);
+    }
+  }
+
+  /**
+   * Inicializa las tareas programadas
+   */
+  static initializeScheduledTasks() {
+    // Programar purga diaria
+    schedule.scheduleJob('0 1 * * *', async () => {
+      await this.runPurge();
+    });
   }
 }
 
