@@ -1,40 +1,52 @@
 export interface Contract {
   id: number
-  titulo: string
-  codigo: string
-  estado: 'borrador' | 'activo' | 'vencido' | 'terminado' | 'renovado'
-  fechaInicio: string
-  fechaFin: string
-  descripcion?: string
-  monto?: number
-  moneda?: string
-  cliente?: {
-    id: number
-    nombre: string
-    email: string
-  }
-  documentos?: Array<{
-    id: number
-    nombre: string
-    tipo: string
-    url: string
-  }>
+  title: string
+  description?: string
+  contractNumber: string
+  startDate: string
+  endDate: string
+  value?: number
+  companyId: number
+  departmentId?: number
+  status: 'ACTIVE' | 'PENDING' | 'EXPIRED' | 'CANCELLED'
+  files?: string[]
+  tags?: string[]
+  responsibleEmail?: string
+  autoRenewal?: boolean
+  renewalDays?: number
+  notes?: string
   createdAt: string
   updatedAt: string
+  createdBy: number
+  company?: {
+    id: number
+    name: string
+  }
+  department?: {
+    id: number
+    name: string
+  }
 }
-
-// Update the store slice to match the Contract interface
-export interface ContractState {
-  contratos: Contract[]
-  cargando: boolean
-  error: string | null
-}
-
-export type ContractStatus = Contract['estado']
 
 export interface ContractFilters {
-  estado?: ContractStatus
-  fechaInicio?: string
-  fechaFin?: string
-  busqueda?: string
+  estado: 'ACTIVE' | 'PENDING' | 'EXPIRED' | 'CANCELLED' | undefined
+  busqueda: string | undefined
+  fechaInicio: string | undefined
+  fechaFin: string | undefined
+  empresaId: number | undefined
+  departamentoId: number | undefined
+  etiquetas: string[] | undefined
+  pagina: number | undefined
+  limite: number | undefined
+  ordenarPor: string | undefined
+  direccionOrden: 'asc' | 'desc' | undefined
+}
+
+// Update the store type
+export interface ContractState {
+  contratos: Contract[]
+  contratoSeleccionado: Contract | null
+  filtros: ContractFilters
+  cargando: boolean
+  error: string | null
 }

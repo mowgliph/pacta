@@ -5,27 +5,31 @@ import { crearSliceContratos, SliceContratos } from './slices/contratos'
 import { crearSliceUI, SliceUI } from './slices/ui'
 import { crearSliceNotificaciones, SliceNotificaciones } from './slices/notificaciones'
 
-interface StoreState extends 
+export interface StoreState extends 
   SliceAutenticacion,
   SliceContratos,
   SliceUI,
   SliceNotificaciones {}
 
 export const useStore = create<StoreState>()(
-  persist(
-    (...a) => ({
-      ...crearSliceAutenticacion(...a),
-      ...crearSliceContratos(...a),
-      ...crearSliceUI(...a),
-      ...crearSliceNotificaciones(...a),
-    }),
-    {
-      name: 'pacta-store',
-      partialize: (state: StoreState) => ({
-        usuario: state.usuario,
-        token: state.token,
-        contratos: state.contratos,
+  devtools(
+    persist(
+      (...a) => ({
+        ...crearSliceAutenticacion(...a),
+        ...crearSliceContratos(...a),
+        ...crearSliceUI(...a),
+        ...crearSliceNotificaciones(...a),
       }),
-    }
+      {
+        name: 'pacta-store',
+        partialize: (state) => ({
+          usuario: state.usuario,
+          token: state.token,
+          contratos: state.contratos,
+          tema: state.tema
+        })
+      }
+    ),
+    { name: 'PACTA Store' }
   )
 )

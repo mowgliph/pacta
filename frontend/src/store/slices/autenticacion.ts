@@ -1,10 +1,12 @@
 import { StateCreator } from 'zustand'
+import { apiClient } from '@/lib/api/client'
 
 interface Usuario {
   id: number
   nombre: string
   email: string
   rol: 'admin' | 'usuario'
+  permisos: string[]
 }
 
 export interface SliceAutenticacion {
@@ -12,45 +14,96 @@ export interface SliceAutenticacion {
   token: string | null
   cargando: boolean
   error: string | null
+  permisos: { [key: string]: boolean }
   iniciarSesion: (email: string, password: string) => Promise<void>
   cerrarSesion: () => void
   verificarSesion: () => Promise<void>
+  actualizarPermisos: (permisos: string[]) => void
+  tienePermiso: (permiso: string) => boolean
 }
 
-export const crearSliceAutenticacion: StateCreator<SliceAutenticacion> = (set) => ({
+export const crearSliceAutenticacion: StateCreator<SliceAutenticacion> = (set, get) => ({
   usuario: null,
   token: null,
   cargando: false,
   error: null,
+  permisos: {},
 
   iniciarSesion: async (email, password) => {
     set({ cargando: true, error: null })
     try {
-      // Aquí iría la llamada a la API
-      const respuesta = await fetch('/api/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password })
+      const { data } = await apiClient.post('/api/v1/auth/login', { email, password })
+      
+      // Configurar el token en el cliente API
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${data.token}`
+      
+      set({ 
+        usuario: data.usuario,
+        token: data.token,
+        cargando: false
       })
-      const datos = await respuesta.json()
-      set({ usuario: datos.usuario, token: datos.token, cargando: false })
+      get().actualizarPermisos(data.usuario.permisos)
+      
+      // Guardar token en localStorage
+      localStorage.setItem('token', data.token)
     } catch (error) {
-      set({ error: 'Error al iniciar sesión', cargando: false })
+      set({ 
+        error: error instanceof Error ? error.message : 'Error al iniciar sesión',
+        cargando: false 
+      })
     }
   },
 
   cerrarSesion: () => {
-    set({ usuario: null, token: null })
-    localStorage.removeItem('pacta-store')
+    // Limpiar token del cliente API
+    delete apiClient.defaults.headers.common['Authorization']
+    
+    set({ 
+      usuario: null, 
+      token: null,
+      permisos: {} 
+    })
+    localStorage.removeItem('token')
   },
 
   verificarSesion: async () => {
-    set({ cargando: true, error: null })
+    const token = localStorage.getItem('token')
+    if (!token) return
+
+    set({ cargando: true })
     try {
-      const respuesta = await fetch('/api/auth/verify')
-      const datos = await respuesta.json()
-      set({ usuario: datos.usuario, cargando: false })
+      // Configurar token en el cliente API
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      
+      const { data } = await apiClient.get('/api/v1/auth/verify')
+      
+      set({ 
+        usuario: data.usuario,
+        token,
+        cargando: false 
+      })
+      get().actualizarPermisos(data.usuario.permisos)
     } catch (error) {
-      set({ error: 'Sesión inválida', usuario: null, token: null, cargando: false })
+      delete apiClient.defaults.headers.common['Authorization']
+      localStorage.removeItem('token')
+      set({ 
+        usuario: null,
+        token: null,
+        permisos: {},
+        cargando: false 
+      })
     }
+  },
+
+  actualizarPermisos: (permisos) => {
+    const permisosMap = permisos.reduce((acc, permiso) => ({
+      ...acc,
+      [permiso]: true
+    }), {})
+    set({ permisos: permisosMap })
+  },
+
+  tienePermiso: (permiso) => {
+    return get().permisos[permiso] || false
   }
 })

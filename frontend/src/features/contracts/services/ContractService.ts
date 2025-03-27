@@ -1,5 +1,5 @@
 import { BaseService } from '@/lib/api/BaseService'
-import { Contract } from '../types'
+import { Contract, ContractFilters } from '../types'
 import { AxiosResponse } from 'axios'
 
 class ContractService extends BaseService {
@@ -7,8 +7,8 @@ class ContractService extends BaseService {
     super('/contracts')
   }
 
-  async getAll(): Promise<AxiosResponse<Contract[]>> {
-    return this.get<Contract[]>()
+  async getAll(filters?: ContractFilters): Promise<AxiosResponse<Contract[]>> {
+    return this.get<Contract[]>('', { params: filters })
   }
 
   async getById(id: number): Promise<AxiosResponse<Contract>> {
@@ -21,6 +21,10 @@ class ContractService extends BaseService {
 
   async update(id: number, data: Partial<Contract>): Promise<AxiosResponse<Contract>> {
     return this.put<Contract>(`/${id}`, data)
+  }
+
+  async updateStatus(id: number, status: Contract['status']): Promise<AxiosResponse<Contract>> {
+    return this.patch<Contract>(`/${id}/status`, { status })
   }
 
   async deleteContract(id: number): Promise<AxiosResponse<void>> {

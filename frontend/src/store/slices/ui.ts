@@ -1,27 +1,51 @@
 import { StateCreator } from 'zustand'
 
-export interface SliceUI {
-  tema: 'light' | 'dark'
-  sidebarAbierto: boolean
-  modalActivo: string | null
-  cambiarTema: (tema: 'light' | 'dark') => void
-  toggleSidebar: () => void
-  abrirModal: (id: string) => void
-  cerrarModal: () => void
+interface Modal {
+  id: string
+  component: React.ComponentType<any>
+  props?: Record<string, any>
 }
 
-export const crearSliceUI: StateCreator<SliceUI> = (set) => ({
-  tema: 'light',
-  sidebarAbierto: true,
-  modalActivo: null,
+export interface SliceUI {
+  tema: 'light' | 'dark' | 'system'
+  modales: Modal[]
+  sidebarAbierto: boolean
+  cambiarTema: (tema: 'light' | 'dark' | 'system') => void
+  abrirModal: (modal: Modal) => void
+  cerrarModal: (id: string) => void
+  toggleSidebar: () => void
+}
 
-  cambiarTema: (tema) => set({ tema }),
-  
-  toggleSidebar: () => set((state) => ({ 
-    sidebarAbierto: !state.sidebarAbierto 
-  })),
-  
-  abrirModal: (id) => set({ modalActivo: id }),
-  
-  cerrarModal: () => set({ modalActivo: null })
+export const crearSliceUI: StateCreator<SliceUI> = (set, get) => ({
+  tema: 'system',
+  modales: [],
+  sidebarAbierto: true,
+
+  cambiarTema: (tema) => {
+    set({ tema })
+    localStorage.setItem('tema', tema)
+    if (tema === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  },
+
+  abrirModal: (modal) => {
+    set((state) => ({
+      modales: [...state.modales, modal]
+    }))
+  },
+
+  cerrarModal: (id) => {
+    set((state) => ({
+      modales: state.modales.filter(modal => modal.id !== id)
+    }))
+  },
+
+  toggleSidebar: () => {
+    set((state) => ({
+      sidebarAbierto: !state.sidebarAbierto
+    }))
+  }
 })

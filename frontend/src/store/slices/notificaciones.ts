@@ -1,101 +1,101 @@
 import { StateCreator } from 'zustand'
 
-interface Notificacion {
+export interface Notification {
   id: string
-  tipo: 'info' | 'success' | 'warning' | 'error'
-  mensaje: string
-  titulo?: string
-  duracion?: number
-  accion?: {
-    texto: string
+  type: 'info' | 'success' | 'warning' | 'error'
+  title?: string
+  message: string
+  duration?: number
+  action?: {
+    label: string
     onClick: () => void
   }
 }
 
 export interface SliceNotificaciones {
-  notificaciones: Notificacion[]
-  mostrarNotificacion: (notificacion: Omit<Notificacion, 'id'>) => void
-  mostrarExito: (mensaje: string, titulo?: string) => void
-  mostrarError: (mensaje: string, titulo?: string) => void
-  mostrarInfo: (mensaje: string, titulo?: string) => void
-  mostrarAlerta: (mensaje: string, titulo?: string) => void
-  eliminarNotificacion: (id: string) => void
-  limpiarNotificaciones: () => void
+  notifications: Notification[]
+  showNotification: (notification: Omit<Notification, 'id'>) => void
+  showSuccess: (message: string, title?: string) => void
+  showError: (message: string, title?: string) => void
+  showWarning: (message: string, title?: string) => void
+  showInfo: (message: string, title?: string) => void
+  dismissNotification: (id: string) => void
+  clearNotifications: () => void
 }
 
 export const crearSliceNotificaciones: StateCreator<SliceNotificaciones> = (set) => ({
-  notificaciones: [],
+  notifications: [],
 
-  mostrarNotificacion: (notificacion) => {
+  showNotification: (notification) => {
     const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     set((state) => ({
-      notificaciones: [...state.notificaciones, { ...notificacion, id }]
+      notifications: [...state.notifications, { ...notification, id }]
     }))
 
-    if (notificacion.duracion !== 0) {
+    if (notification.duration !== 0) {
       setTimeout(() => {
         set((state) => ({
-          notificaciones: state.notificaciones.filter((n) => n.id !== id)
+          notifications: state.notifications.filter((n) => n.id !== id)
         }))
-      }, notificacion.duracion || 5000)
+      }, notification.duration || 5000)
     }
   },
 
-  mostrarExito: (mensaje, titulo) => {
+  showSuccess: (message, title) => {
     set((state) => ({
-      notificaciones: [...state.notificaciones, {
+      notifications: [...state.notifications, {
         id: `${Date.now()}-success`,
-        tipo: 'success',
-        mensaje,
-        titulo,
-        duracion: 3000
+        type: 'success',
+        message,
+        title,
+        duration: 3000
       }]
     }))
   },
 
-  mostrarError: (mensaje, titulo) => {
+  showError: (message, title) => {
     set((state) => ({
-      notificaciones: [...state.notificaciones, {
+      notifications: [...state.notifications, {
         id: `${Date.now()}-error`,
-        tipo: 'error',
-        mensaje,
-        titulo,
-        duracion: 5000
+        type: 'error',
+        message,
+        title,
+        duration: 5000
       }]
     }))
   },
 
-  mostrarInfo: (mensaje, titulo) => {
+  showWarning: (message, title) => {
     set((state) => ({
-      notificaciones: [...state.notificaciones, {
-        id: `${Date.now()}-info`,
-        tipo: 'info',
-        mensaje,
-        titulo,
-        duracion: 4000
-      }]
-    }))
-  },
-
-  mostrarAlerta: (mensaje, titulo) => {
-    set((state) => ({
-      notificaciones: [...state.notificaciones, {
+      notifications: [...state.notifications, {
         id: `${Date.now()}-warning`,
-        tipo: 'warning',
-        mensaje,
-        titulo,
-        duracion: 4000
+        type: 'warning',
+        message,
+        title,
+        duration: 4000
       }]
     }))
   },
 
-  eliminarNotificacion: (id) => {
+  showInfo: (message, title) => {
     set((state) => ({
-      notificaciones: state.notificaciones.filter((n) => n.id !== id)
+      notifications: [...state.notifications, {
+        id: `${Date.now()}-info`,
+        type: 'info',
+        message,
+        title,
+        duration: 4000
+      }]
     }))
   },
 
-  limpiarNotificaciones: () => {
-    set({ notificaciones: [] })
+  dismissNotification: (id) => {
+    set((state) => ({
+      notifications: state.notifications.filter((n) => n.id !== id)
+    }))
+  },
+
+  clearNotifications: () => {
+    set({ notifications: [] })
   }
 })
