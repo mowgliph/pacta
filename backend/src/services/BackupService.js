@@ -210,6 +210,128 @@ class BackupService {
       throw error;
     }
   }
+
+  /**
+   * Lista los backups disponibles
+   * @param {Object} options - Opciones de listado
+   * @returns {Promise<Array>} Lista de backups
+   */
+  async listBackups(options = {}) {
+    const {
+      type,
+      limit = 50,
+      offset = 0,
+      sort = 'createdAt',
+      order = 'desc'
+    } = options;
+
+    const where = type ? { type } : {};
+
+    return this.prisma.backup.findMany({
+      where,
+      orderBy: { [sort]: order.toLowerCase() },
+      take: limit,
+      skip: offset
+    });
+  }
+
+  /**
+   * Obtiene información de espacio en disco
+   * @returns {Promise<Object>} Información de espacio
+   */
+  async getSpaceInfo() {
+    const { total, free } = await checkDiskSpace(config.backup.basePath);
+    const backups = await this.prisma.backup.aggregate({
+      _sum: { size: true },
+      _count: true
+    });
+
+    return {
+      total,
+      free,
+      used: backups._sum.size || 0,
+      count: backups._count,
+      minRequired: parseBytes(config.backup.retention.minSpace)
+    };
+  }
+
+  /**
+   * Obtiene detalles de un backup
+   * @param {number} id - ID del backup
+   * @returns {Promise<Object>} Detalles del backup
+   */
+  async getBackupDetails(id) {
+    return this.prisma.backup.findUnique({
+      where: { id: parseInt(id) }
+    });
+  }
+
+  /**
+   * Restaura un backup
+   * @param {number} id - ID del backup
+   * @param {Object} options - Opciones de restauración
+   */
+  async restoreBackup(id, options = {}) {
+    const backup = await this.getBackupDetails(id);
+    if (!backup) {
+      throw new Error('Backup no encontrado');
+    }
+
+    const backupPath = getNormalizedPath(
+      path.join(
+        config.backup.basePath,
+        config.backup.directories[backup.type],
+        backup.filename
+      )
+    );
+
+    // Verificar integridad
+    const isValid = await verifyBackupIntegrity(backupPath, backup);
+    if (!isValid) {
+      throw new Error('El backup está corrupto o ha sido modificado');
+    }
+
+    // Restaurar backup
+    const data = await fs.readFile(backupPath);
+    
+    // Descifrar si es necesario
+    let decryptedData = data;
+    if (backup.iv) {
+      const decipher = createDecipheriv(
+        config.backup.encryption.algorithm,
+        Buffer.from(config.security.encryptionKey),
+        Buffer.from(backup.iv, 'hex')
+      );
+      
+      decryptedData = Buffer.concat([
+        decipher.update(data),
+        decipher.final()
+      ]);
+    }
+
+    // Descomprimir
+    const decompressed = await new Promise((resolve, reject) => {
+      const gunzip = createGunzip();
+      const chunks = [];
+      
+      gunzip.on('data', chunk => chunks.push(chunk));
+      gunzip.on('end', () => resolve(Buffer.concat(chunks)));
+      gunzip.on('error', reject);
+      
+      gunzip.end(decryptedData);
+    });
+
+    // Restaurar según opciones
+    if (options.includeDatabase) {
+      await this.restoreDatabase(decompressed);
+    }
+    
+    if (options.includeFiles) {
+      await this.restoreFiles(decompressed);
+    }
+
+    logger.info(`Backup ${backup.filename} restaurado exitosamente`);
+  }
 }
 
 export default new BackupService();

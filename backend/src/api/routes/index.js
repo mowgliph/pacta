@@ -7,6 +7,7 @@ import { notFoundHandler } from '../middleware/errorHandler.js';
 import publicRoutes from './public.js';
 import protectedRoutes from './protected.js';
 import adminRoutes from './admin.js';
+import backupRoutes from './backupRoutes.js';
 import { logger } from '../../utils/logger.js';
 
 const router = express.Router();
@@ -28,6 +29,9 @@ router.use('/protected', authenticate, protectedRoutes);
 
 // Rutas de administración (requieren autenticación y rol de admin)
 router.use('/admin', authenticate, adminRoutes);
+
+// Rutas de backup (requieren autenticación)
+router.use('/backup', authenticate, backupRoutes);
 
 // Rutas de autenticación
 router.use('/auth', publicRoutes);

@@ -25,11 +25,11 @@
 
 ## 2. Sistema de Backup Manual
 ### Backend (Prioridad: Media)
-- [ ] API de Backup
-  - [ ] Endpoint de backup selectivo
-  - [ ] Endpoint de restauración
-  - [ ] Listado de backups disponibles
-  - [ ] Verificación de espacio
+- [x] API de Backup
+  - [x] Endpoint de backup selectivo
+  - [x] Endpoint de restauración
+  - [x] Listado de backups disponibles
+  - [x] Verificación de espacio
 
 - [ ] Servicio de Exportación
   - [ ] Exportación selectiva
@@ -116,3 +116,4 @@
 | 2024-03-19 | 0.1.0 | Documento inicial |
 | 2024-03-19 | 0.1.1 | Completada implementación del Servicio de Backup |
 | 2024-03-19 | 0.1.2 | Completada implementación del Sistema de Purga |
+| 2024-03-19 | 0.1.3 | Completada implementación de la API de Backup |
