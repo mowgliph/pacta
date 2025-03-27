@@ -217,6 +217,17 @@ model Cache {
   @@index([expiresAt]) // Índice para optimizar la limpieza de caché expirado
 }
 
+// Modelo de Backups - Sistema de guardado
+model Backup {
+  id        Int      @id @default(autoincrement())
+  filename  String
+  type      String   // 'auto' | 'manual'
+  size      Int
+  iv        String?  // Vector de inicialización para cifrado
+  createdAt DateTime @default(now())
+  duration  Int      // Duración en ms
+}
+
 // Enums
 enum Role {
   ADMIN             // Acceso total
@@ -273,3 +284,4 @@ enum ReportFormat {
   CSV
   HTML
 }
+

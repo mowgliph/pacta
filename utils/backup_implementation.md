@@ -11,11 +11,11 @@
   - [x] Configurar retención (7 días)
   - [x] Establecer programación diaria
 
-- [ ] Servicio de Backup
-  - [ ] Mejorar SchedulerService.runBackup()
-  - [ ] Implementar compresión de archivos
-  - [ ] Añadir cifrado de datos sensibles
-  - [ ] Sistema de logs específico
+- [x] Servicio de Backup
+  - [x] Mejorar SchedulerService.runBackup()
+  - [x] Implementar compresión de archivos
+  - [x] Añadir cifrado de datos sensibles
+  - [x] Sistema de logs específico
 
 - [ ] Sistema de Purga
   - [ ] Servicio de limpieza automática
@@ -114,3 +114,4 @@
 | Fecha | Versión | Descripción |
 |-------|---------|-------------|
 | 2024-03-19 | 0.1.0 | Documento inicial |
+| 2024-03-19 | 0.1.1 | Completada implementación del Servicio de Backup |

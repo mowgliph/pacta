@@ -3,6 +3,7 @@ import { prisma } from '../database/prisma.js';
 import { differenceInDays } from 'date-fns';
 import NotificationService from './NotificationService.js';
 import { logger } from '../utils/logger.js';
+import backupService from './BackupService.js';
 
 class SchedulerService {
   static init() {
@@ -90,20 +91,11 @@ class SchedulerService {
 
   static async runBackup() {
     try {
-      // Implementación del backup (usando child_process o alguna biblioteca de respaldo)
-      logger.info('Ejecutando backup programado');
-
-      // Registro de la actividad
-      await prisma.activityLog.create({
-        data: {
-          userId: 1, // Usuario del sistema
-          action: 'SCHEDULED_BACKUP',
-          entityType: 'System',
-          details: 'Scheduled backup executed',
-        },
-      });
+      logger.info('Starting scheduled backup');
+      await backupService.executeBackup('auto');
+      logger.info('Scheduled backup completed');
     } catch (error) {
-      logger.error('Error durante el backup programado:', error);
+      logger.error('Scheduled backup failed:', error);
     }
   }
 }

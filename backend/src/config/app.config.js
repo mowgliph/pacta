@@ -30,9 +30,58 @@ const config = {
     sync: process.env.DB_SYNC === 'true',
     backup: {
       enabled: process.env.DB_BACKUP_ENABLED === 'true',
-      path: process.env.DB_BACKUP_PATH || './data/backups',
+      path: process.env.BACKUP_BASE_PATH || './data/backups',
       interval: parseInt(process.env.DB_BACKUP_INTERVAL || '86400', 10), // 24 horas
-      keepDays: parseInt(process.env.DB_BACKUP_KEEP_DAYS || '7', 10),
+      keepDays: parseInt(process.env.BACKUP_AUTO_RETAIN_DAYS || '7', 10),
+    },
+  },
+
+  // Añadir nueva sección específica para backups
+  backup: {
+    // Configuración general
+    enabled: process.env.BACKUP_ENABLED === 'true',
+    basePath: process.env.BACKUP_BASE_PATH || './data/backups',
+    
+    // Estructura de directorios
+    directories: {
+      auto: process.env.BACKUP_AUTO_DIR || 'automatic',
+      manual: process.env.BACKUP_MANUAL_DIR || 'manual',
+      temp: process.env.BACKUP_TEMP_DIR || 'temp',
+    },
+
+    // Configuración de retención
+    retention: {
+      autoBackupDays: parseInt(process.env.BACKUP_AUTO_RETAIN_DAYS || '7', 10),
+      manualBackupCount: parseInt(process.env.BACKUP_MANUAL_RETAIN_COUNT || '10', 10),
+      minSpace: process.env.BACKUP_MIN_SPACE || '500mb',
+    },
+
+    // Configuración de compresión
+    compression: {
+      enabled: process.env.BACKUP_COMPRESSION_ENABLED === 'true',
+      level: parseInt(process.env.BACKUP_COMPRESSION_LEVEL || '6', 10),
+      algorithm: process.env.BACKUP_COMPRESSION_ALGO || 'zip',
+    },
+
+    // Configuración de cifrado
+    encryption: {
+      enabled: process.env.BACKUP_ENCRYPTION_ENABLED === 'true',
+      algorithm: process.env.BACKUP_ENCRYPTION_ALGO || 'aes-256-gcm',
+      keySize: parseInt(process.env.BACKUP_ENCRYPTION_KEY_SIZE || '32', 10),
+    },
+
+    // Configuración de programación
+    schedule: {
+      time: process.env.BACKUP_SCHEDULE_TIME || '00:00',
+      days: (process.env.BACKUP_SCHEDULE_DAYS || '0,1,2,3,4,5,6').split(',').map(Number),
+      timezone: process.env.BACKUP_TIMEZONE || 'UTC',
+    },
+
+    // Configuración de notificaciones
+    notifications: {
+      onSuccess: process.env.BACKUP_NOTIFY_SUCCESS === 'true',
+      onError: process.env.BACKUP_NOTIFY_ERROR === 'true',
+      onWarning: process.env.BACKUP_NOTIFY_WARNING === 'true',
     },
   },
 
@@ -117,7 +166,7 @@ const config = {
 
 // Validate required configuration
 const requiredConfig = [
-  'security.encryptionKey',
+  'backup.basePath',
   'security.sessionSecret',
   'jwt.secret',
   'jwt.refreshSecret',
