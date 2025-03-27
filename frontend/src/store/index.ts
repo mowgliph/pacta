@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, devtools } from 'zustand/middleware'
 import { crearSliceAutenticacion, SliceAutenticacion } from './slices/autenticacion'
 import { crearSliceContratos, SliceContratos } from './slices/contratos'
 import { crearSliceUI, SliceUI } from './slices/ui'
