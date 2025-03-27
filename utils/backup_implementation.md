@@ -5,11 +5,11 @@
 
 ## 1. Sistema de Backup Automático
 ### Backend (Prioridad: Alta)
-- [ ] Configuración Base
-  - [ ] Implementar configuración en app.config.js
-  - [ ] Definir estructura de directorios de backup
-  - [ ] Configurar retención (7 días)
-  - [ ] Establecer programación diaria
+- [x] Configuración Base
+  - [x] Implementar configuración en app.config.js
+  - [x] Definir estructura de directorios de backup
+  - [x] Configurar retención (7 días)
+  - [x] Establecer programación diaria
 
 - [ ] Servicio de Backup
   - [ ] Mejorar SchedulerService.runBackup()
