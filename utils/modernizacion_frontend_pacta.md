@@ -124,16 +124,77 @@ Shadcn/Vue proporcionará:
 *Este plan será iterativo y se ajustará según feedback y necesidades del proyecto.
 
 frontend/
-├── src/
-│   ├── assets/          # Estáticos
-│   ├── components/      # Componentes Vue
-│   │   ├── ui/         # Componentes Shadcn
-│   │   └── shared/     # Componentes comunes
-│   ├── composables/     # Composables Vue
-│   ├── config/         # Configuraciones
-│   ├── layouts/        # Layouts principales
-│   ├── router/         # Configuración Tanstack Router
-│   ├── stores/         # Stores Pinia
-│   ├── styles/         # Estilos globales
-│   ├── types/          # TypeScript types
-│   └── views/          # Vistas principales
+├── public/                    # Archivos estáticos públicos
+│   ├── favicon.ico
+│   ├── index.html
+│   └── assets/               # Recursos estáticos (imágenes, fuentes, etc.)
+│       └── images/
+│
+├── src/                      # Código fuente principal
+│   ├── assets/              # Recursos procesados por Vite (imágenes, SVGs, etc.)
+│   │   └── icons/
+│   │
+│   ├── components/         # Componentes reutilizables
+│   │   ├── common/        # Componentes genéricos
+│   │   │   ├── Button/
+│   │   │   │   ├── Button.tsx
+│   │   │   │   ├── Button.types.ts
+│   │   │   │   └── Button.module.css
+│   │   │   └── Input/
+│   │   │
+│   │   ├── layout/       # Componentes de diseño estructural
+│   │   │   ├── Header/
+│   │   │   └── Footer/
+│   │   │
+│   │   └── ui/          # Componentes de UI específicos
+│   │       └── Modal/
+│   │
+│   ├── features/         # Módulos de funcionalidad (Feature-based structure)
+│   │   ├── auth/        # Feature: Autenticación
+│   │   │   ├── components/
+│   │   │   ├── hooks/
+│   │   │   ├── api/
+│   │   │   ├── types/
+│   │   │   └── index.ts
+│   │   └── users/      # Feature: Gestión de usuarios
+│   │
+│   ├── hooks/           # Hooks personalizados reutilizables
+│   │   ├── useFetch.ts
+│   │   └── useForm.ts
+│   │
+│   ├── pages/          # Componentes de página (rutas)
+│   │   ├── Home/
+│   │   │   ├── Home.tsx
+│   │   │   └── Home.module.css
+│   │   └── Profile/
+│   │
+│   ├── services/      # Lógica de servicios (API calls, etc.)
+│   │   ├── api/      # Configuración de API
+│   │   │   ├── client.ts
+│   │   │   └── endpoints.ts
+│   │   └── storage/ # Gestión de almacenamiento
+│   │
+│   ├── store/        # Estado global (Redux, Zustand, etc.)
+│   │   ├── slices/
+│   │   └── index.ts
+│   │
+│   ├── styles/      # Estilos globales
+│   │   ├── global.css
+│   │   └── variables.css
+│   │
+│   ├── types/      # Tipos globales de TypeScript
+│   │   └── index.ts
+│   │
+│   ├── utils/     # Utilidades y helpers
+│   │   ├── formatters.ts
+│   │   └── constants.ts
+│   │
+│   ├── App.tsx
+│   ├── main.tsx
+│   └── vite-env.d.ts
+│
+├── .eslintrc.cjs      # Configuración de ESLint
+├── .prettierrc       # Configuración de Prettier
+├── tsconfig.json    # Configuración de TypeScript
+├── vite.config.ts  # Configuración de Vite
+└── package.json
