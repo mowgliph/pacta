@@ -3,6 +3,7 @@
  */
 import { BaseController } from './BaseController.js';
 import { BackupService } from '../../services/BackupService.js';
+import { ExportService } from '../../services/ExportService.js';
 import { ResponseService } from '../../services/ResponseService.js';
 import logger from '../../utils/logger.js';
 
@@ -10,73 +11,76 @@ export class BackupController extends BaseController {
   constructor() {
     super();
     this.backupService = new BackupService();
+    this.exportService = new ExportService();
   }
 
-  /**
-   * Lista los backups disponibles
-   */
-  async listBackups(req, res) {
+  listBackups = async (req, res) => {
     try {
-      const backups = await this.backupService.listBackups(req.query);
-      return ResponseService.success('Backups retrieved successfully', backups);
+      const filters = {
+        ...req.query,
+        page: parseInt(req.query.page) || 1,
+        limit: parseInt(req.query.limit) || 10
+      };
+      const result = await this.backupService.listBackups(filters);
+      return ResponseService.success('Backups recuperados exitosamente', result);
     } catch (error) {
-      logger.error('Error listing backups:', error);
-      return ResponseService.error('Failed to retrieve backups');
+      logger.error('Error listando backups:', error);
+      return ResponseService.error('Error al recuperar backups');
     }
-  }
+  };
 
-  /**
-   * Obtiene detalles de un backup específico
-   */
-  async getBackupDetails(req, res) {
+  getBackupDetails = async (req, res) => {
     try {
-      const backup = await this.backupService.getBackupDetails(req.params.id);
-      if (!backup) {
-        return ResponseService.notFound('Backup not found');
-      }
-      return ResponseService.success('Backup details retrieved successfully', backup);
+      const result = await this.backupService.getBackupDetails(req.params.id);
+      return result
+        ? ResponseService.success('Detalles del backup recuperados exitosamente', result)
+        : ResponseService.notFound('Backup no encontrado');
     } catch (error) {
-      logger.error('Error getting backup details:', error);
-      return ResponseService.error('Failed to retrieve backup details');
+      logger.error('Error obteniendo detalles del backup:', error);
+      return ResponseService.error('Error al obtener detalles del backup');
     }
-  }
+  };
 
-  /**
-   * Crea un nuevo backup manual
-   */
-  async createBackup(req, res) {
+  createBackup = async (req, res) => {
     try {
-      const backup = await this.backupService.executeBackup('manual', req.body);
-      return ResponseService.success('Backup created successfully', backup);
+      const result = await this.backupService.executeBackup(req.body);
+      return ResponseService.success('Backup creado exitosamente', result);
     } catch (error) {
-      logger.error('Error creating backup:', error);
-      return ResponseService.error('Failed to create backup');
+      logger.error('Error creando backup:', error);
+      return ResponseService.error('Error al crear backup');
     }
-  }
+  };
 
-  /**
-   * Restaura un backup existente
-   */
-  async restoreBackup(req, res) {
+  restoreBackup = async (req, res) => {
     try {
-      await this.backupService.restoreBackup(req.params.id, req.body);
-      return ResponseService.success('Backup restored successfully');
+      await this.backupService.restoreBackup(req.params.id, req.body.options);
+      return ResponseService.success('Backup restaurado exitosamente');
     } catch (error) {
-      logger.error('Error restoring backup:', error);
-      return ResponseService.error('Failed to restore backup');
+      logger.error('Error restaurando backup:', error);
+      return ResponseService.error('Error al restaurar backup');
     }
-  }
+  };
 
-  /**
-   * Obtiene información del espacio de almacenamiento
-   */
-  async getSpaceInfo(req, res) {
+  exportBackup = async (req, res) => {
     try {
-      const spaceInfo = await this.backupService.getSpaceInfo();
-      return ResponseService.success('Space information retrieved successfully', spaceInfo);
+      const result = await this.exportService.exportBackup(
+        req.params.id,
+        req.body
+      );
+      return ResponseService.success('Backup exportado exitosamente', result);
     } catch (error) {
-      logger.error('Error getting space info:', error);
-      return ResponseService.error('Failed to retrieve space information');
+      logger.error('Error exportando backup:', error);
+      return ResponseService.error('Error al exportar backup');
     }
-  }
+  };
+
+  getBackupStats = async (req, res) => {
+    try {
+      const stats = await this.backupService.getStats(req.query);
+      return ResponseService.success('Estadísticas recuperadas exitosamente', stats);
+    } catch (error) {
+      logger.error('Error obteniendo estadísticas:', error);
+      return ResponseService.error('Error al obtener estadísticas');
+    }
+  };
 }

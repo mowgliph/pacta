@@ -16,68 +16,68 @@ class BackupRoutes extends BaseRoute {
   }
 
   initializeRoutes() {
-    // Rutas protegidas (requieren autenticación y rol admin)
-    this.get(
-      '/backups',
-      this.controller.listBackups,
-      [
+    // Lista de backups
+    this.registerRoute('get', '/backups', this.controller.listBackups, {
+      middlewares: [
         authenticate,
         authorize('ADMIN'),
-        this.validationService.validate(
-          this.validationService.validators.backup.backupQuerySchema,
-          'query'
-        )
+        this.validationService.validate('backup.backupQuerySchema', 'query')
       ]
-    );
+    });
 
-    this.get(
-      '/backups/:id',
-      this.controller.getBackupDetails,
-      [
+    // Detalles de backup
+    this.registerRoute('get', '/backups/:id', this.controller.getBackupDetails, {
+      middlewares: [
         authenticate,
         authorize('ADMIN'),
-        this.validationService.validate(
-          this.validationService.validators.backup.backupIdSchema,
-          'params'
-        )
+        this.validationService.validate('backup.backupIdSchema', 'params')
       ]
-    );
+    });
 
-    this.post(
-      '/backups',
-      this.controller.createBackup,
-      [
+    // Crear backup
+    this.registerRoute('post', '/backups', this.controller.createBackup, {
+      middlewares: [
         authenticate,
         authorize('ADMIN'),
         sensitiveRouteLimiter,
-        this.validationService.validate(
-          this.validationService.validators.backup.createBackupSchema
-        )
+        this.validationService.validate('backup.createBackupSchema', 'body')
       ]
-    );
+    });
 
-    this.post(
-      '/backups/:id/restore',
-      this.controller.restoreBackup,
-      [
+    // Restaurar backup
+    this.registerRoute('post', '/backups/:id/restore', this.controller.restoreBackup, {
+      middlewares: [
         authenticate,
         authorize('ADMIN'),
         sensitiveRouteLimiter,
         this.validationService.validateAll({
-          params: this.validationService.validators.backup.backupIdSchema,
-          body: this.validationService.validators.backup.restoreBackupSchema
+          params: 'backup.backupIdSchema',
+          body: 'backup.restoreBackupSchema'
         })
       ]
-    );
+    });
 
-    this.get(
-      '/backups/space',
-      this.controller.getSpaceInfo,
-      [
+    // Exportar backup
+    this.registerRoute('post', '/backups/:id/export', this.controller.exportBackup, {
+      middlewares: [
         authenticate,
-        authorize('ADMIN')
+        authorize('ADMIN'),
+        sensitiveRouteLimiter,
+        this.validationService.validateAll({
+          params: 'backup.backupIdSchema',
+          body: 'backup.exportBackupSchema'
+        })
       ]
-    );
+    });
+
+    // Estadísticas de backup
+    this.registerRoute('get', '/backups/stats', this.controller.getBackupStats, {
+      middlewares: [
+        authenticate,
+        authorize('ADMIN'),
+        this.validationService.validate('backup.backupStatsSchema', 'query')
+      ]
+    });
   }
 }
 

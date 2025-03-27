@@ -9,6 +9,7 @@ import * as dashboardValidators from '../api/validators/dashboardValidators.js';
 import * as analyticsValidators from '../api/validators/analyticsValidators.js';
 import * as documentValidators from '../api/validators/documentValidators.js';
 import * as authValidators from '../api/validators/authValidators.js';
+import * as backupValidators from '../api/validators/backupValidators.js';
 
 export class ValidationService {
   constructor() {
@@ -23,6 +24,7 @@ export class ValidationService {
       ...analyticsValidators,
       ...documentValidators,
       ...authValidators,
+      backup: backupValidators
     };
   }
 
@@ -683,5 +685,52 @@ export class ValidationService {
 
   oauthLoginSchema() {
     return this.validators.oauthLoginSchema();
+  }
+
+  // Backup specific schemas and validation methods
+  async validateBackupQuery(data) {
+    const schema = this.validators.backup.backupQuerySchema;
+    return this.validate(schema, data);
+  }
+
+  async validateBackupId(data) {
+    const schema = this.validators.backup.backupIdSchema;
+    return this.validate(schema, data);
+  }
+
+  async validateBackupCreation(data) {
+    const schema = this.validators.backup.createBackupSchema;
+    return this.validate(schema, data);
+  }
+
+  async validateBackupRestore(data) {
+    const schema = this.validators.backup.restoreBackupSchema;
+    return this.validate(schema, data);
+  }
+
+  async validateBackupExport(data) {
+    const schema = this.validators.backup.exportBackupSchema;
+    return this.validate(schema, data);
+  }
+
+  // Schema getters
+  backupQuerySchema() {
+    return this.validators.backup.backupQuerySchema;
+  }
+
+  backupIdSchema() {
+    return this.validators.backup.backupIdSchema;
+  }
+
+  createBackupSchema() {
+    return this.validators.backup.createBackupSchema;
+  }
+
+  restoreBackupSchema() {
+    return this.validators.backup.restoreBackupSchema;
+  }
+
+  exportBackupSchema() {
+    return this.validators.backup.exportBackupSchema;
   }
 }
