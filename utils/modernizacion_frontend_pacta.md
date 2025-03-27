@@ -12,12 +12,18 @@ Shadcn/Vue proporcionará:
 ## Tareas de Modernización (Por Prioridad)
 
 ### 1. Setup Base (Crítico)
-1. Migración a Vite 5
-2. Configuración TypeScript
-3. Implementación Tanstack Router
-4. Integración Shadcn/Vue inicial
-5. Configuración TailwindCSS
-6. Setup tema oscuro/claro
+1. ✅ Migración a Vite 5
+2. ✅ Configuración TypeScript
+3. ✅ Implementación Tanstack Router
+4. ✅ Integración Shadcn/Vue inicial
+5. ✅ Configuración TailwindCSS
+6. [ ] Setup tema oscuro/claro
+   - [ ] Implementar detección del tema del sistema
+   - [ ] Crear contexto para el tema
+   - [ ] Agregar toggle switch en el header
+   - [ ] Persistir preferencia en localStorage
+   - [ ] Configurar variables CSS para temas
+   - [ ] Implementar transiciones suaves
 
 ### 2. Arquitectura Core (Alta)
 1. Implementación stores Pinia
