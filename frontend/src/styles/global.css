@@ -1,0 +1,16 @@
+/* Transiciones globales */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+/* Transiciones específicas para el tema */
+.dark body {
+  transition: background-color 0.3s ease;
+}
+
+/* Transiciones para iconos del theme toggle */
+.theme-toggle-icon {
+  transition: transform 0.3s ease, opacity 0.2s ease;
+}

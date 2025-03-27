@@ -15,23 +15,23 @@ Shadcn/Vue proporcionará:
 1. ✅ Migración a Vite 5
 2. ✅ Configuración TypeScript
 3. ✅ Implementación Tanstack Router
-4. ✅ Integración Shadcn/Vue inicial
+4. ✅ Integración Shadcn/React inicial
 5. ✅ Configuración TailwindCSS
-6. [ ] Setup tema oscuro/claro
-   - [ ] Implementar detección del tema del sistema
-   - [ ] Crear contexto para el tema
-   - [ ] Agregar toggle switch en el header
-   - [ ] Persistir preferencia en localStorage
-   - [ ] Configurar variables CSS para temas
-   - [ ] Implementar transiciones suaves
+6. ✅ Setup tema oscuro/claro
+   - ✅ Implementar detección del tema del sistema
+   - ✅ Crear contexto para el tema
+   - ✅ Agregar toggle switch en el header
+   - ✅ Persistir preferencia en localStorage
+   - ✅ Configurar variables CSS para temas
+   - ✅ Implementar transiciones suaves
 
 ### 2. Arquitectura Core (Alta)
-1. Implementación stores Pinia
-2. Setup servicios API
-3. Configuración interceptores
-4. Sistema de caché local
-5. Manejo de estados globales
-6. Sistema de notificaciones
+1. 🔄 Implementación stores Zustand
+2. ✅ Setup servicios API base
+3. [ ] Configuración interceptores
+4. [ ] Sistema de caché local
+5. [ ] Manejo de estados globales
+6. [ ] Sistema de notificaciones
 
 ### 3. Autenticación (Alta)
 1. Login moderno
@@ -91,41 +91,47 @@ Shadcn/Vue proporcionará:
 ## Mejores Prácticas a Seguir
 
 ### Código
-- Composables reutilizables
+- Custom Hooks reutilizables
 - TypeScript estricto
-- Props validation
-- Emit typing
-- Error handling
-- Clean code
+- Props typing
+- Error boundaries
+- Clean code principles
+- Manejo de efectos secundarios
 
 ### Componentes
 - Atomic Design
 - Single Responsibility
 - Props drilling mínimo
-- Slots para flexibilidad
-- Documentación clara
+- Render props cuando sea necesario
+- Children para composición
+- Documentación con JSDoc
+- Memoización cuando sea necesario
 
 ### Estado
-- Stores modulares
+- Stores Zustand modulares
 - Actions tipadas
-- Getters computados
+- Selectores optimizados
 - Estado persistente
 - Reset handlers
+- Context para estado global UI
+- Estado local con useState
 
 ### Performance
-- Computed properties
-- Memorización
-- Event debouncing
+- useMemo y useCallback
+- Render optimization
+- Event debouncing/throttling
 - Virtual scrolling
-- Lazy assets
+- Lazy loading
+- Code splitting
+- Bundle analysis
 
 ## Notas Importantes
 - Priorizar UX sobre features
 - Mobile-first approach
 - Mantener bundle size mínimo
 - Documentar mientras se desarrolla
-- Seguir patrones Vue 3
-- Usar Composition API
+- Seguir patrones React modernos
+- Usar Hooks API
 
 *Este plan será iterativo y se ajustará según feedback y necesidades del proyecto.
 
