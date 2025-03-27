@@ -1,6 +1,6 @@
 {
   "name": "pacta-backend",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "description": "PACTA Backend API",
   "type": "module",
   "main": "src/server.js",
