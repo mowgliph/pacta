@@ -1,794 +1,204 @@
-import { User, License, ActivityLog } from '../models/index.js';
 import { BaseController } from './BaseController.js';
-import UserService from '../../services/UserService.js';
+import { UserService } from '../../services/UserService.js';
 import { ValidationService } from '../../services/ValidationService.js';
-import { ResponseService } from '../../services/ResponseService.js';
-import { LoggingService } from '../../services/LoggingService.js';
-import { CacheService } from '../../services/CacheService.js';
-import {
-  AuthenticationError,
-  ValidationError,
-  NotFoundError,
-  ForbiddenError,
-} from '../../utils/errors.js';
+import { NotFoundError, ValidationError, ForbiddenError } from '../../utils/errors.js';
 import { PrismaClient } from '@prisma/client';
-import { compareSync, hashSync } from 'bcrypt';
-import { prisma } from '../../database/prisma.js';
-import { logger } from '../../utils/logger.js';
 
-const prismaClient = new PrismaClient();
+const prisma = new PrismaClient();
 
-/**
- * Controlador para gestionar usuarios
- */
-class UserController extends BaseController {
+export class UserController extends BaseController {
   constructor() {
-    super(UserService);
-    this.validation = new ValidationService();
-    this.response = new ResponseService();
-    this.logger = new LoggingService('UserController');
-    this.cache = new CacheService();
+    const userService = new UserService();
+    super(userService);
+    this.userService = userService;
+    this.validationService = new ValidationService();
   }
 
-  /**
-   * Registra un nuevo usuario
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
-   */
-  register = async (req, res, next) => {
-    try {
-      const userData = req.body;
-      // Los datos ya están validados por el middleware
-      const user = await this.service.register(userData);
-
-      res.status(201).json({
-        success: true,
-        data: user,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * Autentica a un usuario
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
-   */
-  login = async (req, res, next) => {
-    try {
-      const { email, password } = req.body;
-      // Datos ya validados por el middleware
-      const result = await this.service.login(email, password);
-
-      res.status(200).json({
-        success: true,
-        ...result,
-      });
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  /**
-   * Actualiza el perfil del usuario actual
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
-   */
-  updateProfile = async (req, res, next) => {
-    try {
-      const userId = req.user.id;
-      const { firstName, lastName, email } = req.body;
-      // Datos ya validados por el middleware
-
-      // Verificar si el email ya existe (si se está cambiando)
-      if (email && email !== req.user.email) {
-        const existingUser = await prismaClient.user.findUnique({
-          where: { email },
-        });
-
-        if (existingUser) {
-          throw new ValidationError('El email ya está en uso');
-        }
-      }
-
-      // Actualizar usuario
-      const updatedUser = await prismaClient.user.update({
-        where: { id: userId },
-        data: {
-          ...(firstName && { firstName }),
-          ...(lastName && { lastName }),
-          ...(email && { email }),
-        },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-          status: true,
-          lastLogin: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
-
-      // Registrar actividad
-      await prismaClient.activityLog.create({
-        data: {
-          userId,
-          action: 'UPDATE_PROFILE',
-          entityType: 'User',
-          entityId: userId.toString(),
-          details: 'Actualización de perfil',
-        },
-      });
-
-      return this.sendSuccess(res, updatedUser, 200, 'Perfil actualizado correctamente');
-    } catch (error) {
-      return this.handleError(error, res, 'updateProfile');
-    }
-  };
-
-  /**
-   * Cambia la contraseña del usuario actual
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
-   */
-  changePassword = async (req, res, next) => {
-    try {
-      const userId = req.user.id;
-      const { currentPassword, newPassword } = req.body;
-      // Datos ya validados por el middleware
-
-      // Buscar usuario
-      const user = await prismaClient.user.findUnique({
-        where: { id: userId },
-      });
-
-      if (!user) {
-        throw new NotFoundError('Usuario no encontrado');
-      }
-
-      // Verificar contraseña actual
-      if (!compareSync(currentPassword, user.password)) {
-        throw new ValidationError('Contraseña actual incorrecta');
-      }
-
-      // Actualizar contraseña
-      const hashedPassword = hashSync(newPassword, 10);
-
-      await prismaClient.user.update({
-        where: { id: userId },
-        data: { password: hashedPassword },
-      });
-
-      // Registrar actividad
-      await prismaClient.activityLog.create({
-        data: {
-          userId,
-          action: 'CHANGE_PASSWORD',
-          entityType: 'User',
-          entityId: userId.toString(),
-          details: 'Cambio de contraseña',
-        },
-      });
-
-      return this.sendSuccess(res, null, 200, 'Contraseña actualizada correctamente');
-    } catch (error) {
-      return this.handleError(error, res, 'changePassword');
-    }
-  };
-
-  /**
-   * Obtiene el perfil del usuario actual
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
-   */
-  getProfile = async (req, res, next) => {
-    try {
-      const userId = req.user.id;
-
-      const user = await prismaClient.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-          status: true,
-          lastLogin: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
-
-      if (!user) {
-        throw new NotFoundError('Usuario no encontrado');
-      }
-
-      return this.sendSuccess(res, user);
-    } catch (error) {
-      return this.handleError(error, res, 'getProfile');
-    }
-  };
-
-  /**
-   * [ADMIN] Actualiza el rol de un usuario
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
-   */
-  updateUserRole = async (req, res, next) => {
-    try {
-      const { id } = req.params;
-      const { role } = req.body;
-      // Datos ya validados por el middleware
-
-      // No permitir cambiar el rol propio
-      if (parseInt(id) === req.user.id) {
-        throw new ForbiddenError('No puedes cambiar tu propio rol');
-      }
-
-      // Verificar que el usuario existe
-      const user = await prismaClient.user.findUnique({
-        where: { id: parseInt(id) },
-      });
-
-      if (!user) {
-        throw new NotFoundError('Usuario no encontrado');
-      }
-
-      // Actualizar rol
-      const updatedUser = await prismaClient.user.update({
-        where: { id: parseInt(id) },
-        data: { role },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-          status: true,
-        },
-      });
-
-      // Registrar actividad
-      await prismaClient.activityLog.create({
-        data: {
-          userId: req.user.id,
-          action: 'UPDATE_USER_ROLE',
-          entityType: 'User',
-          entityId: id,
-          details: `Cambio de rol: ${user.role} → ${role}`,
-        },
-      });
-
-      return this.sendSuccess(res, updatedUser, 200, 'Rol de usuario actualizado correctamente');
-    } catch (error) {
-      return this.handleError(error, res, 'updateUserRole');
-    }
-  };
-
-  /**
-   * [ADMIN] Actualiza el estado de un usuario
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
-   */
-  updateUserStatus = async (req, res, next) => {
-    try {
-      const { id } = req.params;
-      const { status } = req.body;
-      // Datos ya validados por el middleware
-
-      // No permitir cambiar el estado propio
-      if (parseInt(id) === req.user.id) {
-        throw new ForbiddenError('No puedes cambiar tu propio estado');
-      }
-
-      // Verificar que el usuario existe
-      const user = await prismaClient.user.findUnique({
-        where: { id: parseInt(id) },
-      });
-
-      if (!user) {
-        throw new NotFoundError('Usuario no encontrado');
-      }
-
-      // Actualizar estado
-      const updatedUser = await prismaClient.user.update({
-        where: { id: parseInt(id) },
-        data: { status },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-          status: true,
-        },
-      });
-
-      // Registrar actividad
-      await prismaClient.activityLog.create({
-        data: {
-          userId: req.user.id,
-          action: 'UPDATE_USER_STATUS',
-          entityType: 'User',
-          entityId: id,
-          details: `Cambio de estado: ${user.status} → ${status}`,
-        },
-      });
-
-      return this.sendSuccess(res, updatedUser, 200, 'Estado de usuario actualizado correctamente');
-    } catch (error) {
-      return this.handleError(error, res, 'updateUserStatus');
-    }
-  };
-
-  /**
-   * Busca usuarios por nombre
-   * @param {Object} req - Express request
-   * @param {Object} res - Express response
-   * @param {Function} next - Express next
-   */
-  searchUsers = async (req, res, next) => {
-    try {
-      const { q, page = 1, limit = 10 } = req.query;
-
-      if (!q) {
-        throw new ValidationError('Search query is required');
-      }
-
-      const result = await this.service.searchUsers(q, parseInt(page, 10), parseInt(limit, 10));
-
-      res.status(200).json(result);
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  // Email verification routes
-  async verifyEmail(req, res, next) {
-    try {
-      const { token } = req.params;
-      const user = await this.service.verifyEmail(token);
-      const response = this.response.success('Email verified successfully', user);
-      res.json(response);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  // Password reset routes
-  async requestPasswordReset(req, res, next) {
-    try {
-      const { email } = req.body;
-      await this.service.requestPasswordReset(email);
-      const response = this.response.success('Password reset instructions sent to email');
-      res.json(response);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async resetPassword(req, res, next) {
-    try {
-      const { token } = req.params;
-      const { newPassword } = req.body;
-      const user = await this.service.resetPassword(token, newPassword);
-      const response = this.response.success('Password reset successfully', user);
-      res.json(response);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  // User management routes (admin only)
-  async getActiveUsers(req, res, next) {
-    try {
-      const users = await this.service.getActiveUsers();
-      const response = this.response.success('Active users retrieved successfully', users);
-      res.json(response);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async getInactiveUsers(req, res, next) {
-    try {
-      const users = await this.service.getInactiveUsers();
-      const response = this.response.success('Inactive users retrieved successfully', users);
-      res.json(response);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async getSuspendedUsers(req, res, next) {
-    try {
-      const users = await this.service.getSuspendedUsers();
-      const response = this.response.success('Suspended users retrieved successfully', users);
-      res.json(response);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async getUnverifiedUsers(req, res, next) {
-    try {
-      const users = await this.service.getUnverifiedUsers();
-      const response = this.response.success('Unverified users retrieved successfully', users);
-      res.json(response);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  // Middleware methods
-  validateRegistration = this.validateRequest(this.validation.createUserRegistrationSchema());
-  validateLogin = this.validateRequest(this.validation.createUserLoginSchema());
-  validateProfileUpdate = this.validateRequest(this.validation.createUserProfileSchema());
-  validateStatusUpdate = this.validateRequest(this.validation.createUserStatusSchema());
-  validateRoleUpdate = this.validateRequest(this.validation.createUserRoleSchema());
-  validatePasswordReset = this.validateRequest(this.validation.createPasswordResetSchema());
-
-  // Cache middleware
-  cacheUserProfile = this.cacheResponse(300); // Cache for 5 minutes
-  cacheUserList = this.cacheResponse(300); // Cache for 5 minutes
-
-  // Logging middleware
-  logUserOperation = this.logOperation('User operation');
-
-  /**
-   * Obtiene datos del equipo (solo para roles MANAGER y ADMIN)
-   * @param {Object} req - Objeto de solicitud
-   * @param {Object} res - Objeto de respuesta
-   */
-  async getTeamData(req, res) {
-    try {
-      // Esta función solo debe ser accesible para MANAGER y ADMIN
-      if (!['MANAGER', 'ADMIN'].includes(req.user.role)) {
-        throw new ForbiddenError('No tienes permisos para ver estos datos');
-      }
-
-      // Obtener usuarios del equipo
-      const users = await prismaClient.user.findMany({
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-          status: true,
-          lastLogin: true,
-          createdAt: true,
-        },
-        orderBy: { lastName: 'asc' },
-      });
-
-      // Obtener estadísticas de contratos por usuario
-      const contractStats = await prismaClient.contract.groupBy({
-        by: ['userId'],
-        _count: {
-          id: true,
-        },
-      });
-
-      // Combinar datos
-      const teamData = users.map(user => {
-        const userStats = contractStats.find(stat => stat.userId === user.id);
-        return {
-          ...user,
-          contractCount: userStats ? userStats._count.id : 0,
+  getAllUsers = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const filters = {
+          ...req.query,
+          page: parseInt(req.query.page) || 1,
+          limit: parseInt(req.query.limit) || 10
         };
-      });
+        return await this.userService.getAllUsers(filters);
+      },
+      { filters: req.query }
+    );
+  };
 
-      return this.sendSuccess(res, teamData);
-    } catch (error) {
-      return this.handleError(error, res, 'getTeamData');
-    }
-  }
-
-  /**
-   * Obtiene todos los usuarios
-   * @param {Object} req - Objeto de solicitud
-   * @param {Object} res - Objeto de respuesta
-   */
-  async getAllUsers(req, res) {
-    try {
-      const { page = 1, limit = 10, search } = req.query;
-      const skip = (page - 1) * limit;
-
-      // Construir filtro de búsqueda
-      const where = {};
-      if (search) {
-        where.OR = [
-          { firstName: { contains: search, mode: 'insensitive' } },
-          { lastName: { contains: search, mode: 'insensitive' } },
-          { email: { contains: search, mode: 'insensitive' } },
-        ];
-      }
-
-      // Contar total
-      const total = await prismaClient.user.count({ where });
-
-      // Obtener usuarios
-      const users = await prismaClient.user.findMany({
-        where,
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-          status: true,
-          lastLogin: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-        orderBy: { lastName: 'asc' },
-        skip,
-        take: parseInt(limit),
-      });
-
-      return this.sendPaginated(res, {
-        data: users,
-        meta: {
-          page: parseInt(page),
-          limit: parseInt(limit),
-          total,
-          pages: Math.ceil(total / limit),
-        },
-      });
-    } catch (error) {
-      return this.handleError(error, res, 'getAllUsers');
-    }
-  }
-
-  /**
-   * Obtiene un usuario por ID
-   * @param {Object} req - Objeto de solicitud
-   * @param {Object} res - Objeto de respuesta
-   */
-  async getUserById(req, res) {
-    try {
-      const { id } = req.params;
-
-      const user = await prismaClient.user.findUnique({
-        where: { id: parseInt(id) },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-          status: true,
-          lastLogin: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
-
-      if (!user) {
-        throw new NotFoundError('Usuario no encontrado');
-      }
-
-      // Obtener estadísticas adicionales
-      const contractCount = await prismaClient.contract.count({
-        where: { userId: parseInt(id) },
-      });
-
-      const licenseCount = await prismaClient.license.count({
-        where: { userId: parseInt(id) },
-      });
-
-      return this.sendSuccess(res, {
-        ...user,
-        statistics: {
-          contractCount,
-          licenseCount,
-        },
-      });
-    } catch (error) {
-      return this.handleError(error, res, 'getUserById');
-    }
-  }
-
-  /**
-   * Crea un nuevo usuario
-   * @param {Object} req - Objeto de solicitud
-   * @param {Object} res - Objeto de respuesta
-   */
-  async createUser(req, res) {
-    try {
-      const { firstName, lastName, email, password, role } = req.body;
-
-      // Validar datos
-      if (!firstName || !lastName || !email || !password) {
-        throw new ValidationError('Todos los campos son requeridos');
-      }
-
-      // Verificar email único
-      const existingUser = await prismaClient.user.findUnique({
-        where: { email },
-      });
-
-      if (existingUser) {
-        throw new ValidationError('El email ya está registrado');
-      }
-
-      // Crear usuario
-      const hashedPassword = hashSync(password, 10);
-
-      const user = await prismaClient.user.create({
-        data: {
-          firstName,
-          lastName,
-          email,
-          password: hashedPassword,
-          role: role || 'USER',
-          status: 'ACTIVE',
-          emailVerified: true,
-        },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-          status: true,
-          createdAt: true,
-        },
-      });
-
-      // Registrar actividad
-      await prismaClient.activityLog.create({
-        data: {
-          userId: req.user.id,
-          action: 'CREATE_USER',
-          entityType: 'User',
-          entityId: user.id.toString(),
-          details: `Usuario creado por administrador: ${user.email}`,
-        },
-      });
-
-      return this.sendSuccess(res, user, 201, 'Usuario creado correctamente');
-    } catch (error) {
-      return this.handleError(error, res, 'createUser');
-    }
-  }
-
-  /**
-   * Actualiza un usuario
-   * @param {Object} req - Objeto de solicitud
-   * @param {Object} res - Objeto de respuesta
-   */
-  async updateUser(req, res) {
-    try {
-      const { id } = req.params;
-      const { firstName, lastName, email, role, status } = req.body;
-
-      // Validar datos
-      if (!firstName && !lastName && !email && !role && !status) {
-        throw new ValidationError('No se proporcionaron datos para actualizar');
-      }
-
-      // Verificar que el usuario existe
-      const existingUser = await prismaClient.user.findUnique({
-        where: { id: parseInt(id) },
-      });
-
-      if (!existingUser) {
-        throw new NotFoundError('Usuario no encontrado');
-      }
-
-      // Verificar email único si se está cambiando
-      if (email && email !== existingUser.email) {
-        const duplicateEmail = await prismaClient.user.findUnique({
-          where: { email },
-        });
-
-        if (duplicateEmail) {
-          throw new ValidationError('El email ya está en uso');
+  getTeamData = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        if (!['MANAGER', 'ADMIN'].includes(req.user.role)) {
+          throw new ForbiddenError('No tienes permisos para ver estos datos');
         }
-      }
+        return await this.userService.getTeamData();
+      },
+      { role: req.user.role }
+    );
+  };
 
-      // Actualizar usuario
-      const updatedUser = await prismaClient.user.update({
-        where: { id: parseInt(id) },
-        data: {
-          ...(firstName && { firstName }),
-          ...(lastName && { lastName }),
-          ...(email && { email }),
-          ...(role && { role }),
-          ...(status && { status }),
-        },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          role: true,
-          status: true,
-          lastLogin: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      });
+  getUserById = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const { id } = req.params;
+        const user = await this.userService.getUserById(id);
+        if (!user) {
+          throw new NotFoundError('Usuario no encontrado');
+        }
+        return user;
+      },
+      { userId: req.params.id }
+    );
+  };
 
-      // Registrar actividad
-      await prismaClient.activityLog.create({
-        data: {
-          userId: req.user.id,
-          action: 'UPDATE_USER',
-          entityType: 'User',
-          entityId: id,
-          details: `Usuario actualizado por administrador: ${updatedUser.email}`,
-        },
-      });
+  getProfile = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const userId = req.user.id;
+        return await this.userService.getProfile(userId);
+      },
+      { userId: req.user.id }
+    );
+  };
 
-      return this.sendSuccess(res, updatedUser, 200, 'Usuario actualizado correctamente');
-    } catch (error) {
-      return this.handleError(error, res, 'updateUser');
-    }
-  }
+  createUser = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const validatedData = await this.validationService.validateUserData(req.body);
+        return await this.userService.createUser(validatedData);
+      },
+      { userData: req.body }
+    );
+  };
 
-  /**
-   * Elimina un usuario
-   * @param {Object} req - Objeto de solicitud
-   * @param {Object} res - Objeto de respuesta
-   */
-  async deleteUser(req, res) {
-    try {
-      const { id } = req.params;
+  updateUser = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const { id } = req.params;
+        const validatedData = await this.validationService.validateUserUpdate(req.body);
+        return await this.userService.updateUser(id, validatedData);
+      },
+      { userId: req.params.id, updates: req.body }
+    );
+  };
 
-      // No permitir eliminar el propio usuario
-      if (parseInt(id) === req.user.id) {
-        throw new ValidationError('No puedes eliminar tu propio usuario');
-      }
+  updateProfile = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const userId = req.user.id;
+        const validatedData = await this.validationService.validateProfileUpdate(req.body);
+        return await this.userService.updateProfile(userId, validatedData);
+      },
+      { userId: req.user.id, updates: req.body }
+    );
+  };
 
-      // Verificar que el usuario existe
-      const user = await prismaClient.user.findUnique({
-        where: { id: parseInt(id) },
-      });
+  updateUserRole = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const { id } = req.params;
+        const { role } = req.body;
+        
+        if (parseInt(id) === req.user.id) {
+          throw new ForbiddenError('No puedes cambiar tu propio rol');
+        }
 
-      if (!user) {
-        throw new NotFoundError('Usuario no encontrado');
-      }
+        return await this.userService.updateUserRole(id, role, req.user.id);
+      },
+      { userId: req.params.id, role: req.body.role, adminId: req.user.id }
+    );
+  };
 
-      // Eliminar usuario (opcionalmente hacer un soft delete)
-      await prismaClient.user.update({
-        where: { id: parseInt(id) },
-        data: {
-          status: 'DELETED',
-          deletedAt: new Date(),
-        },
-      });
+  updateUserStatus = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const { id } = req.params;
+        const { status } = req.body;
 
-      // Registrar actividad
-      await prismaClient.activityLog.create({
-        data: {
-          userId: req.user.id,
-          action: 'DELETE_USER',
-          entityType: 'User',
-          entityId: id,
-          details: `Usuario eliminado: ${user.email}`,
-        },
-      });
+        if (parseInt(id) === req.user.id) {
+          throw new ForbiddenError('No puedes cambiar tu propio estado');
+        }
 
-      return this.sendSuccess(res, null, 200, 'Usuario eliminado correctamente');
-    } catch (error) {
-      return this.handleError(error, res, 'deleteUser');
-    }
-  }
+        return await this.userService.updateUserStatus(id, status, req.user.id);
+      },
+      { userId: req.params.id, status: req.body.status, adminId: req.user.id }
+    );
+  };
+
+  changePassword = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const userId = req.user.id;
+        const validatedData = await this.validationService.validatePasswordChange(req.body);
+        await this.userService.changePassword(userId, validatedData);
+        return { message: 'Contraseña actualizada exitosamente' };
+      },
+      { userId: req.user.id }
+    );
+  };
+
+  deleteUser = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const { id } = req.params;
+        await this.userService.deleteUser(id);
+        return { message: 'Usuario eliminado exitosamente' };
+      },
+      { userId: req.params.id }
+    );
+  };
+
+  searchUsers = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const { q, page = 1, limit = 10 } = req.query;
+        if (!q) {
+          throw new ValidationError('Se requiere un término de búsqueda');
+        }
+        return await this.userService.searchUsers(q, parseInt(page), parseInt(limit));
+      },
+      { query: req.query }
+    );
+  };
 }
 
 export default UserController;

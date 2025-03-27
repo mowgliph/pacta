@@ -281,12 +281,29 @@ export class BaseController {
   }
 
   // Helper method for handling async operations
-  async handleAsync(req, res, next, operation) {
+  async handleAsync(req, res, next, operation, context = {}) {
     try {
+      logger.info(`Starting operation: ${operation.name || 'unnamed'}`, {
+        method: req.method,
+        path: req.path,
+        ...context
+      });
+
       const result = await operation();
-      return this.sendResponse(res, result);
+
+      logger.debug(`Operation completed: ${operation.name || 'unnamed'}`, {
+        success: true,
+        ...context
+      });
+
+      return this.sendSuccess(res, result);
     } catch (error) {
-      return this.sendError(res, error);
+      logger.error(`Operation failed: ${operation.name || 'unnamed'}`, {
+        code: error.code || 'OPERATION_ERROR',
+        message: error.message,
+        context
+      });
+      return this.handleError(error, res, operation.name);
     }
   }
 
