@@ -105,14 +105,14 @@
 - [ ] Sistema de Documentos
   - [ ] Visor PDF/DOCX integrado
   - [ ] Carga de archivos con preview
-  - [ ] Historial de versiones
+   - [ ] Historial de versiones
   - [ ] Búsqueda en contenidos
 
 - [ ] Panel de Administración
   - [ ] Gestión de usuarios y permisos
   - [ ] Configuración del sistema
   - [ ] Monitoreo y logs
-  - [ ] Backups y restauración
+   - [ ] Backups y restauración
 
 ## 7. Características Premium (Pendiente 🔴)
 - [ ] Analítica Avanzada
