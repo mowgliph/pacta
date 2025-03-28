@@ -40,12 +40,19 @@ PACTA también está orientado a mejorar la **transparencia y trazabilidad** en 
   - Asistente de primera configuración
 
 - **Arquitectura Frontend:** 
-  - Desarrollado con Vue.js 3 y composables para una gestión de estado eficiente
-  - UI responsiva con Tailwind CSS adaptada a dispositivos móviles y escritorio
-  - Componentes modulares reutilizables para mantener coherencia visual
-  - Validación de formularios en tiempo real con Vuelidate
+  - Desarrollado con React 18 y TypeScript para un código robusto y tipado
+  - Gestión de estado global con Zustand para manejo eficiente de datos
+  - Interfaz de usuario moderna y responsiva implementada con:
+    - Tailwind CSS para estilos utilitarios y diseño adaptativo
+    - Componentes shadcn/ui para una interfaz consistente y accesible
+    - Sistema de temas claro/oscuro incorporado
+  - Enrutamiento tipo-seguro con TanStack Router
+  - Gestión de datos del servidor con TanStack Query
+  - Arquitectura modular organizada por características (feature-based)
+  - Gestión de formularios y validación con React Hook Form
+  - Sistema de iconografía con Tabler Icons
   - Modo offline con sincronización cuando hay conexión
-  - Caché local de archivos y datos frecuentes
+  - Sistema de caché local para datos frecuentes
   - Interfaz adaptada para modo offline/online
   - Sistema de notificaciones local
 
@@ -82,21 +89,21 @@ PACTA adopta un modelo de negocio basado en **licencias perpetuas** con tres niv
   - Hasta 100 contratos almacenados
   - 5 usuarios locales
   - Funcionalidades esenciales
-  - Soporte por ticket
+  - Asistencia Tecnica
   - Sin personalización
 
 - **Licencia Profesional:**
   - Hasta 500 contratos almacenados
   - 20 usuarios locales
   - Todas las funcionalidades
-  - Soporte prioritario
+  - Asistencias Tecnicas
   - Personalización básica
 
 - **Licencia Empresarial:**
   - Contratos ilimitados
   - Usuarios locales ilimitados
   - Todas las funcionalidades avanzadas
-  - Soporte in-situ
+  - Asistnecias tecnicas
   - Personalización completa
   - Migración de datos incluida
 
