@@ -78,6 +78,7 @@ frontend/
   - api/ : Llamadas a API relacionadas
   - types/ : Tipos específicos del módulo
   - index.ts : Punto de entrada y exportaciones
+
 ### 2. Components (Componentes)
 - Tres categorías principales:
   - common/ : Componentes genéricos reutilizables
@@ -87,40 +88,48 @@ frontend/
   - ComponentName.tsx : Lógica y JSX
   - ComponentName.types.ts : Interfaces y tipos
   - ComponentName.module.css : Estilos con scope local
+
 ### 3. Pages (Páginas)
 - Representan rutas de la aplicación
 - Componen componentes y features
 - Manejan la lógica de nivel de página
 - Incluyen sus propios estilos modulares
+
 ### 4. Hooks (Hooks Personalizados)
 - Encapsulan lógica reutilizable
 - Siguen las convenciones de React Hooks
 - Facilitan la composición de funcionalidades
+
 ### 5. Services (Servicios)
 - Centralizan la lógica de comunicación externa
 - Configuración de clientes HTTP
 - Gestión de almacenamiento local
 - Interfaces consistentes para APIs
+
 ### 6. Store (Estado Global)
 - Gestión centralizada del estado
 - Organizado por slices/features
 - Tipado fuerte con TypeScript
 - Acciones y selectores bien definidos
+
 ### 7. Styles (Estilos)
 - Sistema de diseño consistente
 - Variables CSS para temas
 - Integración con Tailwind CSS
 - Módulos CSS para estilos locales
+
 ### 8. Types (Tipos)
 - Tipos globales compartidos
 - Interfaces comunes
 - Enums y constantes tipadas
 - Utilidades de TypeScript
+
 ### 9. Utils (Utilidades)
 - Funciones helper reutilizables
 - Constantes y configuraciones
 - Utilidades de formato y validación
 - Funciones puras y testeables
+
 ## Mejores Prácticas
 ### Código
 - TypeScript en modo estricto
