@@ -1,7 +1,8 @@
 // src/routes.tsx
+import React from 'react';
 import { createRootRoute, createRoute, Outlet } from '@tanstack/react-router';
 import { LoginPage } from './features/auth/pages/LoginPage';
-import { DashboardPage } from './pages/DashboardPage'; // Asumiendo que existirá en src/pages/
+import { DashboardPage } from './features/dashboard/pages/DashboardPage'; // Asumiendo que existirá en src/pages/
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { useStore } from './store';
 
