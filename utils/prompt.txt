@@ -1,0 +1,5 @@
+lee tambien los archivos dentro de la carpeta de utils para que tengas vision de que va la palicacion y que ajustes tanto visuales como modernos y toques de animaciones necesitamos enfocarnos. Todo esto para manteber un estilo consecunete con la aplicacion.
+
+Siempre emplea un visual moderno y minimalista con toques suaves de animaciones para dar una experiencia de usuario agradable. Emplea iconos desde la libreria de tabler icons. 
+
+Siempre antes de realizar modificaciones lee, analisa y revisa el codigo actual. Mantener consistencia en el codigo como la estructuracion del mismo. Antes de crear algo nuevo revisa en toda las areas  por si ya existe, luego modifica. Realiza las tareas parte por parte. Mantener las tecnicas y metodos de programacion modernas, tanto enfoque en el backend como en el frontend. No asumas cosas. Revisa si es que estan las dependencias instaladas y revisa las dependencias que existen. Emplea las que estan de no estar emplea las nuevas recomendadas para instalarlas. Asegurate de que toda la implementacion del frontend este en engranaje consecunete con el backend. Revisa en ambos lados para realizar cualquiera de las modificaciones. 
