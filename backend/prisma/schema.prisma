@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,7 +10,40 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model
+// Enums
+enum Role {
+  RA                // Usuario del desarrollador
+  ADMIN             // Usuario administrativo del cliente
+  MANAGER           // Gestor con permisos amplios
+  USER              // Usuario estándar
+  VIEWER            // Solo lectura
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum ContractStatus {
+  DRAFT              // Borrador
+  ACTIVE             // Activo/Vigente
+  EXPIRED            // Vencido
+  TERMINATED         // Terminado anticipadamente
+  PENDING_RENEWAL    // Pendiente de renovación
+  RENEWED            // Renovado
+  ARCHIVED           // Archivado
+}
+
+enum DocumentType {
+  CONTRACT
+  AMENDMENT
+  ANNEX
+  CERTIFICATE
+  OTHER
+}
+
+// User model - Usuarios del sistema
 model User {
   id                String          @id @default(uuid())
   email             String          @unique
@@ -22,6 +52,7 @@ model User {
   lastName          String
   role              Role            @default(USER)
   status            UserStatus      @default(ACTIVE)
+  isSystemUser      Boolean         @default(false)  // Para identificar usuarios predefinidos (RA y Admin)
   profileImage      String?
   lastLogin         DateTime?
   createdAt         DateTime        @default(now())
@@ -35,6 +66,7 @@ model User {
   notifications     Notification[]  // Notificaciones recibidas
   activities        Activity[]      // Actividades realizadas
   accessLogs        AccessLog[]     // Registros de acceso
+  permisos          Permiso[]       // Permisos específicos
 }
 
 // Company model - Empresas relacionadas con los contratos
@@ -76,21 +108,21 @@ model Department {
 // Contract model - Core model for PACTA
 model Contract {
   id                String          @id @default(uuid())
+  numero            String          @unique
+  fechaInicio       DateTime        @map("fecha_inicio")
+  objeto            String
+  tipo              String
+  denominador       String
+  vigencia          Int
+  fechaFin          DateTime?       @map("fecha_fin")
+  estado            ContractStatus  @default(ACTIVE)
   title             String
   description       String?
-  contractNumber    String?         // Número de referencia del contrato
-  fileUrl           String          // URL del documento PDF/DOCX
+  fileUrl           String?         // URL del documento PDF/DOCX
   fileSize          Int?            // Tamaño del archivo en bytes
   fileMimeType      String?         // Tipo MIME del archivo
-  startDate         DateTime        // Fecha de inicio del contrato
-  endDate           DateTime        // Fecha de vencimiento del contrato
   amount            Float?          // Valor monetario del contrato
   currency          String?         // Moneda (USD, EUR, etc.)
-  status            ContractStatus  @default(ACTIVE)
-  contractType      ContractType    @default(OTHER)
-  renewalType       RenewalType?    @default(MANUAL)
-  renewalPeriod     Int?            // Período de renovación en días
-  alertDays         Int?            // Días antes para alertar del vencimiento
   notes             String?         // Notas adicionales
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
@@ -103,41 +135,156 @@ model Contract {
   companyId         String
   department        Department?     @relation(fields: [departmentId], references: [id])
   departmentId      String?
-  notifications     Notification[]  // Notificaciones asociadas
-  contractTags      ContractTag[]   // Tags asociados (many-to-many)
+  partes            ContratoParte[] // Partes involucradas
+  obligaciones      Obligacion[]    // Obligaciones del contrato
+  entregas          Entrega[]       // Entregas programadas
+  pagos             Pago[]          // Pagos asociados
+  garantias         Garantia[]      // Garantías del contrato
+  notificaciones    Notification[]  // Notificaciones asociadas
+  documentos        Documento[]     // Documentos relacionados
+  permisos          Permiso[]       // Permisos de acceso
   activities        Activity[]      // Actividades asociadas
+
+  @@index([numero])
+  @@index([fechaInicio])
+  @@index([estado])
 }
 
-// Tag model - Etiquetas para categorizar contratos
-model Tag {
-  id                String          @id @default(uuid())
-  name              String          @unique
-  color             String          @default("#3b82f6")  // Color para UI (hex)
-  description       String?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+// Parte model - Partes involucradas en contratos
+model Parte {
+  id                  String          @id @default(uuid())
+  nombre              String
+  domicilio           String
+  municipio           String
+  provincia           String
+  nacionalidad        String
+  autorizacionComercial String?       @map("autorizacion_comercial")
+  cuentaBancariaCup   String          @map("cuenta_bancaria_cup")
+  cuentaBancariaMlc   String?         @map("cuenta_bancaria_mlc")
+  codigoReeup         String          @map("codigo_reeup")
+  nit                 String
+  telefonos           String
+  representante       String
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
 
   // Relations
-  contractTags      ContractTag[]   // Contratos asociados (many-to-many)
+  contratos           ContratoParte[] // Contratos asociados
+
+  @@index([codigoReeup])
+  @@index([nit])
 }
 
-// ContractTag model - Relación many-to-many entre Contract y Tag
-model ContractTag {
-  contract          Contract        @relation(fields: [contractId], references: [id])
-  contractId        String
-  tag               Tag             @relation(fields: [tagId], references: [id])
-  tagId             String
-  createdAt         DateTime        @default(now())
-  
-  @@id([contractId, tagId])
+// ContratoParte model - Relación entre Contrato y Parte
+model ContratoParte {
+  id          String      @id @default(uuid())
+  contratoId  String      @map("contrato_id")
+  parteId     String      @map("parte_id")
+  rol         String
+  createdAt   DateTime    @default(now())
+
+  // Relations
+  contrato    Contract    @relation(fields: [contratoId], references: [id])
+  parte       Parte       @relation(fields: [parteId], references: [id])
+
+  @@unique([contratoId, parteId])
+}
+
+// Obligacion model - Obligaciones de las partes
+model Obligacion {
+  id          String      @id @default(uuid())
+  contratoId  String      @map("contrato_id")
+  parteId     String      @map("parte_id")
+  descripcion String
+  estado      String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  contrato    Contract    @relation(fields: [contratoId], references: [id])
+  parte       Parte       @relation(fields: [parteId], references: [id])
+}
+
+// Entrega model - Entregas programadas
+model Entrega {
+  id          String      @id @default(uuid())
+  contratoId  String      @map("contrato_id")
+  lugar       String
+  plazo       DateTime
+  condiciones String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  contrato    Contract    @relation(fields: [contratoId], references: [id])
+}
+
+// Pago model - Pagos asociados
+model Pago {
+  id          String      @id @default(uuid())
+  contratoId  String      @map("contrato_id")
+  monto       Float
+  moneda      String
+  formaPago   String      @map("forma_pago")
+  plazoPago   DateTime    @map("plazo_pago")
+  estado      String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  contrato    Contract    @relation(fields: [contratoId], references: [id])
+}
+
+// Garantia model - Garantías del contrato
+model Garantia {
+  id          String      @id @default(uuid())
+  contratoId  String      @map("contrato_id")
+  descripcion String
+  plazo       DateTime
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  contrato    Contract    @relation(fields: [contratoId], references: [id])
+}
+
+// Documento model - Documentos relacionados
+model Documento {
+  id          String      @id @default(uuid())
+  contratoId  String      @map("contrato_id")
+  nombre      String
+  ruta        String
+  tipo        DocumentType
+  version     Int
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  contrato    Contract    @relation(fields: [contratoId], references: [id])
+}
+
+// Permiso model - Permisos de acceso
+model Permiso {
+  id          String      @id @default(uuid())
+  usuarioId   String      @map("usuario_id")
+  contratoId  String      @map("contrato_id")
+  nivelAcceso String      @map("nivel_acceso")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  usuario     User        @relation(fields: [usuarioId], references: [id])
+  contrato    Contract    @relation(fields: [contratoId], references: [id])
 }
 
 // Notification model - Notificaciones del sistema
 model Notification {
   id                String             @id @default(uuid())
-  type              NotificationType   @default(EXPIRATION_WARNING)
+  type              String             // Tipo de notificación
   title             String
   message           String
+  fechaEnvio        DateTime           @map("fecha_envio")
+  estado            String
   isRead            Boolean            @default(false)
   createdAt         DateTime           @default(now())
   scheduledFor      DateTime?          // Para notificaciones programadas
@@ -147,11 +294,11 @@ model Notification {
   // Relations
   user              User               @relation(fields: [userId], references: [id])
   userId            String
-  contract          Contract?          @relation(fields: [contractId], references: [id])
-  contractId        String?
+  contrato          Contract?          @relation(fields: [contratoId], references: [id])
+  contratoId        String?
 }
 
-// Activity model - Registro de actividades en el sistema
+// Activity model - Registro de actividades
 model Activity {
   id                String             @id @default(uuid())
   action            String             // Acción realizada
@@ -163,11 +310,11 @@ model Activity {
   // Relations
   user              User               @relation(fields: [userId], references: [id])
   userId            String
-  contract          Contract?          @relation(fields: [contractId], references: [id])
-  contractId        String?
+  contrato          Contract?          @relation(fields: [contratoId], references: [id])
+  contratoId        String?
 }
 
-// AccessLog model - Registro de accesos al sistema
+// AccessLog model - Registro de accesos
 model AccessLog {
   id                String             @id @default(uuid())
   action            String             // Login, logout, failed attempt
@@ -182,7 +329,7 @@ model AccessLog {
   userId            String
 }
 
-// SystemSetting model - Configuraciones globales del sistema
+// SystemSetting model - Configuraciones globales
 model SystemSetting {
   id                String             @id @default(uuid())
   key               String             @unique
@@ -193,33 +340,9 @@ model SystemSetting {
   updatedAt         DateTime           @updatedAt
 }
 
-// Report model - Reportes generados
-model Report {
-  id                String             @id @default(uuid())
-  name              String
-  description       String?
-  fileUrl           String?            // URL del archivo generado
-  format            ReportFormat       @default(PDF)
-  parameters        String?            // Parámetros en JSON
-  createdAt         DateTime           @default(now())
-  generatedAt       DateTime?
-  expiresAt         DateTime?
-}
-
-// Cache model - Sistema de caché persistente
-model Cache {
-  id                String             @id
-  value             String             // Valor almacenado en caché (serializado como JSON)
-  expiresAt         DateTime?          // Tiempo de expiración (null para entradas sin expiración)
-  createdAt         DateTime           @default(now())
-  updatedAt         DateTime           @updatedAt
-
-  @@index([expiresAt]) // Índice para optimizar la limpieza de caché expirado
-}
-
-// Modelo de Backups - Sistema de guardado
+// Backup model - Sistema de guardado
 model Backup {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(uuid())
   filename  String
   type      String   // 'auto' | 'manual'
   size      Int
@@ -227,61 +350,3 @@ model Backup {
   createdAt DateTime @default(now())
   duration  Int      // Duración en ms
 }
-
-// Enums
-enum Role {
-  ADMIN             // Acceso total
-  MANAGER           // Gestor con permisos amplios
-  USER              // Usuario estándar
-  VIEWER            // Solo lectura
-}
-
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
-}
-
-enum ContractStatus {
-  DRAFT              // Borrador
-  ACTIVE             // Activo/Vigente
-  EXPIRED            // Vencido
-  TERMINATED         // Terminado anticipadamente
-  PENDING_RENEWAL    // Pendiente de renovación
-  RENEWED            // Renovado
-  ARCHIVED           // Archivado
-}
-
-enum ContractType {
-  SERVICE            // Servicios
-  PURCHASE           // Compra/Adquisición
-  LEASE              // Arrendamiento
-  EMPLOYMENT         // Laboral
-  NDA                // Confidencialidad
-  LICENSING          // Licenciamiento
-  PARTNERSHIP        // Asociación/Colaboración
-  OTHER              // Otros
-}
-
-enum RenewalType {
-  MANUAL             // Renovación manual
-  AUTOMATIC          // Renovación automática
-  CONDITIONAL        // Renovación condicional
-}
-
-enum NotificationType {
-  EXPIRATION_WARNING // Advertencia de vencimiento
-  RENEWAL_REMINDER   // Recordatorio de renovación
-  DOCUMENT_UPDATED   // Documento actualizado
-  COMMENT_ADDED      // Comentario agregado
-  ASSIGNMENT         // Asignación de contrato
-  SYSTEM             // Notificación del sistema
-}
-
-enum ReportFormat {
-  PDF
-  EXCEL
-  CSV
-  HTML
-}
-
