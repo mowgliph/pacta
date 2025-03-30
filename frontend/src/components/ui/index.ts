@@ -7,5 +7,6 @@ export * from './form'
 export * from './alert'
 export * from './card'
 export * from './dropdown-menu'
+export * from './breadcrumb'
 
 // ... otras exportaciones
