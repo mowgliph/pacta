@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -8,7 +8,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -17,7 +16,7 @@ import {
 import { useStore } from '@/store'; // Importar el store de Zustand
 import { useNavigate } from '@tanstack/react-router'; // Importar hook de navegación
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ExclamationTriangleIcon } from '@radix-ui/react-icons';
+import { IconAt, IconEyeOff, IconEye, IconKey, IconAlertTriangle } from '@tabler/icons-react';
 
 // Esquema de validación con Zod
 const loginFormSchema = z.object({
@@ -37,6 +36,8 @@ export const LoginForm: React.FC = () => {
       error: state.error 
     })
   );
+  
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
@@ -50,19 +51,17 @@ export const LoginForm: React.FC = () => {
   const onSubmit = async (values: LoginFormValues) => {
     const success = await login(values.email, values.password, values.rememberMe);
     if (success) {
-      // Redirigir al dashboard o página principal después del login exitoso
-      navigate({ to: '/dashboard' }); // Ajusta la ruta según tu configuración
+      navigate({ to: '/' }); // La ruta del dashboard es '/'
     }
-    // El manejo de errores se muestra a través del estado 'error' del store
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         {/* Mostrar error general del login */}
         {error && (
-          <Alert variant="destructive">
-            <ExclamationTriangleIcon className="h-4 w-4" />
+          <Alert variant="destructive" className="animate-in fade-in slide-in-from-top-5 duration-300">
+            <IconAlertTriangle className="h-4 w-4" />
             <AlertTitle>Error de Autenticación</AlertTitle>
             <AlertDescription>
               {error}
@@ -76,61 +75,96 @@ export const LoginForm: React.FC = () => {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Correo Electrónico</FormLabel>
-              <FormControl>
-                <Input 
-                  type="email" 
-                  placeholder="tu@correo.com" 
-                  {...field} 
-                  disabled={loading}
-                />
-              </FormControl>
+              <div className="relative">
+                <IconAt className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <FormControl>
+                  <Input 
+                    type="email" 
+                    placeholder="tu@correo.com" 
+                    className="pl-10" 
+                    {...field} 
+                    disabled={loading}
+                  />
+                </FormControl>
+              </div>
               <FormMessage />
             </FormItem>
           )}
         />
+        
         <FormField
           control={form.control}
           name="password"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Contraseña</FormLabel>
-              <FormControl>
-                <Input 
-                  type="password" 
-                  placeholder="********" 
-                  {...field} 
+              <div className="relative">
+                <IconKey className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <FormControl>
+                  <Input 
+                    type={showPassword ? "text" : "password"} 
+                    placeholder="********" 
+                    className="pl-10 pr-10" 
+                    {...field} 
+                    disabled={loading}
+                  />
+                </FormControl>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-1 text-muted-foreground"
+                  onClick={() => setShowPassword(!showPassword)}
                   disabled={loading}
-                />
-              </FormControl>
+                >
+                  {showPassword ? (
+                    <IconEyeOff className="h-4 w-4" />
+                  ) : (
+                    <IconEye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
               <FormMessage />
             </FormItem>
           )}
         />
+        
         <FormField
           control={form.control}
           name="rememberMe"
           render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow">
+            <div className="flex items-center space-x-2 pt-2">
               <FormControl>
                 <Checkbox
                   checked={field.value}
                   onCheckedChange={field.onChange}
                   disabled={loading}
+                  id="rememberMe"
                 />
               </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>
-                  Recuérdame
+              <div className="space-y-0.5 leading-none">
+                <FormLabel
+                  htmlFor="rememberMe"
+                  className="text-sm font-medium cursor-pointer"
+                >
+                  Mantener sesión iniciada
                 </FormLabel>
-                <FormDescription>
-                  Mantener la sesión iniciada en este dispositivo.
-                </FormDescription>
               </div>
-            </FormItem>
+            </div>
           )}
         />
-        <Button type="submit" className="w-full" disabled={loading}>
-          {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+        
+        <Button 
+          type="submit" 
+          className="w-full mt-6 transition-all hover:shadow-md"
+          disabled={loading}
+        >
+          {loading ? (
+            <>
+              <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
+              Iniciando sesión...
+            </>
+          ) : 'Iniciar Sesión'}
         </Button>
       </form>
     </Form>
