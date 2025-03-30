@@ -33,6 +33,17 @@ export const Header: React.FC<HeaderProps> = ({ sidebarExpanded }) => {
     // Aquí iría la lógica real para cambiar el tema
   };
 
+  // Funciones para manejar la navegación
+  const handleProfileClick = () => {
+    // Por ahora navegamos al dashboard, en el futuro cuando exista la ruta /profile
+    navigate({ to: '/' }); // Dashboard es '/'
+  };
+
+  const handleSettingsClick = () => {
+    // Por ahora navegamos al dashboard, en el futuro cuando exista la ruta /settings
+    navigate({ to: '/' }); // Dashboard es '/'
+  };
+
   if (!user) return null;
 
   return (
@@ -80,10 +91,10 @@ export const Header: React.FC<HeaderProps> = ({ sidebarExpanded }) => {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Mi cuenta</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => navigate({ to: '/dashboard' })}>
+            <DropdownMenuItem onClick={handleProfileClick}>
               Perfil
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate({ to: '/dashboard' })}>
+            <DropdownMenuItem onClick={handleSettingsClick}>
               Configuración
             </DropdownMenuItem>
             <DropdownMenuSeparator />

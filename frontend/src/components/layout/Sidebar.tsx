@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useMatchRoute } from '@tanstack/react-router';
+import { useNavigate, useMatchRoute } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
 import { Role } from '@/types/enums';
@@ -11,7 +11,6 @@ import {
   IconReportAnalytics,
   IconChevronRight,
   IconMenu2,
-  IconX,
 } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 
@@ -23,6 +22,10 @@ interface NavItemProps {
   roles?: Role[];
 }
 
+interface SidebarProps {
+  onToggle: (expanded: boolean) => void;
+}
+
 const NavItem: React.FC<NavItemProps> = ({
   to,
   icon,
@@ -30,6 +33,7 @@ const NavItem: React.FC<NavItemProps> = ({
   expanded,
   roles,
 }) => {
+  const navigate = useNavigate();
   const matchRoute = useMatchRoute();
   const isActive = matchRoute({ to });
   const { hasRole } = useStore(state => ({ hasRole: state.hasRole }));
@@ -38,12 +42,17 @@ const NavItem: React.FC<NavItemProps> = ({
   if (roles && roles.length > 0 && !hasRole(roles)) {
     return null;
   }
+  
+  // Usar onClick en lugar de Link para evitar problemas con rutas no definidas
+  const handleClick = () => {
+    navigate({ to });
+  };
 
   return (
-    <Link
-      to={to}
+    <button
+      onClick={handleClick}
       className={cn(
-        'group flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200',
+        'group flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200',
         isActive
           ? 'bg-primary text-primary-foreground'
           : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -54,22 +63,24 @@ const NavItem: React.FC<NavItemProps> = ({
       </span>
       <span
         className={cn(
-          'line-clamp-1 transition-all duration-200',
+          'line-clamp-1 text-left transition-all duration-200',
           expanded ? 'opacity-100' : 'w-0 opacity-0'
         )}
       >
         {label}
       </span>
-    </Link>
+    </button>
   );
 };
 
-export const Sidebar: React.FC = () => {
+export const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
   const [expanded, setExpanded] = useState(true);
   const { user } = useStore(state => ({ user: state.user }));
 
   const toggleSidebar = () => {
-    setExpanded(!expanded);
+    const newExpandedState = !expanded;
+    setExpanded(newExpandedState);
+    onToggle(newExpandedState);
   };
 
   if (!user) return null;
@@ -77,7 +88,7 @@ export const Sidebar: React.FC = () => {
   return (
     <aside
       className={cn(
-        'flex h-screen flex-col border-r bg-card transition-all duration-300 ease-in-out',
+        'fixed left-0 top-0 z-20 flex h-screen flex-col border-r bg-card transition-all duration-300 ease-in-out',
         expanded ? 'w-64' : 'w-16'
       )}
     >
@@ -90,6 +101,7 @@ export const Sidebar: React.FC = () => {
           size="icon"
           onClick={toggleSidebar}
           className="h-8 w-8"
+          aria-label={expanded ? "Contraer menú" : "Expandir menú"}
         >
           {expanded ? (
             <IconChevronRight className="h-4 w-4" />
@@ -99,36 +111,38 @@ export const Sidebar: React.FC = () => {
         </Button>
       </div>
 
-      <nav className="flex-1 space-y-1 p-3">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         <NavItem
-          to="/dashboard"
+          to="/"
           icon={<IconDashboard className="h-4 w-4" />}
           label="Dashboard"
           expanded={expanded}
         />
+        {/* Solo mostrar estos elementos si tienen rutas implementadas */}
+        {/* Por ahora todos dirigen al dashboard */}
         <NavItem
-          to="/contracts"
+          to="/"
           icon={<IconFiles className="h-4 w-4" />}
           label="Contratos"
           expanded={expanded}
           roles={[Role.ADMIN, Role.MANAGER, Role.USER]}
         />
         <NavItem
-          to="/users"
+          to="/"
           icon={<IconUsers className="h-4 w-4" />}
           label="Usuarios"
           expanded={expanded}
           roles={[Role.ADMIN, Role.RA]}
         />
         <NavItem
-          to="/reports"
+          to="/"
           icon={<IconReportAnalytics className="h-4 w-4" />}
           label="Reportes"
           expanded={expanded}
           roles={[Role.ADMIN, Role.MANAGER]}
         />
         <NavItem
-          to="/settings"
+          to="/"
           icon={<IconSettings className="h-4 w-4" />}
           label="Configuración"
           expanded={expanded}
@@ -144,8 +158,8 @@ export const Sidebar: React.FC = () => {
           )}
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-            {user.firstName.charAt(0)}
-            {user.lastName.charAt(0)}
+            {user.firstName?.charAt(0) || ''}
+            {user.lastName?.charAt(0) || ''}
           </div>
           {expanded && (
             <div className="min-w-0 flex-1">

@@ -1,10 +1,11 @@
 // src/routes.tsx
 import React from 'react';
 import { createRootRoute, createRoute, Outlet } from '@tanstack/react-router';
-import { LoginPage } from './features/auth/pages/LoginPage';
-import { DashboardPage } from './pages/DashboardPage'; // Asumiendo que existirá en src/pages/
-import { ProtectedRoute } from './components/auth/ProtectedRoute';
-import { useStore } from './store';
+import { LoginPage } from '../features/auth/pages/LoginPage';
+import { DashboardPage } from '../features/dashboard/pages/DashboardPage'; // Corregir la ruta
+import { ProtectedRoute } from '../components/auth/ProtectedRoute';
+import { DashboardLayout } from '../components/layout/DashboardLayout'; // Importar el layout
+import { useStore } from '../store';
 
 // --- Ruta Raíz (__root.tsx) ---
 // Componente Raíz: Podría incluir layout general, Providers, etc.
@@ -46,11 +47,18 @@ const protectedRoute = createRoute({
   component: ProtectedRoute, 
 });
 
+// Añadir layout intermedio
+const dashboardLayoutRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  id: '_dashboard_layout',
+  component: DashboardLayout,
+});
+
 // --- Ruta Dashboard (/dashboard) ---
 const dashboardRoute = createRoute({
-  // Esta ruta es hija de la ruta protegida
-  getParentRoute: () => protectedRoute,
-  path: '/', // Raíz relativa a la ruta protegida, efectivamente /dashboard
+  // Esta ruta es hija del layout de dashboard
+  getParentRoute: () => dashboardLayoutRoute,
+  path: '/', // Raíz relativa al layout
   component: DashboardPage,
 });
 
@@ -58,7 +66,11 @@ const dashboardRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   loginRoute,
   // Anidar las rutas protegidas bajo el componente protector
-  protectedRoute.addChildren([dashboardRoute])
+  protectedRoute.addChildren([
+    dashboardLayoutRoute.addChildren([
+      dashboardRoute
+    ])
+  ])
 ]);
 
 // --- Exportar la configuración para el Router ---

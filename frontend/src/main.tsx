@@ -7,7 +7,7 @@ import './index.css'
 // Si usas generación automática, sería algo como:
 // import { routeTree } from './routeTree.gen' 
 // Como lo definimos manualmente:
-import { routerConfig } from './routes'
+import { routerConfig } from './routes/routes'
 
 // Crear la instancia del router
 const router = createRouter(routerConfig)
