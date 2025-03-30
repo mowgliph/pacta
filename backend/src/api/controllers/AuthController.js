@@ -26,12 +26,12 @@ export class AuthController extends BaseController {
         });
 
         if (!user) {
-          throw new UnauthorizedError('Credenciales inválidas');
+          throw new UnauthorizedError('Usuario no encontrado');
         }
 
         // Verificar contraseña
         if (!compareSync(validatedData.password, user.password)) {
-          throw new UnauthorizedError('Credenciales inválidas');
+          throw new UnauthorizedError('Contraseña incorrecta');
         }
 
         // Verificar que el usuario está activo
@@ -41,7 +41,7 @@ export class AuthController extends BaseController {
 
         // Verificar que es un usuario del sistema
         if (!user.isSystemUser) {
-          throw new UnauthorizedError('Acceso no autorizado');
+          throw new UnauthorizedError('Acceso no autorizado para usuarios del sistema');
         }
 
         // Actualizar último login
@@ -124,8 +124,19 @@ export class AuthController extends BaseController {
         }
 
         if (!user.isSystemUser) {
-          throw new UnauthorizedError('Acceso no autorizado');
+          throw new UnauthorizedError('Acceso no autorizado para usuarios del sistema');
         }
+
+        // Registrar actividad
+        await prisma.activity.create({
+          data: {
+            action: 'VERIFY_TOKEN',
+            description: 'Verificación de token exitosa',
+            userId: user.id,
+            ipAddress: req.ip,
+            userAgent: req.headers['user-agent']
+          }
+        });
 
         return {
           user: {

@@ -16,32 +16,11 @@ router.post(
   authController.login.bind(authController),
 );
 
-// Registro de usuario
+// Verificación de token
 router.post(
-  '/register',
-  validate(validationService.validators.auth.registrationSchema),
-  authController.register.bind(authController),
-);
-
-// Endpoint para solicitar restablecimiento de contraseña
-router.post(
-  '/forgot-password',
-  validate(validationService.validators.auth.passwordResetRequestSchema),
-  authController.forgotPassword.bind(authController),
-);
-
-// Establecer nueva contraseña
-router.post(
-  '/reset-password',
-  validate(validationService.validators.auth.passwordResetSchema),
-  authController.resetPassword.bind(authController),
-);
-
-// Verificar email
-router.get(
-  '/verify-email/:token',
-  validate(validationService.validators.auth.emailVerificationSchema, 'params'),
-  authController.verifyEmail.bind(authController),
+  '/verify-token',
+  validate(validationService.validators.auth.verifyTokenSchema),
+  authController.verifyToken.bind(authController),
 );
 
 // Refrescar token
@@ -49,36 +28,6 @@ router.post(
   '/refresh-token',
   validate(validationService.validators.auth.refreshTokenSchema),
   authController.refreshToken.bind(authController),
-);
-
-// Cambiar contraseña (requiere autenticación)
-router.post(
-  '/change-password',
-  authenticateToken,
-  validate(validationService.validators.auth.changePasswordSchema),
-  authController.changePassword.bind(authController),
-);
-
-// Verificar 2FA
-router.post(
-  '/verify-2fa',
-  validate(validationService.validators.auth.twoFactorVerifySchema),
-  // Este endpoint se implementaría en el futuro
-);
-
-// Configurar 2FA (requiere autenticación)
-router.post(
-  '/setup-2fa',
-  authenticateToken,
-  validate(validationService.validators.auth.twoFactorSetupSchema),
-  // Este endpoint se implementaría en el futuro
-);
-
-// Oauth login (Google, Facebook, etc.)
-router.post(
-  '/oauth-login',
-  validate(validationService.validators.auth.oauthLoginSchema),
-  // Este endpoint se implementaría en el futuro
 );
 
 export default router;
