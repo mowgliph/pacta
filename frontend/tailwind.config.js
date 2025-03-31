@@ -1,9 +1,11 @@
-import tailwindCssAnimate from 'tailwindcss-animate'
-import defaultTheme from 'tailwindcss/defaultTheme'
-import { fonts } from './src/config/fonts'
+import tailwindCssAnimate from 'tailwindcss-animate';
+import defaultTheme from 'tailwindcss/defaultTheme';
+
+// Define fonts fallback (since we can't import from src/config)
+const fonts = ['inter', 'manrope'];
 
 // Use destructuring with fallback to ensure fontFamily is defined
-const { fontFamily = { sans: ['sans-serif'] } } = defaultTheme || {}
+const { fontFamily = { sans: ['sans-serif'] } } = defaultTheme || {};
 
 /** @type {import('tailwindcss').Config} */
 export default {

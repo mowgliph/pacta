@@ -86,3 +86,10 @@ const routeTree = rootRoute.addChildren([
 export const routerConfig = {
   routeTree,
 };
+
+// Exportar Route para que TanStack Router pueda generar correctamente el routeTree
+export const Route = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/routes',
+  component: () => <div>Routes Page</div>,
+});

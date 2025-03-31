@@ -16,7 +16,7 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['tailwindcss', 'tailwindcss/lib/plugin'],
+    include: ['tailwindcss'],
     esbuildOptions: {
       loader: {
         '.js': 'jsx',
