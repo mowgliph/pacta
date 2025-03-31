@@ -65,3 +65,5 @@ export class NotificationController extends BaseController {
     );
   };
 }
+
+export default new NotificationController();

@@ -2,13 +2,12 @@
  * Rutas para la gestión de compañías
  */
 import express from 'express';
-import { CompanyController } from '../controllers/CompanyController.js';
+import companyController from '../controllers/CompanyController.js';
 import { authenticateToken, isAdmin } from '../middleware/auth.js';
 import { validate, validateBody, validateParams, validateQuery } from '../middleware/validate.js';
 import { ValidationService } from '../../services/ValidationService.js';
 
 const router = express.Router();
-const controller = new CompanyController();
 const validationService = new ValidationService();
 
 // Obtener todas las compañías con filtros y paginación
@@ -16,7 +15,7 @@ router.get(
   '/',
   authenticateToken,
   validateQuery(validationService.searchCompanySchema()),
-  controller.getAllCompanies,
+  companyController.getAllCompanies,
 );
 
 // Obtener una compañía por ID
@@ -24,7 +23,7 @@ router.get(
   '/:id',
   authenticateToken,
   validateParams(validationService.companyIdSchema()),
-  controller.getCompanyById,
+  companyController.getCompanyById,
 );
 
 // Crear una nueva compañía
@@ -33,7 +32,7 @@ router.post(
   authenticateToken,
   isAdmin,
   validateBody(validationService.createCompanySchema()),
-  controller.createCompany,
+  companyController.createCompany,
 );
 
 // Actualizar una compañía existente
@@ -45,7 +44,7 @@ router.put(
     params: validationService.companyIdSchema(),
     body: validationService.updateCompanySchema(),
   }),
-  controller.updateCompany,
+  companyController.updateCompany,
 );
 
 // Eliminar una compañía
@@ -54,7 +53,7 @@ router.delete(
   authenticateToken,
   isAdmin,
   validateParams(validationService.companyIdSchema()),
-  controller.deleteCompany,
+  companyController.deleteCompany,
 );
 
 // Rutas para departamentos
@@ -63,7 +62,7 @@ router.post(
   authenticateToken,
   isAdmin,
   validateBody(validationService.createDepartmentSchema()),
-  controller.createDepartment,
+  companyController.createDepartment,
 );
 
 router.put(
@@ -74,7 +73,7 @@ router.put(
     params: validationService.departmentIdSchema(),
     body: validationService.updateDepartmentSchema(),
   }),
-  controller.updateDepartment,
+  companyController.updateDepartment,
 );
 
 router.delete(
@@ -82,15 +81,15 @@ router.delete(
   authenticateToken,
   isAdmin,
   validateParams(validationService.departmentIdSchema()),
-  controller.deleteDepartment,
+  companyController.deleteDepartment,
 );
 
 // Rutas para análisis y consultas específicas
-router.get('/top/by-contracts', authenticateToken, controller.getTopCompaniesByContracts);
+router.get('/top/by-contracts', authenticateToken, companyController.getTopCompaniesByContracts);
 router.get(
   '/with-expiring-contracts',
   authenticateToken,
-  controller.getCompaniesWithExpiringContracts,
+  companyController.getCompaniesWithExpiringContracts,
 );
 
 export default router;

@@ -3,7 +3,7 @@
  */
 import { BasePrismaRepository } from './BasePrismaRepository.js';
 
-class UserPrismaRepository extends BasePrismaRepository {
+export class UserPrismaRepository extends BasePrismaRepository {
   constructor() {
     super('user');
   }

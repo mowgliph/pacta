@@ -3,10 +3,9 @@
  */
 import express from 'express';
 import { authLimiter } from '../middleware/rateLimit.js';
-import AuthController from '../controllers/AuthController.js';
+import authController from '../controllers/AuthController.js';
 
 const router = express.Router();
-const authController = new AuthController();
 
 // Rutas de autenticación y registro
 router.post('/login', authLimiter, authController.login);

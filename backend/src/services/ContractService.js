@@ -7,8 +7,8 @@ import repositories from '../database/repositories/index.js';
 import { LoggingService } from './LoggingService.js';
 import { ValidationError, NotFoundError } from '../utils/errors.js';
 import { ValidationService } from './ValidationService.js';
-import { CacheService } from './CacheService.js';
-import { NotificationService } from './NotificationService.js';
+import CacheService from './CacheService.js';
+import NotificationService from './NotificationService.js';
 
 export class ContractService extends BaseService {
   constructor() {

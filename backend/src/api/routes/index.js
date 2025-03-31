@@ -4,10 +4,10 @@
  */
 import express from 'express';
 import authRoutes from './auth.js';
-import userRoutes from './user.js';
+import userRoutes from './userRoutes.js';
 import adminRoutes from './admin.js';
-import contractRoutes from './contract.js';
-import { authenticate } from '../middleware/authenticationMiddleware.js';
+import contractRoutes from './contracts.js';
+import { authenticate } from '../middleware/auth.js';
 import { NotFoundError } from '../../utils/errors.js';
 
 const router = express.Router();

@@ -2,7 +2,7 @@
  * Rutas para gestión de usuarios
  */
 import { BaseRoute } from './BaseRoute.js';
-import UserController from '../controllers/UserController.js';
+import userController from '../controllers/UserController.js';
 import { authenticateToken, isAdmin } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { ValidationService } from '../../services/ValidationService.js';
@@ -10,9 +10,9 @@ import { z } from 'zod';
 
 class UserRoutes extends BaseRoute {
   constructor() {
-    super(UserController);
-    this.initializeRoutes();
+    super(userController);
     this.validationService = new ValidationService();
+    this.initializeRoutes();
   }
 
   initializeRoutes() {

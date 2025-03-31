@@ -1,6 +1,6 @@
-import { prisma } from '../database/prisma.js';
-import User from './User.js';
-import License from './License.js';
+import prisma from '../database/prisma.js';
+import { User } from './User.js';
+import { License } from './License.js';
 
 // Exportar el cliente Prisma
 export { prisma };

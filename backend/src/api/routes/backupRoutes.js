@@ -8,6 +8,7 @@ import { authorize } from '../middleware/authorizationMiddleware.js';
 import { sensitiveRouteLimiter } from '../middleware/rateLimit.js';
 import { ValidationService } from '../../services/ValidationService.js';
 import { cacheMiddleware } from '../middleware/cache.js';
+import { validate } from '../middleware/validate.js';
 
 class BackupRoutes extends BaseRoute {
   constructor() {
@@ -23,7 +24,7 @@ class BackupRoutes extends BaseRoute {
         authenticate,
         authorize('ADMIN'),
         cacheMiddleware(300), // 5 minutes cache
-        this.validationService.validate('backup.backupQuerySchema', 'query')
+        validate(this.validationService.validators.backup.backupQuerySchema)
       ]
     });
 
@@ -33,7 +34,7 @@ class BackupRoutes extends BaseRoute {
         authenticate,
         authorize('ADMIN'),
         cacheMiddleware(600), // 10 minutes cache
-        this.validationService.validate('backup.backupIdSchema', 'params')
+        validate(this.validationService.validators.backup.backupIdSchema, 'params')
       ]
     });
 
@@ -43,7 +44,7 @@ class BackupRoutes extends BaseRoute {
         authenticate,
         authorize('ADMIN'),
         cacheMiddleware(900), // 15 minutes cache
-        this.validationService.validate('backup.backupStatsSchema', 'query')
+        validate(this.validationService.validators.backup.backupStatsSchema, 'query')
       ]
     });
 
@@ -54,7 +55,7 @@ class BackupRoutes extends BaseRoute {
         authenticate,
         authorize('ADMIN'),
         sensitiveRouteLimiter,
-        this.validationService.validate('backup.createBackupSchema', 'body')
+        validate(this.validationService.validators.backup.createBackupSchema, 'body')
       ]
     });
 
@@ -64,8 +65,8 @@ class BackupRoutes extends BaseRoute {
         authenticate,
         authorize('ADMIN'),
         sensitiveRouteLimiter,
-        this.validationService.validate('backup.backupIdSchema', 'params'),
-        this.validationService.validate('backup.restoreBackupSchema', 'body')
+        validate(this.validationService.validators.backup.backupIdSchema, 'params'),
+        validate(this.validationService.validators.backup.restoreBackupSchema, 'body')
       ]
     });
 
@@ -75,8 +76,8 @@ class BackupRoutes extends BaseRoute {
         authenticate,
         authorize('ADMIN'),
         sensitiveRouteLimiter,
-        this.validationService.validate('backup.backupIdSchema', 'params'),
-        this.validationService.validate('backup.exportBackupSchema', 'body')
+        validate(this.validationService.validators.backup.backupIdSchema, 'params'),
+        validate(this.validationService.validators.backup.exportBackupSchema, 'body')
       ]
     });
   }

@@ -3,13 +3,13 @@
  * Proporciona métodos para registrar rutas CRUD estándar
  */
 import express from 'express';
-import { LoggingService } from '../services/LoggingService.js';
-import { CacheService } from '../services/CacheService.js';
-import { ValidationService } from '../services/ValidationService.js';
-import { ResponseService } from '../services/ResponseService.js';
+import { LoggingService } from '../../services/LoggingService.js';
+import CacheService from '../../services/CacheService.js';
+import { ValidationService } from '../../services/ValidationService.js';
+import { ResponseService } from '../../services/ResponseService.js';
 import { Router } from 'express';
-import { authenticate } from '../middleware/authMiddleware.js';
-import { authorize } from '../middleware/authorizationMiddleware.js';
+import { authenticate } from '../middleware/auth.js';
+import { authorize } from '../middleware/auth.js';
 
 export class BaseRoute {
   /**
@@ -31,6 +31,74 @@ export class BaseRoute {
    */
   getRouter() {
     return this.router;
+  }
+
+  /**
+   * Crea un middleware para registrar operaciones
+   * @param {string} operation - Nombre de la operación
+   * @returns {Function} - Middleware para logging
+   */
+  logOperation(operation) {
+    return (req, res, next) => {
+      const start = Date.now();
+      res.on('finish', () => {
+        const duration = Date.now() - start;
+        LoggingService.info(`${operation} completed`, {
+          method: req.method,
+          url: req.originalUrl,
+          status: res.statusCode,
+          duration: `${duration}ms`,
+          userId: req.user?.id,
+        });
+      });
+      next();
+    };
+  }
+
+  /**
+   * Crea un middleware para validar la solicitud
+   * @param {object} schema - Esquema de validación
+   * @returns {Function} - Middleware para validación
+   */
+  validateRequest(schema) {
+    return async (req, res, next) => {
+      try {
+        const validationService = new ValidationService();
+        const validatedData = await validationService.validate(schema, req.body);
+        req.body = validatedData;
+        next();
+      } catch (error) {
+        next(error);
+      }
+    };
+  }
+
+  /**
+   * Crea un middleware para cachear la respuesta
+   * @param {number} ttl - Tiempo de vida en segundos
+   * @returns {Function} - Middleware para caché
+   */
+  cacheResponse(ttl = 600) {
+    return async (req, res, next) => {
+      try {
+        const cacheKey = `cache:${req.originalUrl}`;
+        const cachedData = await CacheService.get(cacheKey);
+
+        if (cachedData) {
+          return res.json(ResponseService.success(cachedData));
+        }
+
+        const originalJson = res.json;
+        res.json = function (data) {
+          CacheService.set(cacheKey, data, ttl);
+          return originalJson.call(this, data);
+        };
+
+        next();
+      } catch (error) {
+        next(error);
+      }
+    };
   }
 
   /**
@@ -120,60 +188,134 @@ export class BaseRoute {
   /**
    * Registra una ruta GET
    * @param {String} path - Ruta a registrar
-   * @param {Function} handler - Manejador de la ruta
-   * @param {Array} middlewares - Middlewares a aplicar
+   * @param {Function|Array} handlerOrMiddlewares - Manejador de la ruta o middlewares
+   * @param {Function} [handler] - Manejador de la ruta si el segundo argumento es middlewares
    * @returns {BaseRoute} - this, para encadenamiento
    */
-  get(path, handler, middlewares = []) {
-    this.router.get(path, ...middlewares, handler);
+  get(path, handlerOrMiddlewares, handler) {
+    // Si el segundo argumento es un arreglo, asumimos que son middlewares
+    if (Array.isArray(handlerOrMiddlewares)) {
+      this.router.get(path, ...handlerOrMiddlewares, handler);
+    } 
+    // Si el segundo argumento es una función y el tercero no existe, asumimos que es el handler
+    else if (typeof handlerOrMiddlewares === 'function' && !handler) {
+      this.router.get(path, handlerOrMiddlewares);
+    }
+    // Si tanto el segundo como el tercer argumento existen, el segundo es un middleware y el tercero el handler
+    else {
+      this.router.get(path, handlerOrMiddlewares, handler);
+    }
     return this;
   }
 
   /**
    * Registra una ruta POST
    * @param {String} path - Ruta a registrar
-   * @param {Function} handler - Manejador de la ruta
-   * @param {Array} middlewares - Middlewares a aplicar
+   * @param {Function|Array} handlerOrMiddlewares - Manejador de la ruta o middlewares
+   * @param {Function} [handler] - Manejador de la ruta si el segundo argumento es middlewares
    * @returns {BaseRoute} - this, para encadenamiento
    */
-  post(path, handler, middlewares = []) {
-    this.router.post(path, ...middlewares, handler);
+  post(path, handlerOrMiddlewares, handler) {
+    // Si el segundo argumento es un arreglo, asumimos que son middlewares
+    if (Array.isArray(handlerOrMiddlewares)) {
+      this.router.post(path, ...handlerOrMiddlewares, handler);
+    } 
+    // Si el segundo argumento es una función y el tercero no existe, asumimos que es el handler
+    else if (typeof handlerOrMiddlewares === 'function' && !handler) {
+      this.router.post(path, handlerOrMiddlewares);
+    }
+    // Si tanto el segundo como el tercer argumento existen, el segundo es un middleware y el tercero el handler
+    else {
+      this.router.post(path, handlerOrMiddlewares, handler);
+    }
     return this;
   }
 
   /**
    * Registra una ruta PUT
    * @param {String} path - Ruta a registrar
-   * @param {Function} handler - Manejador de la ruta
-   * @param {Array} middlewares - Middlewares a aplicar
+   * @param {Function|Array} handlerOrMiddlewares - Manejador de la ruta o middlewares
+   * @param {Function} [handler] - Manejador de la ruta si el segundo argumento es middlewares
    * @returns {BaseRoute} - this, para encadenamiento
    */
-  put(path, handler, middlewares = []) {
-    this.router.put(path, ...middlewares, handler);
+  put(path, handlerOrMiddlewares, handler) {
+    // Si el segundo argumento es un arreglo, asumimos que son middlewares
+    if (Array.isArray(handlerOrMiddlewares)) {
+      this.router.put(path, ...handlerOrMiddlewares, handler);
+    } 
+    // Si el segundo argumento es una función y el tercero no existe, asumimos que es el handler
+    else if (typeof handlerOrMiddlewares === 'function' && !handler) {
+      this.router.put(path, handlerOrMiddlewares);
+    }
+    // Si tanto el segundo como el tercer argumento existen, el segundo es un middleware y el tercero el handler
+    else {
+      this.router.put(path, handlerOrMiddlewares, handler);
+    }
     return this;
   }
 
   /**
    * Registra una ruta DELETE
-   * @param {String} path - Ruta a registrar
-   * @param {Function} handler - Manejador de la ruta
-   * @param {Array} middlewares - Middlewares a aplicar
+   * @param {String|Object} pathOrOptions - Ruta a registrar o opciones de configuración
+   * @param {Function|Array} handlerOrMiddlewares - Manejador de la ruta o middlewares
+   * @param {Function} [handler] - Manejador de la ruta si el segundo argumento es middlewares
    * @returns {BaseRoute} - this, para encadenamiento
    */
-  delete(path, handler, middlewares = []) {
-    this.router.delete(path, ...middlewares, handler);
+  delete(pathOrOptions, handlerOrMiddlewares, handler) {
+    // Caso 1: Se llama con options (nueva forma con objeto de opciones)
+    if (typeof pathOrOptions === 'object' && !Array.isArray(pathOrOptions) && !handlerOrMiddlewares) {
+      const options = pathOrOptions || {};
+      const { validate = false, log = true } = options;
+      const mw = [];
+
+      if (validate) {
+        mw.push(this.validateRequest(ValidationService.createIdSchema()));
+      }
+
+      if (log) {
+        mw.push(this.logOperation('Delete record'));
+      }
+
+      this.router.delete('/:id', ...mw, this.controller.delete.bind(this.controller));
+      return this;
+    }
+    
+    // Caso 2: Se llama con path y middlewares/handler (forma tradicional)
+    // Si el segundo argumento es un arreglo, asumimos que son middlewares
+    if (Array.isArray(handlerOrMiddlewares)) {
+      this.router.delete(pathOrOptions, ...handlerOrMiddlewares, handler);
+    } 
+    // Si el segundo argumento es una función y el tercero no existe, asumimos que es el handler
+    else if (typeof handlerOrMiddlewares === 'function' && !handler) {
+      this.router.delete(pathOrOptions, handlerOrMiddlewares);
+    }
+    // Si tanto el segundo como el tercer argumento existen, el segundo es un middleware y el tercero el handler
+    else {
+      this.router.delete(pathOrOptions, handlerOrMiddlewares, handler);
+    }
     return this;
   }
 
   /**
    * Registra una ruta PATCH
    * @param {String} path - Ruta a registrar
-   * @param {Function} handler - Manejador de la ruta
-   * @param {Array} middlewares - Middlewares a aplicar
+   * @param {Function|Array} handlerOrMiddlewares - Manejador de la ruta o middlewares
+   * @param {Function} [handler] - Manejador de la ruta si el segundo argumento es middlewares
    * @returns {BaseRoute} - this, para encadenamiento
    */
-  patch(path, handler, middlewares = []) {
-    this.router.patch(path, ...middlewares, handler);
+  patch(path, handlerOrMiddlewares, handler) {
+    // Si el segundo argumento es un arreglo, asumimos que son middlewares
+    if (Array.isArray(handlerOrMiddlewares)) {
+      this.router.patch(path, ...handlerOrMiddlewares, handler);
+    } 
+    // Si el segundo argumento es una función y el tercero no existe, asumimos que es el handler
+    else if (typeof handlerOrMiddlewares === 'function' && !handler) {
+      this.router.patch(path, handlerOrMiddlewares);
+    }
+    // Si tanto el segundo como el tercer argumento existen, el segundo es un middleware y el tercero el handler
+    else {
+      this.router.patch(path, handlerOrMiddlewares, handler);
+    }
     return this;
   }
 
@@ -183,15 +325,15 @@ export class BaseRoute {
     const middlewares = [];
 
     if (validate) {
-      middlewares.push(this.controller.validateRequest(ValidationService.createPaginationSchema()));
+      middlewares.push(this.validateRequest(ValidationService.createPaginationSchema()));
     }
 
     if (cache) {
-      middlewares.push(this.controller.cacheResponse(cache));
+      middlewares.push(this.cacheResponse(cache));
     }
 
     if (log) {
-      middlewares.push(this.controller.logOperation('Get all records'));
+      middlewares.push(this.logOperation('Get all records'));
     }
 
     this.router.get('/', ...middlewares, this.controller.getAll.bind(this.controller));
@@ -203,15 +345,15 @@ export class BaseRoute {
     const middlewares = [];
 
     if (validate) {
-      middlewares.push(this.controller.validateRequest(ValidationService.createIdSchema()));
+      middlewares.push(this.validateRequest(ValidationService.createIdSchema()));
     }
 
     if (cache) {
-      middlewares.push(this.controller.cacheResponse(cache));
+      middlewares.push(this.cacheResponse(cache));
     }
 
     if (log) {
-      middlewares.push(this.controller.logOperation('Get record by ID'));
+      middlewares.push(this.logOperation('Get record by ID'));
     }
 
     this.router.get('/:id', ...middlewares, this.controller.getById.bind(this.controller));
@@ -223,11 +365,11 @@ export class BaseRoute {
     const middlewares = [];
 
     if (validate) {
-      middlewares.push(this.controller.validateRequest(validate));
+      middlewares.push(this.validateRequest(validate));
     }
 
     if (log) {
-      middlewares.push(this.controller.logOperation('Create record'));
+      middlewares.push(this.logOperation('Create record'));
     }
 
     this.router.post('/', ...middlewares, this.controller.create.bind(this.controller));
@@ -239,30 +381,14 @@ export class BaseRoute {
     const middlewares = [];
 
     if (validate) {
-      middlewares.push(this.controller.validateRequest(validate));
+      middlewares.push(this.validateRequest(validate));
     }
 
     if (log) {
-      middlewares.push(this.controller.logOperation('Update record'));
+      middlewares.push(this.logOperation('Update record'));
     }
 
     this.router.put('/:id', ...middlewares, this.controller.update.bind(this.controller));
-    return this;
-  }
-
-  delete(options = {}) {
-    const { validate = false, log = true } = options;
-    const middlewares = [];
-
-    if (validate) {
-      middlewares.push(this.controller.validateRequest(ValidationService.createIdSchema()));
-    }
-
-    if (log) {
-      middlewares.push(this.controller.logOperation('Delete record'));
-    }
-
-    this.router.delete('/:id', ...middlewares, this.controller.delete.bind(this.controller));
     return this;
   }
 
@@ -272,11 +398,11 @@ export class BaseRoute {
     const middlewares = [];
 
     if (validate) {
-      middlewares.push(this.controller.validateRequest(validate));
+      middlewares.push(this.validateRequest(validate));
     }
 
     if (log) {
-      middlewares.push(this.controller.logOperation('Bulk create records'));
+      middlewares.push(this.logOperation('Bulk create records'));
     }
 
     this.router.post('/bulk', ...middlewares, this.controller.bulkCreate.bind(this.controller));
@@ -288,11 +414,11 @@ export class BaseRoute {
     const middlewares = [];
 
     if (validate) {
-      middlewares.push(this.controller.validateRequest(validate));
+      middlewares.push(this.validateRequest(validate));
     }
 
     if (log) {
-      middlewares.push(this.controller.logOperation('Bulk update records'));
+      middlewares.push(this.logOperation('Bulk update records'));
     }
 
     this.router.put('/bulk', ...middlewares, this.controller.bulkUpdate.bind(this.controller));
@@ -304,11 +430,11 @@ export class BaseRoute {
     const middlewares = [];
 
     if (validate) {
-      middlewares.push(this.controller.validateRequest(ValidationService.createIdsSchema()));
+      middlewares.push(this.validateRequest(ValidationService.createIdsSchema()));
     }
 
     if (log) {
-      middlewares.push(this.controller.logOperation('Bulk delete records'));
+      middlewares.push(this.logOperation('Bulk delete records'));
     }
 
     this.router.delete('/bulk', ...middlewares, this.controller.bulkDelete.bind(this.controller));
@@ -321,15 +447,15 @@ export class BaseRoute {
     const middlewares = [];
 
     if (validate) {
-      middlewares.push(this.controller.validateRequest(ValidationService.createSearchSchema()));
+      middlewares.push(this.validateRequest(ValidationService.createSearchSchema()));
     }
 
     if (cache) {
-      middlewares.push(this.controller.cacheResponse(cache));
+      middlewares.push(this.cacheResponse(cache));
     }
 
     if (log) {
-      middlewares.push(this.controller.logOperation('Search records'));
+      middlewares.push(this.logOperation('Search records'));
     }
 
     this.router.get('/search', ...middlewares, this.controller.search.bind(this.controller));
@@ -342,16 +468,16 @@ export class BaseRoute {
 
     if (validate) {
       middlewares.push(
-        this.controller.validateRequest(ValidationService.createFilterSchema(options.fields || [])),
+        this.validateRequest(ValidationService.createFilterSchema(options.fields || [])),
       );
     }
 
     if (cache) {
-      middlewares.push(this.controller.cacheResponse(cache));
+      middlewares.push(this.cacheResponse(cache));
     }
 
     if (log) {
-      middlewares.push(this.controller.logOperation('Count records'));
+      middlewares.push(this.logOperation('Count records'));
     }
 
     this.router.get('/count', ...middlewares, this.controller.count.bind(this.controller));
@@ -364,15 +490,15 @@ export class BaseRoute {
     const middlewares = [];
 
     if (validate) {
-      middlewares.push(this.controller.validateRequest(validate));
+      middlewares.push(this.validateRequest(validate));
     }
 
     if (cache) {
-      middlewares.push(this.controller.cacheResponse(cache));
+      middlewares.push(this.cacheResponse(cache));
     }
 
     if (log) {
-      middlewares.push(this.controller.logOperation(`${method.toUpperCase()} ${path}`));
+      middlewares.push(this.logOperation(`${method.toUpperCase()} ${path}`));
     }
 
     this.router[method.toLowerCase()](path, ...middlewares, handler.bind(this.controller));

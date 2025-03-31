@@ -1,9 +1,10 @@
 /**
  * Servicio para estadísticas y análisis de datos
  */
-import { prisma } from '../database/prisma.js';
-import { CacheService } from './CacheService.js';
 import { BaseService } from './BaseService.js';
+import { NotFoundError } from '../utils/errors.js';
+import prisma from '../database/prisma.js';
+import { CacheService } from './CacheService.js';
 
 // Tiempo de cache para estadísticas (10 minutos)
 const STATS_CACHE_TTL = 10 * 60;

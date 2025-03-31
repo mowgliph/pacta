@@ -327,4 +327,4 @@ export class SystemController extends BaseController {
   };
 }
 
-export default SystemController; 
+export default new SystemController(); 

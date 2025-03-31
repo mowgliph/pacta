@@ -3,17 +3,12 @@
  */
 import express from 'express';
 import { authorize } from '../middleware/authorizationMiddleware.js';
-import UserController from '../controllers/UserController.js';
-import ContractController from '../controllers/ContractController.js';
-import NotificationController from '../controllers/NotificationController.js';
+import userController from '../controllers/UserController.js';
+import contractController from '../controllers/ContractController.js';
+import notificationController from '../controllers/NotificationController.js';
 import { apiLimiter } from '../middleware/rateLimit.js';
 
 const router = express.Router();
-
-// Instanciar controladores
-const userController = new UserController();
-const contractController = new ContractController();
-const notificationController = new NotificationController();
 
 // Rutas de perfil de usuario (cualquier usuario autenticado)
 router.get('/profile', userController.getProfile);

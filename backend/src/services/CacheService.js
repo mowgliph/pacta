@@ -1,10 +1,13 @@
 import cacheRepository from '../database/repositories/CacheRepository.js';
 import { logger } from '../utils/logger.js';
 import config from '../config/app.config.js';
-import { prisma } from '../database/prisma.js';
+import { BaseService } from './BaseService.js';
+import { NotFoundError } from '../utils/errors.js';
+import prisma from '../database/prisma.js';
 
-class CacheService {
+class CacheService extends BaseService {
   constructor(namespace = '') {
+    super();
     this.namespace = namespace ? `${namespace}:` : '';
     this.defaultTtl = parseInt(config.cache?.ttl || 3600);
   }

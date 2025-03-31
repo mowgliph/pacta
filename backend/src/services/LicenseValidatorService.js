@@ -1,17 +1,18 @@
 import fs from 'fs/promises';
 import { License } from '../models/index.js';
-import { prisma } from '../database/prisma.js';
-
-const TRIAL_CODES = {
-  TRYPATOOL: { days: 7, features: ['BASIC', 'REPORTS'] },
-  TRIALPATOOL: { days: 14, features: ['BASIC', 'REPORTS', 'ANALYTICS'] },
-  TRYFULL: { days: 30, features: ['BASIC', 'REPORTS', 'ANALYTICS', 'EXPORT'] },
-};
+import prisma from '../database/prisma.js';
 
 /**
  * Servicio para validar licencias
  */
-class LicenseValidator {
+export class LicenseValidator {
+  // Códigos de prueba disponibles
+  static TRIAL_CODES = {
+    TRYPATOOL: { days: 7, features: ['BASIC', 'REPORTS'] },
+    TRIALPATOOL: { days: 14, features: ['BASIC', 'REPORTS', 'ANALYTICS'] },
+    TRYFULL: { days: 30, features: ['BASIC', 'REPORTS', 'ANALYTICS', 'EXPORT'] },
+  };
+
   static async validateLicenseFile(filePath, userId) {
     try {
       const fileContent = await fs.readFile(filePath, 'utf8');
@@ -75,6 +76,14 @@ class LicenseValidator {
     return pattern.test(key);
   }
 
+  static generateLicenseKey() {
+    const timestamp = Date.now().toString();
+    const randomKey = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, '0');
+    return `LICENSE-${timestamp}-${randomKey}`;
+  }
+
   static isExpired(dateString) {
     const expiryDate = new Date(dateString);
     return expiryDate < new Date();
@@ -127,11 +136,11 @@ class LicenseValidator {
   }
 
   static async activateTrialWithCode(code, userId) {
-    if (!TRIAL_CODES[code]) {
+    if (!this.TRIAL_CODES[code]) {
       throw new Error('Invalid trial code');
     }
 
-    const { days, features } = TRIAL_CODES[code];
+    const { days, features } = this.TRIAL_CODES[code];
 
     // Check if the user already has a trial license
     const existingTrial = await License.findOne({
@@ -227,5 +236,3 @@ class LicenseValidator {
     };
   }
 }
-
-export default LicenseValidator;

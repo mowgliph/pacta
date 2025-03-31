@@ -1,7 +1,7 @@
-import { prisma } from '../database/prisma.js';
+import prisma from '../database/prisma.js';
 import { differenceInDays } from 'date-fns';
 
-class License {
+export class License {
   // Métodos estáticos
   static async findById(id) {
     return prisma.license.findUnique({

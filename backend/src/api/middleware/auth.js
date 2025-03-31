@@ -3,13 +3,12 @@
  * Combina todas las funcionalidades relacionadas con seguridad, autenticación y permisos
  */
 import jwt from 'jsonwebtoken';
-import { prisma } from '../../database/prisma.js';
+import prisma from '../../database/prisma.js';
 import { logger } from '../../utils/logger.js';
 import { 
   UnauthorizedError, 
   ForbiddenError, 
 } from '../../utils/errors.js';
-import { AuthorizationError } from '../utils/errors.js';
 import { LoggingService } from '../../services/LoggingService.js';
 import config from '../../config/app.config.js';
 import rateLimit from 'express-rate-limit';
@@ -135,6 +134,9 @@ export const authenticate = async (req, res, next) => {
     return next(error);
   }
 };
+
+// Alias para compatibilidad con código existente
+export const authenticateToken = authenticate;
 
 /**
  * Genera tokens de acceso y refresco para un usuario
@@ -396,7 +398,7 @@ export const authorizePermission = permission => {
     try {
       // User must be authenticated first
       if (!req.user) {
-        throw new AuthorizationError('User not authenticated');
+        throw new ForbiddenError('User not authenticated');
       }
 
       // Admin role has all permissions
@@ -406,7 +408,7 @@ export const authorizePermission = permission => {
 
       // Para implementación futura: Verificar si el usuario tiene el permiso requerido
       // Esto requeriría una tabla de permisos y mapeos de usuario-permiso
-      throw new AuthorizationError('Permission-based authorization not implemented');
+      throw new ForbiddenError('Permission-based authorization not implemented');
     } catch (error) {
       next(error);
     }
@@ -465,6 +467,7 @@ export default {
   
   // Autenticación
   authenticate,
+  authenticateToken,
   generateTokens,
   refreshAccessToken,
   

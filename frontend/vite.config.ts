@@ -15,4 +15,12 @@ export default defineConfig({
       '@tabler/icons-react': '@tabler/icons-react/dist/esm/icons/index.mjs',
     },
   },
+  optimizeDeps: {
+    include: ['tailwindcss', 'tailwindcss/lib/plugin'],
+    esbuildOptions: {
+      loader: {
+        '.js': 'jsx',
+      },
+    },
+  },
 })

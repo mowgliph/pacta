@@ -91,6 +91,98 @@ export class ContractController extends BaseController {
     );
   };
 
+  searchContracts = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const searchParams = {
+          ...req.query,
+          userId: req.user.id,
+          role: req.user.role
+        };
+        return await this.contractService.searchContracts(searchParams);
+      },
+      { searchParams: req.query, userId: req.user.id }
+    );
+  };
+
+  changeContractStatus = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const { id } = req.params;
+        const { status, reason } = req.body;
+        return await this.contractService.changeContractStatus(id, status, reason, req.user.id, req.user.role);
+      },
+      { contractId: req.params.id, userId: req.user.id, status: req.body.status }
+    );
+  };
+
+  addTags = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const { id } = req.params;
+        const { tags } = req.body;
+        return await this.contractService.addTags(id, tags, req.user.id, req.user.role);
+      },
+      { contractId: req.params.id, userId: req.user.id, tags: req.body.tags }
+    );
+  };
+
+  removeTags = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const { id } = req.params;
+        const { tags } = req.body;
+        return await this.contractService.removeTags(id, tags, req.user.id, req.user.role);
+      },
+      { contractId: req.params.id, userId: req.user.id, tags: req.body.tags }
+    );
+  };
+
+  uploadDocument = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const { id } = req.params;
+        if (!req.file) {
+          throw new Error('Archivo requerido');
+        }
+        return await this.contractService.uploadDocument(id, req.file, req.user.id, req.user.role);
+      },
+      { contractId: req.params.id, userId: req.user.id, filename: req.file?.originalname }
+    );
+  };
+
+  getContractStats = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const params = {
+          ...req.query,
+          userId: req.user.id,
+          role: req.user.role
+        };
+        return await this.contractService.getContractStats(params);
+      },
+      { params: req.query, userId: req.user.id }
+    );
+  };
+
   getContractHistory = async (req, res) => {
     return this.handleAsync(
       req,
@@ -133,3 +225,5 @@ export class ContractController extends BaseController {
     );
   };
 }
+
+export default new ContractController();

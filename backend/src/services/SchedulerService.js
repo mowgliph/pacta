@@ -1,5 +1,5 @@
 import schedule from 'node-schedule';
-import { prisma } from '../database/prisma.js';
+import prisma from '../database/prisma.js';
 import { differenceInDays } from 'date-fns';
 import NotificationService from './NotificationService.js';
 import { logger } from '../utils/logger.js';

@@ -5,7 +5,7 @@
 import { ResponseService } from '../../services/ResponseService.js';
 import { LoggingService } from '../../services/LoggingService.js';
 import { ValidationService } from '../../services/ValidationService.js';
-import { CacheService } from '../../services/CacheService.js';
+import CacheService from '../../services/CacheService.js';
 import {
   ValidationError as _ValidationError,
   NotFoundError as _NotFoundError,
@@ -16,9 +16,7 @@ import { logger } from '../../utils/logger.js';
 
 export class BaseController {
   constructor(service) {
-    if (!service) {
-      throw new Error('Service is required for BaseController');
-    }
+    // Permitimos que service sea null
     this.service = service;
     this.sendResponse = this.sendResponse.bind(this);
     this.sendError = this.sendError.bind(this);
@@ -32,6 +30,14 @@ export class BaseController {
    */
   getAll = async (req, res, next) => {
     try {
+      // Verificar si el servicio existe
+      if (!this.service) {
+        return res.status(501).json({
+          success: false,
+          message: 'Operation not implemented: No service available',
+        });
+      }
+
       // Extraer parámetros de paginación y filtrado
       const { page = 1, limit = 10, ...query } = req.query;
 
@@ -57,6 +63,14 @@ export class BaseController {
    */
   getById = async (req, res, next) => {
     try {
+      // Verificar si el servicio existe
+      if (!this.service) {
+        return res.status(501).json({
+          success: false,
+          message: 'Operation not implemented: No service available',
+        });
+      }
+
       const { id } = req.params;
       const result = await this.service.getById(id);
 
@@ -84,6 +98,14 @@ export class BaseController {
    */
   create = async (req, res, next) => {
     try {
+      // Verificar si el servicio existe
+      if (!this.service) {
+        return res.status(501).json({
+          success: false,
+          message: 'Operation not implemented: No service available',
+        });
+      }
+
       const data = req.body;
       const result = await this.service.create(data);
 
@@ -104,6 +126,14 @@ export class BaseController {
    */
   update = async (req, res, next) => {
     try {
+      // Verificar si el servicio existe
+      if (!this.service) {
+        return res.status(501).json({
+          success: false,
+          message: 'Operation not implemented: No service available',
+        });
+      }
+
       const { id } = req.params;
       const data = req.body;
 
@@ -126,6 +156,14 @@ export class BaseController {
    */
   delete = async (req, res, next) => {
     try {
+      // Verificar si el servicio existe
+      if (!this.service) {
+        return res.status(501).json({
+          success: false,
+          message: 'Operation not implemented: No service available',
+        });
+      }
+
       const { id } = req.params;
 
       await this.service.delete(id);
@@ -138,6 +176,14 @@ export class BaseController {
 
   async bulkCreate(req, res, next) {
     try {
+      // Verificar si el servicio existe
+      if (!this.service) {
+        return res.status(501).json({
+          success: false,
+          message: 'Operation not implemented: No service available',
+        });
+      }
+
       const data = req.body;
       const options = req.query;
 
@@ -150,6 +196,14 @@ export class BaseController {
 
   async bulkUpdate(req, res, next) {
     try {
+      // Verificar si el servicio existe
+      if (!this.service) {
+        return res.status(501).json({
+          success: false,
+          message: 'Operation not implemented: No service available',
+        });
+      }
+
       const data = req.body;
       const options = req.query;
 
@@ -162,6 +216,14 @@ export class BaseController {
 
   async bulkDelete(req, res, next) {
     try {
+      // Verificar si el servicio existe
+      if (!this.service) {
+        return res.status(501).json({
+          success: false,
+          message: 'Operation not implemented: No service available',
+        });
+      }
+
       const { ids } = req.body;
       const options = req.query;
 
@@ -174,6 +236,14 @@ export class BaseController {
 
   async search(req, res, next) {
     try {
+      // Verificar si el servicio existe
+      if (!this.service) {
+        return res.status(501).json({
+          success: false,
+          message: 'Operation not implemented: No service available',
+        });
+      }
+
       const { query, fields, page = 1, limit = 10 } = req.query;
       const options = { query, fields, page, limit };
 
@@ -186,6 +256,14 @@ export class BaseController {
 
   async count(req, res, next) {
     try {
+      // Verificar si el servicio existe
+      if (!this.service) {
+        return res.status(501).json({
+          success: false,
+          message: 'Operation not implemented: No service available',
+        });
+      }
+
       const filters = req.query;
       const count = await this.service.count(filters);
       res.json(ResponseService.success({ count }));

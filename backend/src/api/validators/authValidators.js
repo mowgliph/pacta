@@ -23,8 +23,8 @@ export const refreshTokenSchema = () => {
   });
 };
 
-// Export all schemas for ValidationService
-export const authValidators = {
+// Export all schemas as a single object for ValidationService
+export const auth = {
   loginSchema,
   verifyTokenSchema,
   refreshTokenSchema,

@@ -43,6 +43,15 @@ export class UnauthorizedError extends AppError {
 }
 
 /**
+ * Error para problemas de autenticación (401)
+ */
+export class AuthenticationError extends AppError {
+  constructor(message = 'Authentication failed') {
+    super(message, 401, 'AUTHENTICATION_FAILED');
+  }
+}
+
+/**
  * Error para acceso prohibido (403)
  */
 export class ForbiddenError extends AppError {
@@ -67,6 +76,16 @@ export class ValidationError extends AppError {
   constructor(message = 'Validation error', errors = null) {
     super(message, 422, 'VALIDATION_ERROR');
     this.errors = errors;
+  }
+}
+
+/**
+ * Error para operaciones de base de datos (500)
+ */
+export class DatabaseError extends AppError {
+  constructor(message = 'Database operation failed', originalError = null) {
+    super(message, 500, 'DATABASE_ERROR');
+    this.originalError = originalError;
   }
 }
 

@@ -1,10 +1,10 @@
-import bcrypt from 'bcrypt';
-import { prisma } from '../database/prisma.js';
+import prisma from '../database/prisma.js';
+import { compareSync, hashSync } from 'bcrypt';
 
-class User {
+export class User {
   // Métodos de instancia
   async comparePassword(password) {
-    return bcrypt.compare(password, this.password);
+    return compareSync(password, this.password);
   }
 
   // Método para serializar el usuario (usado al generar tokens)
@@ -28,7 +28,7 @@ class User {
   }
 
   static async create(data) {
-    const hashedPassword = await bcrypt.hash(data.password, 10);
+    const hashedPassword = hashSync(data.password, 10);
     return prisma.user.create({
       data: {
         ...data,
@@ -39,7 +39,7 @@ class User {
 
   static async update(id, data) {
     if (data.password) {
-      data.password = await bcrypt.hash(data.password, 10);
+      data.password = hashSync(data.password, 10);
     }
     return prisma.user.update({
       where: { id },

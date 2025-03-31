@@ -98,12 +98,43 @@ export const contractTagSchema = () => {
   });
 };
 
+// Contract query schema
+export const contractQuerySchema = () => {
+  return z.object({
+    page: z.string().optional().transform(val => parseInt(val, 10) || 1),
+    limit: z.string().optional().transform(val => parseInt(val, 10) || 10),
+    status: z.enum(['ACTIVE', 'PENDING', 'EXPIRED', 'CANCELLED']).optional(),
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).optional(),
+  });
+};
+
+// Contract stats query schema
+export const contractStatsQuerySchema = () => {
+  return z.object({
+    period: z.enum(['day', 'week', 'month', 'year']).optional().default('month'),
+    startDate: z.string().datetime().optional(),
+    endDate: z.string().datetime().optional(),
+    companyId: z.number().int().optional(),
+  });
+};
+
+// Contract tags schema
+export const contractTagsSchema = () => {
+  return z.object({
+    tags: z.array(z.string().min(1)),
+  });
+};
+
 // Export all schemas for ValidationService
-export const contractValidators = {
+export const contract = {
   createContractSchema,
   updateContractSchema,
   searchContractSchema,
   contractIdSchema,
   changeContractStatusSchema,
   contractTagSchema,
+  contractQuerySchema,
+  contractStatsQuerySchema,
+  contractTagsSchema
 };

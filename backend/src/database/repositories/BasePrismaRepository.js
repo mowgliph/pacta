@@ -3,13 +3,15 @@
  * Proporciona métodos CRUD genéricos para cualquier modelo de Prisma
  */
 import prisma from '../prisma.js';
+import { BaseRepository } from './BaseRepository.js';
 
-export class BasePrismaRepository {
+export class BasePrismaRepository extends BaseRepository {
   /**
    * Constructor del repositorio
    * @param {String} model - Nombre del modelo de Prisma a usar
    */
   constructor(model) {
+    super();
     if (!model) {
       throw new Error('Model name is required for BasePrismaRepository');
     }

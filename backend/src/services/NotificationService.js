@@ -2,12 +2,13 @@
  * Servicio de notificaciones para la aplicación PACTA
  * Gestiona la creación, consulta y actualización de notificaciones
  */
-import { prisma } from '../database/prisma.js';
-import { ValidationError, NotFoundError } from '../utils/errors.js';
+import { BaseService } from './BaseService.js';
+import { NotFoundError, BadRequestError } from '../utils/errors.js';
 import { logger } from '../utils/logger.js';
-import { CacheService } from './CacheService.js';
+import prisma from '../database/prisma.js';
+import CacheService from './CacheService.js';
 
-class NotificationService {
+export class NotificationService {
   constructor() {
     this.cacheService = new CacheService('notifications');
   }

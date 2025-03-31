@@ -65,3 +65,13 @@ export const backupStatsSchema = z.object({
   fromDate: z.string().datetime().optional(),
   toDate: z.string().datetime().optional()
 });
+
+// Export all schemas as a single object for ValidationService
+export const backup = {
+  backupQuerySchema,
+  backupIdSchema,
+  createBackupSchema,
+  restoreBackupSchema,
+  exportBackupSchema,
+  backupStatsSchema
+};

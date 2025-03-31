@@ -99,3 +99,5 @@ export class CompanyController extends BaseController {
     );
   };
 }
+
+export default new CompanyController();

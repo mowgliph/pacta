@@ -2,18 +2,13 @@
  * Rutas de administración de la API (requieren autenticación y rol de admin)
  */
 import express from 'express';
-import { authorize } from '../middleware/authorizationMiddleware.js';
+import { authorize } from '../middleware/auth.js';
 import { sensitiveRouteLimiter } from '../middleware/rateLimit.js';
-import UserController from '../controllers/UserController.js';
-import SystemController from '../controllers/SystemController.js';
-import LicenseController from '../controllers/LicenseController.js';
+import userController from '../controllers/UserController.js';
+import systemController from '../controllers/SystemController.js';
+import licenseController from '../controllers/LicenseController.js';
 
 const router = express.Router();
-
-// Instanciar controladores
-const userController = new UserController();
-const systemController = new SystemController();
-const licenseController = new LicenseController();
 
 // Todas las rutas de este router requieren rol de administrador
 router.use(authorize('ADMIN'));

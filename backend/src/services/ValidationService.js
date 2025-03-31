@@ -15,7 +15,6 @@ export class ValidationService {
   constructor() {
     // Import validators dynamically
     this.validators = {
-      ...userValidators,
       ...contractValidators,
       ...notificationValidators,
       ...companyValidators,
@@ -23,8 +22,9 @@ export class ValidationService {
       ...dashboardValidators,
       ...analyticsValidators,
       ...documentValidators,
-      ...authValidators,
-      backup: backupValidators
+      user: userValidators.user,
+      auth: authValidators.auth,
+      backup: backupValidators.backup
     };
   }
 
@@ -598,93 +598,93 @@ export class ValidationService {
 
   // Auth specific schemas and validation methods
   async validateLogin(data) {
-    const schema = this.validators.loginSchema();
+    const schema = this.validators.auth.loginSchema();
     return this.validate(schema, data);
   }
 
   async validateRegistration(data) {
-    const schema = this.validators.registrationSchema();
+    const schema = this.validators.auth.registrationSchema();
     return this.validate(schema, data);
   }
 
   async validatePasswordResetRequest(data) {
-    const schema = this.validators.passwordResetRequestSchema();
+    const schema = this.validators.auth.passwordResetRequestSchema();
     return this.validate(schema, data);
   }
 
   async validatePasswordReset(data) {
-    const schema = this.validators.passwordResetSchema();
+    const schema = this.validators.auth.passwordResetSchema();
     return this.validate(schema, data);
   }
 
   async validateEmailVerification(data) {
-    const schema = this.validators.emailVerificationSchema();
+    const schema = this.validators.auth.emailVerificationSchema();
     return this.validate(schema, data);
   }
 
   async validateChangePassword(data) {
-    const schema = this.validators.changePasswordSchema();
+    const schema = this.validators.auth.changePasswordSchema();
     return this.validate(schema, data);
   }
 
   async validateRefreshToken(data) {
-    const schema = this.validators.refreshTokenSchema();
+    const schema = this.validators.auth.refreshTokenSchema();
     return this.validate(schema, data);
   }
 
   async validateTwoFactorSetup(data) {
-    const schema = this.validators.twoFactorSetupSchema();
+    const schema = this.validators.auth.twoFactorSetupSchema();
     return this.validate(schema, data);
   }
 
   async validateTwoFactorVerify(data) {
-    const schema = this.validators.twoFactorVerifySchema();
+    const schema = this.validators.auth.twoFactorVerifySchema();
     return this.validate(schema, data);
   }
 
   async validateOauthLogin(data) {
-    const schema = this.validators.oauthLoginSchema();
+    const schema = this.validators.auth.oauthLoginSchema();
     return this.validate(schema, data);
   }
 
   loginSchema() {
-    return this.validators.loginSchema();
+    return this.validators.auth.loginSchema();
   }
 
   registrationSchema() {
-    return this.validators.registrationSchema();
+    return this.validators.auth.registrationSchema();
   }
 
   passwordResetRequestSchema() {
-    return this.validators.passwordResetRequestSchema();
+    return this.validators.auth.passwordResetRequestSchema();
   }
 
   passwordResetSchema() {
-    return this.validators.passwordResetSchema();
+    return this.validators.auth.passwordResetSchema();
   }
 
   emailVerificationSchema() {
-    return this.validators.emailVerificationSchema();
+    return this.validators.auth.emailVerificationSchema();
   }
 
   changePasswordSchema() {
-    return this.validators.changePasswordSchema();
+    return this.validators.auth.changePasswordSchema();
   }
 
   refreshTokenSchema() {
-    return this.validators.refreshTokenSchema();
+    return this.validators.auth.refreshTokenSchema();
   }
 
   twoFactorSetupSchema() {
-    return this.validators.twoFactorSetupSchema();
+    return this.validators.auth.twoFactorSetupSchema();
   }
 
   twoFactorVerifySchema() {
-    return this.validators.twoFactorVerifySchema();
+    return this.validators.auth.twoFactorVerifySchema();
   }
 
   oauthLoginSchema() {
-    return this.validators.oauthLoginSchema();
+    return this.validators.auth.oauthLoginSchema();
   }
 
   // Backup specific schemas and validation methods

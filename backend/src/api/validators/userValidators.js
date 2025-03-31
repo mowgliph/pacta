@@ -161,3 +161,42 @@ export const createBulkUserUpdateSchema = () => {
     .min(1, 'At least one user is required')
     .max(100, 'Maximum of 100 users can be updated at once');
 };
+
+// User ID schema
+export const userIdSchema = () => {
+  return z.object({
+    id: z.string().uuid('Invalid user ID'),
+  });
+};
+
+// User query schema
+export const userQuerySchema = () => {
+  return z.object({
+    page: z.coerce.number().int().positive().optional().default(1),
+    limit: z.coerce.number().int().positive().optional().default(10),
+    search: z.string().optional(),
+    role: z.enum(['admin', 'user', 'moderator']).optional(),
+    status: z.enum(['active', 'inactive', 'suspended']).optional(),
+    sortBy: z.string().optional(),
+    sortOrder: z.enum(['asc', 'desc']).optional().default('asc'),
+  });
+};
+
+// User preferences schema
+export const userPreferencesSchema = () => {
+  return z.record(z.unknown());
+};
+
+// Export all schemas for ValidationService
+export const user = {
+  userCreateSchema: createUserRegistrationSchema,
+  userLoginSchema: createUserLoginSchema,
+  userProfileSchema: createUserProfileSchema,
+  userUpdateSchema: createUserUpdateSchema,
+  userStatusSchema: createUserStatusSchema,
+  userRoleSchema: createUserRoleSchema,
+  userIdSchema,
+  userQuerySchema,
+  userPreferencesSchema,
+  changePasswordSchema: createChangePasswordSchema,
+};

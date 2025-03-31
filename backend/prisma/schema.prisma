@@ -170,6 +170,7 @@ model Parte {
 
   // Relations
   contratos           ContratoParte[] // Contratos asociados
+  obligaciones        Obligacion[]    // Obligaciones de la parte
 
   @@index([codigoReeup])
   @@index([nit])

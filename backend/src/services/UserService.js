@@ -13,7 +13,7 @@ import {
 import jwt from 'jsonwebtoken';
 import config from '../config/app.config.js';
 import { LoggingService } from './LoggingService.js';
-import { CacheService } from './CacheService.js';
+import CacheService from './CacheService.js';
 import { ValidationService } from './ValidationService.js';
 
 export class UserService extends BaseService {
@@ -379,6 +379,46 @@ export class UserService extends BaseService {
       return users;
     } catch (error) {
       this.logger.error('Failed to get unverified users', { error });
+      throw error;
+    }
+  }
+
+  async getUserPreferences(userId) {
+    try {
+      const user = await this.userRepository.findById(userId);
+      if (!user) {
+        throw new NotFoundError('User not found');
+      }
+      
+      // Return user preferences from the user object
+      // Adjust this according to how preferences are stored in your database
+      return user.preferences || {};
+    } catch (error) {
+      this.logger.error('Failed to get user preferences', { userId, error });
+      throw error;
+    }
+  }
+
+  async updateUserPreferences(userId, preferences) {
+    try {
+      const user = await this.userRepository.findById(userId);
+      if (!user) {
+        throw new NotFoundError('User not found');
+      }
+      
+      // Validate preferences if needed
+      if (!preferences || typeof preferences !== 'object') {
+        throw new ValidationError('Invalid preferences format');
+      }
+      
+      // Update user preferences
+      await this.userRepository.update(userId, { preferences });
+      this.logger.info('User preferences updated', { userId });
+      await this.cacheService.invalidateUserCache(userId);
+      
+      return { success: true, preferences };
+    } catch (error) {
+      this.logger.error('Failed to update user preferences', { userId, error });
       throw error;
     }
   }

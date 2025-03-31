@@ -199,6 +199,33 @@ export class UserController extends BaseController {
       { query: req.query }
     );
   };
+
+  getUserPreferences = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const userId = req.user.id;
+        return await this.userService.getUserPreferences(userId);
+      },
+      { userId: req.user.id }
+    );
+  };
+
+  updateUserPreferences = async (req, res) => {
+    return this.handleAsync(
+      req,
+      res,
+      null,
+      async () => {
+        const userId = req.user.id;
+        const validatedData = await this.validationService.validateUserPreferences(req.body);
+        return await this.userService.updateUserPreferences(userId, validatedData);
+      },
+      { userId: req.user.id, preferences: req.body }
+    );
+  };
 }
 
-export default UserController;
+export default new UserController();

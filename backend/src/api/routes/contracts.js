@@ -3,7 +3,7 @@ import { authenticateToken, requiresLicense } from '../middleware/auth.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import * as contractController from '../controllers/ContractController.js';
+import contractController from '../controllers/ContractController.js';
 import { validate, validateAll } from '../middleware/validate.js';
 import { ValidationService } from '../../services/ValidationService.js';
 
@@ -48,6 +48,22 @@ router.get(
   contractController.getAllContracts,
 );
 
+// Search contracts - solo lectura sin licencia
+router.get(
+  '/search',
+  authenticateToken,
+  validate(validationService.validators.contract.contractSearchSchema, 'query'),
+  contractController.searchContracts,
+);
+
+// Get contract statistics - solo lectura sin licencia
+router.get(
+  '/stats',
+  authenticateToken,
+  validate(validationService.validators.contract.contractStatsQuerySchema, 'query'),
+  contractController.getContractStats,
+);
+
 // Get contract by ID - solo lectura sin licencia
 router.get(
   '/:id',
@@ -86,14 +102,6 @@ router.delete(
   requiresLicense,
   validate(validationService.validators.contract.contractIdSchema, 'params'),
   contractController.deleteContract,
-);
-
-// Search contracts - solo lectura sin licencia
-router.get(
-  '/search',
-  authenticateToken,
-  validate(validationService.validators.contract.contractSearchSchema, 'query'),
-  contractController.searchContracts,
 );
 
 // Change contract status - requiere licencia
@@ -140,14 +148,6 @@ router.post(
   upload.single('document'),
   validate(validationService.validators.contract.contractIdSchema, 'params'),
   contractController.uploadDocument,
-);
-
-// Get contract statistics - solo lectura sin licencia
-router.get(
-  '/stats',
-  authenticateToken,
-  validate(validationService.validators.contract.contractStatsQuerySchema, 'query'),
-  contractController.getContractStats,
 );
 
 export default router;
