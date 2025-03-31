@@ -11,6 +11,9 @@ import {
   IconReportAnalytics,
   IconChevronRight,
   IconMenu2,
+  IconChevronLeft,
+  IconFileDescription,
+  IconBuildingSkyscraper,
 } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 
@@ -73,101 +76,127 @@ const NavItem: React.FC<NavItemProps> = ({
   );
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
-  const [expanded, setExpanded] = useState(true);
+type SidebarLink = {
+  title: string;
+  icon: React.ReactNode;
+  href: string;
+  badge?: number;
+};
+
+const mainLinks: SidebarLink[] = [
+  {
+    title: "Dashboard",
+    icon: <IconDashboard className="h-5 w-5" />,
+    href: "/dashboard",
+  },
+  {
+    title: "Contracts",
+    icon: <IconFileDescription className="h-5 w-5" />,
+    href: "/contracts",
+    badge: 3,
+  },
+  {
+    title: "Companies",
+    icon: <IconBuildingSkyscraper className="h-5 w-5" />,
+    href: "/companies",
+  },
+  {
+    title: "Users",
+    icon: <IconUsers className="h-5 w-5" />,
+    href: "/users",
+  },
+];
+
+const bottomLinks: SidebarLink[] = [
+  {
+    title: "Settings",
+    icon: <IconSettings className="h-5 w-5" />,
+    href: "/settings",
+  },
+];
+
+export function Sidebar() {
+  const [collapsed, setCollapsed] = useState(false);
   const { user } = useStore(state => ({ user: state.user }));
 
-  const toggleSidebar = () => {
-    const newExpandedState = !expanded;
-    setExpanded(newExpandedState);
-    onToggle(newExpandedState);
-  };
-
-  if (!user) return null;
-
   return (
-    <aside
+    <aside 
       className={cn(
-        'fixed left-0 top-0 z-20 flex h-screen flex-col border-r bg-card transition-all duration-300 ease-in-out',
-        expanded ? 'w-64' : 'w-16'
+        "fixed left-0 top-0 z-10 flex h-screen flex-col border-r border-border bg-card text-card-foreground transition-all duration-300",
+        collapsed ? "w-16" : "w-64"
       )}
     >
-      <div className="flex h-16 items-center justify-between border-b px-4">
-        <div className={cn('flex items-center gap-2 transition-all', expanded ? 'opacity-100' : 'opacity-0')}>
-          <span className="font-bold text-primary">PACTA</span>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleSidebar}
-          className="h-8 w-8"
-          aria-label={expanded ? "Contraer menú" : "Expandir menú"}
+      <div className="flex h-16 items-center justify-between border-b border-border px-4">
+        <h1 className={cn("text-xl font-bold transition-opacity", collapsed ? "opacity-0 w-0" : "opacity-100")}>
+          PACTA
+        </h1>
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className="rounded-md p-1 hover:bg-accent text-muted-foreground hover:text-accent-foreground"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
-          {expanded ? (
-            <IconChevronRight className="h-4 w-4" />
-          ) : (
-            <IconMenu2 className="h-4 w-4" />
-          )}
-        </Button>
+          {collapsed ? <IconChevronRight className="h-5 w-5" /> : <IconChevronLeft className="h-5 w-5" />}
+        </button>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-        <NavItem
-          to="/"
-          icon={<IconDashboard className="h-4 w-4" />}
-          label="Dashboard"
-          expanded={expanded}
-        />
-        {/* Solo mostrar estos elementos si tienen rutas implementadas */}
-        {/* Por ahora todos dirigen al dashboard */}
-        <NavItem
-          to="/"
-          icon={<IconFiles className="h-4 w-4" />}
-          label="Contratos"
-          expanded={expanded}
-          roles={[Role.ADMIN, Role.MANAGER, Role.USER]}
-        />
-        <NavItem
-          to="/"
-          icon={<IconUsers className="h-4 w-4" />}
-          label="Usuarios"
-          expanded={expanded}
-          roles={[Role.ADMIN, Role.RA]}
-        />
-        <NavItem
-          to="/"
-          icon={<IconReportAnalytics className="h-4 w-4" />}
-          label="Reportes"
-          expanded={expanded}
-          roles={[Role.ADMIN, Role.MANAGER]}
-        />
-        <NavItem
-          to="/"
-          icon={<IconSettings className="h-4 w-4" />}
-          label="Configuración"
-          expanded={expanded}
-          roles={[Role.ADMIN, Role.RA]}
-        />
+      <nav className="flex flex-1 flex-col justify-between p-2">
+        <div className="space-y-1">
+          {mainLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              {link.icon}
+              <span className={cn("transition-opacity", collapsed ? "opacity-0 w-0" : "opacity-100")}>
+                {link.title}
+              </span>
+              {link.badge && !collapsed && (
+                <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                  {link.badge}
+                </span>
+              )}
+              {link.badge && collapsed && (
+                <span className="absolute right-2 top-1 h-2 w-2 rounded-full bg-primary"></span>
+              )}
+            </a>
+          ))}
+        </div>
+
+        <div className="space-y-1">
+          {bottomLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              {link.icon}
+              <span className={cn("transition-opacity", collapsed ? "opacity-0 w-0" : "opacity-100")}>
+                {link.title}
+              </span>
+            </a>
+          ))}
+        </div>
       </nav>
 
       <div className="mt-auto border-t p-3">
         <div
           className={cn(
             'flex items-center gap-3 rounded-md px-3 py-2',
-            expanded ? 'justify-start' : 'justify-center'
+            collapsed ? 'justify-center' : 'justify-start'
           )}
         >
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-            {user.firstName?.charAt(0) || ''}
-            {user.lastName?.charAt(0) || ''}
+            {user?.firstName?.charAt(0) || ''}
+            {user?.lastName?.charAt(0) || ''}
           </div>
-          {expanded && (
+          {!collapsed && (
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">
-                {user.firstName} {user.lastName}
+                {user?.firstName} {user?.lastName}
               </p>
               <p className="truncate text-xs text-muted-foreground">
-                {user.role}
+                {user?.role}
               </p>
             </div>
           )}
@@ -175,4 +204,4 @@ export const Sidebar: React.FC<SidebarProps> = ({ onToggle }) => {
       </div>
     </aside>
   );
-}; 
+} 

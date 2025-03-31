@@ -1,32 +1,26 @@
-import { IconSun, IconMoon } from '@tabler/icons-react'
-import { useTheme } from '@/contexts/ThemeContext'
-import { Button } from '@/components/ui/button'
+import { IconMoon, IconSun } from "@tabler/icons-react";
+import { useTheme } from "../ThemeProvider";
 
 export function ThemeToggle() {
-  const { theme, toggleTheme } = useTheme()
+  const { theme, setTheme } = useTheme();
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={toggleTheme}
-      className="w-9 h-9 rounded-full"
+    <button
+      onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+      className="rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-primary"
+      aria-label="Toggle theme"
     >
-      <IconSun 
-        size={20}
-        stroke={1.5}
-        className="rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" 
-        aria-hidden="true"
+      <span className="sr-only">Toggle theme</span>
+      <IconSun
+        className={`theme-toggle-icon h-5 w-5 ${
+          theme === "light" ? "text-primary" : "text-muted-foreground opacity-50 rotate-90 scale-0"
+        }`}
       />
-      <IconMoon 
-        size={20}
-        stroke={1.5}
-        className="absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" 
-        aria-hidden="true"
+      <IconMoon
+        className={`theme-toggle-icon absolute h-5 w-5 ${
+          theme === "dark" ? "text-primary" : "text-muted-foreground opacity-0 -rotate-90 scale-0"
+        }`}
       />
-      <span className="sr-only">
-        {theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
-      </span>
-    </Button>
-  )
+    </button>
+  );
 }

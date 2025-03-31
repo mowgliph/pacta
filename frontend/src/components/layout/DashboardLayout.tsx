@@ -1,41 +1,29 @@
-import React, { useState } from 'react';
-import { Outlet } from '@tanstack/react-router';
-import { Sidebar } from './Sidebar';
-import { Header } from './Header';
-import { BreadcrumbContainer } from './BreadcrumbContainer';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { Sidebar } from "./Sidebar";
+import { Header } from "./Header";
+import { cn } from "../../lib/utils";
 
-export const DashboardLayout: React.FC = () => {
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
+type DashboardLayoutProps = {
+  children: React.ReactNode;
+};
 
-  // Función para que el Sidebar pueda comunicar su estado de expansión
-  const handleSidebarToggle = (expanded: boolean) => {
-    setSidebarExpanded(expanded);
-  };
+export function DashboardLayout({ children }: DashboardLayoutProps) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background">
-      <Sidebar onToggle={handleSidebarToggle} />
-      
-      <div 
+    <div className="min-h-screen bg-background">
+      <Sidebar />
+      <Header sidebarCollapsed={sidebarCollapsed} />
+      <main
         className={cn(
-          "flex flex-1 flex-col transition-all duration-300",
-          sidebarExpanded ? "ml-64" : "ml-16"
+          "min-h-screen pt-16 transition-all duration-300",
+          sidebarCollapsed ? "ml-16" : "ml-64"
         )}
       >
-        <Header sidebarExpanded={sidebarExpanded} />
-        
-        <main 
-          className={cn(
-            "flex-1 overflow-auto p-6 pt-20 transition-all duration-300"
-          )}
-        >
-          <div className="mx-auto w-full max-w-7xl">
-            <BreadcrumbContainer />
-            <Outlet />
-          </div>
-        </main>
-      </div>
+        <div className="container mx-auto p-6">
+          {children}
+        </div>
+      </main>
     </div>
   );
-};
+}

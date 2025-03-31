@@ -1,7 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '@/store';
 import { useNavigate } from '@tanstack/react-router';
-import { IconBell, IconMoon, IconSun, IconSearch } from '@tabler/icons-react';
+import { 
+  IconBell, 
+  IconMoon, 
+  IconSun, 
+  IconSearch, 
+  IconUserCircle, 
+  IconChevronDown 
+} from "@tabler/icons-react";
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,97 +20,104 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from "../ui/ThemeToggle";
 
 interface HeaderProps {
-  sidebarExpanded: boolean;
+  sidebarCollapsed?: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({ sidebarExpanded }) => {
+export function Header({ sidebarCollapsed = false }: HeaderProps) {
   const navigate = useNavigate();
   const { logout, user } = useStore(state => ({
     logout: state.logout,
     user: state.user,
   }));
 
-  // Para el cambio de tema, mejorar esto después con un slice de UI
   const [theme, setTheme] = React.useState<'light' | 'dark'>('light');
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const toggleTheme = () => {
     setTheme(theme === 'light' ? 'dark' : 'light');
     // Aquí iría la lógica real para cambiar el tema
   };
 
-  // Funciones para manejar la navegación
   const handleProfileClick = () => {
-    // Por ahora navegamos al dashboard, en el futuro cuando exista la ruta /profile
     navigate({ to: '/' }); // Dashboard es '/'
   };
 
   const handleSettingsClick = () => {
-    // Por ahora navegamos al dashboard, en el futuro cuando exista la ruta /settings
     navigate({ to: '/' }); // Dashboard es '/'
   };
 
   if (!user) return null;
 
   return (
-    <header
-      className={cn(
-        'fixed z-10 flex h-16 w-full items-center justify-between border-b bg-background px-4 transition-all duration-300',
-        sidebarExpanded ? 'pl-64' : 'pl-16'
-      )}
-    >
-      <div className="flex items-center gap-4 md:gap-8">
-        <div className="relative w-64 max-w-sm hidden sm:block">
-          <IconSearch className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar..."
-            className="pl-8 h-9 bg-muted/50 border-muted-foreground/20 focus-visible:bg-background"
+    <header className={cn(
+      "fixed top-0 right-0 z-10 flex h-16 items-center justify-between border-b border-border bg-background px-4 transition-all duration-300",
+      sidebarCollapsed ? "left-16" : "left-64"
+    )}>
+      <div className="flex items-center gap-2">
+        <div className={cn(
+          "relative flex items-center rounded-md border border-input bg-background transition-all duration-200",
+          searchFocused ? "w-96 ring-2 ring-ring" : "w-64"
+        )}>
+          <IconSearch className="ml-2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search..."
+            className="w-full bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground"
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setSearchFocused(false)}
           />
         </div>
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="relative">
+        <ThemeToggle />
+
+        <button className="relative rounded-full p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
           <IconBell className="h-5 w-5" />
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-            3
-          </span>
-        </Button>
+          <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary"></span>
+        </button>
 
-        <Button variant="ghost" size="icon" onClick={toggleTheme}>
-          {theme === 'light' ? (
-            <IconMoon className="h-5 w-5" />
-          ) : (
-            <IconSun className="h-5 w-5" />
-          )}
-        </Button>
+        <div className="relative">
+          <button 
+            className="flex items-center gap-2 rounded-full p-1 text-foreground hover:bg-accent transition-colors"
+            onClick={() => setUserMenuOpen(!userMenuOpen)}
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+              {user.firstName?.charAt(0) || ''}
+              {user.lastName?.charAt(0) || ''}
+            </div>
+            <span className="text-sm">{user.firstName} {user.lastName}</span>
+            <IconChevronDown className={cn(
+              "h-4 w-4 text-muted-foreground transition-transform", 
+              userMenuOpen && "rotate-180"
+            )} />
+          </button>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                {user.firstName?.charAt(0) || ''}
-                {user.lastName?.charAt(0) || ''}
+          {userMenuOpen && (
+            <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-md border border-border bg-card shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+              <div className="py-1">
+                <a href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-accent">
+                  <IconUserCircle className="h-4 w-4" />
+                  Profile
+                </a>
+                <a href="/settings" className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-accent">
+                  <IconUserCircle className="h-4 w-4" />
+                  Settings
+                </a>
+                <hr className="my-1 border-border" />
+                <a href="/logout" className="flex items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-accent">
+                  <IconUserCircle className="h-4 w-4" />
+                  Logout
+                </a>
               </div>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Mi cuenta</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleProfileClick}>
-              Perfil
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleSettingsClick}>
-              Configuración
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => logout()}>
-              Cerrar sesión
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
-}; 
+} 
