@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet } from '@tanstack/react-router';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { BreadcrumbContainer } from './BreadcrumbContainer';
 import { cn } from '@/lib/utils';
 
 export const DashboardLayout: React.FC = () => {
@@ -30,6 +31,7 @@ export const DashboardLayout: React.FC = () => {
           )}
         >
           <div className="mx-auto w-full max-w-7xl">
+            <BreadcrumbContainer />
             <Outlet />
           </div>
         </main>

@@ -2,9 +2,10 @@
 import React from 'react';
 import { createRootRoute, createRoute, Outlet } from '@tanstack/react-router';
 import { LoginPage } from '../features/auth/pages/LoginPage';
-import { DashboardPage } from '../features/dashboard/pages/DashboardPage'; // Corregir la ruta
+import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
 import { ProtectedRoute } from '../components/auth/ProtectedRoute';
-import { DashboardLayout } from '../components/layout/DashboardLayout'; // Importar el layout
+import { DashboardLayout } from '../components/layout/DashboardLayout';
+import { NotificationContainer } from '../components/layout/NotificationContainer';
 import { useStore } from '../store';
 
 // --- Ruta Raíz (__root.tsx) ---
@@ -18,8 +19,12 @@ const RootComponent = () => {
 
   return (
     <>
-      {/* Aquí podría ir un Header/Sidebar persistente */}
-      <Outlet /> {/* Donde se renderizan las rutas hijas */}
+      {/* Contenedor de notificaciones globales */}
+      <NotificationContainer />
+      
+      {/* Donde se renderizan las rutas hijas */}
+      <Outlet />
+      
       {/* <ReactQueryDevtools /> */}
       {/* <TanStackRouterDevtools /> */}
     </>
@@ -56,10 +61,14 @@ const dashboardLayoutRoute = createRoute({
 
 // --- Ruta Dashboard (/dashboard) ---
 const dashboardRoute = createRoute({
-  // Esta ruta es hija del layout de dashboard
   getParentRoute: () => dashboardLayoutRoute,
-  path: '/', // Raíz relativa al layout
+  path: '/', 
   component: DashboardPage,
+  beforeLoad: () => {
+    return {
+      breadcrumb: 'Dashboard'
+    };
+  }
 });
 
 // --- Crear el Árbol de Rutas ---
@@ -76,4 +85,4 @@ const routeTree = rootRoute.addChildren([
 // --- Exportar la configuración para el Router ---
 export const routerConfig = {
   routeTree,
-}; 
+};

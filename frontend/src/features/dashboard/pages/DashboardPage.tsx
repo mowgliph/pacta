@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useStore } from '@/store';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
@@ -8,13 +8,18 @@ import {
   IconAlertCircle,
   IconTrendingUp,
   IconArrowUpRight,
-  IconArrowDownRight
+  IconArrowDownRight,
+  IconRefresh
 } from '@tabler/icons-react';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { Button } from '@/components/ui/button';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useStore(state => ({ 
     user: state.user
   }));
+  const { showSuccess, showInfo, showWarning, showError } = useNotifications();
 
   // Datos de ejemplo para el dashboard
   const stats = [
@@ -52,17 +57,63 @@ export const DashboardPage: React.FC = () => {
     }
   ];
 
+  // Ejemplo: Mostrar una notificación de bienvenida al cargar el dashboard
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      showSuccess(
+        '¡Bienvenido a PACTA!',
+        `Sesión iniciada como ${user?.firstName || ''} ${user?.lastName || ''}`,
+        { duration: 5000 }
+      );
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [showSuccess, user]);
+  
+  // Función para simular una actualización de datos
+  const handleRefreshData = () => {
+    showInfo('Actualizando datos...', 'Espere un momento mientras recargamos la información');
+    
+    // Simular un proceso de actualización que toma tiempo
+    setTimeout(() => {
+      showSuccess('Datos actualizados', 'La información ha sido actualizada correctamente');
+    }, 2000);
+  };
+  
+  // Función para mostrar diferentes tipos de notificaciones
+  const handleTestNotifications = () => {
+    showInfo('Información', 'Este es un mensaje informativo');
+    
+    setTimeout(() => {
+      showSuccess('Éxito', 'Operación completada correctamente');
+    }, 1000);
+    
+    setTimeout(() => {
+      showWarning('Advertencia', 'Tenga cuidado con esta acción');
+    }, 2000);
+    
+    setTimeout(() => {
+      showError('Error', 'Ha ocurrido un problema al procesar la solicitud');
+    }, 3000);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Saludo personalizado */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Bienvenido de nuevo, {user?.firstName || 'Usuario'}. Aquí está un resumen de PACTA.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title={`¡Bienvenido, ${user?.firstName || 'Usuario'}!`}
+        description="Panel de control principal"
+        actions={
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefreshData}
+            className="flex items-center gap-1"
+          >
+            <IconRefresh className="h-4 w-4" />
+            <span>Actualizar</span>
+          </Button>
+        }
+      />
 
       {/* Tarjetas de estadísticas */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -154,6 +205,19 @@ export const DashboardPage: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Sección de prueba de notificaciones */}
+      <div className="col-span-full">
+        <div className="rounded-lg border bg-card p-6 shadow-sm">
+          <h3 className="text-xl font-semibold mb-4">Probar Sistema de Notificaciones</h3>
+          <p className="text-muted-foreground mb-4">
+            Haga clic en el botón de abajo para probar los diferentes tipos de notificaciones.
+          </p>
+          <Button onClick={handleTestNotifications}>
+            Mostrar notificaciones
+          </Button>
+        </div>
       </div>
     </div>
   );
