@@ -1,42 +1,42 @@
 /**
- * Router principal de la API
+ * Archivo principal para las rutas de la API
+ * Combina todas las rutas y las exporta como un router único
  */
 import express from 'express';
-import { authenticate } from '../middleware/authMiddleware.js';
-import { notFoundHandler } from '../middleware/errorHandler.js';
-import publicRoutes from './public.js';
-import protectedRoutes from './protected.js';
+import authRoutes from './auth.js';
+import userRoutes from './user.js';
 import adminRoutes from './admin.js';
-import backupRoutes from './backupRoutes.js';
-import { logger } from '../../utils/logger.js';
+import contractRoutes from './contract.js';
+import { authenticate } from '../middleware/authenticationMiddleware.js';
+import { NotFoundError } from '../../utils/errors.js';
 
 const router = express.Router();
 
-// Middleware para registrar todas las solicitudes
-router.use((req, res, next) => {
-  logger.info(`${req.method} ${req.originalUrl}`, {
-    ip: req.ip,
-    userAgent: req.get('User-Agent'),
+// Ruta de verificación de API
+router.get('/', (req, res) => {
+  res.json({
+    status: 'success',
+    message: 'PACTA API v0.3.0',
+    timestamp: new Date().toISOString(),
   });
-  next();
 });
 
 // Rutas públicas (no requieren autenticación)
-router.use('/public', publicRoutes);
+router.use('/auth', authRoutes);
+
+// Middleware de autenticación para rutas protegidas
+router.use(authenticate);
 
 // Rutas protegidas (requieren autenticación)
-router.use('/protected', authenticate, protectedRoutes);
+router.use('/users', userRoutes);
+router.use('/contracts', contractRoutes);
 
-// Rutas de administración (requieren autenticación y rol de admin)
-router.use('/admin', authenticate, adminRoutes);
+// Rutas de administración (requieren autenticación y role de admin)
+router.use('/admin', adminRoutes);
 
-// Rutas de backup (requieren autenticación)
-router.use('/backup', authenticate, backupRoutes);
-
-// Rutas de autenticación
-router.use('/auth', publicRoutes);
-
-// Manejo de rutas no encontradas
-router.use(notFoundHandler);
+// Manejador de rutas no encontradas dentro de la API
+router.use('*', (req, res, next) => {
+  next(new NotFoundError(`Ruta no encontrada: ${req.originalUrl}`));
+});
 
 export default router;
