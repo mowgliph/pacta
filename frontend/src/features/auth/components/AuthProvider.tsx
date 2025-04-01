@@ -1,9 +1,9 @@
-import { ReactNode, useEffect, createContext, useContext, useState } from "react";
+import { type ReactNode, useEffect, createContext, useContext, useState } from "react";
 import { useStore } from "@/store";
 import { Login } from "@/pages/Login";
 import { useNavigate, useMatches } from '@tanstack/react-router';
 
-interface AuthContextType {
+type AuthContextType = {
   isAuthenticated: boolean;
   isLoading: boolean;
   token: string | null;
@@ -21,7 +21,7 @@ export function useAuth() {
   return context;
 }
 
-interface AuthProviderProps {
+type AuthProviderProps = {
   children: ReactNode;
 }
 

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Tipos para las estadísticas del dashboard
-export interface DashboardStats {
+export type DashboardStats = {
   activeContracts: number;
   pendingRenewals: number;
   totalUsers: number;

@@ -4,7 +4,7 @@ import { IconArrowLeft } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-interface PageHeaderProps {
+type PageHeaderProps = {
   title: string;
   description?: string;
   backButton?: boolean;

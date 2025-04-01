@@ -1,10 +1,10 @@
-import React, { useEffect, ReactNode } from 'react';
+import React, { useEffect, type ReactNode } from 'react';
 import { useStore } from '@/store';
 import { Navigate, useRouterState } from '@tanstack/react-router';
-import { Role } from '@/types/enums';
+import { type Role } from '@/types/enums';
 import { FullPageSpinner } from '@/components/ui/spinner'; // Asumiendo que tenemos un Spinner
 
-interface ProtectedRouteProps {
+type ProtectedRouteProps = {
   // Opcional: roles permitidos para esta ruta
   allowedRoles?: Role[];
   children?: ReactNode;

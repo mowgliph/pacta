@@ -11,8 +11,9 @@ import {
 } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { IconLock } from '@tabler/icons-react';
+import { cn } from '@/lib/utils';
 
-interface DashboardChartProps {
+type DashboardChartProps = {
   title: string;
   description?: string;
   data: {
@@ -22,6 +23,7 @@ interface DashboardChartProps {
   isLoading?: boolean;
   isPublic?: boolean;
   onRequireAuth?: () => void;
+  className?: string;
 }
 
 export const DashboardChart: React.FC<DashboardChartProps> = ({
@@ -31,6 +33,7 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
   isLoading = false,
   isPublic = false,
   onRequireAuth,
+  className,
 }) => {
   // Preparar datos para el gráfico
   const chartData = data?.labels.map((label, index) => ({
@@ -41,7 +44,7 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
   // Si está cargando, mostrar esqueleto
   if (isLoading) {
     return (
-      <Card className="col-span-4">
+      <Card className={cn("col-span-4", className)}>
         <CardHeader>
           <CardTitle>{title}</CardTitle>
           {description && <CardDescription>{description}</CardDescription>}
@@ -54,7 +57,7 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
   }
 
   return (
-    <Card className="col-span-4">
+    <Card className={cn("col-span-4", className)}>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}

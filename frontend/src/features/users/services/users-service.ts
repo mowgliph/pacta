@@ -1,17 +1,17 @@
 import { api } from '@/lib/api';
-import { User } from '@/store';
+import { type User } from '@/store';
 
 // Tipo extendido para usuarios con metadata adicional
-export interface UserDetails extends User {
+export type UserDetails = {
   createdAt: string;
   updatedAt: string;
   lastLogin?: string;
   status: 'active' | 'inactive' | 'suspended';
   permissions?: string[];
-}
+} & User
 
 // Parámetros para la búsqueda de usuarios
-export interface UserSearchParams {
+export type UserSearchParams = {
   page?: number;
   limit?: number;
   search?: string;
@@ -22,7 +22,7 @@ export interface UserSearchParams {
 }
 
 // Respuesta paginada de usuarios
-export interface UsersResponse {
+export type UsersResponse = {
   data: UserDetails[];
   total: number;
   page: number;
@@ -31,7 +31,7 @@ export interface UsersResponse {
 }
 
 // Datos para crear un usuario
-export interface CreateUserData {
+export type CreateUserData = {
   email: string;
   password: string;
   firstName: string;
@@ -42,7 +42,7 @@ export interface CreateUserData {
 }
 
 // Datos para actualizar un usuario
-export interface UpdateUserData {
+export type UpdateUserData = {
   firstName?: string;
   lastName?: string;
   role?: string;

@@ -13,18 +13,18 @@ import { UpcomingContractsCard } from '../components/UpcomingContractsCard';
 import { DashboardChart } from '../components/DashboardChart';
 import { QuickActions } from '../components/QuickActions';
 import { useDashboardStats } from '../hooks/useDashboardStats';
+import { Link } from '@tanstack/react-router';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useStore(state => ({ 
     user: state.user
   }));
-  const { showSuccess, showInfo, showWarning, showError } = useNotifications();
+  const { showSuccess, showInfo, showError } = useNotifications();
   
   // Obtener datos del dashboard
   const { 
     data: dashboardStats, 
     isLoading, 
-    isError, 
     refetch 
   } = useDashboardStats();
 
@@ -48,7 +48,7 @@ export const DashboardPage: React.FC = () => {
     try {
       await refetch();
       showSuccess('Datos actualizados', 'La información ha sido actualizada correctamente');
-    } catch (error) {
+    } catch (_error) {
       showError('Error al actualizar', 'No se pudieron obtener los datos más recientes');
     }
   };
@@ -91,6 +91,7 @@ export const DashboardPage: React.FC = () => {
           description="Evolución de contratos en los últimos meses"
           data={dashboardStats?.contractsStats || { labels: [], data: [] }}
           isLoading={isLoading}
+          className="col-span-4"
         />
       </div>
 
@@ -98,7 +99,12 @@ export const DashboardPage: React.FC = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <div className="col-span-4">
           <RecentActivityCard 
-            activities={dashboardStats?.recentActivity || []}
+            activities={dashboardStats?.recentActivity?.map(activity => ({
+              id: activity.id,
+              type: activity.type,
+              description: activity.description,
+              timestamp: activity.timestamp
+            })) || []}
             isLoading={isLoading}
           />
         </div>
@@ -111,10 +117,16 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Botón de acceso rápido a todas las estadísticas */}
+      {/* Botón de acceso rápido a estadísticas completas */}
       <div className="flex justify-end">
-        <Button variant="outline" className="flex items-center gap-2">
-          Ver estadísticas completas <IconArrowRight className="h-4 w-4" />
+        <Button 
+          variant="outline" 
+          className="flex items-center gap-2"
+          asChild
+        >
+          <Link to="/_authenticated/statistics">
+            Ver estadísticas completas <IconArrowRight className="h-4 w-4" />
+          </Link>
         </Button>
       </div>
     </div>

@@ -86,17 +86,17 @@ export function DashboardPublicPage() {
         </AlertDescription>
       </Alert>
 
-      {/* Acciones Rápidas */}
+      {/* Acciones rápidas públicas */}
       <QuickActionsPublic onRequireAuth={handleRequireAuth} />
 
-      {/* Tarjetas de estadísticas */}
+      {/* Tarjetas de estadísticas (versión pública) */}
       <DashboardStatsCards 
-        activeContracts={dashboardStats.activeContracts}
-        pendingRenewals={dashboardStats.pendingRenewals}
-        totalUsers={dashboardStats.totalUsers}
-        alerts={dashboardStats.alerts}
+        activeContracts={dashboardStats?.activeContracts || 0}
+        pendingRenewals={dashboardStats?.pendingRenewals || 0}
+        totalUsers={dashboardStats?.totalUsers || 0}
+        alerts={dashboardStats?.alerts || 0}
         isLoading={isLoading}
-        isPublic
+        isPublic={true}
         onRequireAuth={handleRequireAuth}
       />
 
@@ -112,9 +112,11 @@ export function DashboardPublicPage() {
         />
       </div>
 
-      {/* Sección de actividad reciente */}
+      {/* Actividad reciente (versión pública limitada) */}
       <div className="grid gap-4 md:grid-cols-1">
-        <RecentActivityPublic onRequireAuth={handleRequireAuth} />
+        <RecentActivityPublic 
+          onRequireAuth={handleRequireAuth}
+        />
       </div>
 
       {/* Botón de inicio de sesión */}

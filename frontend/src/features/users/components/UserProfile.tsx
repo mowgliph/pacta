@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { IconEdit, IconMail, IconPhone, IconBriefcase } from "@tabler/icons-react";
 
-interface UserProfileProps {
+type UserProfileProps = {
   className?: string;
   user?: {
     id: string;

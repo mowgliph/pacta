@@ -1,16 +1,16 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { type UpcomingContract as ServiceUpcomingContract } from '../services/dashboard-service';
 
-interface UpcomingContract {
-  id: string;
-  contractNumber: string;
-  company: string;
-  type: string;
-  daysUntilExpiry: number;
-}
+// Adaptamos esta interfaz para que coincida con la del servicio
+type UpcomingContract = {
+  contractNumber?: string;  // Opcional para compatibilidad
+  type?: string;            // Opcional para compatibilidad
+  daysUntilExpiry?: number; // Opcional para compatibilidad
+} & ServiceUpcomingContract
 
-interface UpcomingContractsCardProps {
+type UpcomingContractsCardProps = {
   contracts: UpcomingContract[];
   isLoading?: boolean;
 }
@@ -87,20 +87,20 @@ export const UpcomingContractsCard: React.FC<UpcomingContractsCardProps> = ({
                 <div 
                   className={cn(
                     "h-2 w-2 rounded-full transition-all group-hover:scale-125", 
-                    getExpiryColor(contract.daysUntilExpiry)
+                    getExpiryColor(contract.daysUntilExpiry || contract.daysRemaining || 0)
                   )} 
                 />
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">
-                      Contrato #{contract.contractNumber}
+                      Contrato #{contract.contractNumber || contract.name}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {formatDaysText(contract.daysUntilExpiry)}
+                      {formatDaysText(contract.daysUntilExpiry || contract.daysRemaining || 0)}
                     </p>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {contract.company} - {contract.type}
+                    {contract.company} - {contract.type || contract.status}
                   </p>
                 </div>
               </div>

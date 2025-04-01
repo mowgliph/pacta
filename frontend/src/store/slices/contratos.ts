@@ -1,14 +1,14 @@
-import { StateCreator } from 'zustand'
+import { type StateCreator } from 'zustand'
 import { 
   ContractsService, 
-  Contract, 
-  ContractSearchParams,
-  CreateContractData
+  type Contract, 
+  type ContractSearchParams,
+  type CreateContractData
 } from '@/features/contracts'
-import { ApiError } from '@/lib/api'
+import { type ApiError } from '@/lib/api'
 import { ContractStatus } from '@/types/enums'
 
-export interface FiltrosContrato {
+export type FiltrosContrato = {
   estado?: 'active' | 'pending' | 'expired' | 'cancelled'; // Usar los mismos valores que acepta la API
   busqueda?: string;
   fechaInicio?: string;
@@ -22,7 +22,7 @@ export interface FiltrosContrato {
   direccionOrden?: 'asc' | 'desc';
 }
 
-export interface SliceContratos {
+export type SliceContratos = {
   contratos: Contract[];
   contratoSeleccionado: Contract | null;
   filtros: FiltrosContrato;

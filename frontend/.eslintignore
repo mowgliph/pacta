@@ -1,0 +1,17 @@
+# Dependencies
+/node_modules
+
+# Build artifacts
+/dist
+/build
+
+# Test files
+/__tests__
+/coverage
+
+# Configuration files
+/*.config.js
+
+# Cache files
+/.eslintcache
+/.cache 

@@ -1,9 +1,9 @@
-import { Contract } from '../../types'
+import { type Contract } from '../../types'
 import { formatDate } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 
-interface ContractCardProps {
+type ContractCardProps = {
   contract: Contract
 }
 

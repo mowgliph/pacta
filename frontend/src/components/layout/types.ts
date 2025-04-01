@@ -1,4 +1,4 @@
-export interface NavItemType {
+export type NavItemType = {
   id: string;
   title: string;
   href?: string;
@@ -10,31 +10,31 @@ export interface NavItemType {
   roles?: string[];
 }
 
-export interface NavGroupType {
+export type NavGroupType = {
   title: string;
   items: NavItemType[];
 }
 
-export interface SidebarProps {
+export type SidebarProps = {
   className?: string;
   navItems?: NavGroupType[];
   collapsible?: boolean;
   defaultCollapsed?: boolean;
 }
 
-export interface TopNavProps {
+export type TopNavProps = {
   className?: string;
 }
 
-export interface HeaderProps {
+export type HeaderProps = {
   className?: string;
 }
 
-export interface NavUserProps {
+export type NavUserProps = {
   className?: string;
 }
 
-export interface NavGroupProps {
+export type NavGroupProps = {
   className?: string;
   group: NavGroupType;
   collapsed?: boolean;

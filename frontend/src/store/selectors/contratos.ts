@@ -1,5 +1,5 @@
 import { useStore } from '../index'
-import { Contract, ContractFilters } from '@/features/contracts/types'
+import { type Contract, type ContractFilters } from '@/features/contracts/types'
 
 export const useContratosFiltrados = () => {
   return useStore((state) => {

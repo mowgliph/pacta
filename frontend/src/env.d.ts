@@ -1,7 +1,7 @@
 /// <reference types="vite/client" />
 
 declare module '@env' {
-  interface ImportMetaEnv {
+  type ImportMetaEnv = {
     VITE_API_URL: string
     VITE_API_VERSION: string
     VITE_APP_NAME: string
@@ -29,7 +29,7 @@ declare module '@env' {
     VITE_ENABLE_CODE_SPLITTING: string
   }
 
-  interface ImportMeta {
+  type ImportMeta = {
     readonly env: ImportMetaEnv
   }
 }

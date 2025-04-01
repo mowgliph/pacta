@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 import { useSearch } from '@/context/search-context'
 import { Button } from './ui/button'
 
-interface Props {
+type Props = {
   className?: string
   type?: React.HTMLInputTypeAttribute
   placeholder?: string

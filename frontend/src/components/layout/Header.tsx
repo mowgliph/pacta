@@ -27,7 +27,7 @@ import { ThemeToggle } from "../ui/ThemeToggle";
 import { Badge } from '../ui/badge';
 import { Separator } from '../ui/separator';
 
-interface HeaderProps {
+type HeaderProps = {
   sidebarCollapsed?: boolean;
   onToggleSidebar?: () => void;
   isPublic?: boolean;

@@ -1,6 +1,6 @@
 import { Skeleton } from '@/components/ui/skeleton'
 
-interface ContractListSkeletonProps {
+type ContractListSkeletonProps = {
   count?: number
 }
 

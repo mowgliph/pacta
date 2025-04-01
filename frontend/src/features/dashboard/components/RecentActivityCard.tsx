@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { format, formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { 
   IconFileInvoice, 
@@ -10,14 +10,15 @@ import {
   IconFileUpload
 } from '@tabler/icons-react';
 
-interface ActivityItem {
+// Interfaz adaptada para aceptar datos tanto del componente como del servicio
+type ActivityItem = {
   id: string;
   type: string;
   description: string;
-  createdAt: string;
+  timestamp?: string; // Campo del servicio para la fecha
 }
 
-interface RecentActivityCardProps {
+type RecentActivityCardProps = {
   activities: ActivityItem[];
   isLoading?: boolean;
 }
@@ -113,7 +114,7 @@ export const RecentActivityCard: React.FC<RecentActivityCardProps> = ({
                   {activity.description}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {formatDate(activity.createdAt)}
+                  {formatDate(activity.timestamp || '')}
                 </p>
               </div>
             </div>

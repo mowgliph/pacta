@@ -1,8 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { Role, UserStatus } from '@/types/enums';
-import { AuthService, LoginRequest } from '@/features/auth';
-import { ApiError } from '@/lib/api';
+import { type Role, type UserStatus } from '@/types/enums';
+import { AuthService, type LoginRequest } from '@/features/auth';
+import { type ApiError } from '@/lib/api';
 
 // Types
 export type User = {

@@ -34,7 +34,7 @@ const data = [
   },
 ];
 
-interface OverviewProps {
+type OverviewProps = {
   className?: string;
 }
 

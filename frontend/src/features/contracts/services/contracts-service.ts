@@ -1,7 +1,7 @@
 import { api } from '@/lib/api';
 
 // Tipo para contratos
-export interface Contract {
+export type Contract = {
   id: string;
   name: string;
   description?: string;
@@ -20,7 +20,7 @@ export interface Contract {
 }
 
 // Tipo para adjuntos
-export interface Attachment {
+export type Attachment = {
   id: string;
   name: string;
   type: string;
@@ -30,7 +30,7 @@ export interface Attachment {
 }
 
 // Tipo para suplementos
-export interface Supplement {
+export type Supplement = {
   id: string;
   name: string;
   description?: string;
@@ -40,7 +40,7 @@ export interface Supplement {
 }
 
 // Parámetros para la búsqueda de contratos
-export interface ContractSearchParams {
+export type ContractSearchParams = {
   page?: number;
   limit?: number;
   status?: 'active' | 'pending' | 'expired' | 'cancelled';
@@ -53,7 +53,7 @@ export interface ContractSearchParams {
 }
 
 // Respuesta paginada de contratos
-export interface ContractsResponse {
+export type ContractsResponse = {
   data: Contract[];
   total: number;
   page: number;
@@ -62,7 +62,7 @@ export interface ContractsResponse {
 }
 
 // Datos para crear un contrato
-export interface CreateContractData {
+export type CreateContractData = {
   name: string;
   description?: string;
   companyId: string;

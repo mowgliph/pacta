@@ -82,7 +82,7 @@ const StatCard: React.FC<StatCardProps> = ({
   );
 };
 
-interface DashboardStatsCardsProps {
+type DashboardStatsCardsProps = {
   activeContracts: number;
   pendingRenewals: number;
   totalUsers: number;

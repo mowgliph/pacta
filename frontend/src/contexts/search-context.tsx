@@ -1,14 +1,14 @@
 import React from 'react'
 import { CommandK } from '@/components/CommandK'
 
-interface SearchContextType {
+type SearchContextType = {
   open: boolean
   setOpen: React.Dispatch<React.SetStateAction<boolean>>
 }
 
 const SearchContext = React.createContext<SearchContextType | null>(null)
 
-interface Props {
+type Props = {
   children: React.ReactNode
 }
 

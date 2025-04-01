@@ -1,4 +1,4 @@
-export interface Contract {
+export type Contract = {
   id: number
   title: string
   description?: string
@@ -28,7 +28,7 @@ export interface Contract {
   }
 }
 
-export interface ContractFilters {
+export type ContractFilters = {
   estado: 'ACTIVE' | 'PENDING' | 'EXPIRED' | 'CANCELLED' | undefined
   busqueda: string | undefined
   fechaInicio: string | undefined
@@ -43,7 +43,7 @@ export interface ContractFilters {
 }
 
 // Update the store type
-export interface ContractState {
+export type ContractState = {
   contratos: Contract[]
   contratoSeleccionado: Contract | null
   filtros: ContractFilters

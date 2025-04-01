@@ -1,7 +1,7 @@
 import { useStore } from '@/store';
-import { StatusType } from '@/components/layout/StatusBanner';
+import { type StatusType } from '@/components/layout/StatusBanner';
 
-interface NotificationAction {
+type NotificationAction = {
   label: string;
   onClick: () => void;
 }

@@ -1,8 +1,8 @@
-import { StateCreator } from 'zustand'
-import { ContractsService, Attachment } from '@/features/contracts'
-import { ApiError } from '@/lib/api'
+import { type StateCreator } from 'zustand'
+import { ContractsService, type Attachment } from '@/features/contracts'
+import { type ApiError } from '@/lib/api'
 
-export interface SliceDocumentos {
+export type SliceDocumentos = {
   documentos: Attachment[]
   documentoSeleccionado: Attachment | null
   cargando: boolean

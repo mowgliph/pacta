@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { type FormEvent, useState } from "react";
 import { IconBrandTailwind, IconEye, IconEyeOff, IconLogin } from "@tabler/icons-react";
 import { useStore } from "../store";
 import { ThemeToggle } from "../components/ui/ThemeToggle";

@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Command as CommandPrimitive } from 'cmdk';
 import {
@@ -13,6 +13,13 @@ import {
   IconMoon,
   IconSun,
   IconDeviceLaptop,
+  IconUser,
+  IconLogout,
+  IconHome,
+  IconFileText,
+  IconChartLine,
+  IconHelpCircle,
+  IconBell
 } from '@tabler/icons-react';
 
 import { cn } from '@/lib/utils';
@@ -21,6 +28,8 @@ import {
   DialogContent,
 } from '@/components/ui/dialog';
 import { useStore } from '@/store';
+import { useThemeStore } from '@/stores/themeStore';
+import { Button } from './ui/button';
 
 // Tipo de comando
 type CommandItem = {
@@ -75,15 +84,14 @@ const CommandList = ({
 };
 
 // Componente CommandK principal
-export function CommandK() {
-  const navigate = useNavigate();
-  const [open, setOpen] = React.useState(false);
-  const [search, setSearch] = React.useState('');
+export const CommandK = () => {
+  const [open, setOpen] = useState(false);
+  const _navigate = useNavigate();
+  const [value, setValue] = useState('');
+  const { setTheme } = useThemeStore();
   
   // Store
-  const { setTheme, theme, setCommandK } = useStore(state => ({
-    setTheme: state.setTheme,
-    theme: state.theme,
+  const { setCommandK } = useStore(state => ({
     setCommandK: state.setCommandK
   }));
   
@@ -183,12 +191,12 @@ export function CommandK() {
   
   // Filtrar resultados por búsqueda
   const filteredResults = React.useMemo(() => {
-    if (!search) return commands;
+    if (!value) return commands;
     
     return commands.filter((item) =>
-      item.title.toLowerCase().includes(search.toLowerCase())
+      item.title.toLowerCase().includes(value.toLowerCase())
     );
-  }, [search, commands]);
+  }, [value, commands]);
 
   // Separar resultados por sección
   const principalResults = filteredResults.filter((item) => item.section === 'principal');
@@ -246,8 +254,8 @@ export function CommandK() {
             <CommandPrimitive.Input
               placeholder="Buscar comandos, páginas, etc..."
               className="flex h-12 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-              value={search}
-              onValueChange={setSearch}
+              value={value}
+              onValueChange={setValue}
             />
             <kbd className="pointer-events-none ml-auto hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-xs font-medium opacity-100 sm:flex">
               ESC
@@ -295,7 +303,7 @@ export function CommandK() {
                 <IconSearch className="h-12 w-12 text-muted-foreground" />
                 <h2 className="mt-4 text-lg font-medium">No se encontraron resultados</h2>
                 <p className="mb-4 text-sm text-muted-foreground">
-                  No hemos encontrado resultados para "{search}". Intenta con otra búsqueda.
+                  No hemos encontrado resultados para "{value}". Intenta con otra búsqueda.
                 </p>
               </div>
             )}

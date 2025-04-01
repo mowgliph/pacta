@@ -1,41 +1,41 @@
 import { api } from '@/lib/api';
-import { User } from '@/store';
+import { type User } from '@/store';
 
 // Tipos para las respuestas de la API
-export interface LoginResponse {
+export type LoginResponse = {
   token: string;
   user: User;
 }
 
-export interface RegisterResponse {
+export type RegisterResponse = {
   token: string;
   user: User;
 }
 
-export interface ResetPasswordResponse {
+export type ResetPasswordResponse = {
   success: boolean;
   message: string;
 }
 
 // Tipos para las solicitudes
-export interface LoginRequest {
+export type LoginRequest = {
   email: string;
   password: string;
   rememberMe?: boolean;
 }
 
-export interface RegisterRequest {
+export type RegisterRequest = {
   email: string;
   password: string;
   firstName: string;
   lastName: string;
 }
 
-export interface ResetPasswordRequest {
+export type ResetPasswordRequest = {
   email: string;
 }
 
-export interface ChangePasswordRequest {
+export type ChangePasswordRequest = {
   oldPassword: string;
   newPassword: string;
 }

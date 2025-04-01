@@ -1,4 +1,4 @@
-import { useStore, StoreState } from '@/store'
+import { useStore, type StoreState } from '@/store'
 import { useQuery } from '@tanstack/react-query'
 import { contractService } from '../../services/ContractService'
 import { ContractCard } from '../ContractCard'

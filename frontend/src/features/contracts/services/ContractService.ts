@@ -1,6 +1,6 @@
 import { BaseService } from '@/lib/api/BaseService'
-import { Contract, ContractFilters } from '../types'
-import { AxiosResponse } from 'axios'
+import { type Contract, type ContractFilters } from '../types'
+import { type AxiosResponse } from 'axios'
 
 class ContractService extends BaseService {
   constructor() {

@@ -10,12 +10,12 @@ import {
 import { IconHome } from '@tabler/icons-react';
 
 // Definición de tipo para el contexto de ruta que proporciona información de breadcrumb
-interface RouteContext {
+type RouteContext = {
   breadcrumb?: string;
 }
 
 // Props del componente
-interface BreadcrumbNavigationProps {
+type BreadcrumbNavigationProps = {
   className?: string;
 }
 

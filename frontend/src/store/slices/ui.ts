@@ -1,13 +1,13 @@
-import { StateCreator } from 'zustand'
-import { StatusType } from '@/components/layout/StatusBanner'
+import { type StateCreator } from 'zustand'
+import { type StatusType } from '@/components/layout/StatusBanner'
 
-interface Modal {
+type Modal = {
   id: string
   component: React.ComponentType<any>
   props?: Record<string, any>
 }
 
-export interface Notification {
+export type Notification = {
   id: string
   type: StatusType
   title: string
@@ -20,7 +20,7 @@ export interface Notification {
   }
 }
 
-export interface SliceUI {
+export type SliceUI = {
   tema: 'light' | 'dark' | 'system'
   modales: Modal[]
   sidebarAbierto: boolean

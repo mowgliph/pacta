@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 
 export type StatusType = 'info' | 'success' | 'warning' | 'error';
 
-interface StatusBannerProps {
+type StatusBannerProps = {
   type?: StatusType;
   title: string;
   message?: string;

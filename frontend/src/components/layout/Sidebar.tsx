@@ -46,7 +46,7 @@ type NavSection = {
 };
 
 // Props para el NavItem
-interface NavItemProps {
+type NavItemProps = {
   link: NavLink;
   collapsed: boolean;
   isPublic?: boolean;

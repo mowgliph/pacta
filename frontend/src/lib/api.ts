@@ -14,10 +14,10 @@ export type ApiError = {
 };
 
 // Opciones para las peticiones
-interface RequestOptions extends RequestInit {
+type RequestOptions = {
   token?: string;
   params?: Record<string, any>;
-}
+} & RequestInit
 
 /**
  * Función para realizar peticiones a la API

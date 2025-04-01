@@ -1,6 +1,6 @@
-import { StateCreator } from 'zustand'
+import { type StateCreator } from 'zustand'
 
-export interface Notification {
+export type Notification = {
   id: string
   type: 'info' | 'success' | 'warning' | 'error'
   title?: string
@@ -12,7 +12,7 @@ export interface Notification {
   }
 }
 
-export interface SliceNotificaciones {
+export type SliceNotificaciones = {
   notifications: Notification[]
   showNotification: (notification: Omit<Notification, 'id'>) => void
   showSuccess: (message: string, title?: string) => void

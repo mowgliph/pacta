@@ -8,7 +8,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 
-interface QuickActionsPublicProps {
+type QuickActionsPublicProps = {
   onRequireAuth: () => void
 }
 

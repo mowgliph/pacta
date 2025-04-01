@@ -1,86 +1,91 @@
 import React from 'react';
-import { useNavigate } from '@tanstack/react-router';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
   IconPlus, 
-  IconFileImport, 
-  IconClipboardList, 
-  IconUser, 
-  IconBuildingStore 
+  IconFileSearch, 
+  IconSettings, 
+  IconBell, 
+  IconFileUpload,
+  IconChartBar
 } from '@tabler/icons-react';
 
-type ActionItem = {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  route: string;
-};
-
+/**
+ * Componente de acciones rápidas para el dashboard
+ */
 export const QuickActions: React.FC = () => {
-  const navigate = useNavigate();
+  // Hook de navegación
+  const _navigate = useNavigate();
 
-  // Función de manejo de navegación
-  const handleNavigate = (path: string) => {
-    // Crear una función que maneje la navegación
-    // Por ahora, simplemente loguea la ruta a la que se debería navegar
-    console.log(`Navegando a: ${path}`);
-    // En un futuro, cuando las rutas estén definidas correctamente:
-    // navigate({ to: path as any });
+  // Ejemplos de acciones comunes
+  const handleCreateContract = () => {
+    // Aquí iría la lógica para crear un contrato
+    // Por ahora solo mostramos un log
+    console.warn('Creación de contrato no implementada');
   };
-
-  // Definir acciones rápidas
-  const actions: ActionItem[] = [
-    {
-      title: 'Nuevo Contrato',
-      description: 'Crear un nuevo contrato',
-      icon: <IconPlus className="h-5 w-5" />,
-      route: '/contracts/new',
-    },
-    {
-      title: 'Nuevo Suplemento',
-      description: 'Añadir suplemento a contrato',
-      icon: <IconClipboardList className="h-5 w-5" />,
-      route: '/supplements/new',
-    },
-    {
-      title: 'Nueva Empresa',
-      description: 'Registrar empresa',
-      icon: <IconBuildingStore className="h-5 w-5" />,
-      route: '/companies/new',
-    },
-    {
-      title: 'Nuevo Usuario',
-      description: 'Registrar usuario',
-      icon: <IconUser className="h-5 w-5" />,
-      route: '/users/new',
-    },
-  ];
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Acciones Rápidas</CardTitle>
-        <CardDescription>Accesos directos a funcionalidades frecuentes</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-4">
-          {actions.map((action, i) => (
-            <Button
-              key={i}
-              variant="outline"
-              className="h-auto flex flex-col items-center justify-center gap-2 p-4 transition-all hover:border-primary"
-              onClick={() => handleNavigate(action.route)}
-            >
-              <div className="rounded-full bg-primary/10 p-2 text-primary">
-                {action.icon}
+      <CardContent className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Botón de crear contrato */}
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2 justify-start p-4 h-auto min-h-16"
+            onClick={handleCreateContract}
+          >
+            <IconPlus className="h-5 w-5 text-primary" />
+            <div className="flex flex-col items-start">
+              <span className="font-medium">Crear Contrato</span>
+              <span className="text-xs text-muted-foreground">Nuevo contrato</span>
+            </div>
+          </Button>
+
+          {/* Botón de subir documento */}
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2 justify-start p-4 h-auto min-h-16"
+            asChild
+          >
+            <Link to="/_authenticated/documents/upload">
+              <IconFileUpload className="h-5 w-5 text-blue-500" />
+              <div className="flex flex-col items-start">
+                <span className="font-medium">Subir Documento</span>
+                <span className="text-xs text-muted-foreground">Añadir documento</span>
               </div>
-              <div className="text-center">
-                <h3 className="font-medium">{action.title}</h3>
-                <p className="text-xs text-muted-foreground">{action.description}</p>
+            </Link>
+          </Button>
+
+          {/* Botón de buscar contrato */}
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2 justify-start p-4 h-auto min-h-16"
+            asChild
+          >
+            <Link to="/_authenticated/contracts/search">
+              <IconFileSearch className="h-5 w-5 text-amber-500" />
+              <div className="flex flex-col items-start">
+                <span className="font-medium">Buscar Contrato</span>
+                <span className="text-xs text-muted-foreground">Búsqueda avanzada</span>
               </div>
-            </Button>
-          ))}
+            </Link>
+          </Button>
+
+          {/* Botón de estadísticas */}
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-2 justify-start p-4 h-auto min-h-16"
+            asChild
+          >
+            <Link to="/_authenticated/statistics">
+              <IconChartBar className="h-5 w-5 text-emerald-500" />
+              <div className="flex flex-col items-start">
+                <span className="font-medium">Estadísticas</span>
+                <span className="text-xs text-muted-foreground">Ver informes</span>
+              </div>
+            </Link>
+          </Button>
         </div>
       </CardContent>
     </Card>
