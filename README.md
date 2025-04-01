@@ -1,100 +1,198 @@
 # PACTA: Plataforma de Automatización y Control de Contratos Empresariales
 
-PACTA es una aplicación de escritorio instalable localmente, diseñada para optimizar la gestión de contratos en empresas grandes. Su objetivo principal es proporcionar una solución integral para la administración eficiente de contratos ya existentes, facilitando su seguimiento, organización y control de vencimientos, garantizando así la seguridad, organización y cumplimiento de plazos, tanto en entornos con conexión a internet como sin ella.
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]() [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)]()
+
+PACTA es una aplicación de escritorio instalable localmente, diseñada para optimizar la gestión de contratos en empresas grandes. Su objetivo es proporcionar una solución integral para la administración eficiente de contratos, con énfasis en usabilidad, seguridad y visualización avanzada.
 
 ---
 
-## **Funciones Principales**
-PACTA ofrece diversas funcionalidades para facilitar la gestión contractual:
+## Tabla de Contenidos
 
-- **Dashboard Estadístico:** Panel principal con resumen visual de estadísticas de contratos y acciones rápidas personalizables.
-- **Gestión de Contratos:** Visualización, filtrado y búsqueda avanzada de contratos por tipo (Cliente/Proveedor), estado y otros criterios.
-- **Suplementos Contractuales:** Sistema para modificación de contratos mediante suplementos, manteniendo historial completo de cambios.
-- **Notificaciones y Recordatorios:** Alertas automáticas sobre vencimientos, renovaciones y acciones pendientes mostradas en la aplicación.
-- **Perfiles de Usuario:** Gestión de usuarios con roles específicos (RA y admin) con capacidad de personalización de contraseñas.
-- **Estadísticas Avanzadas:** Sección dedicada a métricas y análisis detallado de la gestión contractual global.
-- **Ciclo de Vida de Contratos:** Control automático de estados de contratos basado en fechas de vencimiento.
-
----
-
-## **Objetivo de PACTA**
-
-El principal objetivo de PACTA es **reducir los errores, optimizar el tiempo de gestión y mejorar la organización de contratos** dentro de las empresas. Con esta plataforma, se busca automatizar el seguimiento y minimizar riesgos legales derivados de la falta de control de vencimientos contractuales.
-
-**Objetivos específicos implementados:**
-- Eliminación de vencimientos no detectados mediante alertas proactivas
-- Centralización de toda la documentación contractual en un único repositorio seguro
-- Reducción del tiempo de búsqueda de contratos con un sistema avanzado de filtros
-- Visualización eficiente mediante dashboard intuitivo y estadísticas detalladas
+- [Introducción](#introducción)
+- [Características](#características)
+- [Tecnologías](#tecnologías)
+- [Arquitectura](#arquitectura)
+- [Instalación y Configuración](#instalación-y-configuración)
+- [Uso](#uso)
+- [Desarrollo](#desarrollo)
+- [Contribución](#contribución)
+- [Licencia](#licencia)
+- [Contacto](#contacto)
 
 ---
 
-## **Características Técnicas Implementadas**
+## Introducción
 
-- **Arquitectura Frontend:** 
-  - Desarrollado con React 18 y TypeScript para un código robusto y tipado
-  - Interfaz moderna con Shadcn/UI y Tailwind CSS para diseño minimalista y responsivo
-  - Enrutamiento tipo-seguro con TanStack Router
-  - Gestión de estado global con Zustand para manejo eficiente de datos
-  - Sistema de componentes modulares y reutilizables
-  - Visualización de datos con gráficos interactivos
-  - Dashboard principal optimizado para visualización de estadísticas
-  - Sistema de temas claro/oscuro incorporado
-
-- **Arquitectura Backend:**
-  - Servidor Express con TypeScript
-  - Base de datos SQLite para almacenamiento local
-  - API RESTful organizada por recursos
-  - Sistema de autenticación JWT con roles definidos
-  - Validación de datos con Zod
-  - Gestión de suplementos contractuales
-  - Lógica de negocio para estados de contratos
-
-- **Flujo de Trabajo de Contratos:**
-  - Creación de contratos nuevos con datos completos
-  - Modificación mediante suplementos (preservando historial)
-  - Cambio automático de estado según fechas de vencimiento
-  - Sin eliminación física (solo cambios de estado)
-  - Filtrado por tipo de contrato (Cliente/Proveedor)
-  - Clasificación automática (Vigente, Vencido, etc.)
+PACTA es una plataforma diseñada para:
+- **Gestionar contratos:** Visualización, filtrado y búsqueda de contratos (Cliente/Proveedor).
+- **Automatizar el ciclo de vida de los contratos:** Creación, modificaciones (suplementos) y cancelación por vencimiento.
+- **Generar alertas y notificaciones:** Seguimiento de vencimientos y cambios críticos.
+- **Ofrecer una interfaz moderna:** Dashboard interactivo y visualización avanzada de estadísticas.
 
 ---
 
-## **Secciones Principales de la Aplicación**
+## Características
 
-### **1. Dashboard Principal**
-Panel central con visualización de estadísticas clave, indicadores de rendimiento y acciones rápidas como:
-- Resumen de contratos por estado y tipo
-- Gráficos de distribución de contratos
-- Accesos directos para agregar contratos o suplementos
-- Alertas de vencimientos próximos
-- Vista rápida de actividad reciente
+- **Dashboard Estadístico Moderno:**  
+  Resumen visual de contratos, indicadores de rendimiento, gráficos interactivos y acciones rápidas.
 
-### **2. Gestión de Contratos**
-Vista completa de todos los contratos con:
-- Tabla interactiva con ordenamiento y filtrado
-- Filtros principales por tipo (Cliente/Proveedor)
-- Búsqueda por número de contrato, empresa, etc.
-- Vista detallada de cada contrato
-- Historial de suplementos asociados
-- Estados visuales según vigencia
+- **Gestión Integral de Contratos:**  
+  Listado completo de contratos con filtros por tipo, búsqueda avanzada y visualización detallada.
 
-### **3. Estadísticas Avanzadas**
-Sección dedicada exclusivamente al análisis con:
-- Métricas detalladas de contratos por categoría
-- Gráficos comparativos y evolutivos
-- Tendencias de renovación y cancelación
-- Rendimiento por tipo de contrato
-- Reportes exportables
+- **Gestión de Suplementos:**  
+  Mecanismo para modificar contratos preservando el historial completo de cambios.
 
-### **4. Perfil de Usuario**
-Gestión personalizada del usuario con:
-- Datos de perfil modificables
-- Cambio de contraseñas seguro
-- Preferencias de notificaciones
-- Historial de actividad
+- **Autenticación y Control de Acceso:**  
+  Sistema de roles (RA y admin) con autenticación JWT, control robusto de permisos y cambio de contraseña.
+
+- **Diseño y Usabilidad:**  
+  Interfaz minimalista y moderna basada en Tailwind CSS, shadcn/UI y React con Vite.
+
+- **Optimización de Desempeño:**  
+  Code splitting, lazy loading y caché inteligente para una experiencia de usuario ágil.
+
+- **Accesibilidad:**  
+  Cumplimiento de estándares WCAG AA/AAA, diseño mobile-first, y micro-interacciones para una experiencia inclusiva.
+
+- **Innovación:**  
+  Posible integración de analíticas predictivas y recomendaciones basadas en IA para mejorar la gestión proactiva de contratos.
 
 ---
 
-PACTA evoluciona para ofrecer una solución completa y eficiente para la gestión contractual empresarial, con enfoque en usabilidad, visualización de datos y flujos de trabajo optimizados.
+## Tecnologías
 
+### Frontend
+- **Framework:** React 19 y TypeScript
+- **Build Tool:** Vite
+- **Estilos:** Tailwind CSS y shadcn/UI
+- **Enrutamiento:** TanStack Router
+- **Gestión de Estado:** Zustand y TanStack Query
+
+### Backend
+- **Runtime:** Node.js con Express.js y TypeScript
+- **Persistencia:** Prisma ORM con SQLite
+- **Autenticación:** JWT
+- **Validación:** Zod
+- **Documentación:** Swagger/OpenAPI
+
+---
+
+## Arquitectura
+
+### Frontend
+- **Dashboard y Navegación:**  
+  Interfaz con secciones de Contratos, Estadísticas y Perfil, complementada con micro-interacciones y animaciones sutiles.
+- **Modularidad:**  
+  Uso de componentes atómicos y reutilizables, facilitando la escalabilidad y el mantenimiento.
+- **Optimización:**  
+  Implementación de técnicas como code splitting, lazy loading y caché inteligente.
+
+### Backend
+- **API RESTful:**  
+  Endpoints organizados para usuarios, contratos, suplementos, empresas, notificaciones y estadísticas.
+- **Lógica de Negocio:**  
+  Manejo automático de estados, validación exhaustiva con Zod y control centralizado de errores.
+- **Seguridad:**  
+  Autenticación basada en JWT, control de roles y protección de endpoints críticos.
+
+---
+
+## Instalación y Configuración
+
+### Requisitos
+- Node.js (versión LTS recomendada)
+- npm o yarn
+- SQLite (para el backend)
+
+### Pasos de Instalación
+
+1. **Clonar el repositorio:**
+   ```bash
+   git clone https://github.com/tu_usuario/pacta.git
+   cd pacta
+   ```
+
+2. **Instalar dependencias:**
+   - **Backend:**
+     ```bash
+     cd backend
+     npm install
+     ```
+   - **Frontend:**
+     ```bash
+     cd ../frontend
+     npm install
+     ```
+
+3. **Configurar variables de entorno:**
+   - Revisa los archivos `.env.example` y configura tus variables en cada carpeta (backend y frontend).
+
+4. **Ejecutar la aplicación:**
+   - **Backend:**
+     ```bash
+     npm run dev
+     ```
+   - **Frontend:**
+     ```bash
+     npm run dev
+     ```
+
+---
+
+## Uso
+
+Una vez iniciada la aplicación:
+- **Dashboard:** Visualiza estadísticas, gráficos interactivos y accede a acciones rápidas.
+- **Contratos:** Gestiona, filtra y busca contratos con facilidad.
+- **Estadísticas:** Accede a análisis detallados, tendencias y reportes exportables.
+- **Perfil:** Administra tu información personal y configura las notificaciones y la seguridad.
+
+---
+
+## Desarrollo
+
+Para contribuir o personalizar la aplicación, consulta el archivo [desarrollo_de_pacta.txt](./docs/desarrollo_de_pacta.txt) que contiene el análisis profundo, cronograma y recomendaciones técnicas.
+
+**Puntos clave:**
+- Sigue las mejores prácticas de desarrollo y actualiza regularmente las dependencias.
+- Realiza pruebas unitarias y de integración para mantener la estabilidad.
+- Utiliza herramientas de monitoreo para detectar y resolver problemas en producción.
+
+---
+
+## Contribución
+
+¡Las contribuciones son bienvenidas! Para colaborar:
+
+1. Realiza un fork del repositorio.
+2. Crea una rama con tu feature o corrección:
+   ```bash
+   git checkout -b feature/nueva-funcionalidad
+   ```
+3. Realiza tus cambios y haz commit:
+   ```bash
+   git commit -m 'Agregar nueva funcionalidad'
+   ```
+4. Haz push a tu rama:
+   ```bash
+   git push origin feature/nueva-funcionalidad
+   ```
+5. Abre un Pull Request.
+
+Consulta el archivo [CONTRIBUTING.md](CONTRIBUTING.md) para más detalles sobre el proceso de contribución.
+
+---
+
+## Licencia
+
+Este proyecto se distribuye bajo la Licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más detalles.
+
+---
+
+## Contacto
+
+Si tienes preguntas o sugerencias, abre un issue en GitHub o contáctanos directamente.
+
+---
+
+*¡Gracias por utilizar PACTA y por contribuir a mejorar la gestión de contratos empresariales!*
