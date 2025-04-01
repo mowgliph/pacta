@@ -29,10 +29,10 @@ type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 export const LoginForm: React.FC = () => {
   const navigate = useNavigate();
-  const { login, loading, error } = useStore(
+  const { login, isLoading, error } = useStore(
     (state) => ({ 
       login: state.login, 
-      loading: state.loading, 
+      isLoading: state.isLoading, 
       error: state.error 
     })
   );
@@ -51,7 +51,7 @@ export const LoginForm: React.FC = () => {
   const onSubmit = async (values: LoginFormValues) => {
     const success = await login(values.email, values.password, values.rememberMe);
     if (success) {
-      navigate({ to: '/' }); // La ruta del dashboard es '/'
+      navigate({ to: '/_authenticated' }); // Redirigir al área autenticada
     }
   };
 
@@ -83,7 +83,7 @@ export const LoginForm: React.FC = () => {
                     placeholder="tu@correo.com" 
                     className="pl-10" 
                     {...field} 
-                    disabled={loading}
+                    disabled={isLoading}
                   />
                 </FormControl>
               </div>
@@ -106,7 +106,7 @@ export const LoginForm: React.FC = () => {
                     placeholder="********" 
                     className="pl-10 pr-10" 
                     {...field} 
-                    disabled={loading}
+                    disabled={isLoading}
                   />
                 </FormControl>
                 <Button
@@ -115,7 +115,7 @@ export const LoginForm: React.FC = () => {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 py-1 text-muted-foreground"
                   onClick={() => setShowPassword(!showPassword)}
-                  disabled={loading}
+                  disabled={isLoading}
                 >
                   {showPassword ? (
                     <IconEyeOff className="h-4 w-4" />
@@ -138,7 +138,7 @@ export const LoginForm: React.FC = () => {
                 <Checkbox
                   checked={field.value}
                   onCheckedChange={field.onChange}
-                  disabled={loading}
+                  disabled={isLoading}
                   id="rememberMe"
                 />
               </FormControl>
@@ -157,9 +157,9 @@ export const LoginForm: React.FC = () => {
         <Button 
           type="submit" 
           className="w-full mt-6 transition-all hover:shadow-md"
-          disabled={loading}
+          disabled={isLoading}
         >
-          {loading ? (
+          {isLoading ? (
             <>
               <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent"></span>
               Iniciando sesión...

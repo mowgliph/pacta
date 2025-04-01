@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { Role } from '@/types/enums';
+import { Role, UserStatus } from '@/types/enums';
+import { AuthService, LoginRequest } from '@/features/auth';
+import { ApiError } from '@/lib/api';
 
 // Types
 export type User = {
@@ -9,6 +11,10 @@ export type User = {
   firstName: string;
   lastName: string;
   role: string;
+  avatar?: string;
+  status?: UserStatus;
+  lastLogin?: string;
+  profileImage?: string;
 };
 
 export type Notification = {
@@ -28,12 +34,14 @@ type StoreState = {
   // Auth
   user: User | null;
   token: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
-  hasRole: (roles: Role[]) => boolean;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<boolean>;
+  logout: () => Promise<void>;
+  verifySession: () => Promise<void>;
+  hasRole: (roles: Role | Role[]) => boolean;
   
   // UI
   theme: 'light' | 'dark';
@@ -52,6 +60,32 @@ type StoreState = {
   clearNotifications: () => void;
 };
 
+// Helper para guardar tokens
+const saveTokens = (accessToken: string, refreshToken: string = accessToken, rememberMe: boolean = false) => {
+  const storage = rememberMe ? localStorage : sessionStorage;
+  storage.setItem('accessToken', accessToken);
+  storage.setItem('refreshToken', refreshToken);
+};
+
+// Helper para limpiar tokens
+const clearTokens = () => {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+  sessionStorage.removeItem('accessToken');
+  sessionStorage.removeItem('refreshToken');
+};
+
+// Helper para recuperar tokens
+const getStoredTokens = (): { accessToken: string | null; refreshToken: string | null } => {
+  let accessToken = localStorage.getItem('accessToken');
+  let refreshToken = localStorage.getItem('refreshToken');
+  if (!accessToken) {
+    accessToken = sessionStorage.getItem('accessToken');
+    refreshToken = sessionStorage.getItem('refreshToken');
+  }
+  return { accessToken, refreshToken };
+};
+
 // Create the store
 export const useStore = create<StoreState>()(
   persist(
@@ -59,51 +93,108 @@ export const useStore = create<StoreState>()(
       // Auth state
       user: null,
       token: null,
+      refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
       
-      login: async (email: string, password: string) => {
+      login: async (email: string, password: string, rememberMe = false) => {
         set({ isLoading: true, error: null });
         try {
-          // In a real app, this would be an API call
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // Usar el servicio de autenticación real
+          const loginData: LoginRequest = { email, password, rememberMe };
+          const response = await AuthService.login(loginData);
           
-          // Mock successful login
-          const mockUser: User = {
-            id: '1',
-            email,
-            firstName: 'John',
-            lastName: 'Doe',
-            role: 'admin'
-          };
+          // Guardar tokens
+          saveTokens(response.token, response.token, rememberMe);
           
           set({
-            user: mockUser,
-            token: 'mock-jwt-token',
+            user: response.user,
+            token: response.token,
+            refreshToken: response.token, // En algunas implementaciones puede ser diferente
             isAuthenticated: true,
             isLoading: false
           });
+          
+          return true;
         } catch (error) {
+          clearTokens();
+          const apiError = error as ApiError;
           set({
             isLoading: false,
-            error: error instanceof Error ? error.message : 'Login failed'
+            error: apiError.message || 'Error al iniciar sesión',
+            isAuthenticated: false,
+            user: null,
+            token: null,
+            refreshToken: null
+          });
+          
+          return false;
+        }
+      },
+      
+      logout: async () => {
+        set({ isLoading: true });
+        try {
+          // Llamar al servicio de logout si hay token
+          if (get().token) {
+            await AuthService.logout();
+          }
+          clearTokens();
+        } catch (error) {
+          // Ignorar errores durante el logout
+          console.error('Error durante el logout', error);
+        } finally {
+          // Limpiar el estado independientemente del resultado
+          set({
+            user: null,
+            token: null,
+            refreshToken: null,
+            isAuthenticated: false,
+            isLoading: false
           });
         }
       },
       
-      logout: () => {
-        set({
-          user: null,
-          token: null,
-          isAuthenticated: false
-        });
+      verifySession: async () => {
+        const { accessToken, refreshToken } = getStoredTokens();
+        if (!accessToken) {
+          set({ isAuthenticated: false });
+          return;
+        }
+
+        set({ isLoading: true });
+        try {
+          // Usar el servicio para verificar el token
+          const isValid = await AuthService.validateToken(accessToken);
+          
+          if (isValid) {
+            // Si el token es válido, obtener información del usuario
+            const userData = await AuthService.getCurrentUser();
+            
+            set({ 
+              user: userData,
+              token: accessToken,
+              refreshToken,
+              isLoading: false,
+              isAuthenticated: true,
+              error: null 
+            });
+          } else {
+            get().logout();
+          }
+        } catch (error) {
+          get().logout();
+          set({ isLoading: false });
+        }
       },
       
-      hasRole: (roles: Role[]) => {
+      hasRole: (roles: Role | Role[]) => {
         const { user } = get();
         if (!user) return false;
-        return roles.includes(user.role as Role);
+        
+        const rolesToCheck = Array.isArray(roles) ? roles : [roles];
+        return rolesToCheck.includes(user.role as Role);
       },
       
       // UI state
@@ -154,6 +245,7 @@ export const useStore = create<StoreState>()(
       partialize: (state) => ({
         user: state.user,
         token: state.token,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
         theme: state.theme
       })

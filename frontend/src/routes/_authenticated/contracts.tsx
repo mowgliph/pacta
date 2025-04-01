@@ -1,4 +1,4 @@
-import { ContractsListPage } from '@/features/contracts/pages/ContractsListPage'
+import { ContractsListPage } from '@/features/contracts'
 
 /**
  * Ruta para listar contratos dentro del área autenticada

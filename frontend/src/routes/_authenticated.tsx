@@ -2,6 +2,7 @@ import { Outlet, redirect } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { useStore } from '@/store'
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute'
 
 /**
  * Ruta principal para todas las páginas autenticadas
@@ -18,9 +19,11 @@ export function AuthenticatedComponent() {
   }, [])
 
   return (
-    <DashboardLayout>
-      <Outlet />
-    </DashboardLayout>
+    <ProtectedRoute>
+      <DashboardLayout>
+        <Outlet />
+      </DashboardLayout>
+    </ProtectedRoute>
   )
 }
 

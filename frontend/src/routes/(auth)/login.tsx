@@ -1,5 +1,5 @@
 import { redirect } from '@tanstack/react-router'
-import { LoginPage } from '@/features/auth/pages/LoginPage'
+import { LoginPage } from '@/features/auth'
 import { useStore } from '@/store'
 
 /**

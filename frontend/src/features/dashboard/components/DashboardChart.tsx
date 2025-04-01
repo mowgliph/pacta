@@ -1,5 +1,5 @@
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
   AreaChart, 
   Area, 
@@ -9,6 +9,8 @@ import {
   Tooltip, 
   ResponsiveContainer 
 } from 'recharts';
+import { Button } from '@/components/ui/button';
+import { IconLock } from '@tabler/icons-react';
 
 interface DashboardChartProps {
   title: string;
@@ -18,6 +20,8 @@ interface DashboardChartProps {
     data: number[];
   };
   isLoading?: boolean;
+  isPublic?: boolean;
+  onRequireAuth?: () => void;
 }
 
 export const DashboardChart: React.FC<DashboardChartProps> = ({
@@ -25,6 +29,8 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
   description,
   data,
   isLoading = false,
+  isPublic = false,
+  onRequireAuth,
 }) => {
   // Preparar datos para el gráfico
   const chartData = data?.labels.map((label, index) => ({
@@ -104,6 +110,19 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({
           </ResponsiveContainer>
         </div>
       </CardContent>
+      {isPublic && onRequireAuth && (
+        <CardFooter>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full justify-between"
+            onClick={onRequireAuth}
+          >
+            <span>Ver estadísticas detalladas</span>
+            <IconLock className="h-4 w-4 ml-2" />
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }; 

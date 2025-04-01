@@ -97,6 +97,7 @@ export function DashboardPublicPage() {
         alerts={dashboardStats.alerts}
         isLoading={isLoading}
         isPublic
+        onRequireAuth={handleRequireAuth}
       />
 
       {/* Gráfico de contratos */}
@@ -107,6 +108,7 @@ export function DashboardPublicPage() {
           data={dashboardStats.contractsStats}
           isLoading={isLoading}
           isPublic
+          onRequireAuth={handleRequireAuth}
         />
       </div>
 

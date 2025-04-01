@@ -1,5 +1,5 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout'
-import { DashboardPublicPage } from '@/features/dashboard/pages/DashboardPublicPage'
+import { DashboardPublicPage } from '@/features/dashboard'
 
 /**
  * Componente de Dashboard Público

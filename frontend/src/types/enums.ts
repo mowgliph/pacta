@@ -2,33 +2,31 @@
  * Roles de usuario definidos en el backend.
  */
 export enum Role {
-  RA = 'RA',
-  ADMIN = 'ADMIN',
-  MANAGER = 'MANAGER',
-  USER = 'USER',
-  VIEWER = 'VIEWER',
+  ADMIN = 'admin',
+  MANAGER = 'manager',
+  USER = 'user',
 }
 
 /**
  * Estados de usuario definidos en el backend.
  */
 export enum UserStatus {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
-  SUSPENDED = 'SUSPENDED',
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  PENDING = 'pending',
+  SUSPENDED = 'suspended',
 }
 
 /**
  * Estados de contrato definidos en el backend.
  */
 export enum ContractStatus {
-  DRAFT = 'DRAFT',
-  ACTIVE = 'ACTIVE',
-  EXPIRED = 'EXPIRED',
-  TERMINATED = 'TERMINATED',
-  PENDING_RENEWAL = 'PENDING_RENEWAL',
-  RENEWED = 'RENEWED',
-  ARCHIVED = 'ARCHIVED',
+  DRAFT = 'draft',
+  PENDING = 'pending',
+  ACTIVE = 'active',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+  EXPIRED = 'expired',
 }
 
 /**
@@ -50,4 +48,16 @@ export enum PaymentStatus {
   PAID = 'PAID',
   OVERDUE = 'OVERDUE',
   CANCELLED = 'CANCELLED',
+}
+
+export enum NotificationType {
+  SUCCESS = 'success',
+  ERROR = 'error',
+  WARNING = 'warning',
+  INFO = 'info',
+}
+
+export enum SortOrder {
+  ASC = 'asc',
+  DESC = 'desc',
 } 

@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { RouterProvider } from '@tanstack/react-router';
 import { router } from './routeTree.gen';
+import { AuthProvider } from './providers/AuthProvider';
 import './index.css';
 
 // Create the root element for React to render into

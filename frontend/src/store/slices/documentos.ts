@@ -1,26 +1,16 @@
 import { StateCreator } from 'zustand'
-import { apiClient } from '@/lib/api/client'
-import { AxiosError } from 'axios'
-
-interface Documento {
-  id: number
-  nombre: string
-  tipo: string
-  url: string
-  tamaño: number
-  fechaCreacion: string
-  contratoId?: number
-}
+import { ContractsService, Attachment } from '@/features/contracts'
+import { ApiError } from '@/lib/api'
 
 export interface SliceDocumentos {
-  documentos: Documento[]
-  documentoSeleccionado: Documento | null
+  documentos: Attachment[]
+  documentoSeleccionado: Attachment | null
   cargando: boolean
   error: string | null
-  subirDocumento: (archivo: File, contratoId?: number) => Promise<void>
-  eliminarDocumento: (id: number) => Promise<void>
-  obtenerDocumentos: (contratoId?: number) => Promise<void>
-  seleccionarDocumento: (documento: Documento) => void
+  subirDocumento: (archivo: File, contratoId: string) => Promise<void>
+  eliminarDocumento: (contratoId: string, id: string) => Promise<void>
+  obtenerDocumentos: (contratoId: string) => Promise<void>
+  seleccionarDocumento: (documento: Attachment) => void
 }
 
 export const crearSliceDocumentos: StateCreator<SliceDocumentos> = (set) => ({
@@ -32,39 +22,34 @@ export const crearSliceDocumentos: StateCreator<SliceDocumentos> = (set) => ({
   subirDocumento: async (archivo, contratoId) => {
     set({ cargando: true, error: null })
     try {
-      const formData = new FormData()
-      formData.append('archivo', archivo)
-      if (contratoId) formData.append('contratoId', contratoId.toString())
-
-      const { data } = await apiClient.post('/documentos', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
+      const adjunto = await ContractsService.uploadAttachment(contratoId, archivo)
 
       set((state) => ({
-        documentos: [...state.documentos, data],
+        documentos: [...state.documentos, adjunto],
         cargando: false
       }))
     } catch (error) {
-      const axiosError = error as AxiosError<{ mensaje: string }>
+      const apiError = error as ApiError
       set({ 
-        error: axiosError.response?.data?.mensaje || 'Error al subir documento',
+        error: apiError.message || 'Error al subir documento',
         cargando: false 
       })
     }
   },
 
-  eliminarDocumento: async (id) => {
+  eliminarDocumento: async (contratoId, id) => {
     set({ cargando: true, error: null })
     try {
-      await apiClient.delete(`/documentos/${id}`)
+      await ContractsService.deleteAttachment(contratoId, id)
+      
       set((state) => ({
         documentos: state.documentos.filter(doc => doc.id !== id),
         cargando: false
       }))
     } catch (error) {
-      const axiosError = error as AxiosError<{ mensaje: string }>
+      const apiError = error as ApiError
       set({ 
-        error: axiosError.response?.data?.mensaje || 'Error al eliminar documento',
+        error: apiError.message || 'Error al eliminar documento',
         cargando: false 
       })
     }
@@ -73,13 +58,16 @@ export const crearSliceDocumentos: StateCreator<SliceDocumentos> = (set) => ({
   obtenerDocumentos: async (contratoId) => {
     set({ cargando: true, error: null })
     try {
-      const url = contratoId ? `/documentos?contratoId=${contratoId}` : '/documentos'
-      const { data } = await apiClient.get(url)
-      set({ documentos: data, cargando: false })
-    } catch (error) {
-      const axiosError = error as AxiosError<{ mensaje: string }>
+      const adjuntos = await ContractsService.getContractAttachments(contratoId)
+      
       set({ 
-        error: axiosError.response?.data?.mensaje || 'Error al obtener documentos',
+        documentos: adjuntos, 
+        cargando: false 
+      })
+    } catch (error) {
+      const apiError = error as ApiError
+      set({ 
+        error: apiError.message || 'Error al obtener documentos',
         cargando: false 
       })
     }

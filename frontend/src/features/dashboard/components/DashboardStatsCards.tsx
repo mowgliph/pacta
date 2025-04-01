@@ -6,8 +6,10 @@ import {
   IconCalendarEvent, 
   IconAlertCircle,
   IconArrowUpRight,
-  IconArrowDownRight
+  IconArrowDownRight,
+  IconLock
 } from '@tabler/icons-react';
+import { Button } from '@/components/ui/button';
 
 type StatCardProps = {
   title: string;
@@ -17,6 +19,8 @@ type StatCardProps = {
   trend: 'up' | 'down' | 'neutral';
   percentage?: string;
   className?: string;
+  isPublic?: boolean;
+  onRequireAuth?: () => void;
 };
 
 const StatCard: React.FC<StatCardProps> = ({ 
@@ -26,7 +30,9 @@ const StatCard: React.FC<StatCardProps> = ({
   icon, 
   trend,
   percentage,
-  className = ''
+  className = '',
+  isPublic,
+  onRequireAuth
 }) => {
   return (
     <Card className={`overflow-hidden transition-all hover:shadow-md ${className}`}>
@@ -59,6 +65,18 @@ const StatCard: React.FC<StatCardProps> = ({
           )}
           <span className="ml-1">{description}</span>
         </div>
+        
+        {isPublic && onRequireAuth && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mt-3 w-full justify-between text-xs"
+            onClick={onRequireAuth}
+          >
+            <span>Ver detalles</span>
+            <IconLock className="h-3 w-3" />
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
@@ -70,6 +88,8 @@ interface DashboardStatsCardsProps {
   totalUsers: number;
   alerts: number;
   isLoading?: boolean;
+  isPublic?: boolean;
+  onRequireAuth?: () => void;
 }
 
 export const DashboardStatsCards: React.FC<DashboardStatsCardsProps> = ({
@@ -78,6 +98,8 @@ export const DashboardStatsCards: React.FC<DashboardStatsCardsProps> = ({
   totalUsers,
   alerts,
   isLoading = false,
+  isPublic = false,
+  onRequireAuth,
 }) => {
   // Si está cargando, mostrar un esqueleto de carga
   if (isLoading) {
@@ -141,6 +163,8 @@ export const DashboardStatsCards: React.FC<DashboardStatsCardsProps> = ({
         <StatCard
           key={index}
           {...stat}
+          isPublic={isPublic}
+          onRequireAuth={onRequireAuth}
           className="transform transition-transform hover:scale-102 hover:-translate-y-1"
         />
       ))}

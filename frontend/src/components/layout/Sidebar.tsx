@@ -19,6 +19,8 @@ import {
   IconBell,
   IconLogout,
   IconCommand,
+  IconInfoCircle,
+  IconLogin
 } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -32,31 +34,57 @@ type NavLink = {
   href: string;
   badge?: number;
   roles?: Role[];
+  isPublicOnly?: boolean;
+  action?: () => void;
 };
 
 // Tipo para una sección de navegación
 type NavSection = {
   title?: string;
   links: NavLink[];
+  isPublicOnly?: boolean;
 };
 
+// Props para el NavItem
+interface NavItemProps {
+  link: NavLink;
+  collapsed: boolean;
+  isPublic?: boolean;
+  onRequireAuth?: () => void;
+}
+
 // Componente para cada enlace de navegación
-const NavItem = ({ link, collapsed }: { link: NavLink; collapsed: boolean }) => {
+const NavItem = ({ link, collapsed, isPublic, onRequireAuth }: NavItemProps) => {
   const navigate = useNavigate();
   const matchRoute = useMatchRoute();
   const isActive = matchRoute({ to: link.href });
   const { hasRole } = useStore(state => ({ hasRole: state.hasRole }));
   
-  // Si se especifican roles y el usuario no tiene ninguno, no mostrar el ítem
-  if (link.roles && link.roles.length > 0 && !hasRole(link.roles)) {
+  // Si está en modo público y el enlace no es para público, no mostrar
+  if (isPublic && !link.isPublicOnly) {
     return null;
   }
   
-  // Navegación usando el router
+  // Si no está en modo público y el enlace es solo para público, no mostrar
+  if (!isPublic && link.isPublicOnly) {
+    return null;
+  }
+  
+  // Si se especifican roles y el usuario no tiene ninguno, no mostrar el ítem
+  if (!isPublic && link.roles && link.roles.length > 0 && !hasRole(link.roles)) {
+    return null;
+  }
+  
+  // Función para manejar el clic
   const handleClick = () => {
-    console.log(`Navegando a: ${link.href}`);
-    // En el futuro cuando las rutas estén listas:
-    // navigate({ to: link.href });
+    if (link.action) {
+      link.action();
+    } else if (isPublic && onRequireAuth && !link.isPublicOnly) {
+      onRequireAuth();
+    } else {
+      console.log(`Navegando a: ${link.href}`);
+      navigate({ to: link.href });
+    }
   };
 
   const navItem = (
@@ -116,14 +144,14 @@ const NavItem = ({ link, collapsed }: { link: NavLink; collapsed: boolean }) => 
   return navItem;
 };
 
-// Secciones de navegación
+// Secciones de navegación privadas
 const navSections: NavSection[] = [
   {
     links: [
       {
         title: "Dashboard",
         icon: <IconDashboard className="h-5 w-5" />,
-        href: "/dashboard",
+        href: "/",
       },
     ]
   },
@@ -133,18 +161,18 @@ const navSections: NavSection[] = [
       {
         title: "Contratos",
         icon: <IconFileDescription className="h-5 w-5" />,
-        href: "/contracts",
+        href: "/_authenticated/contracts",
         badge: 3,
       },
       {
         title: "Suplementos",
         icon: <IconClipboardList className="h-5 w-5" />,
-        href: "/supplements",
+        href: "/_authenticated/supplements",
       },
       {
         title: "Empresas",
         icon: <IconBuildingSkyscraper className="h-5 w-5" />,
-        href: "/companies",
+        href: "/_authenticated/companies",
       },
     ]
   },
@@ -154,13 +182,13 @@ const navSections: NavSection[] = [
       {
         title: "Usuarios",
         icon: <IconUsers className="h-5 w-5" />,
-        href: "/users",
+        href: "/_authenticated/users",
         roles: [Role.ADMIN],
       },
       {
         title: "Notificaciones",
         icon: <IconBell className="h-5 w-5" />,
-        href: "/notifications",
+        href: "/_authenticated/notifications",
         badge: 5,
       },
     ]
@@ -171,20 +199,55 @@ const navSections: NavSection[] = [
       {
         title: "Estadísticas",
         icon: <IconReportAnalytics className="h-5 w-5" />,
-        href: "/statistics",
+        href: "/_authenticated/statistics",
       },
       {
         title: "Configuración",
         icon: <IconSettings className="h-5 w-5" />,
-        href: "/settings",
+        href: "/_authenticated/settings",
       },
     ]
   }
 ];
 
-export function Sidebar() {
+// Secciones de navegación públicas
+const publicNavSections: NavSection[] = [
+  {
+    links: [
+      {
+        title: "Panel principal",
+        icon: <IconDashboard className="h-5 w-5" />,
+        href: "/",
+        isPublicOnly: true,
+      },
+    ]
+  },
+  {
+    title: "Acceso",
+    links: [
+      {
+        title: "Iniciar sesión",
+        icon: <IconLogin className="h-5 w-5" />,
+        href: "/(auth)/login",
+        isPublicOnly: true,
+      },
+      {
+        title: "Acerca de PACTA",
+        icon: <IconInfoCircle className="h-5 w-5" />,
+        href: "/about",
+        isPublicOnly: true,
+      }
+    ]
+  }
+];
+
+export function Sidebar({ isPublic = false }: { isPublic?: boolean }) {
+  const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
-  const { user } = useStore(state => ({ user: state.user }));
+  const { user, logout } = useStore(state => ({ 
+    user: state.user,
+    logout: state.logout
+  }));
   const commandK = useStore(state => state.commandK);
 
   // Efecto para escuchar el atajo de teclado para colapsar/expandir sidebar
@@ -206,6 +269,22 @@ export function Sidebar() {
       commandK.toggle();
     }
   };
+  
+  // Redirigir al login cuando se requiera autenticación
+  const handleRequireAuth = () => {
+    navigate({ to: '/(auth)/login' });
+  };
+
+  // Cerrar sesión
+  const handleLogout = () => {
+    if (logout) {
+      logout();
+      navigate({ to: '/' });
+    }
+  };
+
+  // Determinar qué secciones de navegación mostrar
+  const sectionsToShow = isPublic ? publicNavSections : navSections;
 
   return (
     <aside 
@@ -231,7 +310,7 @@ export function Sidebar() {
       </div>
 
       <ScrollArea className="flex-1 px-2 py-2">
-        {navSections.map((section, idx) => (
+        {sectionsToShow.map((section, idx) => (
           <div key={idx} className="py-2">
             {section.title && !collapsed && (
               <h2 className="px-3 py-2 text-xs font-semibold text-muted-foreground">
@@ -243,64 +322,86 @@ export function Sidebar() {
             )}
             <div className="space-y-1">
               {section.links.map((link, linkIdx) => (
-                <NavItem key={linkIdx} link={link} collapsed={collapsed} />
+                <NavItem 
+                  key={linkIdx} 
+                  link={link} 
+                  collapsed={collapsed} 
+                  isPublic={isPublic}
+                  onRequireAuth={handleRequireAuth}
+                />
               ))}
             </div>
           </div>
         ))}
       </ScrollArea>
 
-      <div className="mt-auto border-t border-border p-3 space-y-2">
-        <Button
-          variant="outline" 
-          className={cn(
-            "w-full text-muted-foreground hover:text-foreground hover:bg-accent/50 flex items-center gap-2",
-            collapsed ? "justify-center px-0" : "justify-start"
-          )}
-          onClick={handleCommandK}
-        >
-          <IconCommand className="h-5 w-5" />
-          {!collapsed && <span>Búsqueda global</span>}
-          {!collapsed && (
-            <kbd className="ml-auto pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium sm:flex">
-              Ctrl+K
-            </kbd>
-          )}
-        </Button>
+      {!isPublic ? (
+        <div className="mt-auto border-t border-border p-3 space-y-2">
+          <Button
+            variant="outline" 
+            className={cn(
+              "w-full text-muted-foreground hover:text-foreground hover:bg-accent/50 flex items-center gap-2",
+              collapsed ? "justify-center px-0" : "justify-start"
+            )}
+            onClick={handleCommandK}
+          >
+            <IconCommand className="h-5 w-5" />
+            {!collapsed && <span>Búsqueda global</span>}
+            {!collapsed && (
+              <kbd className="ml-auto pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium sm:flex">
+                Ctrl+K
+              </kbd>
+            )}
+          </Button>
 
-        <div
-          className={cn(
-            'flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent/50 cursor-pointer transition-colors',
-            collapsed ? 'justify-center' : 'justify-start'
-          )}
-        >
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-            {user?.firstName?.charAt(0) || ''}
-            {user?.lastName?.charAt(0) || ''}
-          </div>
-          {!collapsed && (
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">
-                {user?.firstName} {user?.lastName}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {user?.role || 'Usuario'}
-              </p>
+          <div
+            className={cn(
+              'flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent/50 cursor-pointer transition-colors',
+              collapsed ? 'justify-center' : 'justify-start'
+            )}
+          >
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+              {user?.firstName?.charAt(0) || ''}
+              {user?.lastName?.charAt(0) || ''}
             </div>
-          )}
-        </div>
+            {!collapsed && (
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">
+                  {user?.firstName} {user?.lastName}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {user?.role || 'Usuario'}
+                </p>
+              </div>
+            )}
+          </div>
 
-        <Button
-          variant="ghost" 
-          className={cn(
-            "w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex items-center gap-2",
-            collapsed ? "justify-center" : "justify-start"
-          )}
-        >
-          <IconLogout className="h-5 w-5" />
-          {!collapsed && <span>Cerrar sesión</span>}
-        </Button>
-      </div>
+          <Button
+            variant="ghost" 
+            className={cn(
+              "w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex items-center gap-2",
+              collapsed ? "justify-center" : "justify-start"
+            )}
+            onClick={handleLogout}
+          >
+            <IconLogout className="h-5 w-5" />
+            {!collapsed && <span>Cerrar sesión</span>}
+          </Button>
+        </div>
+      ) : (
+        <div className="mt-auto border-t border-border p-3">
+          <Button
+            className={cn(
+              "w-full flex items-center gap-2",
+              collapsed ? "justify-center px-0" : "justify-start"
+            )}
+            onClick={handleRequireAuth}
+          >
+            <IconLogin className="h-5 w-5" />
+            {!collapsed && <span>Iniciar Sesión</span>}
+          </Button>
+        </div>
+      )}
     </aside>
   );
 } 

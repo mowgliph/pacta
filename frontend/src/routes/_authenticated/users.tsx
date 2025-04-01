@@ -1,4 +1,4 @@
-import { UsersListPage } from '@/features/users/pages/UsersListPage'
+import { UsersListPage } from '@/features/users'
 
 /**
  * Ruta para gestionar usuarios dentro del área autenticada

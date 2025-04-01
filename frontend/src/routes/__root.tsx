@@ -3,7 +3,7 @@ import { Outlet } from '@tanstack/react-router'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { ThemeProvider } from '@/components/theme/ThemeProvider'
 import { NotificationProvider } from '@/components/notifications/NotificationProvider'
-import { AuthProvider } from '@/features/auth/providers/AuthProvider'
+import { AuthProvider } from '@/features/auth/components/AuthProvider'
 
 // Componente para errores generales
 function GeneralError() {
