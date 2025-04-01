@@ -1,8 +1,14 @@
-import { ContractsListPage } from '@/features/contracts'
+import { createFileRoute } from "@tanstack/react-router";
+import { ContractsLayout } from "@/features/contracts/layouts/ContractsLayout";
 
 /**
- * Ruta para listar contratos dentro del área autenticada
+ * Ruta para la sección de contratos en la aplicación
  */
-export function ContractsComponent() {
-  return <ContractsListPage />
-} 
+export const Route = createFileRoute("/_authenticated/contracts")({
+  component: ContractsLayout,
+})
+
+/**
+ * Ruta para listar contratos
+ */
+export const ContractsComponent = ContractsListPage 

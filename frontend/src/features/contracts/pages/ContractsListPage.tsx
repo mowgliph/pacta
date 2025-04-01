@@ -1,77 +1,102 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import React, { useState, useEffect } from 'react'
+import { Link, useNavigate } from '@tanstack/react-router'
+import { 
+  IconPlus,
+  IconSearch, 
+  IconFilter, 
+  IconArrowsSort 
+} from '@tabler/icons-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { ContractsService, type Contract } from '../services/contracts-service'
+import { ContractList } from '../components/ContractList'
 
 /**
- * Página que muestra la lista de contratos disponibles
- * con filtros y opciones de acción
+ * Página principal para mostrar la lista de contratos
  */
-export function ContractsListPage() {
+export const ContractsListPage: React.FC = () => {
+  const navigate = useNavigate()
+  const [isLoading, setIsLoading] = useState(false)
+  const [contracts, setContracts] = useState<Contract[]>([])
+  const [searchTerm, setSearchTerm] = useState('')
+  
+  // Cargar contratos al montar el componente
+  useEffect(() => {
+    const loadContracts = async () => {
+      setIsLoading(true)
+      try {
+        const response = await ContractsService.getContracts({
+          search: searchTerm,
+          page: 1,
+          limit: 20
+        })
+        setContracts(response.data)
+      } catch (error) {
+        console.error('Error al cargar los contratos:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    
+    loadContracts()
+  }, [searchTerm])
+  
+  // Manejar la búsqueda
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    // La búsqueda ya se ejecuta mediante el useEffect cuando cambia searchTerm
+  }
+  
+  // Navegar a la página de crear contrato
+  const handleCreateContract = () => {
+    navigate({ to: '/_authenticated/contracts/create' })
+  }
+  
   return (
-    <div className="flex flex-col gap-5 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Contratos</h1>
-        <Button>Crear contrato</Button>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Contratos</h1>
+        <Button 
+          onClick={handleCreateContract} 
+          className="gap-2"
+        >
+          <IconPlus size={16} />
+          <span>Nuevo contrato</span>
+        </Button>
       </div>
-
-      <Tabs defaultValue="active" className="w-full">
-        <TabsList>
-          <TabsTrigger value="active">Activos</TabsTrigger>
-          <TabsTrigger value="pending">Pendientes</TabsTrigger>
-          <TabsTrigger value="expired">Expirados</TabsTrigger>
-        </TabsList>
-        <TabsContent value="active" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Contratos activos</CardTitle>
-              <CardDescription>
-                Lista de todos los contratos actualmente vigentes.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
-                <div className="p-8 text-center">
-                  No hay contratos activos por el momento.
-                </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Lista de contratos</CardTitle>
+          <div className="flex gap-2 items-center">
+            <form onSubmit={handleSearch} className="flex-1">
+              <div className="relative w-full">
+                <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
+                <Input 
+                  type="search"
+                  placeholder="Buscar contratos..." 
+                  className="w-full pl-9"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="pending" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Contratos pendientes</CardTitle>
-              <CardDescription>
-                Lista de contratos en espera de aprobación.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
-                <div className="p-8 text-center">
-                  No hay contratos pendientes por el momento.
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="expired" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Contratos expirados</CardTitle>
-              <CardDescription>
-                Lista de contratos que han caducado.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="rounded-md border">
-                <div className="p-8 text-center">
-                  No hay contratos expirados por el momento.
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </form>
+            <Button size="icon" variant="outline" title="Filtrar resultados">
+              <IconFilter size={16} />
+            </Button>
+            <Button size="icon" variant="outline" title="Ordenar">
+              <IconArrowsSort size={16} />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ContractList 
+            contracts={contracts} 
+            isLoading={isLoading} 
+          />
+        </CardContent>
+      </Card>
     </div>
   )
 } 

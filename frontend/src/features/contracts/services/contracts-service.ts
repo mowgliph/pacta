@@ -5,6 +5,7 @@ export type Contract = {
   id: string;
   name: string;
   description?: string;
+  contractNumber: string;  // Número único de contrato
   companyId: string;
   companyName: string;
   startDate: string;
@@ -17,6 +18,10 @@ export type Contract = {
   attachments?: Attachment[];
   supplements?: Supplement[];
   tags?: string[];
+  type: 'client' | 'provider';  // Tipo de contrato: cliente o proveedor
+  authorizedBy?: string;  // Persona que autoriza
+  signatures?: string[];  // Firmas del contrato
+  additionalInfo?: Record<string, any>;  // Información adicional flexible
 }
 
 // Tipo para adjuntos
@@ -35,6 +40,8 @@ export type Supplement = {
   name: string;
   description?: string;
   effectiveDate: string;
+  contractId: string;
+  documentUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -50,6 +57,8 @@ export type ContractSearchParams = {
   search?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
+  type?: 'client' | 'provider';  // Filtro por tipo de contrato
+  contractNumber?: string;  // Búsqueda por número de contrato
 }
 
 // Respuesta paginada de contratos
@@ -65,6 +74,7 @@ export type ContractsResponse = {
 export type CreateContractData = {
   name: string;
   description?: string;
+  contractNumber: string;
   companyId: string;
   startDate: string;
   endDate: string;
@@ -72,6 +82,19 @@ export type CreateContractData = {
   value: number;
   currency: string;
   tags?: string[];
+  type: 'client' | 'provider';
+  authorizedBy?: string;
+  signatures?: string[];
+  additionalInfo?: Record<string, any>;
+}
+
+// Datos para crear un suplemento
+export type CreateSupplementData = {
+  name: string;
+  description?: string;
+  effectiveDate: string;
+  contractId: string;
+  documentFile?: File;
 }
 
 /**
@@ -89,18 +112,52 @@ export const ContractsService = {
    */
   getContract: (id: string) => 
     api.get<Contract>(`/contracts/${id}`),
+
+  /**
+   * Busca un contrato por número
+   */
+  findContractByNumber: (contractNumber: string) =>
+    api.get<Contract[]>(`/contracts/search`, { params: { contractNumber } }),
   
   /**
    * Crea un nuevo contrato
    */
-  createContract: (data: CreateContractData) => 
-    api.post<Contract>('/contracts', data),
+  createContract: (data: CreateContractData, documentFile?: File) => {
+    const formData = new FormData();
+    
+    // Añadir los datos del contrato como JSON
+    formData.append('data', JSON.stringify(data));
+    
+    // Añadir el archivo si existe
+    if (documentFile) {
+      formData.append('document', documentFile);
+    }
+    
+    return api.post<Contract>('/contracts', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
   
   /**
    * Actualiza un contrato existente
    */
-  updateContract: (id: string, data: Partial<CreateContractData>) => 
-    api.put<Contract>(`/contracts/${id}`, data),
+  updateContract: (id: string, data: Partial<CreateContractData>, documentFile?: File) => {
+    if (documentFile) {
+      const formData = new FormData();
+      formData.append('data', JSON.stringify(data));
+      formData.append('document', documentFile);
+      
+      return api.put<Contract>(`/contracts/${id}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    } else {
+      return api.put<Contract>(`/contracts/${id}`, data);
+    }
+  },
   
   /**
    * Elimina un contrato
@@ -143,6 +200,59 @@ export const ContractsService = {
   /**
    * Crea un nuevo suplemento para un contrato
    */
-  createSupplement: (contractId: string, data: Partial<Supplement>) => 
-    api.post<Supplement>(`/contracts/${contractId}/supplements`, data),
+  createSupplement: (contractId: string, data: CreateSupplementData) => {
+    const formData = new FormData();
+    
+    // Añadir los datos del suplemento como JSON
+    formData.append('data', JSON.stringify(data));
+    
+    // Añadir el archivo si existe
+    if (data.documentFile) {
+      formData.append('document', data.documentFile);
+    }
+    
+    return api.post<Supplement>(`/contracts/${contractId}/supplements`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  /**
+   * Obtiene un suplemento por su ID
+   */
+  getSupplement: (contractId: string, supplementId: string) => 
+    api.get<Supplement>(`/contracts/${contractId}/supplements/${supplementId}`),
+
+  /**
+   * Actualiza un suplemento existente
+   */
+  updateSupplement: (contractId: string, supplementId: string, data: Partial<CreateSupplementData>) => {
+    if (data.documentFile) {
+      const formData = new FormData();
+      const { documentFile, ...restData } = data;
+      formData.append('data', JSON.stringify(restData));
+      formData.append('document', documentFile);
+      
+      return api.put<Supplement>(`/contracts/${contractId}/supplements/${supplementId}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    } else {
+      return api.put<Supplement>(`/contracts/${contractId}/supplements/${supplementId}`, data);
+    }
+  },
+
+  /**
+   * Elimina un suplemento
+   */
+  deleteSupplement: (contractId: string, supplementId: string) => 
+    api.delete(`/contracts/${contractId}/supplements/${supplementId}`),
+
+  /**
+   * Búsqueda avanzada de contratos
+   */
+  advancedSearch: (params: ContractSearchParams) =>
+    api.get<ContractsResponse>('/contracts/advanced-search', { params }),
 }; 
