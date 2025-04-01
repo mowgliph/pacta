@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useMatchRoute } from '@tanstack/react-router';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
@@ -14,175 +14,263 @@ import {
   IconChevronLeft,
   IconFileDescription,
   IconBuildingSkyscraper,
+  IconClipboardList,
+  IconCalendarEvent,
+  IconBell,
+  IconLogout,
+  IconCommand,
 } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
-interface NavItemProps {
-  to: string;
-  icon: React.ReactNode;
-  label: string;
-  expanded: boolean;
-  roles?: Role[];
-}
-
-interface SidebarProps {
-  onToggle: (expanded: boolean) => void;
-}
-
-const NavItem: React.FC<NavItemProps> = ({
-  to,
-  icon,
-  label,
-  expanded,
-  roles,
-}) => {
-  const navigate = useNavigate();
-  const matchRoute = useMatchRoute();
-  const isActive = matchRoute({ to });
-  const { hasRole } = useStore(state => ({ hasRole: state.hasRole }));
-  
-  // Si se especifican roles y el usuario no tiene ninguno, no mostrar el ítem
-  if (roles && roles.length > 0 && !hasRole(roles)) {
-    return null;
-  }
-  
-  // Usar onClick en lugar de Link para evitar problemas con rutas no definidas
-  const handleClick = () => {
-    navigate({ to });
-  };
-
-  return (
-    <button
-      onClick={handleClick}
-      className={cn(
-        'group flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200',
-        isActive
-          ? 'bg-primary text-primary-foreground'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-      )}
-    >
-      <span className="flex h-5 w-5 items-center justify-center">
-        {icon}
-      </span>
-      <span
-        className={cn(
-          'line-clamp-1 text-left transition-all duration-200',
-          expanded ? 'opacity-100' : 'w-0 opacity-0'
-        )}
-      >
-        {label}
-      </span>
-    </button>
-  );
-};
-
-type SidebarLink = {
+// Tipos para los enlaces de navegación
+type NavLink = {
   title: string;
   icon: React.ReactNode;
   href: string;
   badge?: number;
+  roles?: Role[];
 };
 
-const mainLinks: SidebarLink[] = [
-  {
-    title: "Dashboard",
-    icon: <IconDashboard className="h-5 w-5" />,
-    href: "/dashboard",
-  },
-  {
-    title: "Contracts",
-    icon: <IconFileDescription className="h-5 w-5" />,
-    href: "/contracts",
-    badge: 3,
-  },
-  {
-    title: "Companies",
-    icon: <IconBuildingSkyscraper className="h-5 w-5" />,
-    href: "/companies",
-  },
-  {
-    title: "Users",
-    icon: <IconUsers className="h-5 w-5" />,
-    href: "/users",
-  },
-];
+// Tipo para una sección de navegación
+type NavSection = {
+  title?: string;
+  links: NavLink[];
+};
 
-const bottomLinks: SidebarLink[] = [
+// Componente para cada enlace de navegación
+const NavItem = ({ link, collapsed }: { link: NavLink; collapsed: boolean }) => {
+  const navigate = useNavigate();
+  const matchRoute = useMatchRoute();
+  const isActive = matchRoute({ to: link.href });
+  const { hasRole } = useStore(state => ({ hasRole: state.hasRole }));
+  
+  // Si se especifican roles y el usuario no tiene ninguno, no mostrar el ítem
+  if (link.roles && link.roles.length > 0 && !hasRole(link.roles)) {
+    return null;
+  }
+  
+  // Navegación usando el router
+  const handleClick = () => {
+    console.log(`Navegando a: ${link.href}`);
+    // En el futuro cuando las rutas estén listas:
+    // navigate({ to: link.href });
+  };
+
+  const navItem = (
+    <button
+      onClick={handleClick}
+      className={cn(
+        'group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-all duration-200',
+        isActive
+          ? 'bg-primary text-primary-foreground'
+          : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+      )}
+    >
+      <div className="flex items-center gap-3">
+        <span className="flex h-5 w-5 items-center justify-center shrink-0">
+          {link.icon}
+        </span>
+        <span
+          className={cn(
+            'line-clamp-1 text-left transition-all duration-200',
+            collapsed ? 'w-0 opacity-0' : 'opacity-100'
+          )}
+        >
+          {link.title}
+        </span>
+      </div>
+      
+      {link.badge && !collapsed && (
+        <span className="rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+          {link.badge}
+        </span>
+      )}
+      
+      {link.badge && collapsed && (
+        <span className="absolute right-2 top-1 h-2 w-2 rounded-full bg-primary"></span>
+      )}
+    </button>
+  );
+
+  if (collapsed) {
+    return (
+      <TooltipProvider>
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>{navItem}</TooltipTrigger>
+          <TooltipContent side="right" className="font-medium">
+            {link.title}
+            {link.badge && (
+              <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
+                {link.badge}
+              </span>
+            )}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return navItem;
+};
+
+// Secciones de navegación
+const navSections: NavSection[] = [
   {
-    title: "Settings",
-    icon: <IconSettings className="h-5 w-5" />,
-    href: "/settings",
+    links: [
+      {
+        title: "Dashboard",
+        icon: <IconDashboard className="h-5 w-5" />,
+        href: "/dashboard",
+      },
+    ]
   },
+  {
+    title: "Gestión",
+    links: [
+      {
+        title: "Contratos",
+        icon: <IconFileDescription className="h-5 w-5" />,
+        href: "/contracts",
+        badge: 3,
+      },
+      {
+        title: "Suplementos",
+        icon: <IconClipboardList className="h-5 w-5" />,
+        href: "/supplements",
+      },
+      {
+        title: "Empresas",
+        icon: <IconBuildingSkyscraper className="h-5 w-5" />,
+        href: "/companies",
+      },
+    ]
+  },
+  {
+    title: "Administración",
+    links: [
+      {
+        title: "Usuarios",
+        icon: <IconUsers className="h-5 w-5" />,
+        href: "/users",
+        roles: [Role.ADMIN],
+      },
+      {
+        title: "Notificaciones",
+        icon: <IconBell className="h-5 w-5" />,
+        href: "/notifications",
+        badge: 5,
+      },
+    ]
+  },
+  {
+    title: "Sistema",
+    links: [
+      {
+        title: "Estadísticas",
+        icon: <IconReportAnalytics className="h-5 w-5" />,
+        href: "/statistics",
+      },
+      {
+        title: "Configuración",
+        icon: <IconSettings className="h-5 w-5" />,
+        href: "/settings",
+      },
+    ]
+  }
 ];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const { user } = useStore(state => ({ user: state.user }));
+  const commandK = useStore(state => state.commandK);
+
+  // Efecto para escuchar el atajo de teclado para colapsar/expandir sidebar
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'b' && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        setCollapsed(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Abrir el CommandK (búsqueda global)
+  const handleCommandK = () => {
+    if (commandK?.toggle) {
+      commandK.toggle();
+    }
+  };
 
   return (
     <aside 
       className={cn(
-        "fixed left-0 top-0 z-10 flex h-screen flex-col border-r border-border bg-card text-card-foreground transition-all duration-300",
+        "fixed left-0 top-0 z-20 flex h-screen flex-col border-r border-border bg-card text-card-foreground transition-all duration-300",
         collapsed ? "w-16" : "w-64"
       )}
     >
       <div className="flex h-16 items-center justify-between border-b border-border px-4">
-        <h1 className={cn("text-xl font-bold transition-opacity", collapsed ? "opacity-0 w-0" : "opacity-100")}>
-          PACTA
+        <h1 className={cn("text-xl font-bold transition-opacity flex items-center gap-2", 
+          collapsed ? "opacity-0 w-0" : "opacity-100"
+        )}>
+          <span className="text-primary">P</span>ACTA
         </h1>
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="rounded-md p-1 hover:bg-accent text-muted-foreground hover:text-accent-foreground"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? "Expandir menú" : "Contraer menú"}
+          title={`${collapsed ? "Expandir" : "Contraer"} (Ctrl+B)`}
         >
           {collapsed ? <IconChevronRight className="h-5 w-5" /> : <IconChevronLeft className="h-5 w-5" />}
         </button>
       </div>
 
-      <nav className="flex flex-1 flex-col justify-between p-2">
-        <div className="space-y-1">
-          {mainLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-            >
-              {link.icon}
-              <span className={cn("transition-opacity", collapsed ? "opacity-0 w-0" : "opacity-100")}>
-                {link.title}
-              </span>
-              {link.badge && !collapsed && (
-                <span className="ml-auto rounded-full bg-primary px-2 py-0.5 text-xs text-primary-foreground">
-                  {link.badge}
-                </span>
-              )}
-              {link.badge && collapsed && (
-                <span className="absolute right-2 top-1 h-2 w-2 rounded-full bg-primary"></span>
-              )}
-            </a>
-          ))}
-        </div>
+      <ScrollArea className="flex-1 px-2 py-2">
+        {navSections.map((section, idx) => (
+          <div key={idx} className="py-2">
+            {section.title && !collapsed && (
+              <h2 className="px-3 py-2 text-xs font-semibold text-muted-foreground">
+                {section.title}
+              </h2>
+            )}
+            {section.title && collapsed && idx > 0 && (
+              <Separator className="mx-auto my-2 w-4/5" />
+            )}
+            <div className="space-y-1">
+              {section.links.map((link, linkIdx) => (
+                <NavItem key={linkIdx} link={link} collapsed={collapsed} />
+              ))}
+            </div>
+          </div>
+        ))}
+      </ScrollArea>
 
-        <div className="space-y-1">
-          {bottomLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-            >
-              {link.icon}
-              <span className={cn("transition-opacity", collapsed ? "opacity-0 w-0" : "opacity-100")}>
-                {link.title}
-              </span>
-            </a>
-          ))}
-        </div>
-      </nav>
+      <div className="mt-auto border-t border-border p-3 space-y-2">
+        <Button
+          variant="outline" 
+          className={cn(
+            "w-full text-muted-foreground hover:text-foreground hover:bg-accent/50 flex items-center gap-2",
+            collapsed ? "justify-center px-0" : "justify-start"
+          )}
+          onClick={handleCommandK}
+        >
+          <IconCommand className="h-5 w-5" />
+          {!collapsed && <span>Búsqueda global</span>}
+          {!collapsed && (
+            <kbd className="ml-auto pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium sm:flex">
+              Ctrl+K
+            </kbd>
+          )}
+        </Button>
 
-      <div className="mt-auto border-t p-3">
         <div
           className={cn(
-            'flex items-center gap-3 rounded-md px-3 py-2',
+            'flex items-center gap-3 rounded-md px-3 py-2 hover:bg-accent/50 cursor-pointer transition-colors',
             collapsed ? 'justify-center' : 'justify-start'
           )}
         >
@@ -196,11 +284,22 @@ export function Sidebar() {
                 {user?.firstName} {user?.lastName}
               </p>
               <p className="truncate text-xs text-muted-foreground">
-                {user?.role}
+                {user?.role || 'Usuario'}
               </p>
             </div>
           )}
         </div>
+
+        <Button
+          variant="ghost" 
+          className={cn(
+            "w-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 flex items-center gap-2",
+            collapsed ? "justify-center" : "justify-start"
+          )}
+        >
+          <IconLogout className="h-5 w-5" />
+          {!collapsed && <span>Cerrar sesión</span>}
+        </Button>
       </div>
     </aside>
   );

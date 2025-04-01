@@ -1,5 +1,5 @@
 import { DashboardLayout } from "./components/layout/DashboardLayout";
-import { ThemeProvider } from "./components/ThemeProvider";
+import { ThemeProvider } from "./components/theme-provider";
 import { NotificationProvider } from "./components/ui/NotificationContainer";
 import { AuthProvider } from "./components/auth/AuthProvider";
 

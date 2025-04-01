@@ -28,7 +28,7 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
-      'no-console': 'error',
+      'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',
@@ -42,6 +42,15 @@ export default tseslint.config(
           ignoreRestSiblings: true,
         },
       ],
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        { prefer: 'type-imports', fixStyle: 'inline-type-imports' },
+      ],
+      '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
+      'prefer-const': 'error',
+      'no-duplicate-imports': 'error',
+      'eqeqeq': ['error', 'always'],
     },
   }
 )

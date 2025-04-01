@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
-import { useStore } from '@/store';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
+import { useStore } from '@/store';
 import { 
   IconBell, 
-  IconMoon, 
-  IconSun, 
   IconSearch, 
-  IconUserCircle, 
-  IconChevronDown 
+  IconUser,
+  IconSettings,
+  IconLogout,
+  IconHelpCircle,
+  IconCommand,
+  IconHexagonLetterP,
+  IconMenu2,
+  IconLogin
 } from "@tabler/icons-react";
 import { Button } from '@/components/ui/button';
 import {
@@ -18,105 +22,220 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from "../ui/ThemeToggle";
+import { Badge } from '../ui/badge';
+import { Separator } from '../ui/separator';
 
 interface HeaderProps {
   sidebarCollapsed?: boolean;
+  onToggleSidebar?: () => void;
+  isPublic?: boolean;
 }
 
-export function Header({ sidebarCollapsed = false }: HeaderProps) {
+export function Header({ sidebarCollapsed = false, onToggleSidebar, isPublic = false }: HeaderProps) {
   const navigate = useNavigate();
-  const { logout, user } = useStore(state => ({
+  const { logout, user, commandK } = useStore(state => ({
     logout: state.logout,
     user: state.user,
+    commandK: state.commandK,
   }));
 
-  const [theme, setTheme] = React.useState<'light' | 'dark'>('light');
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  // Estado para detectar el scroll
+  const [scrolled, setScrolled] = useState(false);
 
-  const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
-    // Aquí iría la lógica real para cambiar el tema
+  // Efecto para detectar el scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      const offset = window.scrollY;
+      setScrolled(offset > 10);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Abrir el CommandK (búsqueda global)
+  const openCommandK = () => {
+    if (commandK?.toggle) {
+      commandK.toggle();
+    }
   };
 
-  const handleProfileClick = () => {
-    navigate({ to: '/' }); // Dashboard es '/'
+  // Navegar al login
+  const handleLogin = () => {
+    navigate({ to: '/(auth)/login' });
   };
 
-  const handleSettingsClick = () => {
-    navigate({ to: '/' }); // Dashboard es '/'
-  };
-
-  if (!user) return null;
+  // Mock para notificaciones no leídas
+  const unreadNotifications = 3;
 
   return (
-    <header className={cn(
-      "fixed top-0 right-0 z-10 flex h-16 items-center justify-between border-b border-border bg-background px-4 transition-all duration-300",
-      sidebarCollapsed ? "left-16" : "left-64"
-    )}>
-      <div className="flex items-center gap-2">
-        <div className={cn(
-          "relative flex items-center rounded-md border border-input bg-background transition-all duration-200",
-          searchFocused ? "w-96 ring-2 ring-ring" : "w-64"
-        )}>
-          <IconSearch className="ml-2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search..."
-            className="w-full bg-transparent px-3 py-2 text-sm outline-none placeholder:text-muted-foreground"
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
-          />
+    <header 
+      className={cn(
+        "fixed top-0 right-0 z-10 flex h-16 items-center justify-between border-b border-border transition-all duration-300",
+        scrolled ? "bg-background/95 backdrop-blur-sm shadow-sm" : "bg-background",
+        sidebarCollapsed ? "left-16" : "left-64"
+      )}
+    >
+      <div className="flex items-center gap-4 px-4">
+        {/* Botón de menú para dispositivos móviles */}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="md:hidden"
+          onClick={onToggleSidebar}
+        >
+          <IconMenu2 className="h-5 w-5" />
+        </Button>
+        
+        {/* Logo para mobile */}
+        <div className="mr-2 md:hidden">
+          <IconHexagonLetterP className="h-8 w-8 text-primary" />
         </div>
+
+        <Separator orientation="vertical" className="h-6 hidden md:block" />
+
+        {/* Botón de búsqueda global con atajo de teclado */}
+        <Button 
+          variant="outline" 
+          className="relative h-9 w-9 p-0 xl:h-10 xl:w-64 xl:justify-start xl:px-3 xl:py-2"
+          onClick={isPublic ? handleLogin : openCommandK}
+        >
+          <IconSearch className="h-4 w-4 xl:mr-2" />
+          <span className="hidden xl:inline-flex">Buscar...</span>
+          <kbd className="pointer-events-none absolute right-1.5 top-1.5 hidden h-6 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-xs font-medium opacity-100 xl:flex">
+            <span className="text-xs">⌘</span>K
+          </kbd>
+        </Button>
       </div>
 
-      <div className="flex items-center gap-2">
-        <ThemeToggle />
-
-        <button className="relative rounded-full p-2 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
-          <IconBell className="h-5 w-5" />
-          <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary"></span>
-        </button>
-
-        <div className="relative">
-          <button 
-            className="flex items-center gap-2 rounded-full p-1 text-foreground hover:bg-accent transition-colors"
-            onClick={() => setUserMenuOpen(!userMenuOpen)}
+      <div className="flex items-center gap-3 px-4">
+        {/* Botón de login para modo público */}
+        {isPublic ? (
+          <Button
+            size="sm"
+            onClick={handleLogin}
+            className="flex items-center gap-1"
           >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-              {user.firstName?.charAt(0) || ''}
-              {user.lastName?.charAt(0) || ''}
-            </div>
-            <span className="text-sm">{user.firstName} {user.lastName}</span>
-            <IconChevronDown className={cn(
-              "h-4 w-4 text-muted-foreground transition-transform", 
-              userMenuOpen && "rotate-180"
-            )} />
-          </button>
+            <IconLogin className="h-4 w-4" />
+            <span className="hidden md:inline">Iniciar Sesión</span>
+          </Button>
+        ) : (
+          <>
+            {/* Ayuda */}
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-muted-foreground hover:text-foreground"
+              onClick={() => console.log('Ayuda')}
+              aria-label="Ayuda"
+            >
+              <IconHelpCircle className="h-5 w-5" />
+            </Button>
 
-          {userMenuOpen && (
-            <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-md border border-border bg-card shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
-              <div className="py-1">
-                <a href="/profile" className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-accent">
-                  <IconUserCircle className="h-4 w-4" />
-                  Profile
-                </a>
-                <a href="/settings" className="flex items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-accent">
-                  <IconUserCircle className="h-4 w-4" />
-                  Settings
-                </a>
-                <hr className="my-1 border-border" />
-                <a href="/logout" className="flex items-center gap-2 px-4 py-2 text-sm text-destructive hover:bg-accent">
-                  <IconUserCircle className="h-4 w-4" />
-                  Logout
-                </a>
-              </div>
-            </div>
-          )}
-        </div>
+            {/* Notificaciones */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative text-muted-foreground hover:text-foreground">
+                  <IconBell className="h-5 w-5" />
+                  {unreadNotifications > 0 && (
+                    <Badge 
+                      variant="destructive" 
+                      className="absolute -right-1 -top-1 h-5 w-5 justify-center rounded-full p-0 text-xs"
+                    >
+                      {unreadNotifications}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <div className="max-h-[300px] overflow-y-auto">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <DropdownMenuItem key={i} className="flex flex-col items-start py-2">
+                      <div className="font-medium">
+                        {i < unreadNotifications ? 'Nueva notificación' : 'Notificación leída'}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {[
+                          'Contrato próximo a vencer', 
+                          'Nuevo usuario registrado', 
+                          'Actualización del sistema', 
+                          'Nuevo suplemento añadido',
+                          'Recordatorio de renovación'
+                        ][i]}
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        Hace {[5, 10, 30, 60, 120][i]} minutos
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="justify-center font-medium" onClick={() => console.log('Ver todas las notificaciones')}>
+                  Ver todas las notificaciones
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* User Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="flex h-8 items-center gap-2 px-2 hover:bg-accent"
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    {user?.firstName?.charAt(0) || ''}
+                    {user?.lastName?.charAt(0) || ''}
+                  </div>
+                  <div className="hidden flex-col items-start text-left md:flex">
+                    <span className="text-sm font-medium">
+                      {user?.firstName} {user?.lastName}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {user?.role || 'Usuario'}
+                    </span>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Mi cuenta</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="gap-2"
+                  onClick={() => console.log('Navegar a perfil')}
+                >
+                  <IconUser className="h-4 w-4" /> 
+                  Perfil
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  className="gap-2"
+                  onClick={() => console.log('Navegar a configuración')}
+                >
+                  <IconSettings className="h-4 w-4" /> 
+                  Configuración
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  className="gap-2 text-destructive focus:text-destructive" 
+                  onClick={() => {
+                    if (logout) logout();
+                    console.log('Cerrar sesión');
+                  }}
+                >
+                  <IconLogout className="h-4 w-4" /> 
+                  Cerrar sesión
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        )}
+
+        {/* Theme Toggle */}
+        <ThemeToggle />
       </div>
     </header>
   );

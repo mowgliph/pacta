@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { Role } from '@/types/enums';
 
 // Types
 export type User = {
@@ -17,6 +18,11 @@ export type Notification = {
   type: 'success' | 'error' | 'info' | 'warning';
 };
 
+// Tipo para el CommandK
+export type CommandKRef = {
+  toggle: () => void;
+};
+
 // Store state and actions type
 type StoreState = {
   // Auth
@@ -27,12 +33,17 @@ type StoreState = {
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  hasRole: (roles: Role[]) => boolean;
   
   // UI
   theme: 'light' | 'dark';
   sidebarCollapsed: boolean;
   toggleSidebar: () => void;
   setTheme: (theme: 'light' | 'dark') => void;
+  
+  // CommandK
+  commandK: CommandKRef | null;
+  setCommandK: (ref: CommandKRef) => void;
   
   // Notifications
   notifications: Notification[];
@@ -89,6 +100,12 @@ export const useStore = create<StoreState>()(
         });
       },
       
+      hasRole: (roles: Role[]) => {
+        const { user } = get();
+        if (!user) return false;
+        return roles.includes(user.role as Role);
+      },
+      
       // UI state
       theme: 'light',
       sidebarCollapsed: false,
@@ -99,6 +116,13 @@ export const useStore = create<StoreState>()(
       
       setTheme: (theme) => {
         set({ theme });
+      },
+      
+      // CommandK state
+      commandK: null,
+      
+      setCommandK: (ref: CommandKRef) => {
+        set({ commandK: ref });
       },
       
       // Notifications state
