@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Outlet } from '@tanstack/react-router'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { ThemeProvider } from '@/components/theme/ThemeProvider'
-import { NotificationProvider } from '@/components/notifications/NotificationProvider'
+import { ThemeProvider } from '@/components/theme-provider'
+import { NotificationProvider } from '@/components/ui/NotificationContainer'
 import { AuthProvider } from '@/features/auth/components/AuthProvider'
 
 // Componente para errores generales
