@@ -14,7 +14,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { useStore } from '@/store'; // Importar el store de Zustand
-import { useNavigate } from '@tanstack/react-router'; // Importar hook de navegación
+import { useNavigate } from '@remix-run/react'; // Importar hook de navegación
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { IconAt, IconEyeOff, IconEye, IconKey, IconAlertTriangle } from '@tabler/icons-react';
 
@@ -51,7 +51,7 @@ export const LoginForm: React.FC = () => {
   const onSubmit = async (values: LoginFormValues) => {
     const success = await login(values.email, values.password, values.rememberMe);
     if (success) {
-      navigate({ to: '/_authenticated' }); // Redirigir al área autenticada
+      navigate('/dashboard'); // Redirigir al dashboard
     }
   };
 

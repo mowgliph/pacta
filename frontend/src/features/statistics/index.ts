@@ -27,8 +27,19 @@ export { StatisticsMockService } from './services/statisticsMockService';
 // Re-exportación de hooks para acceso a datos
 export {
   useSpecificStats,
-  useUserMetrics
-} from '../dashboard/hooks/useDashboardStats';
+  useUserMetrics,
+  useContractTypeStats,
+  useContractStatusStats,
+  useContractMonthlyStats,
+  useActivityStats,
+  useCompanyStats,
+  useClientContractStats,
+  useProviderContractStats,
+  useExpiredContractStats,
+  useSupplementStats,
+  useNewContractStats,
+  type StatisticsType
+} from './hooks/useStatistics';
 
 // Esta estructura permite importar componentes y servicios directamente 
 // desde el módulo de estadísticas.

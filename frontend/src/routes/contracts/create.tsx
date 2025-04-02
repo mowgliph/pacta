@@ -1,9 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { ContractCreatePage } from '@/features/contracts'
+import { ContractCreatePage } from '../../features/contracts';
+import React from 'react';
 
 /**
- * Ruta para crear nuevos contratos
+ * Componente para la página de creación de contratos
  */
-export const Route = createFileRoute('/contracts/create')({
-  component: ContractCreatePage
-}) 
+export default function CreateContract() {
+  return <ContractCreatePage />;
+} 

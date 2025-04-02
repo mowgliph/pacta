@@ -26,11 +26,16 @@ export function ThemeProvider({
   storageKey = 'pacta-theme',
   ...props
 }: ThemeProviderProps) {
-  const [theme, _setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  )
+  const [theme, _setTheme] = useState<Theme>(() => {
+    // Verificar si estamos en el navegador
+    if (typeof window === 'undefined') return defaultTheme;
+    return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+  });
 
   useEffect(() => {
+    // Solo ejecutar en el navegador
+    if (typeof window === 'undefined') return;
+    
     const root = window.document.documentElement
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
 
@@ -55,7 +60,10 @@ export function ThemeProvider({
   }, [theme])
 
   const setTheme = (theme: Theme) => {
-    localStorage.setItem(storageKey, theme)
+    // Verificar si estamos en el navegador
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(storageKey, theme)
+    }
     _setTheme(theme)
   }
 

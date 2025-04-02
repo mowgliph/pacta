@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@remix-run/react';
 import { useStore } from '@/store';
 import { 
   IconBell, 
@@ -64,7 +64,7 @@ export function Header({ sidebarCollapsed = false, onToggleSidebar, isPublic = f
 
   // Navegar al login
   const handleLogin = () => {
-    navigate({ to: '/(auth)/login' });
+    navigate('/login');
   };
 
   // Mock para notificaciones no leídas

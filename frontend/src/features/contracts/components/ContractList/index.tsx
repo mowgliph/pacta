@@ -1,5 +1,5 @@
 import React from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@remix-run/react'
 import {
   IconEye,
   IconPencil,
@@ -118,17 +118,17 @@ export const ContractList: React.FC<ContractListProps> = ({
 
   // Función para manejar ver detalles
   const handleViewContract = (id: string) => {
-    navigate({ to: `/contratos/${id}` })
+    navigate(`/contracts/${id}`)
   }
 
   // Función para manejar edición
   const handleEdit = (id: string) => {
-    navigate({ to: `/_authenticated/contracts/$id/edit`, params: { id } })
+    navigate(`/contracts/${id}/edit`)
   }
 
   // Función para agregar suplemento
   const handleAddSupplement = (id: string) => {
-    navigate({ to: `/_authenticated/contracts/$id/supplements/new`, params: { id } })
+    navigate(`/contracts/${id}/supplements/new`)
   }
 
   return (

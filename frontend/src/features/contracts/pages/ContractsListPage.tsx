@@ -1,56 +1,69 @@
-import React, { useState, useEffect } from 'react'
-import { Link, useNavigate } from '@tanstack/react-router'
+import React, { useState, useCallback } from 'react'
+import { Link, useNavigate } from '@remix-run/react'
 import { 
   IconPlus,
   IconSearch, 
   IconFilter, 
-  IconArrowsSort 
+  IconArrowsSort,
+  IconRefresh
 } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { ContractsService, type Contract } from '../services/contracts-service'
 import { ContractList } from '../components/ContractList'
+import { useSearchContracts } from '../hooks/useContracts'
+import type { ContractSearchParams } from '../services/contracts-service'
 
 /**
  * Página principal para mostrar la lista de contratos
  */
 export const ContractsListPage: React.FC = () => {
   const navigate = useNavigate()
-  const [isLoading, setIsLoading] = useState(false)
-  const [contracts, setContracts] = useState<Contract[]>([])
   const [searchTerm, setSearchTerm] = useState('')
+  const [searchParams, setSearchParams] = useState<ContractSearchParams>({
+    page: 1,
+    limit: 20,
+    sortBy: 'createdAt',
+    sortOrder: 'desc'
+  })
   
-  // Cargar contratos al montar el componente
-  useEffect(() => {
-    const loadContracts = async () => {
-      setIsLoading(true)
-      try {
-        const response = await ContractsService.getContracts({
-          search: searchTerm,
-          page: 1,
-          limit: 20
-        })
-        setContracts(response.data)
-      } catch (error) {
-        console.error('Error al cargar los contratos:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    
-    loadContracts()
-  }, [searchTerm])
+  // Usar SWR para obtener los contratos
+  const { 
+    contracts, 
+    pagination, 
+    isLoading, 
+    error, 
+    mutate: refreshContracts 
+  } = useSearchContracts(searchTerm, searchParams)
   
   // Manejar la búsqueda
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    // La búsqueda ya se ejecuta mediante el useEffect cuando cambia searchTerm
+    // La búsqueda ya se ejecuta automáticamente cuando cambia searchTerm
   }
+  
+  // Manejar el cambio de página
+  const handlePageChange = useCallback((newPage: number) => {
+    setSearchParams(prev => ({ ...prev, page: newPage }))
+  }, [])
+  
+  // Manejar el ordenamiento
+  const handleSort = useCallback((field: string) => {
+    setSearchParams(prev => ({
+      ...prev,
+      sortBy: field,
+      sortOrder: prev.sortBy === field && prev.sortOrder === 'asc' ? 'desc' : 'asc'
+    }))
+  }, [])
   
   // Navegar a la página de crear contrato
   const handleCreateContract = () => {
-    navigate({ to: '/_authenticated/contracts/create' })
+    navigate('/contracts/create')
+  }
+  
+  // Refrescar los datos manualmente
+  const handleRefresh = () => {
+    refreshContracts()
   }
   
   return (
@@ -68,7 +81,18 @@ export const ContractsListPage: React.FC = () => {
       
       <Card>
         <CardHeader>
-          <CardTitle>Lista de contratos</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>Lista de contratos</CardTitle>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleRefresh}
+              disabled={isLoading}
+            >
+              <IconRefresh size={16} className={isLoading ? 'animate-spin' : ''} />
+              <span className="ml-2">Actualizar</span>
+            </Button>
+          </div>
           <div className="flex gap-2 items-center">
             <form onSubmit={handleSearch} className="flex-1">
               <div className="relative w-full">
@@ -85,7 +109,12 @@ export const ContractsListPage: React.FC = () => {
             <Button size="icon" variant="outline" title="Filtrar resultados">
               <IconFilter size={16} />
             </Button>
-            <Button size="icon" variant="outline" title="Ordenar">
+            <Button 
+              size="icon" 
+              variant="outline" 
+              title="Ordenar por fecha" 
+              onClick={() => handleSort('createdAt')}
+            >
               <IconArrowsSort size={16} />
             </Button>
           </div>
@@ -94,7 +123,33 @@ export const ContractsListPage: React.FC = () => {
           <ContractList 
             contracts={contracts} 
             isLoading={isLoading} 
+            error={error ? 'Error al cargar los contratos' : undefined}
+            onRefresh={handleRefresh}
           />
+          
+          {pagination && pagination.totalPages > 1 && (
+            <div className="flex justify-between items-center mt-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={pagination.page <= 1 || isLoading}
+              >
+                Anterior
+              </Button>
+              <span>
+                Página {pagination.page} de {pagination.totalPages}
+              </span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={pagination.page >= pagination.totalPages || isLoading}
+              >
+                Siguiente
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

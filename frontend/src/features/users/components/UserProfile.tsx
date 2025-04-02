@@ -3,18 +3,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { IconEdit, IconMail, IconPhone, IconBriefcase } from "@tabler/icons-react";
+import { UserProfileData } from '../types';
 
 type UserProfileProps = {
   className?: string;
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-    avatar?: string;
-    role: string;
-    phone?: string;
-    department?: string;
-  };
+  user?: UserProfileData;
+  onEdit?: () => void;
 }
 
 export function UserProfile({ className, user }: UserProfileProps) {

@@ -1,14 +1,13 @@
-import React from 'react'
-import { Outlet } from '@tanstack/react-router'
+import React, { ReactNode } from 'react'
 
 /**
  * Layout para las páginas de contratos
  * Provee estructura común para todas las páginas de la sección de contratos
  */
-export const ContractsLayout: React.FC = () => {
+export const ContractsLayout: React.FC<{ children: ReactNode }> = ({ children }) => {
   return (
     <div className="container py-6 space-y-6">
-      <Outlet />
+      {children}
     </div>
   )
 } 

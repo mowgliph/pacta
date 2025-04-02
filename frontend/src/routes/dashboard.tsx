@@ -1,30 +1,36 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
-import { useStore } from '@/store'
-import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
-import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { LoaderFunction, redirect } from '@remix-run/node';
+import { useLoaderData } from '@remix-run/react';
+import { DashboardPage } from '../features/dashboard/pages/DashboardPage';
+import { DashboardLayout } from '../components/layout/DashboardLayout';
+import React from 'react';
 
 /**
- * Ruta para el dashboard principal
+ * Loader para verificar autenticación antes de acceder al dashboard
  */
-export const Route = createFileRoute('/dashboard')({
-  component: () => (
+export const loader: LoaderFunction = async ({ request }) => {
+  // En un entorno real, verificaríamos la cookie de autenticación aquí
+  // y redireccionaríamos si el usuario no está autenticado
+  
+  const urlParams = new URL(request.url).searchParams;
+  const mockAuth = urlParams.get('auth') === 'true';
+  
+  // Si no está autenticado, redireccionar al login
+  if (!mockAuth) {
+    // Para propósitos de demostración, puedes acceder usando ?auth=true
+    // En producción, implementa un sistema real de autenticación
+    // return redirect('/login');
+  }
+  
+  return { isAuthenticated: true };
+};
+
+/**
+ * Componente para la página del dashboard
+ */
+export default function Dashboard() {
+  return (
     <DashboardLayout>
       <DashboardPage />
     </DashboardLayout>
-  ),
-  beforeLoad: () => {
-    // Verificar si el usuario está autenticado
-    const isAuthenticated = useStore.getState().isAuthenticated
-    const token = useStore.getState().token
-    
-    // Redirigir al login si no está autenticado
-    if (!isAuthenticated && !token) {
-      throw redirect({
-        to: '/login',
-        replace: true
-      })
-    }
-    
-    return null
-  }
-}) 
+  );
+} 

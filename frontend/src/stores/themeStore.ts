@@ -10,11 +10,14 @@ type ThemeStore = {
 
 // Determinar el tema del sistema
 const getSystemTheme = (): 'dark' | 'light' => {
+  if (typeof window === 'undefined') return 'light';
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
 // Aplicar el tema al documento
 const applyTheme = (theme: Theme) => {
+  if (typeof window === 'undefined') return;
+  
   const root = window.document.documentElement
   root.classList.remove('light', 'dark')
   

@@ -84,9 +84,10 @@ src/
 │       └── components/  # Componentes compartidos entre features
 ├── hooks/          # Hooks personalizados
 ├── lib/            # Bibliotecas y utilidades
+│   └── api/        # Cliente API y configuración de SWR
 ├── pages/          # Páginas de la aplicación
 ├── providers/      # Proveedores de React
-├── routes/         # Configuración de rutas (TanStack Router)
+├── routes/         # Rutas de la aplicación (Remix)
 ├── store/          # Estado global (Zustand)
 ├── types/          # Tipos y definiciones TypeScript
 └── utils/          # Funciones utilitarias

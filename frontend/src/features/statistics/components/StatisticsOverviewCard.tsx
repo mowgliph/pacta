@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useDashboardStats, useUserMetrics } from '../../dashboard/hooks/useDashboardStats';
+import { useDashboardStats, useUserMetrics } from '../hooks/useStatistics';
 
 export function StatisticsOverviewCard() {
   const { data: dashboardStats, isLoading: isDashboardStatsLoading } = useDashboardStats();

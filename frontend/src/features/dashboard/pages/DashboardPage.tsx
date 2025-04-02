@@ -13,7 +13,7 @@ import { UpcomingContractsCard } from '../components/UpcomingContractsCard';
 import { DashboardChart } from '../components/DashboardChart';
 import { QuickActions } from '../components/QuickActions';
 import { useDashboardStats } from '../hooks/useDashboardStats';
-import { Link } from '@tanstack/react-router';
+import { Link } from '@remix-run/react';
 
 export const DashboardPage: React.FC = () => {
   const { user } = useStore(state => ({ 
@@ -21,11 +21,12 @@ export const DashboardPage: React.FC = () => {
   }));
   const { showSuccess, showInfo, showError } = useNotifications();
   
-  // Obtener datos del dashboard
+  // Obtener datos del dashboard usando SWR
   const { 
     data: dashboardStats, 
     isLoading, 
-    refetch 
+    error,
+    mutate 
   } = useDashboardStats();
 
   // Mostrar notificación de bienvenida
@@ -41,12 +42,13 @@ export const DashboardPage: React.FC = () => {
     return () => clearTimeout(timer);
   }, [showSuccess, user]);
   
-  // Función para actualizar los datos
+  // Función para actualizar los datos con SWR
   const handleRefreshData = async () => {
     showInfo('Actualizando datos...', 'Espere un momento mientras recargamos la información');
     
     try {
-      await refetch();
+      // Con SWR se usa mutate para revalidar datos en vez de refetch
+      await mutate(); 
       showSuccess('Datos actualizados', 'La información ha sido actualizada correctamente');
     } catch (_error) {
       showError('Error al actualizar', 'No se pudieron obtener los datos más recientes');
@@ -124,7 +126,7 @@ export const DashboardPage: React.FC = () => {
           className="flex items-center gap-2"
           asChild
         >
-          <Link to="/_authenticated/statistics">
+          <Link to="/statistics">
             Ver estadísticas completas <IconArrowRight className="h-4 w-4" />
           </Link>
         </Button>

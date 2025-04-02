@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from '@tanstack/react-router';
+import { Link } from '@remix-run/react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useDashboardStats } from '../hooks/useDashboardStats';
@@ -10,8 +10,8 @@ import { PageHeader } from '@/components/layout/PageHeader';
 import { IconArrowRight } from '@tabler/icons-react';
 
 export const DashboardPublicPage: React.FC = () => {
-  // Obtener datos públicos
-  const { data: dashboardStats, isLoading } = useDashboardStats();
+  // Obtener datos públicos con SWR
+  const { data: dashboardStats, isLoading: isLoadingStats, error } = useDashboardStats();
 
   // Controlador para eventos de autenticación requerida
   const handleRequireAuth = () => {
@@ -27,7 +27,7 @@ export const DashboardPublicPage: React.FC = () => {
       />
 
       {/* Acciones rápidas públicas */}
-      <QuickActionsPublic />
+      <QuickActionsPublic onRequireAuth={handleRequireAuth} />
 
       {/* Tarjetas de estadísticas (versión pública) */}
       <DashboardStatsCards 
@@ -35,15 +35,14 @@ export const DashboardPublicPage: React.FC = () => {
         pendingRenewals={dashboardStats?.pendingRenewals || 0}
         totalUsers={dashboardStats?.totalUsers || 0}
         alerts={dashboardStats?.alerts || 0}
-        isLoading={isLoading}
+        isLoading={isLoadingStats}
         isPublic={true}
-        onRequireAuth={handleRequireAuth}
       />
 
       {/* Actividad reciente (versión pública limitada) */}
       <div className="grid gap-4 md:grid-cols-1">
         <RecentActivityPublic 
-          isLoading={isLoading}
+          onRequireAuth={handleRequireAuth}
         />
       </div>
 
@@ -52,7 +51,7 @@ export const DashboardPublicPage: React.FC = () => {
         <CardHeader>
           <CardTitle>¿Desea acceder a todas las funcionalidades?</CardTitle>
           <CardDescription>
-            Regístrese o inicie sesión para acceder a todas las características de la plataforma
+            Inicie sesión para acceder a todas las características de la plataforma
           </CardDescription>
           <div className="flex flex-col gap-2 sm:flex-row pt-4">
             <Button asChild>

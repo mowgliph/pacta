@@ -1,10 +1,10 @@
 /**
  * Módulo de utilidad para realizar solicitudes a la API
  */
-import { useStore } from '@/store';
+import { useStore } from '../store';
 
 // URL base de la API
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env.API_URL || 'http://localhost:3001/api';
 
 // Tipos de error de la API
 export type ApiError = {

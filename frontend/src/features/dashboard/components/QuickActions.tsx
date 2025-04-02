@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@remix-run/react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -48,7 +48,7 @@ export const QuickActions: React.FC = () => {
             className="flex items-center gap-2 justify-start p-4 h-auto min-h-16"
             asChild
           >
-            <Link to="/_authenticated/documents/upload">
+            <Link to="/documents/upload">
               <IconFileUpload className="h-5 w-5 text-blue-500" />
               <div className="flex flex-col items-start">
                 <span className="font-medium">Subir Documento</span>
@@ -63,7 +63,7 @@ export const QuickActions: React.FC = () => {
             className="flex items-center gap-2 justify-start p-4 h-auto min-h-16"
             asChild
           >
-            <Link to="/_authenticated/contracts/search">
+            <Link to="/contracts/search">
               <IconFileSearch className="h-5 w-5 text-amber-500" />
               <div className="flex flex-col items-start">
                 <span className="font-medium">Buscar Contrato</span>
@@ -78,7 +78,7 @@ export const QuickActions: React.FC = () => {
             className="flex items-center gap-2 justify-start p-4 h-auto min-h-16"
             asChild
           >
-            <Link to="/_authenticated/statistics">
+            <Link to="/statistics">
               <IconChartBar className="h-5 w-5 text-emerald-500" />
               <div className="flex flex-col items-start">
                 <span className="font-medium">Estadísticas</span>

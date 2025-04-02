@@ -62,6 +62,9 @@ type StoreState = {
 
 // Helper para guardar tokens
 const saveTokens = (accessToken: string, refreshToken: string = accessToken, rememberMe: boolean = false) => {
+  // Verificar si estamos en el navegador
+  if (typeof window === 'undefined') return;
+  
   const storage = rememberMe ? localStorage : sessionStorage;
   storage.setItem('accessToken', accessToken);
   storage.setItem('refreshToken', refreshToken);
@@ -69,6 +72,9 @@ const saveTokens = (accessToken: string, refreshToken: string = accessToken, rem
 
 // Helper para limpiar tokens
 const clearTokens = () => {
+  // Verificar si estamos en el navegador
+  if (typeof window === 'undefined') return;
+  
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
   sessionStorage.removeItem('accessToken');
@@ -77,6 +83,11 @@ const clearTokens = () => {
 
 // Helper para recuperar tokens
 const getStoredTokens = (): { accessToken: string | null; refreshToken: string | null } => {
+  // Verificar si estamos en el navegador
+  if (typeof window === 'undefined') {
+    return { accessToken: null, refreshToken: null };
+  }
+  
   let accessToken = localStorage.getItem('accessToken');
   let refreshToken = localStorage.getItem('refreshToken');
   if (!accessToken) {

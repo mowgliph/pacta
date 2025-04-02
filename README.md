@@ -66,7 +66,7 @@ PACTA es una plataforma diseñada para:
 - **Build Tool:** Vite
 - **Estilos:** Tailwind CSS y shadcn/UI
 - **Enrutamiento:** TanStack Router
-- **Gestión de Estado:** Zustand y TanStack Query
+- **Gestión de Estado:** Zustand y SWR
 
 ### Backend
 - **Runtime:** Node.js con Express.js y TypeScript

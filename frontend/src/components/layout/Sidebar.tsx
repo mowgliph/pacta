@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useMatchRoute } from '@tanstack/react-router';
+import { useNavigate, useLocation } from '@remix-run/react';
 import { cn } from '@/lib/utils';
 import { useStore } from '@/store';
 import { Role } from '@/types/enums';
@@ -20,7 +20,8 @@ import {
   IconLogout,
   IconCommand,
   IconInfoCircle,
-  IconLogin
+  IconLogin,
+  IconPlus
 } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -56,34 +57,29 @@ type NavItemProps = {
 // Componente para cada enlace de navegación
 const NavItem = ({ link, collapsed, isPublic, onRequireAuth }: NavItemProps) => {
   const navigate = useNavigate();
-  const matchRoute = useMatchRoute();
-  const isActive = matchRoute({ to: link.href });
+  const location = useLocation();
+  const isActive = location.pathname === link.href;
   const { hasRole } = useStore(state => ({ hasRole: state.hasRole }));
   
-  // Si está en modo público y el enlace no es para público, no mostrar
+  // Verificar si el usuario tiene permiso para acceder a la ruta
+  const hasPermission = !link.roles || hasRole(link.roles);
+  
+  // Si es ruta pública, verificar si es solo para público
   if (isPublic && !link.isPublicOnly) {
     return null;
   }
   
-  // Si no está en modo público y el enlace es solo para público, no mostrar
-  if (!isPublic && link.isPublicOnly) {
+  // Si requiere autenticación y el usuario no tiene permiso, no mostrar el enlace
+  if (!isPublic && !hasPermission) {
     return null;
   }
   
-  // Si se especifican roles y el usuario no tiene ninguno, no mostrar el ítem
-  if (!isPublic && link.roles && link.roles.length > 0 && !hasRole(link.roles)) {
-    return null;
-  }
-  
-  // Función para manejar el clic
+  // Función para manejar clic en enlaces
   const handleClick = () => {
     if (link.action) {
       link.action();
-    } else if (isPublic && onRequireAuth && !link.isPublicOnly) {
-      onRequireAuth();
     } else {
-      console.log(`Navegando a: ${link.href}`);
-      navigate({ to: link.href });
+      navigate(link.href);
     }
   };
 
@@ -151,7 +147,23 @@ const navSections: NavSection[] = [
       {
         title: "Dashboard",
         icon: <IconDashboard className="h-5 w-5" />,
-        href: "/",
+        href: "/dashboard",
+      },
+    ]
+  },
+  {
+    title: "Contratos",
+    links: [
+      {
+        title: "Todos los contratos",
+        icon: <IconFileDescription className="h-5 w-5" />,
+        href: "/contracts",
+      },
+      {
+        title: "Crear contrato",
+        icon: <IconPlus className="h-5 w-5" />,
+        href: "/contracts/create",
+        roles: [Role.ADMIN, Role.MANAGER],
       },
     ]
   },
@@ -159,20 +171,14 @@ const navSections: NavSection[] = [
     title: "Gestión",
     links: [
       {
-        title: "Contratos",
-        icon: <IconFileDescription className="h-5 w-5" />,
-        href: "/_authenticated/contracts",
-        badge: 3,
-      },
-      {
         title: "Suplementos",
         icon: <IconClipboardList className="h-5 w-5" />,
-        href: "/_authenticated/supplements",
+        href: "/supplements",
       },
       {
         title: "Empresas",
         icon: <IconBuildingSkyscraper className="h-5 w-5" />,
-        href: "/_authenticated/companies",
+        href: "/companies",
       },
     ]
   },
@@ -182,13 +188,13 @@ const navSections: NavSection[] = [
       {
         title: "Usuarios",
         icon: <IconUsers className="h-5 w-5" />,
-        href: "/_authenticated/users",
+        href: "/users",
         roles: [Role.ADMIN],
       },
       {
         title: "Notificaciones",
         icon: <IconBell className="h-5 w-5" />,
-        href: "/_authenticated/notifications",
+        href: "/notifications",
         badge: 5,
       },
     ]
@@ -199,12 +205,12 @@ const navSections: NavSection[] = [
       {
         title: "Estadísticas",
         icon: <IconReportAnalytics className="h-5 w-5" />,
-        href: "/_authenticated/statistics",
+        href: "/statistics",
       },
       {
         title: "Configuración",
         icon: <IconSettings className="h-5 w-5" />,
-        href: "/_authenticated/settings",
+        href: "/settings",
       },
     ]
   }
@@ -228,7 +234,7 @@ const publicNavSections: NavSection[] = [
       {
         title: "Iniciar sesión",
         icon: <IconLogin className="h-5 w-5" />,
-        href: "/(auth)/login",
+        href: "/login",
         isPublicOnly: true,
       },
       {
@@ -272,14 +278,14 @@ export function Sidebar({ isPublic = false }: { isPublic?: boolean }) {
   
   // Redirigir al login cuando se requiera autenticación
   const handleRequireAuth = () => {
-    navigate({ to: '/(auth)/login' });
+    navigate('/login');
   };
 
   // Cerrar sesión
   const handleLogout = () => {
     if (logout) {
       logout();
-      navigate({ to: '/' });
+      navigate('/');
     }
   };
 

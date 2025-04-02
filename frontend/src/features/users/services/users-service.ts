@@ -1,54 +1,11 @@
 import { api } from '@/lib/api';
-import { type User } from '@/store';
-
-// Tipo extendido para usuarios con metadata adicional
-export type UserDetails = {
-  createdAt: string;
-  updatedAt: string;
-  lastLogin?: string;
-  status: 'active' | 'inactive' | 'suspended';
-  permissions?: string[];
-} & User
-
-// Parámetros para la búsqueda de usuarios
-export type UserSearchParams = {
-  page?: number;
-  limit?: number;
-  search?: string;
-  role?: string;
-  status?: 'active' | 'inactive' | 'suspended';
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
-
-// Respuesta paginada de usuarios
-export type UsersResponse = {
-  data: UserDetails[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
-}
-
-// Datos para crear un usuario
-export type CreateUserData = {
-  email: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  role: string;
-  status?: 'active' | 'inactive';
-  permissions?: string[];
-}
-
-// Datos para actualizar un usuario
-export type UpdateUserData = {
-  firstName?: string;
-  lastName?: string;
-  role?: string;
-  status?: 'active' | 'inactive' | 'suspended';
-  permissions?: string[];
-}
+import { 
+  UserDetails, 
+  UserSearchParams, 
+  UsersResponse, 
+  CreateUserData, 
+  UpdateUserData 
+} from '../types';
 
 /**
  * Servicio para gestionar usuarios
@@ -109,4 +66,16 @@ export const UsersService = {
    */
   updateUserPermissions: (id: string, permissions: string[]) => 
     api.put<{ success: boolean }>(`/users/${id}/permissions`, { permissions }),
+
+  /**
+   * Obtiene usuarios activos (para selectores, etc.)
+   */
+  getActiveUsers: () => 
+    api.get<UserDetails[]>('/users/active'),
+
+  /**
+   * Obtiene usuarios por rol
+   */
+  getUsersByRole: (role: string) => 
+    api.get<UserDetails[]>(`/users/by-role/${role}`),
 }; 

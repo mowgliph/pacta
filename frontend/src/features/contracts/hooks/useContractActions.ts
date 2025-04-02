@@ -1,12 +1,12 @@
 import { useStore } from '@/store'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@remix-run/react'
 
 export function useContractActions() {
   const navigate = useNavigate()
   const { eliminarContrato } = useStore()
 
   const handleEdit = (id: number) => {
-    navigate({ to: '/contracts/$contractId/edit', params: { contractId: id.toString() } })
+    navigate(`/contracts/${id}/edit`)
   }
 
   const handleDelete = async (id: number) => {

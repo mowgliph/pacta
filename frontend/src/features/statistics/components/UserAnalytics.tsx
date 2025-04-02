@@ -2,13 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatisticsChartCard } from './StatisticsChartCard';
-import { useSpecificStats, useUserMetrics } from '../../dashboard/hooks/useDashboardStats';
+import { useSpecificStats, useUserMetrics } from '../hooks/useStatistics';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 
 export function UserAnalytics() {
-  const { data: userStats, isLoading } = useSpecificStats('user');
-  const { data: myMetrics, isLoading: isMetricsLoading } = useUserMetrics();
+  // SWR proporciona isLoading (o isValidating) directamente
+  const { data: userStats, isLoading, error: userStatsError } = useSpecificStats('user');
+  const { data: myMetrics, isLoading: isMetricsLoading, error: metricsError } = useUserMetrics();
   
   // Datos para gráfico de usuarios por mes
   const monthlyUserData = useMemo(() => {

@@ -1,43 +1,124 @@
-import { useQuery } from '@tanstack/react-query';
-import { 
-  DashboardService, 
-  type DashboardStats, 
-  type SpecificStats, 
-  type UserMetrics 
-} from '../services/dashboard-service';
+import { useGet } from '@/lib/api/swr-hooks';
+import { DashboardService } from '../services/dashboard-service';
+import { createSWRKey } from '@/lib/api/swrConfig';
 import { StatisticsService } from '../../statistics/services/statisticsService';
+import { 
+  DashboardStats, 
+  Activity, 
+  Contract, 
+  SpecificStats, 
+  UserMetrics 
+} from '../types';
 
 /**
- * Hook para obtener las estadísticas generales del dashboard
+ * Hook para obtener las estadísticas del dashboard
  */
-export const useDashboardStats = () => {
-  return useQuery<DashboardStats>({
-    queryKey: ['dashboardStats'],
-    queryFn: async () => {
-      const response = await DashboardService.getDashboardStats();
-      return response;
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+export function useDashboardStats() {
+  return useGet<DashboardStats>('/dashboard/stats', {
+    revalidateOnFocus: false,
+    dedupingInterval: 5 * 60 * 1000, // 5 minutos
   });
-};
+}
+
+/**
+ * Hook para obtener los contratos que expiran pronto
+ */
+export function useExpiringContracts(days = 30, limit = 5) {
+  return useGet<Contract[]>(`/dashboard/expiring-contracts?days=${days}&limit=${limit}`, {
+    revalidateOnFocus: false,
+    dedupingInterval: 10 * 60 * 1000, // 10 minutos
+  });
+}
+
+/**
+ * Hook para obtener la actividad reciente
+ */
+export function useRecentActivity(limit = 10) {
+  return useGet<Activity[]>(`/dashboard/activity?limit=${limit}`, {
+    revalidateOnFocus: true,
+    dedupingInterval: 60 * 1000, // 1 minuto
+  });
+}
+
+/**
+ * Hook para obtener estadísticas de contratos por tipo (cliente/proveedor)
+ */
+export function useContractsByType() {
+  return useGet<{client: number, provider: number}>('/dashboard/contracts-by-type', {
+    revalidateOnFocus: false,
+    dedupingInterval: 30 * 60 * 1000, // 30 minutos
+  });
+}
+
+/**
+ * Hook para obtener estadísticas de contratos por estado
+ */
+export function useContractsByStatus() {
+  return useGet<{active: number, pending: number, expired: number, cancelled: number}>('/dashboard/contracts-by-status', {
+    revalidateOnFocus: false,
+    dedupingInterval: 30 * 60 * 1000, // 30 minutos
+  });
+}
+
+/**
+ * Hook para obtener estadísticas de contratos por mes
+ */
+export function useContractsByMonth(months = 6) {
+  return useGet<{month: string, count: number}[]>(`/dashboard/contracts-by-month?months=${months}`, {
+    revalidateOnFocus: false, 
+    dedupingInterval: 24 * 60 * 60 * 1000, // 24 horas
+  });
+}
+
+/**
+ * Hook para obtener contratos próximos a vencer
+ */
+export function useUpcomingContracts(limit = 5) {
+  return useGet<Contract[]>(`/dashboard/upcoming-contracts?limit=${limit}`, {
+    revalidateOnFocus: false,
+    dedupingInterval: 10 * 60 * 1000, // 10 minutos
+  });
+}
+
+/**
+ * Hook para obtener estadísticas generales de contratos
+ */
+export function useContractStats() {
+  return useGet<{
+    total: number;
+    active: number;
+    expiring: number;
+    expired: number;
+  }>('/dashboard/contract-stats', {
+    revalidateOnFocus: false,
+    dedupingInterval: 30 * 60 * 1000, // 30 minutos
+  });
+}
+
+/**
+ * Hook para obtener estadísticas de suplementos
+ */
+export function useSupplementStats() {
+  return useGet<{
+    total: number;
+    byMonth: {
+      month: string;
+      count: number;
+    }[];
+  }>('/dashboard/supplement-stats', {
+    revalidateOnFocus: false,
+    dedupingInterval: 30 * 60 * 1000, // 30 minutos
+  });
+}
 
 /**
  * Hook para obtener estadísticas específicas según el tipo
  * @param type El tipo de estadísticas a obtener
  */
 export const useSpecificStats = (type: 'contract' | 'user' | 'activity' | 'company' | 'client-contract' | 'provider-contract' | 'expired-contract' | 'supplement-contract' | 'new-contract') => {
-  return useQuery<SpecificStats>({
-    queryKey: ['specificStats', type],
-    queryFn: async () => {
-      try {
-        const response = await StatisticsService.getSpecificStats(type);
-        return response;
-      } catch (error) {
-        console.error(`Error al obtener estadísticas de ${type}:`, error);
-        throw error;
-      }
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutos
+  return useGet<SpecificStats>(`/dashboard/specific-stats/${type}`, {
+    revalidateOnFocus: false,
+    dedupingInterval: 5 * 60 * 1000, // 5 minutos
   });
 };
 
@@ -45,36 +126,8 @@ export const useSpecificStats = (type: 'contract' | 'user' | 'activity' | 'compa
  * Hook para obtener métricas específicas del usuario actual
  */
 export const useUserMetrics = () => {
-  return useQuery<UserMetrics>({
-    queryKey: ['userMetrics'],
-    queryFn: async () => {
-      const response = await DashboardService.getUserMetrics();
-      return response;
-    },
-    staleTime: 5 * 60 * 1000, // 5 minutos
-  });
-};
-
-/**
- * Hook para obtener las actividades recientes
- */
-export const useRecentActivity = (limit = 5) => {
-  return useQuery({
-    queryKey: ['recentActivity', limit],
-    queryFn: () => DashboardService.getRecentActivity(limit),
-    staleTime: 1000 * 60 * 2, // 2 minutos
-    refetchOnWindowFocus: false,
-  });
-};
-
-/**
- * Hook para obtener contratos próximos a vencer
- */
-export const useUpcomingContracts = (limit = 5) => {
-  return useQuery({
-    queryKey: ['upcomingContracts', limit],
-    queryFn: () => DashboardService.getUpcomingContracts(limit),
-    staleTime: 1000 * 60 * 10, // 10 minutos
-    refetchOnWindowFocus: false,
+  return useGet<UserMetrics>('/dashboard/user-metrics', {
+    revalidateOnFocus: false,
+    dedupingInterval: 5 * 60 * 1000, // 5 minutos
   });
 }; 

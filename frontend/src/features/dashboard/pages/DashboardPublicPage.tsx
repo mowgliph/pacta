@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useNavigate } from '@remix-run/react'
 import { 
   IconRefresh, 
   IconArrowRight,
@@ -43,8 +43,8 @@ export function DashboardPublicPage() {
   }
 
   // Dirigir al login cuando se requiera autenticación
-  const handleRequireAuth = () => {
-    navigate({ to: '/(auth)/login' })
+  const handleLogin = () => {
+    navigate('/login');
   }
 
   return (
@@ -66,7 +66,7 @@ export function DashboardPublicPage() {
             </Button>
             <Button 
               size="sm"
-              onClick={handleRequireAuth}
+              onClick={handleLogin}
               className="flex items-center gap-1"
             >
               <IconLogin className="h-4 w-4" />
@@ -87,7 +87,7 @@ export function DashboardPublicPage() {
       </Alert>
 
       {/* Acciones rápidas públicas */}
-      <QuickActionsPublic onRequireAuth={handleRequireAuth} />
+      <QuickActionsPublic onRequireAuth={handleLogin} />
 
       {/* Tarjetas de estadísticas (versión pública) */}
       <DashboardStatsCards 
@@ -97,7 +97,7 @@ export function DashboardPublicPage() {
         alerts={dashboardStats?.alerts || 0}
         isLoading={isLoading}
         isPublic={true}
-        onRequireAuth={handleRequireAuth}
+        onRequireAuth={handleLogin}
       />
 
       {/* Gráfico de contratos */}
@@ -108,14 +108,14 @@ export function DashboardPublicPage() {
           data={dashboardStats.contractsStats}
           isLoading={isLoading}
           isPublic
-          onRequireAuth={handleRequireAuth}
+          onRequireAuth={handleLogin}
         />
       </div>
 
       {/* Actividad reciente (versión pública limitada) */}
       <div className="grid gap-4 md:grid-cols-1">
         <RecentActivityPublic 
-          onRequireAuth={handleRequireAuth}
+          onRequireAuth={handleLogin}
         />
       </div>
 
@@ -128,7 +128,7 @@ export function DashboardPublicPage() {
           </CardDescription>
         </CardHeader>
         <CardFooter>
-          <Button onClick={handleRequireAuth} className="flex items-center gap-2">
+          <Button onClick={handleLogin} className="flex items-center gap-2">
             Iniciar sesión <IconArrowRight className="h-4 w-4" />
           </Button>
         </CardFooter>

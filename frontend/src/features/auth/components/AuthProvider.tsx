@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, createContext, useContext, useState } from "react";
 import { useStore } from "@/store";
 import { Login } from "@/pages/Login";
-import { useNavigate, useMatches } from '@tanstack/react-router';
+import { useNavigate, useMatches } from '@remix-run/react';
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -48,8 +48,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     
     const currentMatch = matches[matches.length - 1];
     
-    if (currentMatch && currentMatch.routeId?.includes('_authenticated') && !isAuthenticated) {
-      navigate({ to: '/(auth)/login', replace: true });
+    // Verificar si la ruta requiere autenticación (handle.requiresAuth = true)
+    if (currentMatch && currentMatch.handle && (currentMatch.handle as any).requiresAuth && !isAuthenticated) {
+      navigate('/login', { replace: true });
     }
   }, [matches, isAuthenticated, initialCheckDone, navigate]);
 
@@ -79,7 +80,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const logout = async (): Promise<void> => {
     if (storeLogout) {
       await storeLogout();
-      navigate({ to: '/(auth)/login', replace: true });
+      navigate('/login', { replace: true });
     }
   };
 

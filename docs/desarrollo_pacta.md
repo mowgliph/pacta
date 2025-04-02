@@ -31,11 +31,11 @@ frontend/
 - **React 18**: Framework de UI
 - **TypeScript**: Tipado estático
 - **Vite**: Bundler y dev server
-- **TanStack Router**: Enrutamiento tipado 
+- **Remix**: Definir rutas claras para Dashboard, Contratos y Estadísticas, con una estructura organizada
 - **Shadcn/UI + Tailwind**: Componentes de UI
 - **Zustand**: Gestión de estado
 - **React Hook Form + Zod**: Manejo de formularios
-- **TanStack Query**: Gestión de datos del servidor
+- **SWR**: Gestión de datos del servidor
 - **Recharts**: Visualización de datos
 
 #### Estado Actual
@@ -101,7 +101,7 @@ Este documento expone el análisis integral y el plan de trabajo para la actuali
 ### 2.2 Frontend  
 
 - **Fundamentos Técnicos**: React (configurado para React 19), TypeScript, Vite, Tailwind CSS, y shadcn/UI.
-- **Herramientas y Gestión de Estado**: Estado global con Zustand, integración de TanStack Query y enrutamiento seguro con TanStack Router.
+- **Herramientas y Gestión de Estado**: Estado global con Zustand, integración de SWR y enrutamiento con Remix.
 - **Evolución del diseño**: Uso de diseño minimalista y moderno, con soporte para temas claro/oscuro, micro-interacciones y componentes componibles.
 - **Estado actual**: Algunas áreas (UI/UX Core, Layout principal, Módulos funcionales) se encuentran en progreso o pendientes, lo que requiere refinar el dashboard, la navegación y la integración de funcionalidades críticas.
 
@@ -132,20 +132,20 @@ PACTA es una plataforma integral para la gestión de contratos empresariales que
   - Gráficos comparativos, tendencias y reportes exportables.
 
 - **Gestión de Suplementos**:
-  - Entender “suplemento” como la acción de modificar contratos, preservando el historial sin eliminación de registros.
+  - Entender "suplemento" como la acción de modificar contratos, preservando el historial sin eliminación de registros.
   - Proceso de adición de suplementos vinculado a cada contrato, respetando las reglas de negocio definidas.
 
 - **Autenticación y Control de Acceso**:
   - Dos tipos de usuario: RA (desarrollador, con permisos totales) y admin (gestión de la aplicación).
-  - Contraseñas generativas iniciadas con “Pacta.2025*” y opción de cambio desde el perfil.
+  - Contraseñas generativas iniciadas con "Pacta.2025*" y opción de cambio desde el perfil.
   - Protección de rutas y acciones mediante guardias basados en roles.
 
 ### 3.2 Tecnologías y Herramientas a Consolidar
 - **Frontend**:  
   - **React y Vite**: Continuar utilizando React con Vite para optimización y desarrollo rápido.
   - **Tailwind CSS y Shadcn/UI**: Ampliar el sistema de diseño, implementando animaciones y micro-interacciones modernas.
-  - **TanStack Router**: Definir rutas claras para Dashboard, Contratos y Estadísticas, con tipado estricto.
-  - **Zustand y TanStack Query**: Completar la integración para un manejo de estado global y sincronización con el backend.
+  - **Remix**: Definir rutas claras para Dashboard, Contratos y Estadísticas, con una estructura organizada
+  - **Zustand y SWR**: Completar la integración para un manejo de estado global y sincronización con el backend.
   
 - **Backend**:
   - **Express.js y TypeScript**: Mantener la robustez y escalabilidad, con mejoras en la validación (usando Zod) y manejo de errores.
@@ -177,7 +177,7 @@ PACTA es una plataforma integral para la gestión de contratos empresariales que
 ### 4.3 Frontend: Implementación del Nuevo Diseño y Funcionalidades (Semanas 3-6)
 - **Dashboard Principal**:
   - Crear vista con resumen de estadísticas, gráficos y acciones rápidas.
-  - Implementar navegación intuitiva (sidebar con “Contratos” y “Estadísticas”).
+  - Implementar navegación intuitiva (sidebar con "Contratos" y "Estadísticas").
 - **Página de Contratos**:
   - Desarrollar tabla interactiva con filtros (Cliente/Proveedor) y búsqueda.
   - Integrar llamada a API para traer datos del backend.
@@ -188,7 +188,7 @@ PACTA es una plataforma integral para la gestión de contratos empresariales que
   - Crear vistas de login y perfil de usuario.
   - Implementar validación de formularios (usando Zod) y manejo de tokens.
 - **Routing y Navegación**:
-  - Configurar rutas en TanStack Router, protegiendo las rutas sensibles según rol.
+  - Configurar rutas en Remix, protegiendo las rutas sensibles según rol.
   - Agregar transiciones y animaciones para mejorar la experiencia de usuario.
 
 ### 4.4 Integración y Pruebas Finales (Semanas 7-8)
@@ -221,7 +221,7 @@ PACTA es una plataforma integral para la gestión de contratos empresariales que
 ### 5.3 Rendimiento y Escalabilidad
 - **Optimización del Frontend**:
   - Implementar code splitting y lazy loading para reducir el tamaño inicial del bundle.
-  - Utilizar memoización y optimizar la gestión del estado con Zustand y TanStack Query para minimizar re-renderizados.
+  - Utilizar memoización y optimizar la gestión del estado con Zustand y SWR para minimizar re-renderizados.
 - **Mejora de la Comunicación con el Backend**:
   - Implementar caché inteligente en el frontend para almacenar respuestas frecuentes y reducir las llamadas a la API.
   - Considerar el uso de web sockets o actualizaciones en tiempo real para notificaciones y cambios dinámicos en el dashboard.

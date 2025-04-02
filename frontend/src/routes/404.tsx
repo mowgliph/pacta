@@ -1,9 +1,10 @@
-import { createFileRoute, Link } from '@tanstack/react-router'
+import { Link } from '@remix-run/react';
+import React from 'react';
 
 /**
- * Página de error 404
+ * Página para rutas no encontradas (404)
  */
-function NotFoundPage() {
+export default function NotFound() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
       <div className="text-center">
@@ -20,9 +21,5 @@ function NotFoundPage() {
         </Link>
       </div>
     </div>
-  )
-}
-
-export const Route = createFileRoute('/404')({
-  component: NotFoundPage
-}) 
+  );
+} 

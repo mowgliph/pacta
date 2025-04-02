@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatisticsChartCard } from './StatisticsChartCard';
-import { useSpecificStats } from '../../dashboard/hooks/useDashboardStats';
+import { useSpecificStats } from '../hooks/useStatistics';
 import { Progress } from '@/components/ui/progress';
 
 export function ContractAnalytics() {

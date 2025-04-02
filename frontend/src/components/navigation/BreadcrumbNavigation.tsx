@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useRouterState, useMatches } from '@tanstack/react-router';
+import { Link, useMatches } from '@remix-run/react';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -10,7 +10,7 @@ import {
 import { IconHome } from '@tabler/icons-react';
 
 // Definición de tipo para el contexto de ruta que proporciona información de breadcrumb
-type RouteContext = {
+type RouteHandle = {
   breadcrumb?: string;
 }
 
@@ -19,20 +19,19 @@ type BreadcrumbNavigationProps = {
   className?: string;
 }
 
-// Función para reconstruir la ruta completa
-const getFullPath = (paths: string[]): string => {
-  return '/' + paths.filter(Boolean).join('/');
-};
-
 export const BreadcrumbNavigation: React.FC<BreadcrumbNavigationProps> = ({ className }) => {
-  const router = useRouterState();
   const matches = useMatches();
   
-  // Filtramos las rutas que tienen IDs con underscores ya que suelen ser rutas de layout
-  const filteredMatches = matches.filter(match => !match.routeId.startsWith('_'));
+  // Filtramos las rutas sin handle o breadcrumb
+  const breadcrumbs = matches
+    .filter(match => match.handle && (match.handle as RouteHandle).breadcrumb)
+    .map(match => ({
+      breadcrumb: (match.handle as RouteHandle).breadcrumb as string,
+      pathname: match.pathname
+    }));
   
-  // Si estamos en la ruta raíz, no mostramos breadcrumbs
-  if (filteredMatches.length <= 1 && router.location.pathname === '/') {
+  // Si no hay breadcrumbs o estamos en la ruta raíz, no mostramos nada
+  if (breadcrumbs.length === 0 || window.location.pathname === '/') {
     return null;
   }
 
@@ -49,31 +48,21 @@ export const BreadcrumbNavigation: React.FC<BreadcrumbNavigationProps> = ({ clas
         
         <BreadcrumbSeparator />
         
-        {/* Mapear las rutas anidadas para crear el breadcrumb */}
-        {filteredMatches.map((match, index) => {
-          const isLast = index === filteredMatches.length - 1;
-          const paths = filteredMatches.slice(0, index + 1).map(m => m.pathname);
-          const fullPath = getFullPath(paths);
+        {/* Mapear las rutas para crear el breadcrumb */}
+        {breadcrumbs.map((item, index) => {
+          const isLast = index === breadcrumbs.length - 1;
           
-          // Extraer el nombre usando el pathname como fallback
-          // Nota: cada ruta puede definir un metadato para breadcrumb
-          const routeName = 
-            // Casting seguro a any para acceder a metadatos posibles
-            ((match as any).__lazyMeta?.breadcrumb || 
-             (match as any).meta?.breadcrumb) || 
-            // Capitalizar el pathname como fallback
-            (match.pathname && match.pathname.charAt(0).toUpperCase() + match.pathname.slice(1)) || 
-            'Página';
-          
-          // El último elemento no es clickeable
           return (
-            <React.Fragment key={match.id}>
+            <React.Fragment key={item.pathname}>
               <BreadcrumbItem>
                 {isLast ? (
-                  <BreadcrumbPage>{routeName}</BreadcrumbPage>
+                  <BreadcrumbPage>{item.breadcrumb}</BreadcrumbPage>
                 ) : (
-                  <Link to={fullPath} className="text-muted-foreground hover:text-foreground transition-colors">
-                    {routeName}
+                  <Link 
+                    to={item.pathname} 
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {item.breadcrumb}
                   </Link>
                 )}
               </BreadcrumbItem>

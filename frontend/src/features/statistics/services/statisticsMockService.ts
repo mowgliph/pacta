@@ -1,4 +1,5 @@
-import { type SpecificStats, type UserMetrics } from '../../dashboard/services/dashboard-service';
+import { SpecificStats, UserMetrics } from '../types';
+import { StatisticsType } from '../hooks/useStatistics';
 
 /**
  * Genera datos mock para las estadísticas de contratos
@@ -120,7 +121,7 @@ export const mockUserMetrics = (): UserMetrics => {
  * Útil para desarrollo mientras se completa la implementación del backend
  */
 export const StatisticsMockService = {
-  getSpecificStats: (type: string): SpecificStats => {
+  getSpecificStats: (type: StatisticsType): SpecificStats => {
     // Datos comunes para todas las estadísticas
     const baseStats: SpecificStats = {
       lastUpdated: new Date().toISOString(),
@@ -334,4 +335,16 @@ export const StatisticsMockService = {
         return baseStats;
     }
   },
+
+  /**
+   * Obtiene métricas de usuario simuladas
+   */
+  getUserMetrics: (): UserMetrics => {
+    return {
+      contractsCreated: 12,
+      contractsUpdated: 28,
+      documentsUploaded: 45,
+      lastActivity: new Date().toISOString(),
+    };
+  }
 }; 

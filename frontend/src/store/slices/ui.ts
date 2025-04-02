@@ -42,11 +42,16 @@ export const crearSliceUI: StateCreator<SliceUI> = (set, get) => ({
 
   cambiarTema: (tema) => {
     set({ tema })
-    localStorage.setItem('tema', tema)
-    if (tema === 'dark') {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
+    
+    // Verificar si estamos en el navegador
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('tema', tema)
+      
+      if (tema === 'dark') {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
     }
   },
 

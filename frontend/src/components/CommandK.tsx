@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@remix-run/react';
 import {
   IconDashboard,
   IconFileDescription,
@@ -60,21 +60,21 @@ export const CommandK = () => {
       id: 'dashboard',
       title: 'Dashboard',
       icon: <IconDashboard className="h-4 w-4" />,
-      href: '/_authenticated/dashboard',
+      href: '/dashboard',
       section: 'principal',
     },
     {
       id: 'contracts',
       title: 'Contratos',
       icon: <IconFileDescription className="h-4 w-4" />,
-      href: '/_authenticated/contracts',
+      href: '/contracts',
       section: 'principal',
     },
     {
       id: 'new-contract',
       title: 'Nuevo Contrato',
       icon: <IconFileDescription className="h-4 w-4" />,
-      href: '/_authenticated/contracts/create',
+      href: '/contracts/create',
       shortcut: 'N C',
       section: 'principal',
     },
@@ -82,35 +82,35 @@ export const CommandK = () => {
       id: 'supplements',
       title: 'Suplementos',
       icon: <IconClipboardList className="h-4 w-4" />,
-      href: '/_authenticated/supplements',
+      href: '/supplements',
       section: 'principal',
     },
     {
       id: 'companies',
       title: 'Empresas',
       icon: <IconBuildingSkyscraper className="h-4 w-4" />,
-      href: '/_authenticated/companies',
+      href: '/companies',
       section: 'principal',
     },
     {
       id: 'users',
       title: 'Usuarios',
       icon: <IconUsers className="h-4 w-4" />,
-      href: '/_authenticated/users',
+      href: '/users',
       section: 'principal',
     },
     {
       id: 'settings',
       title: 'Configuración',
       icon: <IconSettings className="h-4 w-4" />,
-      href: '/_authenticated/settings',
+      href: '/settings',
       section: 'configuracion',
     },
     {
       id: 'profile',
       title: 'Mi Perfil',
       icon: <IconUsers className="h-4 w-4" />,
-      href: '/_authenticated/profile',
+      href: '/profile',
       section: 'configuracion',
     },
     // Comandos de tema
@@ -196,7 +196,7 @@ export const CommandK = () => {
                     if (item.action) {
                       runCommand(item.action);
                     } else if (item.href) {
-                      runCommand(() => navigate({ to: item.href as any }));
+                      runCommand(() => navigate(item.href as string));
                     }
                   }}
                 >
@@ -234,7 +234,7 @@ export const CommandK = () => {
                       if (item.action) {
                         runCommand(item.action);
                       } else if (item.href) {
-                        runCommand(() => navigate({ to: item.href as any }));
+                        runCommand(() => navigate(item.href as string));
                       }
                     }}
                   >

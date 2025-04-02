@@ -20,17 +20,30 @@ const initialState: ThemeProviderState = {
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
+// Verificar si estamos en el navegador
+const isClient = typeof window !== 'undefined';
+
 export function ThemeProvider({
   children,
   defaultTheme = "light",
   storageKey = "pacta-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
-  );
+  const [theme, setTheme] = useState<Theme>(defaultTheme);
+  
+  // Inicializar el tema desde localStorage solo en el cliente
+  useEffect(() => {
+    if (isClient) {
+      const savedTheme = localStorage.getItem(storageKey) as Theme;
+      if (savedTheme) {
+        setTheme(savedTheme);
+      }
+    }
+  }, [storageKey]);
 
   useEffect(() => {
+    if (!isClient) return;
+    
     const root = window.document.documentElement;
     
     root.classList.remove("light", "dark");

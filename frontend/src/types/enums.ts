@@ -11,22 +11,34 @@ export enum Role {
  * Estados de usuario definidos en el backend.
  */
 export enum UserStatus {
-  ACTIVE = 'active',
-  INACTIVE = 'inactive',
-  PENDING = 'pending',
-  SUSPENDED = 'suspended',
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  PENDING = 'PENDING',
+  BLOCKED = 'BLOCKED',
 }
 
 /**
  * Estados de contrato definidos en el backend.
  */
 export enum ContractStatus {
-  DRAFT = 'draft',
-  PENDING = 'pending',
-  ACTIVE = 'active',
-  COMPLETED = 'completed',
-  CANCELLED = 'cancelled',
-  EXPIRED = 'expired',
+  DRAFT = 'DRAFT',
+  PENDING = 'PENDING',
+  ACTIVE = 'ACTIVE',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+  EXPIRED = 'EXPIRED',
+}
+
+/**
+ * Estados de suplemento definidos en el backend.
+ */
+export enum SupplementStatus {
+  DRAFT = 'DRAFT',
+  PENDING = 'PENDING',
+  ACTIVE = 'ACTIVE',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+  EXPIRED = 'EXPIRED',
 }
 
 /**
@@ -48,15 +60,22 @@ export enum PaymentStatus {
   PAID = 'PAID',
   OVERDUE = 'OVERDUE',
   CANCELLED = 'CANCELLED',
+  PARTIALLY_PAID = 'PARTIALLY_PAID',
 }
 
+/**
+ * Tipos de notificación definidos en el sistema.
+ */
 export enum NotificationType {
-  SUCCESS = 'success',
-  ERROR = 'error',
-  WARNING = 'warning',
-  INFO = 'info',
+  SUCCESS = 'SUCCESS',
+  ERROR = 'ERROR',
+  WARNING = 'WARNING',
+  INFO = 'INFO',
 }
 
+/**
+ * Orden de clasificación
+ */
 export enum SortOrder {
   ASC = 'asc',
   DESC = 'desc',

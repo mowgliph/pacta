@@ -34,7 +34,8 @@ El principal objetivo de PACTA es **reducir los errores, optimizar el tiempo de 
 - **Arquitectura Frontend:** 
   - Desarrollado con React 18 y TypeScript para un código robusto y tipado
   - Interfaz moderna con Shadcn/UI y Tailwind CSS para diseño minimalista y responsivo
-  - Enrutamiento tipo-seguro con TanStack Router
+  - Enrutamiento tipo-seguro con Remix
+  - Gestión de datos del servidor con SWR
   - Gestión de estado global con Zustand para manejo eficiente de datos
   - Sistema de componentes modulares y reutilizables
   - Visualización de datos con gráficos interactivos

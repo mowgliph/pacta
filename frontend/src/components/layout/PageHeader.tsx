@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate } from '@remix-run/react';
 import { IconArrowLeft } from '@tabler/icons-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -25,7 +25,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 
   const handleBack = () => {
     if (backPath) {
-      navigate({ to: backPath });
+      navigate(backPath);
     } else {
       window.history.back();
     }

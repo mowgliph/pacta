@@ -2,14 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatisticsChartCard } from './StatisticsChartCard';
-import { useSpecificStats } from '../../dashboard/hooks/useDashboardStats';
+import { useSpecificStats } from '../hooks/useStatistics';
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { IconCalendar, IconFilter } from '@tabler/icons-react';
 
 export function ActivityAnalytics() {
-  const { data: activityStats, isLoading, refetch } = useSpecificStats('activity');
+  const { data: activityStats, isLoading, mutate } = useSpecificStats('activity');
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [activityType, setActivityType] = useState<string>('all');
   
@@ -61,7 +61,7 @@ export function ActivityAnalytics() {
   
   // Actualizar filtros y refrescar datos
   const applyFilters = () => {
-    refetch();
+    mutate();
   };
   
   return (
