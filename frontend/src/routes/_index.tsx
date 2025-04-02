@@ -1,4 +1,16 @@
 import { redirect } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
+
+// Ruta para la página de inicio que redirige a la ruta autenticada
+export const Route = createFileRoute('/_index')({
+  component: IndexComponent,
+  beforeLoad: () => {
+    throw redirect({
+      to: '/_authenticated/dashboard',
+      replace: true
+    })
+  }
+})
 
 // Componente que redirige a la ruta autenticada
 export function IndexComponent() {
