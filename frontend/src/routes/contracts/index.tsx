@@ -4,6 +4,6 @@ import { ContractsListPage } from '@/features/contracts'
 /**
  * Ruta para la lista de contratos
  */
-export const Route = createFileRoute('/_authenticated/contracts/')({
+export const Route = createFileRoute('/contracts/')({
   component: ContractsListPage
 }) 

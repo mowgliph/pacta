@@ -11,22 +11,19 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as IndexImport } from './routes/_index'
+import { Route as LoginImport } from './routes/login'
 import { Route as DashboardImport } from './routes/dashboard'
-import { Route as AuthenticatedImport } from './routes/_authenticated'
-import { Route as AuthenticatedIndexImport } from './routes/_authenticated/index'
-import { Route as AuthenticatedUsersImport } from './routes/_authenticated/users'
-import { Route as AuthenticatedStatisticsImport } from './routes/_authenticated/statistics'
-import { Route as AuthenticatedContractsImport } from './routes/_authenticated/contracts'
-import { Route as errors404Import } from './routes/(errors)/404'
-import { Route as authLoginImport } from './routes/(auth)/login'
-import { Route as AuthenticatedContractsIndexImport } from './routes/_authenticated/contracts/index'
-import { Route as AuthenticatedContractsCreateImport } from './routes/_authenticated/contracts/create'
+import { Route as ContractsImport } from './routes/contracts'
+import { Route as R404Import } from './routes/404'
+import { Route as IndexImport } from './routes/index'
+import { Route as ContractsIndexImport } from './routes/contracts/index'
+import { Route as ContractsCreateImport } from './routes/contracts/create'
 
 // Create/Update Routes
 
-const IndexRoute = IndexImport.update({
-  id: '/_index',
+const LoginRoute = LoginImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -36,77 +33,59 @@ const DashboardRoute = DashboardImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const AuthenticatedRoute = AuthenticatedImport.update({
-  id: '/_authenticated',
+const ContractsRoute = ContractsImport.update({
+  id: '/contracts',
+  path: '/contracts',
   getParentRoute: () => rootRoute,
 } as any)
 
-const AuthenticatedIndexRoute = AuthenticatedIndexImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-
-const AuthenticatedUsersRoute = AuthenticatedUsersImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-
-const AuthenticatedStatisticsRoute = AuthenticatedStatisticsImport.update({
-  id: '/statistics',
-  path: '/statistics',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-
-const AuthenticatedContractsRoute = AuthenticatedContractsImport.update({
-  id: '/contracts',
-  path: '/contracts',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-
-const errors404Route = errors404Import.update({
-  id: '/(errors)/404',
+const R404Route = R404Import.update({
+  id: '/404',
   path: '/404',
   getParentRoute: () => rootRoute,
 } as any)
 
-const authLoginRoute = authLoginImport.update({
-  id: '/(auth)/login',
-  path: '/login',
+const IndexRoute = IndexImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRoute,
 } as any)
 
-const AuthenticatedContractsIndexRoute =
-  AuthenticatedContractsIndexImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedContractsRoute,
-  } as any)
+const ContractsIndexRoute = ContractsIndexImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ContractsRoute,
+} as any)
 
-const AuthenticatedContractsCreateRoute =
-  AuthenticatedContractsCreateImport.update({
-    id: '/create',
-    path: '/create',
-    getParentRoute: () => AuthenticatedContractsRoute,
-  } as any)
+const ContractsCreateRoute = ContractsCreateImport.update({
+  id: '/create',
+  path: '/create',
+  getParentRoute: () => ContractsRoute,
+} as any)
 
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof AuthenticatedImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
-    '/_index': {
-      id: '/_index'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof IndexImport
+    '/404': {
+      id: '/404'
+      path: '/404'
+      fullPath: '/404'
+      preLoaderRoute: typeof R404Import
+      parentRoute: typeof rootRoute
+    }
+    '/contracts': {
+      id: '/contracts'
+      path: '/contracts'
+      fullPath: '/contracts'
+      preLoaderRoute: typeof ContractsImport
       parentRoute: typeof rootRoute
     }
     '/dashboard': {
@@ -116,195 +95,120 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardImport
       parentRoute: typeof rootRoute
     }
-    '/(auth)/login': {
-      id: '/(auth)/login'
+    '/login': {
+      id: '/login'
       path: '/login'
       fullPath: '/login'
-      preLoaderRoute: typeof authLoginImport
+      preLoaderRoute: typeof LoginImport
       parentRoute: typeof rootRoute
     }
-    '/(errors)/404': {
-      id: '/(errors)/404'
-      path: '/404'
-      fullPath: '/404'
-      preLoaderRoute: typeof errors404Import
-      parentRoute: typeof rootRoute
-    }
-    '/_authenticated/contracts': {
-      id: '/_authenticated/contracts'
-      path: '/contracts'
-      fullPath: '/contracts'
-      preLoaderRoute: typeof AuthenticatedContractsImport
-      parentRoute: typeof AuthenticatedImport
-    }
-    '/_authenticated/statistics': {
-      id: '/_authenticated/statistics'
-      path: '/statistics'
-      fullPath: '/statistics'
-      preLoaderRoute: typeof AuthenticatedStatisticsImport
-      parentRoute: typeof AuthenticatedImport
-    }
-    '/_authenticated/users': {
-      id: '/_authenticated/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof AuthenticatedUsersImport
-      parentRoute: typeof AuthenticatedImport
-    }
-    '/_authenticated/': {
-      id: '/_authenticated/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexImport
-      parentRoute: typeof AuthenticatedImport
-    }
-    '/_authenticated/contracts/create': {
-      id: '/_authenticated/contracts/create'
+    '/contracts/create': {
+      id: '/contracts/create'
       path: '/create'
       fullPath: '/contracts/create'
-      preLoaderRoute: typeof AuthenticatedContractsCreateImport
-      parentRoute: typeof AuthenticatedContractsImport
+      preLoaderRoute: typeof ContractsCreateImport
+      parentRoute: typeof ContractsImport
     }
-    '/_authenticated/contracts/': {
-      id: '/_authenticated/contracts/'
+    '/contracts/': {
+      id: '/contracts/'
       path: '/'
       fullPath: '/contracts/'
-      preLoaderRoute: typeof AuthenticatedContractsIndexImport
-      parentRoute: typeof AuthenticatedContractsImport
+      preLoaderRoute: typeof ContractsIndexImport
+      parentRoute: typeof ContractsImport
     }
   }
 }
 
 // Create and export the route tree
 
-interface AuthenticatedContractsRouteChildren {
-  AuthenticatedContractsCreateRoute: typeof AuthenticatedContractsCreateRoute
-  AuthenticatedContractsIndexRoute: typeof AuthenticatedContractsIndexRoute
+interface ContractsRouteChildren {
+  ContractsCreateRoute: typeof ContractsCreateRoute
+  ContractsIndexRoute: typeof ContractsIndexRoute
 }
 
-const AuthenticatedContractsRouteChildren: AuthenticatedContractsRouteChildren =
-  {
-    AuthenticatedContractsCreateRoute: AuthenticatedContractsCreateRoute,
-    AuthenticatedContractsIndexRoute: AuthenticatedContractsIndexRoute,
-  }
-
-const AuthenticatedContractsRouteWithChildren =
-  AuthenticatedContractsRoute._addFileChildren(
-    AuthenticatedContractsRouteChildren,
-  )
-
-interface AuthenticatedRouteChildren {
-  AuthenticatedContractsRoute: typeof AuthenticatedContractsRouteWithChildren
-  AuthenticatedStatisticsRoute: typeof AuthenticatedStatisticsRoute
-  AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
-  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+const ContractsRouteChildren: ContractsRouteChildren = {
+  ContractsCreateRoute: ContractsCreateRoute,
+  ContractsIndexRoute: ContractsIndexRoute,
 }
 
-const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedContractsRoute: AuthenticatedContractsRouteWithChildren,
-  AuthenticatedStatisticsRoute: AuthenticatedStatisticsRoute,
-  AuthenticatedUsersRoute: AuthenticatedUsersRoute,
-  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
-}
-
-const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
-  AuthenticatedRouteChildren,
+const ContractsRouteWithChildren = ContractsRoute._addFileChildren(
+  ContractsRouteChildren,
 )
 
 export interface FileRoutesByFullPath {
-  '': typeof IndexRoute
+  '/': typeof IndexRoute
+  '/404': typeof R404Route
+  '/contracts': typeof ContractsRouteWithChildren
   '/dashboard': typeof DashboardRoute
-  '/login': typeof authLoginRoute
-  '/404': typeof errors404Route
-  '/contracts': typeof AuthenticatedContractsRouteWithChildren
-  '/statistics': typeof AuthenticatedStatisticsRoute
-  '/users': typeof AuthenticatedUsersRoute
-  '/': typeof AuthenticatedIndexRoute
-  '/contracts/create': typeof AuthenticatedContractsCreateRoute
-  '/contracts/': typeof AuthenticatedContractsIndexRoute
+  '/login': typeof LoginRoute
+  '/contracts/create': typeof ContractsCreateRoute
+  '/contracts/': typeof ContractsIndexRoute
 }
 
 export interface FileRoutesByTo {
-  '': typeof IndexRoute
+  '/': typeof IndexRoute
+  '/404': typeof R404Route
   '/dashboard': typeof DashboardRoute
-  '/login': typeof authLoginRoute
-  '/404': typeof errors404Route
-  '/statistics': typeof AuthenticatedStatisticsRoute
-  '/users': typeof AuthenticatedUsersRoute
-  '/': typeof AuthenticatedIndexRoute
-  '/contracts/create': typeof AuthenticatedContractsCreateRoute
-  '/contracts': typeof AuthenticatedContractsIndexRoute
+  '/login': typeof LoginRoute
+  '/contracts/create': typeof ContractsCreateRoute
+  '/contracts': typeof ContractsIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
-  '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/_index': typeof IndexRoute
+  '/': typeof IndexRoute
+  '/404': typeof R404Route
+  '/contracts': typeof ContractsRouteWithChildren
   '/dashboard': typeof DashboardRoute
-  '/(auth)/login': typeof authLoginRoute
-  '/(errors)/404': typeof errors404Route
-  '/_authenticated/contracts': typeof AuthenticatedContractsRouteWithChildren
-  '/_authenticated/statistics': typeof AuthenticatedStatisticsRoute
-  '/_authenticated/users': typeof AuthenticatedUsersRoute
-  '/_authenticated/': typeof AuthenticatedIndexRoute
-  '/_authenticated/contracts/create': typeof AuthenticatedContractsCreateRoute
-  '/_authenticated/contracts/': typeof AuthenticatedContractsIndexRoute
+  '/login': typeof LoginRoute
+  '/contracts/create': typeof ContractsCreateRoute
+  '/contracts/': typeof ContractsIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | ''
-    | '/dashboard'
-    | '/login'
+    | '/'
     | '/404'
     | '/contracts'
-    | '/statistics'
-    | '/users'
-    | '/'
+    | '/dashboard'
+    | '/login'
     | '/contracts/create'
     | '/contracts/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | ''
+    | '/'
+    | '/404'
     | '/dashboard'
     | '/login'
-    | '/404'
-    | '/statistics'
-    | '/users'
-    | '/'
     | '/contracts/create'
     | '/contracts'
   id:
     | '__root__'
-    | '/_authenticated'
-    | '/_index'
+    | '/'
+    | '/404'
+    | '/contracts'
     | '/dashboard'
-    | '/(auth)/login'
-    | '/(errors)/404'
-    | '/_authenticated/contracts'
-    | '/_authenticated/statistics'
-    | '/_authenticated/users'
-    | '/_authenticated/'
-    | '/_authenticated/contracts/create'
-    | '/_authenticated/contracts/'
+    | '/login'
+    | '/contracts/create'
+    | '/contracts/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
-  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   IndexRoute: typeof IndexRoute
+  R404Route: typeof R404Route
+  ContractsRoute: typeof ContractsRouteWithChildren
   DashboardRoute: typeof DashboardRoute
-  authLoginRoute: typeof authLoginRoute
-  errors404Route: typeof errors404Route
+  LoginRoute: typeof LoginRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  AuthenticatedRoute: AuthenticatedRouteWithChildren,
   IndexRoute: IndexRoute,
+  R404Route: R404Route,
+  ContractsRoute: ContractsRouteWithChildren,
   DashboardRoute: DashboardRoute,
-  authLoginRoute: authLoginRoute,
-  errors404Route: errors404Route,
+  LoginRoute: LoginRoute,
 }
 
 export const routeTree = rootRoute
@@ -317,61 +221,39 @@ export const routeTree = rootRoute
     "__root__": {
       "filePath": "__root.tsx",
       "children": [
-        "/_authenticated",
-        "/_index",
+        "/",
+        "/404",
+        "/contracts",
         "/dashboard",
-        "/(auth)/login",
-        "/(errors)/404"
+        "/login"
       ]
     },
-    "/_authenticated": {
-      "filePath": "_authenticated.tsx",
+    "/": {
+      "filePath": "index.tsx"
+    },
+    "/404": {
+      "filePath": "404.tsx"
+    },
+    "/contracts": {
+      "filePath": "contracts.tsx",
       "children": [
-        "/_authenticated/contracts",
-        "/_authenticated/statistics",
-        "/_authenticated/users",
-        "/_authenticated/"
+        "/contracts/create",
+        "/contracts/"
       ]
-    },
-    "/_index": {
-      "filePath": "_index.tsx"
     },
     "/dashboard": {
       "filePath": "dashboard.tsx"
     },
-    "/(auth)/login": {
-      "filePath": "(auth)/login.tsx"
+    "/login": {
+      "filePath": "login.tsx"
     },
-    "/(errors)/404": {
-      "filePath": "(errors)/404.tsx"
+    "/contracts/create": {
+      "filePath": "contracts/create.tsx",
+      "parent": "/contracts"
     },
-    "/_authenticated/contracts": {
-      "filePath": "_authenticated/contracts.tsx",
-      "parent": "/_authenticated",
-      "children": [
-        "/_authenticated/contracts/create",
-        "/_authenticated/contracts/"
-      ]
-    },
-    "/_authenticated/statistics": {
-      "filePath": "_authenticated/statistics.tsx",
-      "parent": "/_authenticated"
-    },
-    "/_authenticated/users": {
-      "filePath": "_authenticated/users.tsx",
-      "parent": "/_authenticated"
-    },
-    "/_authenticated/": {
-      "filePath": "_authenticated/index.tsx",
-      "parent": "/_authenticated"
-    },
-    "/_authenticated/contracts/create": {
-      "filePath": "_authenticated/contracts/create.tsx",
-      "parent": "/_authenticated/contracts"
-    },
-    "/_authenticated/contracts/": {
-      "filePath": "_authenticated/contracts/index.tsx",
-      "parent": "/_authenticated/contracts"
+    "/contracts/": {
+      "filePath": "contracts/index.tsx",
+      "parent": "/contracts"
     }
   }
 }

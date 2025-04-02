@@ -1,16 +1,15 @@
-import { createFileRoute, redirect } from '@tanstack/react-router'
+import { Outlet, createFileRoute, redirect } from '@tanstack/react-router'
 import { useStore } from '@/store'
-import { DashboardPage } from '@/features/dashboard/pages/DashboardPage'
-import { DashboardLayout } from '@/components/layout/DashboardLayout'
+import { ContractsLayout } from '@/features/contracts/layouts/ContractsLayout'
 
 /**
- * Ruta para el dashboard principal
+ * Ruta principal para la sección de contratos
  */
-export const Route = createFileRoute('/dashboard')({
+export const Route = createFileRoute('/contracts')({
   component: () => (
-    <DashboardLayout>
-      <DashboardPage />
-    </DashboardLayout>
+    <ContractsLayout>
+      <Outlet />
+    </ContractsLayout>
   ),
   beforeLoad: () => {
     // Verificar si el usuario está autenticado

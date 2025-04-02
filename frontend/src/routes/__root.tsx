@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Outlet } from '@tanstack/react-router'
+import { Outlet, createRootRoute } from '@tanstack/react-router'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { ThemeProvider } from '@/components/theme-provider'
 import { NotificationProvider } from '@/components/ui/NotificationContainer'
@@ -32,9 +32,9 @@ function NotFoundError() {
 // Cliente de consulta para React Query
 const queryClient = new QueryClient()
 
-// Componente raíz que proporciona contexto a toda la aplicación
-export function RootComponent() {
-  return (
+// Definición de la ruta raíz utilizando createRootRoute
+export const Route = createRootRoute({
+  component: () => (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <NotificationProvider>
@@ -45,5 +45,8 @@ export function RootComponent() {
       </ThemeProvider>
       {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
-  )
-}
+  ),
+  // Manejo de errores global
+  errorComponent: () => <GeneralError />,
+  notFoundComponent: () => <NotFoundError />
+})
