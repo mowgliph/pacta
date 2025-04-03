@@ -1,0 +1,23 @@
+name: 🚀 Auto Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Detecta cualquier tag que comience con "v" (ej: v1.0.0, v2.1.0)
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛎️ Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 🚀 Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}  # Usa el nombre del tag
+          name: "Release ${{ github.ref_name }}"  # Nombre del Release
+          body: "🚀 Cambios en esta versión:\n\n- Descripción aquí\n- Más mejoras"
+          draft: false  # Si es "true", el release será un borrador
+          prerelease: false  # Si es "true", el release será pre-lanzamiento
