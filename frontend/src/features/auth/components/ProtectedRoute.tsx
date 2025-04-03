@@ -5,6 +5,7 @@ import { type Role } from '@/types/enums';
 type ProtectedRouteProps = {
   children: React.ReactNode;
   rolesPermitidos?: Role[];
+  requiredRoles?: Role[];
   redirectTo?: To;
 };
 
@@ -16,10 +17,14 @@ type ProtectedRouteProps = {
 export function ProtectedRoute({ 
   children, 
   rolesPermitidos = [], 
+  requiredRoles = [],
   redirectTo = '/auth/access-denied' 
 }: ProtectedRouteProps) {
   const { estaAutenticado, tienePermiso } = useAuth();
   const location = useLocation();
+  
+  // Combinar roles permitidos de ambos props para compatibilidad
+  const roles = [...rolesPermitidos, ...requiredRoles];
 
   // Si el usuario no está autenticado, redirigir al login
   if (!estaAutenticado) {
@@ -27,12 +32,12 @@ export function ProtectedRoute({
   }
 
   // Si no se especifican roles, permitir acceso a cualquier usuario autenticado
-  if (rolesPermitidos.length === 0) {
+  if (roles.length === 0) {
     return <>{children}</>;
   }
 
   // Verificar si el usuario tiene alguno de los roles permitidos
-  const tieneAcceso = tienePermiso(rolesPermitidos);
+  const tieneAcceso = tienePermiso(roles);
 
   // Si el usuario no tiene los roles necesarios, redirigir a la ruta especificada
   if (!tieneAcceso) {

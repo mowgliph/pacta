@@ -64,7 +64,7 @@ export default function ContractsListPage({ isPublic = false }: ContractsListPag
   
   // Navegar a la página de crear contrato
   const handleCreateContract = () => {
-    navigate('/contracts/create')
+    navigate('/contracts/new')
   }
   
   // Refrescar los datos manualmente
@@ -72,9 +72,16 @@ export default function ContractsListPage({ isPublic = false }: ContractsListPag
     refreshContracts()
   }
 
-  const handleFilterChange = (newFilters: any) => {
-    setFilters(newFilters)
-    setSearchParams(prev => ({ ...prev, page: 1 }))
+  const handleFilterChange = (newFilters: Partial<ContractSearchParams>) => {
+    // Aplicar nuevos filtros manteniendo la paginación y ordenamiento actuales
+    setSearchParams(prev => ({ 
+      ...prev, 
+      ...newFilters,
+      page: 1 // Resetear a la primera página al filtrar
+    }));
+    
+    // Actualizar estado de filtros
+    setFilters(newFilters);
   }
   
   return (

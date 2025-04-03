@@ -2,13 +2,13 @@
  * Módulo de utilidad para realizar solicitudes a la API
  */
 import axios, { type AxiosError, type AxiosRequestConfig } from 'axios';
+import { API_CONFIG } from '@/config/api';
 
 // Crear una instancia de axios con configuración base
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: API_CONFIG.baseURL || 'http://localhost:3000/api',
+  headers: API_CONFIG.headers,
+  timeout: API_CONFIG.timeout,
 });
 
 // Interceptor para incluir el token de autenticación si existe

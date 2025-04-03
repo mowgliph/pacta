@@ -7,16 +7,13 @@ import {
 } from '@tanstack/react-query';
 import axios from 'axios';
 import { queryClient } from '@/lib/react-query';
-
-// Configuración de axios
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+import { API_CONFIG } from '@/config/api';
 
 // Crea instancia de axios con configuración base
 const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: API_CONFIG.baseURL || 'http://localhost:3001/api',
+  headers: API_CONFIG.headers,
+  timeout: API_CONFIG.timeout,
 });
 
 // Interceptor para agregar token a las peticiones

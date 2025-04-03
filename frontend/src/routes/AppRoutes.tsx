@@ -1,18 +1,16 @@
 import React, { lazy, Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams, Outlet } from 'react-router-dom';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Role } from '@/types/enums';
-import { MainLayout } from '@/layouts/MainLayout';
-import { AuthLayout } from '@/layouts/AuthLayout';
-import { PublicLayout } from '@/layouts/PublicLayout';
-import ProtectedRoute from '@/features/auth/components/ProtectedRoute';
-import Loading from '@/components/shared/Loading';
+import MainLayout from '@/layouts/MainLayout';
+import AuthLayout from '@/layouts/AuthLayout';
+import PublicLayout from '@/layouts/PublicLayout';
+import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute';
+import { Spinner } from '@/components/ui/spinner';
 
 // Importar páginas con carga perezosa
 const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage'));
 const RegisterPage = lazy(() => import('@/features/auth/pages/RegisterPage'));
-const ForgotPasswordPage = lazy(() => import('@/features/auth/pages/ForgotPasswordPage'));
-const ResetPasswordPage = lazy(() => import('@/features/auth/pages/ResetPasswordPage'));
 const DashboardPage = lazy(() => import('@/features/dashboard/pages/DashboardPage'));
 const PublicDashboardPage = lazy(() => import('@/features/dashboard/pages/PublicDashboardPage'));
 const ProfilePage = lazy(() => import('@/features/users/pages/UserProfilePage'));
@@ -20,26 +18,23 @@ const UserSettingsPage = lazy(() => import('@/features/users/pages/UserSettingsP
 const UsersListPage = lazy(() => import('@/features/users/pages/UsersListPage'));
 const ContractsListPage = lazy(() => import('@/features/contracts/pages/ContractsListPage'));
 const ContractDetailsPage = lazy(() => import('@/features/contracts/pages/ContractDetailsPage'));
-const CreateContractPage = lazy(() => import('@/features/contracts/pages/CreateContractPage'));
-const EditContractPage = lazy(() => import('@/features/contracts/pages/EditContractPage'));
-const SupplementsListPage = lazy(() => import('@/features/contracts/pages/SupplementsListPage'));
+const ContractCreatePage = lazy(() => import('@/features/contracts/pages/ContractCreatePage'));
+const ContractEditPage = lazy(() => import('@/features/contracts/pages/ContractEditPage'));
+const SupplementListPage = lazy(() => import('@/features/contracts/pages/SupplementListPage'));
 const SupplementDetailsPage = lazy(() => import('@/features/contracts/pages/SupplementDetailsPage'));
-const CreateSupplementPage = lazy(() => import('@/features/contracts/pages/CreateSupplementPage'));
-const EditSupplementPage = lazy(() => import('@/features/contracts/pages/EditSupplementPage'));
-const AnalyticsPage = lazy(() => import('@/features/analytics/pages/AnalyticsPage'));
+const SupplementCreatePage = lazy(() => import('@/features/contracts/pages/SupplementCreatePage'));
+const SupplementEditPage = lazy(() => import('@/features/contracts/pages/SupplementEditPage'));
 const NotFoundPage = lazy(() => import('@/components/shared/NotFoundPage'));
 
 export const AppRoutes = () => {
   return (
     <BrowserRouter>
-      <Suspense fallback={<Loading />}>
+      <Suspense fallback={<Spinner />}>
         <Routes>
           {/* Rutas públicas con layout de autenticación */}
           <Route element={<AuthLayout />}>
             <Route path="/auth/login" element={<LoginPage />} />
             <Route path="/auth/register" element={<RegisterPage />} />
-            <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-            <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
           </Route>
           
           {/* Rutas públicas con layout principal */}
@@ -50,7 +45,11 @@ export const AppRoutes = () => {
           </Route>
 
           {/* Rutas protegidas con layout principal */}
-          <Route element={<ProtectedRoute />}>
+          <Route element={
+            <ProtectedRoute>
+              <Outlet />
+            </ProtectedRoute>
+          }>
             <Route element={<MainLayout />}>
               {/* Dashboard - Acceso para todos los usuarios autenticados */}
               <Route path="/dashboard" element={<DashboardPage />} />
@@ -61,7 +60,7 @@ export const AppRoutes = () => {
               
               {/* Gestión de Usuarios - Acceso solo para Administradores */}
               <Route path="/users" element={
-                <ProtectedRoute requiredRoles={[Role.ADMIN, Role.RA]}>
+                <ProtectedRoute rolesPermitidos={[Role.ADMIN, Role.RA]}>
                   <UsersListPage />
                 </ProtectedRoute>
               } />
@@ -72,34 +71,27 @@ export const AppRoutes = () => {
               
               {/* Gestión de Contratos - Acceso para crear/editar solo para roles con permisos */}
               <Route path="/contracts/new" element={
-                <ProtectedRoute requiredRoles={[Role.ADMIN, Role.MANAGER]}>
-                  <CreateContractPage />
+                <ProtectedRoute rolesPermitidos={[Role.ADMIN, Role.MANAGER]}>
+                  <ContractCreatePage />
                 </ProtectedRoute>
               } />
               <Route path="/contracts/:id/edit" element={
-                <ProtectedRoute requiredRoles={[Role.ADMIN, Role.MANAGER]}>
-                  <EditContractWrapper />
+                <ProtectedRoute rolesPermitidos={[Role.ADMIN, Role.MANAGER]}>
+                  <ContractEditWrapper />
                 </ProtectedRoute>
               } />
               
               {/* Suplementos - Vista y gestión */}
-              <Route path="/contracts/:contractId/supplements" element={<SupplementsListWrapper />} />
+              <Route path="/contracts/:contractId/supplements" element={<SupplementListWrapper />} />
               <Route path="/contracts/:contractId/supplements/:id" element={<SupplementDetailsWrapper />} />
               <Route path="/contracts/:contractId/supplements/new" element={
-                <ProtectedRoute requiredRoles={[Role.ADMIN, Role.MANAGER]}>
-                  <CreateSupplementWrapper />
+                <ProtectedRoute rolesPermitidos={[Role.ADMIN, Role.MANAGER]}>
+                  <SupplementCreateWrapper />
                 </ProtectedRoute>
               } />
               <Route path="/contracts/:contractId/supplements/:id/edit" element={
-                <ProtectedRoute requiredRoles={[Role.ADMIN, Role.MANAGER]}>
-                  <EditSupplementWrapper />
-                </ProtectedRoute>
-              } />
-              
-              {/* Análisis y Reportes - Acceso solo para Administradores y Gerentes */}
-              <Route path="/analytics" element={
-                <ProtectedRoute requiredRoles={[Role.ADMIN, Role.MANAGER]}>
-                  <AnalyticsPage />
+                <ProtectedRoute rolesPermitidos={[Role.ADMIN, Role.MANAGER]}>
+                  <SupplementEditWrapper />
                 </ProtectedRoute>
               } />
             </Route>
@@ -119,40 +111,40 @@ export const AppRoutes = () => {
 // Componentes wrapper para pasar props desde los parámetros de ruta
 const ContractDetailsWrapper = () => {
   const { id } = useParams<{ id: string }>();
-  return <ContractDetailsPage id={id} />;
+  return <ContractDetailsPage id={id!} />;
 };
 
-const EditContractWrapper = () => {
+const ContractEditWrapper = () => {
   const { id } = useParams<{ id: string }>();
-  return <EditContractPage id={id} />;
+  return <ContractEditPage id={id!} />;
 };
 
-const SupplementsListWrapper = () => {
+const SupplementListWrapper = () => {
   const { contractId } = useParams<{ contractId: string }>();
-  return <SupplementsListPage contractId={contractId} />;
+  return <SupplementListPage contractId={contractId!} />;
 };
 
 const SupplementDetailsWrapper = () => {
   const { contractId, id } = useParams<{ contractId: string; id: string }>();
-  return <SupplementDetailsPage contractId={contractId} id={id} />;
+  return <SupplementDetailsPage contractId={contractId!} id={id!} />;
 };
 
-const CreateSupplementWrapper = () => {
+const SupplementCreateWrapper = () => {
   const { contractId } = useParams<{ contractId: string }>();
-  return <CreateSupplementPage contractId={contractId} />;
+  return <SupplementCreatePage contractId={contractId!} />;
 };
 
-const EditSupplementWrapper = () => {
+const SupplementEditWrapper = () => {
   const { contractId, id } = useParams<{ contractId: string; id: string }>();
-  return <EditSupplementPage contractId={contractId} id={id} />;
+  return <SupplementEditPage contractId={contractId!} id={id!} />;
 };
 
 const PublicContractWrapper = () => {
   const { id } = useParams<{ id: string }>();
-  return <ContractDetailsPage id={id} isPublic={true} />;
+  return <ContractDetailsPage id={id!} isPublic={true} />;
 };
 
 const PublicSupplementWrapper = () => {
   const { contractId, id } = useParams<{ contractId: string; id: string }>();
-  return <SupplementDetailsPage contractId={contractId} id={id} isPublic={true} />;
+  return <SupplementDetailsPage contractId={contractId!} id={id!} isPublic={true} />;
 }; 

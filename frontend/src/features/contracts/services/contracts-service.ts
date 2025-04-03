@@ -254,7 +254,7 @@ export const ContractService = {
     const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
     
     // Abrir la URL en una nueva pestaña
-    window.open(`${baseUrl}/contracts/supplements/${supplementId}/download`, '_blank');
+    window.open(`${baseUrl}/supplements/${supplementId}/download`, '_blank');
   },
   
   // Crear un nuevo suplemento

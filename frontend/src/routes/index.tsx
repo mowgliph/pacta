@@ -39,7 +39,7 @@ const PublicStatisticsPage = lazy(() => import('../features/statistics/pages/Pub
 
 // Common Pages
 const HomePage = lazy(() => import('../features/common/pages/HomePage'));
-const NotFoundPage = lazy(() => import('../features/common/pages/NotFoundPage'));
+const NotFoundPage = lazy(() => import('../components/shared/NotFoundPage'));
 const ErrorPage = lazy(() => import('../features/common/pages/ErrorPage'));
 
 // Rutas públicas (sin autenticación requerida)

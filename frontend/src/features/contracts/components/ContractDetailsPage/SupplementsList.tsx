@@ -18,7 +18,7 @@ import {
   IconCalendar,
   IconClock,
 } from '@tabler/icons-react';
-import { type Supplement } from '../../services/contracts-service';
+import { type Supplement, ContractService } from '../../services/contracts-service';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Role } from '@/types/enums';
 
@@ -59,12 +59,9 @@ export const SupplementsList: React.FC<SupplementsListProps> = ({
   };
 
   // Función para descargar el documento
-  const handleDownloadDocument = (documentUrl?: string) => {
-    if (documentUrl) {
-      // Crear una URL completa con el servidor backend
-      const baseUrl = import.meta.env.VITE_API_URL || '';
-      const url = documentUrl.startsWith('http') ? documentUrl : `${baseUrl}/${documentUrl}`;
-      window.open(url, '_blank');
+  const handleDownloadDocument = (id: string) => {
+    if (id) {
+      ContractService.downloadSupplementDocument(id);
     }
   };
 
@@ -158,7 +155,7 @@ export const SupplementsList: React.FC<SupplementsListProps> = ({
                       size="sm" 
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDownloadDocument(supplement.documentUrl);
+                        handleDownloadDocument(supplement.id);
                       }}
                       title="Descargar documento"
                     >
