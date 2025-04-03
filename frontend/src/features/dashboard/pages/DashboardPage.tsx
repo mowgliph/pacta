@@ -11,11 +11,13 @@ import { DashboardStatsCards } from '../components/DashboardStatsCards';
 import { RecentActivityCard } from '../components/RecentActivityCard';
 import { UpcomingContractsCard } from '../components/UpcomingContractsCard';
 import { DashboardChart } from '../components/DashboardChart';
+import { DashboardContractsChart } from '../components/DashboardContractsChart';
 import { QuickActions } from '../components/QuickActions';
 import { useDashboardStats } from '../hooks/useDashboardStats';
-import { Link } from '@remix-run/react';
+import { Link } from 'react-router-dom';
+import { useContractStatsByType } from '@/features/contracts/hooks/useContracts';
 
-export const DashboardPage: React.FC = () => {
+export default function DashboardPage() {
   const { user } = useStore(state => ({ 
     user: state.user
   }));
@@ -24,10 +26,16 @@ export const DashboardPage: React.FC = () => {
   // Obtener datos del dashboard usando SWR
   const { 
     data: dashboardStats, 
-    isLoading, 
+    isLoading: isLoadingStats, 
     error,
     mutate 
   } = useDashboardStats();
+
+  // Obtener estadísticas de contratos por tipo
+  const { 
+    data: contractTypeStats, 
+    isLoading: isLoadingContractTypes 
+  } = useContractStatsByType();
 
   // Mostrar notificación de bienvenida
   useEffect(() => {
@@ -54,6 +62,9 @@ export const DashboardPage: React.FC = () => {
       showError('Error al actualizar', 'No se pudieron obtener los datos más recientes');
     }
   };
+
+  // Combinar datos de carga
+  const isLoading = isLoadingStats || isLoadingContractTypes;
 
   return (
     <div className="space-y-6">
@@ -93,7 +104,15 @@ export const DashboardPage: React.FC = () => {
           description="Evolución de contratos en los últimos meses"
           data={dashboardStats?.contractsStats || { labels: [], data: [] }}
           isLoading={isLoading}
-          className="col-span-4"
+          className="col-span-4 lg:col-span-3"
+        />
+        
+        <DashboardContractsChart
+          title="Tipos de contratos"
+          description="Distribución por categoría"
+          data={contractTypeStats || { client: 0, provider: 0 }}
+          isLoading={isLoading}
+          className="col-span-4 lg:col-span-1"
         />
       </div>
 
@@ -133,4 +152,4 @@ export const DashboardPage: React.FC = () => {
       </div>
     </div>
   );
-}; 
+} 

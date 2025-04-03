@@ -1,18 +1,28 @@
-// Re-exportaciones de la característica de autenticación
-export { LoginPage } from './pages/LoginPage';
+// Componentes
 export { LoginForm } from './components/LoginForm';
+export { AuthProvider } from './components/AuthProvider';
+export { ProtectedRoute } from './components/ProtectedRoute';
 
-// Exportación del servicio de autenticación
+// Páginas
+export { default as LoginPage } from './pages/LoginPage';
+export { default as RegisterPage } from './pages/RegisterPage';
+export { default as ResetPasswordPage } from './pages/ResetPasswordPage';
+export { default as AccessDeniedPage } from './pages/AccessDeniedPage';
+
+// Hooks
+export { useAuth } from './hooks/useAuth';
+
+// Servicios
+export { ServicioAutenticacion } from './services/auth-service';
+export type { SolicitudLogin } from './services/auth-service';
+
+// Exportar servicios
 export { 
-  AuthService,
-  type LoginRequest,
-  type LoginResponse,
-  type RegisterRequest,
-  type RegisterResponse,
-  type ResetPasswordRequest,
-  type ResetPasswordResponse,
-  type ChangePasswordRequest
-} from './services/auth-service';
-
-// Esta estructura permite importar los componentes directamente desde la feature
-// Ejemplo: import { LoginPage, AuthService } from '@/features/auth';
+  type SolicitudRegistro,
+  type SolicitudRestablecerPassword,
+  type SolicitudCambiarPassword,
+  type RespuestaLogin,
+  type RespuestaRegistro,
+  type RespuestaCerrarSesion,
+  type RespuestaRestablecerPassword
+} from './services/auth-service'; 

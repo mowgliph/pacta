@@ -3,7 +3,7 @@ import { IconBuildingStore, IconTruckDelivery } from '@tabler/icons-react'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 
-interface ContractTypeSelectorProps {
+type ContractTypeSelectorProps = {
   value: 'client' | 'provider'
   onChange: (value: 'client' | 'provider') => void
 }

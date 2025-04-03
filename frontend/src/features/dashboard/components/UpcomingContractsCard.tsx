@@ -1,110 +1,94 @@
 import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { type UpcomingContract as ServiceUpcomingContract } from '../services/dashboard-service';
-
-// Adaptamos esta interfaz para que coincida con la del servicio
-type UpcomingContract = {
-  contractNumber?: string;  // Opcional para compatibilidad
-  type?: string;            // Opcional para compatibilidad
-  daysUntilExpiry?: number; // Opcional para compatibilidad
-} & ServiceUpcomingContract
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { UpcomingContract } from '../types';
+import { Badge } from '@/components/ui/badge';
+import { IconCalendarDue, IconExternalLink } from '@tabler/icons-react';
+import { Link } from 'react-router-dom';
 
 type UpcomingContractsCardProps = {
   contracts: UpcomingContract[];
   isLoading?: boolean;
+  className?: string;
 }
 
 export const UpcomingContractsCard: React.FC<UpcomingContractsCardProps> = ({
-  contracts,
+  contracts = [],
   isLoading = false,
+  className
 }) => {
-  // Función para determinar el color del indicador según los días restantes
-  const getExpiryColor = (days: number) => {
-    if (days <= 7) return 'bg-red-500';
-    if (days <= 30) return 'bg-yellow-500';
-    return 'bg-green-500';
+  // Determinar la variante del badge según los días restantes
+  const getVariant = (days: number) => {
+    if (days <= 7) return 'destructive';
+    if (days <= 30) return 'warning';
+    return 'outline';
   };
-
-  // Función para formatear el texto de días restantes
-  const formatDaysText = (days: number) => {
-    if (days === 1) return '1 día';
-    if (days < 7) return `${days} días`;
-    if (days < 30) return `${Math.ceil(days / 7)} semanas`;
-    return `${Math.ceil(days / 30)} ${Math.ceil(days / 30) === 1 ? 'mes' : 'meses'}`;
-  };
-
-  // Si está cargando, mostrar esqueleto de carga
-  if (isLoading) {
-    return (
-      <Card className="h-full">
-        <CardHeader>
-          <CardTitle>Contratos por Vencer</CardTitle>
-          <CardDescription>
-            Contratos que requieren renovación próximamente
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+  
+  // Renderizar un elemento de contrato próximo a vencer
+  const renderContractItem = (contract: UpcomingContract) => (
+    <div key={contract.id} className="flex justify-between items-center py-3">
+      <div className="space-y-1">
+        <div className="font-medium text-sm">
+          {contract.company}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          #{contract.contractNumber} - {contract.type}
+        </div>
+      </div>
+      <div className="flex items-center space-x-2">
+        <Badge variant={getVariant(contract.daysUntilExpiry)}>
+          {contract.daysUntilExpiry} días
+        </Badge>
+        <Button
+          size="sm"
+          variant="ghost"
+          asChild
+        >
+          <Link to={`/contracts/${contract.id}`}>
+            <IconExternalLink className="h-4 w-4" />
+            <span className="sr-only">Ver contrato</span>
+          </Link>
+        </Button>
+      </div>
+    </div>
+  );
+  
+  return (
+    <Card className={className}>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Contratos por vencer</CardTitle>
+        {!isLoading && contracts.length > 0 && (
+          <Link to="/contracts?filter=expiring">
+            <Button variant="ghost" size="sm" className="text-xs">
+              Ver todos
+            </Button>
+          </Link>
+        )}
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          // Mostrar esqueleto durante la carga
           <div className="space-y-4">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="flex items-center gap-2 border-b pb-3 last:border-0">
-                <div className="h-2 w-2 rounded-full bg-muted animate-pulse"></div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <div className="h-4 w-20 bg-muted rounded animate-pulse"></div>
-                    <div className="h-3 w-12 bg-muted rounded animate-pulse"></div>
-                  </div>
-                  <div className="h-3 w-28 bg-muted rounded animate-pulse mt-1"></div>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="flex justify-between items-center py-3">
+                <div className="space-y-2">
+                  <div className="h-4 w-32 bg-muted rounded animate-pulse"></div>
+                  <div className="h-3 w-24 bg-muted rounded animate-pulse"></div>
                 </div>
+                <div className="h-6 w-16 bg-muted rounded animate-pulse"></div>
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle>Contratos por Vencer</CardTitle>
-        <CardDescription>
-          Contratos que requieren renovación próximamente
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {contracts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
+        ) : contracts.length === 0 ? (
+          // Mostrar mensaje si no hay contratos por vencer
+          <div className="py-8 text-center text-muted-foreground">
+            <IconCalendarDue className="mx-auto h-8 w-8 mb-2 opacity-50" />
             <p>No hay contratos próximos a vencer</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {contracts.map((contract) => (
-              <div 
-                key={contract.id} 
-                className="flex items-center gap-2 border-b pb-3 last:border-0 group transition-colors hover:bg-muted/30 p-2 rounded-md"
-              >
-                <div 
-                  className={cn(
-                    "h-2 w-2 rounded-full transition-all group-hover:scale-125", 
-                    getExpiryColor(contract.daysUntilExpiry || contract.daysRemaining || 0)
-                  )} 
-                />
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium">
-                      Contrato #{contract.contractNumber || contract.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDaysText(contract.daysUntilExpiry || contract.daysRemaining || 0)}
-                    </p>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {contract.company} - {contract.type || contract.status}
-                  </p>
-                </div>
-              </div>
-            ))}
+          // Mostrar los contratos
+          <div className="space-y-1 divide-y">
+            {contracts.map(renderContractItem)}
           </div>
         )}
       </CardContent>

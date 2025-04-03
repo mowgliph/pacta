@@ -1,111 +1,96 @@
 /**
  * Módulo de utilidad para realizar solicitudes a la API
  */
-import { useStore } from '../store';
+import axios, { type AxiosError, type AxiosRequestConfig } from 'axios';
 
-// URL base de la API
-const API_URL = process.env.API_URL || 'http://localhost:3001/api';
+// Crear una instancia de axios con configuración base
+const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
-// Tipos de error de la API
-export type ApiError = {
-  message: string;
-  status: number;
-  errors?: Record<string, string[]>;
-};
-
-// Opciones para las peticiones
-type RequestOptions = {
-  token?: string;
-  params?: Record<string, any>;
-} & RequestInit
-
-/**
- * Función para realizar peticiones a la API
- * @param endpoint Endpoint de la API (sin la URL base)
- * @param options Opciones de la petición
- * @returns Resultado de la petición
- */
-export async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const { token, params, ...fetchOptions } = options;
-  
-  // Construir la URL con query params si existen
-  let url = `${API_URL}${endpoint}`;
-  if (params) {
-    const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([key, value]) => {
-      searchParams.append(key, String(value));
-    });
-    url = `${url}?${searchParams.toString()}`;
-  }
-  
-  // Cabeceras por defecto
-  const headers = new Headers(fetchOptions.headers);
-  if (!headers.has('Content-Type') && !(fetchOptions.body instanceof FormData)) {
-    headers.set('Content-Type', 'application/json');
-  }
-  
-  // Añadir token de autenticación si existe
-  const authToken = token || useStore.getState().token;
-  if (authToken) {
-    headers.set('Authorization', `Bearer ${authToken}`);
-  }
-  
-  // Realizar la petición
-  const response = await fetch(url, {
-    ...fetchOptions,
-    headers,
-  });
-  
-  // Comprobar errores HTTP
-  if (!response.ok) {
-    let errorData: ApiError;
-    try {
-      errorData = await response.json();
-    } catch (error) {
-      errorData = {
-        message: 'Error de servidor',
-        status: response.status,
-      };
+// Interceptor para incluir el token de autenticación si existe
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('tokenAcceso') || sessionStorage.getItem('tokenAcceso');
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    
-    throw errorData;
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Interceptor para manejar errores de respuesta
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError) => {
+    // Gestionar errores específicos como 401 (no autorizado)
+    if (error.response?.status === 401) {
+      // Limpiar tokens
+      localStorage.removeItem('tokenAcceso');
+      localStorage.removeItem('tokenRefresco');
+      sessionStorage.removeItem('tokenAcceso');
+      sessionStorage.removeItem('tokenRefresco');
+      
+      // Si no estamos ya en la página de login, redirigir
+      if (window.location.pathname !== '/auth/login') {
+        window.location.href = '/auth/login';
+      }
+    }
+    return Promise.reject(error);
   }
-  
-  // Si la respuesta está vacía, devolver null
-  if (response.status === 204) {
-    return null as T;
-  }
-  
-  // Parsear la respuesta como JSON
-  return await response.json();
+);
+
+// Tipos para las respuestas de la API
+export type ApiResponse<T> = {
+  data: T;
+  message?: string;
+  status: 'success' | 'error';
 }
 
-// Funciones auxiliares para diferentes métodos HTTP
+// Tipo para errores de la API
+export type ApiError = {
+  message: string;
+  code?: string;
+  errors?: Array<{ field: string; message: string }>;
+  status?: string;
+}
+
+// Funciones auxiliares para llamadas a la API
 export const api = {
-  get: <T>(endpoint: string, options?: RequestOptions) => 
-    apiRequest<T>(endpoint, { method: 'GET', ...options }),
-    
-  post: <T>(endpoint: string, data?: any, options?: RequestOptions) => 
-    apiRequest<T>(endpoint, { 
-      method: 'POST', 
-      body: data ? JSON.stringify(data) : undefined,
-      ...options 
-    }),
-    
-  put: <T>(endpoint: string, data?: any, options?: RequestOptions) => 
-    apiRequest<T>(endpoint, { 
-      method: 'PUT', 
-      body: data ? JSON.stringify(data) : undefined,
-      ...options 
-    }),
-    
-  patch: <T>(endpoint: string, data?: any, options?: RequestOptions) => 
-    apiRequest<T>(endpoint, { 
-      method: 'PATCH', 
-      body: data ? JSON.stringify(data) : undefined,
-      ...options 
-    }),
-    
-  delete: <T>(endpoint: string, options?: RequestOptions) => 
-    apiRequest<T>(endpoint, { method: 'DELETE', ...options }),
-}; 
+  // GET
+  async get<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await apiClient.get<ApiResponse<T>>(url, config);
+    return response.data.data;
+  },
+
+  // POST
+  async post<T, D>(url: string, data: D, config?: AxiosRequestConfig): Promise<T> {
+    const response = await apiClient.post<ApiResponse<T>>(url, data, config);
+    return response.data.data;
+  },
+
+  // PUT
+  async put<T, D>(url: string, data: D, config?: AxiosRequestConfig): Promise<T> {
+    const response = await apiClient.put<ApiResponse<T>>(url, data, config);
+    return response.data.data;
+  },
+
+  // PATCH
+  async patch<T, D>(url: string, data: D, config?: AxiosRequestConfig): Promise<T> {
+    const response = await apiClient.patch<ApiResponse<T>>(url, data, config);
+    return response.data.data;
+  },
+
+  // DELETE
+  async delete<T>(url: string, config?: AxiosRequestConfig): Promise<T> {
+    const response = await apiClient.delete<ApiResponse<T>>(url, config);
+    return response.data.data;
+  },
+};
+
+// Exportar el API por defecto
+export default api; 

@@ -1,7 +1,7 @@
 import { api } from '@/lib/api';
-import { SpecificStats, UserMetrics } from '../types';
+import { type SpecificStats, type UserMetrics } from '../types';
 import { StatisticsMockService } from './statisticsMockService';
-import { StatisticsType } from '../hooks/useStatistics';
+import { type StatisticsType } from '../hooks/useStatistics';
 
 // Verificar si debe usar datos mock o reales
 const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true';

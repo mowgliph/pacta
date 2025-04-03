@@ -1,25 +1,20 @@
-import { type ReactNode, useEffect, createContext, useContext, useState } from "react";
-import { useStore } from "@/store";
-import { Login } from "@/pages/Login";
-import { useNavigate, useMatches } from '@remix-run/react';
+import { type ReactNode, useEffect, createContext, useState, useCallback } from "react";
+import { useNavigate, useLocation, useMatches } from 'react-router-dom';
+import { useStore, type User } from "@/store";
+import { Spinner } from "@/components/ui/spinner";
+import { type Role } from "@/types/enums";
 
 type AuthContextType = {
-  isAuthenticated: boolean;
-  isLoading: boolean;
+  estaAutenticado: boolean;
+  cargando: boolean;
   token: string | null;
-  checkAuth: () => Promise<boolean>;
-  logout: () => Promise<void>;
+  usuario: User | null;
+  verificarAutenticacion: () => Promise<boolean>;
+  cerrarSesion: () => Promise<void>;
+  redirigirPorRol: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth debe ser usado dentro de un AuthProvider");
-  }
-  return context;
-}
 
 type AuthProviderProps = {
   children: ReactNode;
@@ -27,87 +22,115 @@ type AuthProviderProps = {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const matches = useMatches();
   
-  const { user, isAuthenticated, token, isLoading, logout: storeLogout } = useStore();
+  const { 
+    usuario,
+    token, 
+    estaAutenticado, 
+    cargando, 
+    cerrarSesion,
+    verificarSesion,
+    tienePermiso
+  } = useStore();
+  
   const [initialCheckDone, setInitialCheckDone] = useState(false);
+
+  // Función para redirigir al usuario según su rol
+  const redirigirPorRol = useCallback(() => {
+    if (!usuario) return;
+    
+    // Obtener la ruta a la que querían acceder
+    const from = location.state?.from || '/dashboard';
+    
+    // Verificar si el usuario es administrador o desarrollador
+    const esRolElevado = usuario.role === 'RA' || usuario.role === 'ADMIN';
+    
+    if (esRolElevado) {
+      // Permitir acceso a la ruta solicitada para roles elevados
+      navigate(from);
+    } else {
+      // Otros usuarios van al dashboard por defecto
+      navigate('/dashboard');
+    }
+  }, [usuario, location.state, navigate]);
+
+  // Función para verificar la autenticación
+  const verificarAutenticacion = useCallback(async (): Promise<boolean> => {
+    try {
+      await verificarSesion();
+      return estaAutenticado;
+    } catch (error) {
+      console.error("Error al verificar la autenticación:", error);
+      return false;
+    }
+  }, [verificarSesion, estaAutenticado]);
 
   // Verificar autenticación cuando se monta el componente
   useEffect(() => {
     const init = async () => {
-      await checkAuth();
+      await verificarAutenticacion();
       setInitialCheckDone(true);
     };
     
     init();
-  }, []);
+  }, [verificarAutenticacion]);
   
   // Verificar si la ruta actual requiere autenticación
   useEffect(() => {
     if (!initialCheckDone) return;
     
     const currentMatch = matches[matches.length - 1];
+    if (!currentMatch || !currentMatch.handle) return;
     
-    // Verificar si la ruta requiere autenticación (handle.requiresAuth = true)
-    if (currentMatch && currentMatch.handle && (currentMatch.handle as any).requiresAuth && !isAuthenticated) {
-      navigate('/login', { replace: true });
-    }
-  }, [matches, isAuthenticated, initialCheckDone, navigate]);
-
-  // Función para verificar la autenticación
-  const checkAuth = async (): Promise<boolean> => {
-    if (isAuthenticated && token) {
-      return true;
+    const handle = currentMatch.handle as { requiresAuth?: boolean, roles?: Role[] };
+    
+    // Si la ruta requiere autenticación y el usuario no está autenticado
+    if (handle.requiresAuth && !estaAutenticado) {
+      // Guardar la ubicación que intentaban acceder para redireccionar después del login
+      navigate('/auth/login', { 
+        replace: true, 
+        state: { from: location.pathname } 
+      });
+      return;
     }
     
-    // Si hay token pero no está autenticado, el token podría haber expirado
-    if (token && !isAuthenticated) {
-      try {
-        // Aquí podría intentar renovar el token o validarlo con el backend
-        // Por ahora, simplemente consideramos que si hay token, está autenticado
-        return true;
-      } catch (error) {
-        console.error('Error al verificar token:', error);
-        await logout();
-        return false;
+    // Si la ruta requiere roles específicos
+    if (handle.requiresAuth && handle.roles && handle.roles.length > 0) {
+      // Verificar si el usuario tiene alguno de los roles requeridos
+      const hasRequiredRole = handle.roles.some(role => tienePermiso(role));
+      
+      if (!hasRequiredRole) {
+        // Redireccionar a la página de acceso denegado
+        navigate('/auth/access-denied', { replace: true });
       }
     }
-    
-    return false;
-  };
-
-  // Función para cerrar sesión
-  const logout = async (): Promise<void> => {
-    if (storeLogout) {
-      await storeLogout();
-      navigate('/login', { replace: true });
-    }
-  };
+  }, [matches, estaAutenticado, initialCheckDone, location.pathname, navigate, tienePermiso]);
 
   // Show a loading state while we check authentication
-  if (!initialCheckDone || isLoading) {
+  if (!initialCheckDone || cargando) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+        <Spinner size="lg" />
       </div>
     );
   }
 
-  // If not authenticated, show login page
-  if (!isAuthenticated) {
-    return <Login />;
-  }
-
-  // If authenticated, render children
+  // Return the provider with the authentication context
   return (
     <AuthContext.Provider value={{ 
-      isAuthenticated, 
-      isLoading, 
-      token, 
-      checkAuth, 
-      logout 
+      estaAutenticado, 
+      cargando, 
+      token,
+      usuario,
+      verificarAutenticacion, 
+      cerrarSesion,
+      redirigirPorRol
     }}>
       {children}
     </AuthContext.Provider>
   );
-} 
+}
+
+export { AuthContext }; 

@@ -28,14 +28,14 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Contract } from '../../services/contracts-service'
+import { type Contract } from '../../services/contracts-service'
 import { ContractListSkeleton } from './ContractListSkeleton'
 import { ContractListEmpty } from './ContractListEmpty'
 import { ContractListError } from './ContractListError'
 import { ContractCard } from '../ContractCard'
 import { Skeleton } from '@/components/ui/skeleton'
 
-interface ContractListProps {
+type ContractListProps = {
   contracts: Contract[]
   isLoading?: boolean
   error?: string

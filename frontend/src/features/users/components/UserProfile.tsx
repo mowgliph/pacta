@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { IconEdit, IconMail, IconPhone, IconBriefcase } from "@tabler/icons-react";
-import { UserProfileData } from '../types';
+import { type UserProfileData } from '../types';
 
 type UserProfileProps = {
   className?: string;

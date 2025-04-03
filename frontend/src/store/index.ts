@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { type Role, type UserStatus } from '@/types/enums';
-import { AuthService, type LoginRequest } from '@/features/auth';
+import { ServicioAutenticacion, type SolicitudLogin } from '@/features/auth/services/auth-service';
 import { type ApiError } from '@/lib/api';
 
 // Types
@@ -32,16 +32,16 @@ export type CommandKRef = {
 // Store state and actions type
 type StoreState = {
   // Auth
-  user: User | null;
+  usuario: User | null;
   token: string | null;
-  refreshToken: string | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
+  tokenRefresco: string | null;
+  estaAutenticado: boolean;
+  cargando: boolean;
   error: string | null;
-  login: (email: string, password: string, rememberMe?: boolean) => Promise<boolean>;
-  logout: () => Promise<void>;
-  verifySession: () => Promise<void>;
-  hasRole: (roles: Role | Role[]) => boolean;
+  iniciarSesion: (username: string, password: string, recordarme?: boolean) => Promise<boolean>;
+  cerrarSesion: () => Promise<void>;
+  verificarSesion: () => Promise<void>;
+  tienePermiso: (roles: Role | Role[]) => boolean;
   
   // UI
   theme: 'light' | 'dark';
@@ -61,40 +61,42 @@ type StoreState = {
 };
 
 // Helper para guardar tokens
-const saveTokens = (accessToken: string, refreshToken: string = accessToken, rememberMe: boolean = false) => {
+const guardarTokens = (tokenAcceso: string, tokenRefresco: string = tokenAcceso, recordarme: boolean = false) => {
   // Verificar si estamos en el navegador
   if (typeof window === 'undefined') return;
   
-  const storage = rememberMe ? localStorage : sessionStorage;
-  storage.setItem('accessToken', accessToken);
-  storage.setItem('refreshToken', refreshToken);
+  const storage = recordarme ? localStorage : sessionStorage;
+  storage.setItem('tokenAcceso', tokenAcceso);
+  storage.setItem('tokenRefresco', tokenRefresco);
 };
 
 // Helper para limpiar tokens
-const clearTokens = () => {
+const limpiarTokens = () => {
   // Verificar si estamos en el navegador
   if (typeof window === 'undefined') return;
   
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
-  sessionStorage.removeItem('accessToken');
-  sessionStorage.removeItem('refreshToken');
+  localStorage.removeItem('tokenAcceso');
+  localStorage.removeItem('tokenRefresco');
+  sessionStorage.removeItem('tokenAcceso');
+  sessionStorage.removeItem('tokenRefresco');
 };
 
-// Helper para recuperar tokens
-const getStoredTokens = (): { accessToken: string | null; refreshToken: string | null } => {
+// Helper para obtener tokens almacenados
+const obtenerTokensAlmacenados = () => {
   // Verificar si estamos en el navegador
-  if (typeof window === 'undefined') {
-    return { accessToken: null, refreshToken: null };
+  if (typeof window === 'undefined') return { tokenAcceso: null, tokenRefresco: null };
+  
+  // Intentar obtener desde localStorage primero (recordarme)
+  let tokenAcceso = localStorage.getItem('tokenAcceso');
+  let tokenRefresco = localStorage.getItem('tokenRefresco');
+  
+  // Si no hay en localStorage, intentar sessionStorage
+  if (!tokenAcceso) {
+    tokenAcceso = sessionStorage.getItem('tokenAcceso');
+    tokenRefresco = sessionStorage.getItem('tokenRefresco');
   }
   
-  let accessToken = localStorage.getItem('accessToken');
-  let refreshToken = localStorage.getItem('refreshToken');
-  if (!accessToken) {
-    accessToken = sessionStorage.getItem('accessToken');
-    refreshToken = sessionStorage.getItem('refreshToken');
-  }
-  return { accessToken, refreshToken };
+  return { tokenAcceso, tokenRefresco };
 };
 
 // Create the store
@@ -102,110 +104,110 @@ export const useStore = create<StoreState>()(
   persist(
     (set, get) => ({
       // Auth state
-      user: null,
+      usuario: null,
       token: null,
-      refreshToken: null,
-      isAuthenticated: false,
-      isLoading: false,
+      tokenRefresco: null,
+      estaAutenticado: false,
+      cargando: false,
       error: null,
       
-      login: async (email: string, password: string, rememberMe = false) => {
-        set({ isLoading: true, error: null });
+      iniciarSesion: async (username: string, password: string, recordarme = false) => {
+        set({ cargando: true, error: null });
         try {
           // Usar el servicio de autenticación real
-          const loginData: LoginRequest = { email, password, rememberMe };
-          const response = await AuthService.login(loginData);
+          const datosSolicitud: SolicitudLogin = { username, password, rememberMe: recordarme };
+          const respuesta = await ServicioAutenticacion.iniciarSesion(datosSolicitud);
           
           // Guardar tokens
-          saveTokens(response.token, response.token, rememberMe);
+          guardarTokens(respuesta.token, respuesta.token, recordarme);
           
           set({
-            user: response.user,
-            token: response.token,
-            refreshToken: response.token, // En algunas implementaciones puede ser diferente
-            isAuthenticated: true,
-            isLoading: false
+            usuario: respuesta.user,
+            token: respuesta.token,
+            tokenRefresco: respuesta.token, // En algunas implementaciones puede ser diferente
+            estaAutenticado: true,
+            cargando: false
           });
           
           return true;
         } catch (error) {
-          clearTokens();
+          limpiarTokens();
           const apiError = error as ApiError;
           set({
-            isLoading: false,
+            cargando: false,
             error: apiError.message || 'Error al iniciar sesión',
-            isAuthenticated: false,
-            user: null,
+            estaAutenticado: false,
+            usuario: null,
             token: null,
-            refreshToken: null
+            tokenRefresco: null
           });
           
           return false;
         }
       },
       
-      logout: async () => {
-        set({ isLoading: true });
+      cerrarSesion: async () => {
+        set({ cargando: true });
         try {
           // Llamar al servicio de logout si hay token
           if (get().token) {
-            await AuthService.logout();
+            await ServicioAutenticacion.cerrarSesion();
           }
-          clearTokens();
+          limpiarTokens();
         } catch (error) {
           // Ignorar errores durante el logout
-          console.error('Error durante el logout', error);
+          console.error('Error durante el cierre de sesión', error);
         } finally {
           // Limpiar el estado independientemente del resultado
           set({
-            user: null,
+            usuario: null,
             token: null,
-            refreshToken: null,
-            isAuthenticated: false,
-            isLoading: false
+            tokenRefresco: null,
+            estaAutenticado: false,
+            cargando: false
           });
         }
       },
       
-      verifySession: async () => {
-        const { accessToken, refreshToken } = getStoredTokens();
-        if (!accessToken) {
-          set({ isAuthenticated: false });
+      verificarSesion: async () => {
+        const { tokenAcceso, tokenRefresco } = obtenerTokensAlmacenados();
+        if (!tokenAcceso) {
+          set({ estaAutenticado: false });
           return;
         }
 
-        set({ isLoading: true });
+        set({ cargando: true });
         try {
           // Usar el servicio para verificar el token
-          const isValid = await AuthService.validateToken(accessToken);
+          const esValido = await ServicioAutenticacion.validarToken(tokenAcceso);
           
-          if (isValid) {
+          if (esValido) {
             // Si el token es válido, obtener información del usuario
-            const userData = await AuthService.getCurrentUser();
+            const datosUsuario = await ServicioAutenticacion.obtenerUsuarioActual();
             
             set({ 
-              user: userData,
-              token: accessToken,
-              refreshToken,
-              isLoading: false,
-              isAuthenticated: true,
+              usuario: datosUsuario,
+              token: tokenAcceso,
+              tokenRefresco: tokenRefresco,
+              cargando: false,
+              estaAutenticado: true,
               error: null 
             });
           } else {
-            get().logout();
+            get().cerrarSesion();
           }
         } catch (error) {
-          get().logout();
-          set({ isLoading: false });
+          get().cerrarSesion();
+          set({ cargando: false });
         }
       },
       
-      hasRole: (roles: Role | Role[]) => {
-        const { user } = get();
-        if (!user) return false;
+      tienePermiso: (roles: Role | Role[]) => {
+        const { usuario } = get();
+        if (!usuario) return false;
         
         const rolesToCheck = Array.isArray(roles) ? roles : [roles];
-        return rolesToCheck.includes(user.role as Role);
+        return rolesToCheck.includes(usuario.role as Role);
       },
       
       // UI state
@@ -254,10 +256,10 @@ export const useStore = create<StoreState>()(
     {
       name: 'pacta-store',
       partialize: (state) => ({
-        user: state.user,
+        usuario: state.usuario,
         token: state.token,
-        refreshToken: state.refreshToken,
-        isAuthenticated: state.isAuthenticated,
+        tokenRefresco: state.tokenRefresco,
+        estaAutenticado: state.estaAutenticado,
         theme: state.theme
       })
     }

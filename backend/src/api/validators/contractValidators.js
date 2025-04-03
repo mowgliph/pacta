@@ -126,6 +126,24 @@ export const contractTagsSchema = () => {
   });
 };
 
+// Schema para creación de suplemento
+export const supplementCreateSchema = () => {
+  return z.object({
+    name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
+    description: z.string().optional(),
+    effectiveDate: z.string().datetime('Fecha de efectividad inválida'),
+  });
+};
+
+// Schema para actualización de suplemento
+export const supplementUpdateSchema = () => {
+  return z.object({
+    name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres').optional(),
+    description: z.string().optional(),
+    effectiveDate: z.string().datetime('Fecha de efectividad inválida').optional(),
+  });
+};
+
 // Export all schemas for ValidationService
 export const contract = {
   createContractSchema,
@@ -136,5 +154,7 @@ export const contract = {
   contractTagSchema,
   contractQuerySchema,
   contractStatsQuerySchema,
-  contractTagsSchema
+  contractTagsSchema,
+  supplementCreateSchema,
+  supplementUpdateSchema
 };

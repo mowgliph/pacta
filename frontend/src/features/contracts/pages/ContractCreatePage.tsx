@@ -1,5 +1,5 @@
 import React from 'react'
-import { useNavigate } from '@remix-run/react'
+import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -12,7 +12,7 @@ import type { CreateContractData } from '../services/contracts-service'
 /**
  * Página para crear un nuevo contrato
  */
-export function ContractCreatePage() {
+export default function ContractCreatePage() {
   const navigate = useNavigate()
   const { showSuccess, showError } = useNotifications()
   const { execute: createContract, isLoading: isSubmitting } = useCreateContract()

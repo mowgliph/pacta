@@ -2,29 +2,37 @@
  * Tipos para el módulo de usuarios
  */
 
-import { User } from '@/store';
-import { UserStatus } from '@/types/enums';
+import { type User } from '@/store';
+import { type UserStatus } from '@/types/enums';
 
 /**
  * Tipo extendido para usuarios con metadata adicional
  */
-export interface UserDetails extends User {
+export type UserDetails = {
   createdAt: string;
   updatedAt: string;
   lastLogin?: string;
   status: UserStatus;
   permissions?: string[];
-}
+  address?: string;
+  phone?: string;
+  position?: string;
+  department?: {
+    id: string;
+    name: string;
+  };
+} & User
 
 /**
  * Parámetros para la búsqueda de usuarios
  */
-export interface UserSearchParams {
+export type UserSearchParams = {
   page?: number;
   limit?: number;
   search?: string;
   role?: string;
-  status?: UserStatus;
+  status?: string;
+  departmentId?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
@@ -32,42 +40,50 @@ export interface UserSearchParams {
 /**
  * Respuesta paginada de usuarios
  */
-export interface UsersResponse {
-  data: UserDetails[];
-  total: number;
-  page: number;
-  limit: number;
+export type UsersResponse = {
+  items: User[];
+  totalItems: number;
   totalPages: number;
+  currentPage: number;
 }
 
 /**
  * Datos para crear un usuario
  */
-export interface CreateUserData {
+export type CreateUserData = {
   email: string;
   password: string;
   firstName: string;
   lastName: string;
   role: string;
   status?: UserStatus;
+  departmentId?: string;
+  address?: string;
+  phone?: string;
+  position?: string;
   permissions?: string[];
 }
 
 /**
  * Datos para actualizar un usuario
  */
-export interface UpdateUserData {
+export type UpdateUserData = {
   firstName?: string;
   lastName?: string;
+  email?: string;
   role?: string;
   status?: UserStatus;
+  departmentId?: string;
+  address?: string;
+  phone?: string;
+  position?: string;
   permissions?: string[];
 }
 
 /**
  * Tipo para cambiar contraseña de usuario
  */
-export interface ChangePasswordData {
+export type ChangePasswordData = {
   oldPassword: string;
   newPassword: string;
   confirmPassword: string;
@@ -76,7 +92,7 @@ export interface ChangePasswordData {
 /**
  * Datos para mostrar en el perfil de usuario
  */
-export interface UserProfileData {
+export type UserProfileData = {
   id: string;
   name: string;
   email: string;
@@ -104,7 +120,22 @@ export enum UserPermission {
  * Roles disponibles en el sistema
  */
 export enum UserRole {
-  ADMIN = 'admin',
-  USER = 'user',
-  GUEST = 'guest'
+  ADMIN = 'ADMIN',
+  RA = 'RA',
+  MANAGER = 'MANAGER',
+  USER = 'USER',
+  VIEWER = 'VIEWER',
+}
+
+// Enums
+export enum UserStatus {
+  ACTIVE = 'ACTIVE',
+  INACTIVE = 'INACTIVE',
+  SUSPENDED = 'SUSPENDED',
+}
+
+export type ResetPasswordData = {
+  token: string;
+  newPassword: string;
+  confirmPassword: string;
 } 

@@ -1,12 +1,12 @@
 import { api } from '@/lib/api';
 import { 
-  Activity, 
-  DashboardStats, 
-  SpecificStats, 
-  UserMetrics,
+  type Activity, 
+  type DashboardStats, 
+  type SpecificStats, 
+  type UserMetrics,
   Contract,
-  UpcomingContract,
-  ContractStats
+  type UpcomingContract,
+  type ContractStats
 } from '../types';
 
 /**

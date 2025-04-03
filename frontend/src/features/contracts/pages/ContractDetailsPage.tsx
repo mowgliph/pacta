@@ -1,19 +1,27 @@
-import React from 'react'
-import { useNavigate } from '@remix-run/react'
-import { useContract, useContractAttachments, useContractSupplements } from '../hooks/useContracts'
+import React, { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useContract, useContractAttachments, useContractSupplements, useDeleteSupplement } from '../hooks/useContracts'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { IconArrowLeft, IconEdit, IconTrash, IconFileText } from '@tabler/icons-react'
+import { IconArrowLeft, IconEdit, IconTrash, IconFileText, IconFileDownload } from '@tabler/icons-react'
+import { SupplementsList } from '../components/ContractDetailsPage/SupplementsList'
+import { ContractService, type ContractAttachment } from '../services/contracts-service'
+import { toast } from '@/hooks/useToast'
+import { useAuth } from '@/features/auth/hooks/useAuth'
+import { ContractStatus, ContractType, Role } from '@/types/enums'
+import { Badge } from '@/components/ui/badge'
 
-interface ContractDetailsPageProps {
-  id: string
+type ContractDetailsPageProps = {
+  id: string;
+  isPublic?: boolean;
 }
 
-export function ContractDetailsPage({ id }: ContractDetailsPageProps) {
+export default function ContractDetailsPage({ id, isPublic = false }: ContractDetailsPageProps) {
   const navigate = useNavigate()
+  const { tienePermiso } = useAuth()
   
-  // Usar los hooks SWR para obtener los datos del contrato y relacionados
+  // Usar los hooks para obtener los datos del contrato y relacionados
   const { 
     data: contract, 
     isLoading: isLoadingContract, 
@@ -35,6 +43,16 @@ export function ContractDetailsPage({ id }: ContractDetailsPageProps) {
     error: supplementsError
   } = useContractSupplements(id)
   
+  // Mutación para eliminar suplementos
+  const { 
+    execute: deleteSupplement,
+    isLoading: isDeletingSupplement
+  } = useDeleteSupplement(id)
+  
+  useEffect(() => {
+    loadData()
+  }, [id, loadData])
+  
   // Manejar navegación a la lista de contratos
   const handleBack = () => {
     navigate('/contracts')
@@ -44,6 +62,33 @@ export function ContractDetailsPage({ id }: ContractDetailsPageProps) {
   const handleEdit = () => {
     navigate(`/contracts/${id}/edit`)
   }
+  
+  // Manejar descarga del documento del contrato
+  const handleDownloadDocument = () => {
+    if (contract?.documentUrl) {
+      ContractService.downloadContractDocument(id);
+    }
+  };
+  
+  // Eliminar un suplemento
+  const handleDeleteSupplement = async (supplementId: string) => {
+    if (window.confirm('¿Está seguro de que desea eliminar este suplemento? Esta acción no se puede deshacer.')) {
+      try {
+        await deleteSupplement(supplementId);
+        toast({
+          title: "Suplemento eliminado",
+          description: "El suplemento ha sido eliminado correctamente",
+          variant: "default"
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "No se pudo eliminar el suplemento",
+          variant: "destructive"
+        });
+      }
+    }
+  };
   
   // Si está cargando, mostrar un esqueleto
   if (isLoadingContract) {
@@ -129,31 +174,63 @@ export function ContractDetailsPage({ id }: ContractDetailsPageProps) {
       {/* Aquí irán más componentes de detalle que se implementarán en pasos posteriores */}
       <Card>
         <CardHeader>
-          <CardTitle>Información básica</CardTitle>
+          <CardTitle>Información del contrato</CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Número de contrato</h3>
-            <p>{contract.contractNumber}</p>
+        <CardContent className="grid gap-6">
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">Número de contrato</h3>
+              <p className="mt-1 text-sm">{contract.contractNumber}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">Estado</h3>
+              <p className="mt-1">
+                <Badge variant={getStatusVariant(contract.status)}>{getStatusLabel(contract.status)}</Badge>
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">Tipo</h3>
+              <p className="mt-1">
+                <Badge variant="outline">{getTypeLabel(contract.type)}</Badge>
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Tipo</h3>
-            <p>{contract.type === 'client' ? 'Cliente' : 'Proveedor'}</p>
+          
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">Fecha de inicio</h3>
+              <p className="mt-1 text-sm">{formatDate(contract.startDate)}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">Fecha de fin</h3>
+              <p className="mt-1 text-sm">{formatDate(contract.endDate)}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Empresa</h3>
-            <p>{contract.companyName || 'No especificada'}</p>
+          
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">Empresa</h3>
+              <p className="mt-1 text-sm">{contract.company?.name || 'No especificada'}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground">Valor</h3>
+              <p className="mt-1 text-sm">{formatCurrency(contract.amount, contract.currency)}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground">Estado</h3>
-            <p>{
-              contract.status === 'active' ? 'Activo' :
-              contract.status === 'pending' ? 'Pendiente' :
-              contract.status === 'expired' ? 'Expirado' :
-              contract.status === 'cancelled' ? 'Cancelado' : 
-              contract.status
-            }</p>
-          </div>
+          
+          {contract.documentUrl && (
+            <div className="mt-4">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleDownloadDocument} 
+                className="flex items-center gap-2"
+              >
+                <IconFileDownload className="h-4 w-4" />
+                Descargar documento
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
       
@@ -164,14 +241,6 @@ export function ContractDetailsPage({ id }: ContractDetailsPageProps) {
             <CardTitle>Fechas</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-4">
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">Fecha de inicio</h3>
-              <p>{new Date(contract.startDate).toLocaleDateString()}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground">Fecha de finalización</h3>
-              <p>{new Date(contract.endDate).toLocaleDateString()}</p>
-            </div>
             <div>
               <h3 className="text-sm font-medium text-muted-foreground">Creado</h3>
               <p>{new Date(contract.createdAt).toLocaleDateString()}</p>
@@ -217,62 +286,28 @@ export function ContractDetailsPage({ id }: ContractDetailsPageProps) {
       )}
       
       {/* Suplementos */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Suplementos</CardTitle>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => navigate(`/contracts/${id}/supplements/new`)}
-            className="gap-2"
-          >
-            Añadir suplemento
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {isLoadingSupplements ? (
-            <div className="flex flex-col space-y-2 animate-pulse">
-              <div className="h-10 bg-muted rounded"></div>
-              <div className="h-10 bg-muted rounded"></div>
-            </div>
-          ) : supplementsError ? (
-            <p className="text-destructive text-center py-4">Error al cargar suplementos</p>
-          ) : !supplements || supplements.length === 0 ? (
-            <p className="text-muted-foreground text-center py-4">No hay suplementos para este contrato</p>
-          ) : (
-            <div className="space-y-2">
-              {supplements.map((supplement) => (
-                <div key={supplement.id} className="flex justify-between items-center p-3 border rounded-md">
-                  <div>
-                    <p className="font-medium">{supplement.name}</p>
-                    <p className="text-sm text-muted-foreground">Fecha: {new Date(supplement.effectiveDate).toLocaleDateString()}</p>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => navigate(`/contracts/${id}/supplements/${supplement.id}`)}
-                  >
-                    Ver
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <SupplementsList 
+        contractId={id}
+        supplements={supplements}
+        isLoading={isLoadingSupplements}
+        error={supplementsError?.message}
+        onDelete={handleDeleteSupplement}
+      />
       
       {/* Adjuntos */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Documentos adjuntos</CardTitle>
-          <Button 
-            variant="outline" 
-            size="sm"
-            // Aquí iría una función para añadir archivos
-            className="gap-2"
-          >
-            Añadir documento
-          </Button>
+          {tienePermiso([Role.ADMIN, Role.MANAGER]) && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              // Aquí iría una función para añadir archivos
+              className="gap-2"
+            >
+              Añadir documento
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {isLoadingAttachments ? (
@@ -286,7 +321,7 @@ export function ContractDetailsPage({ id }: ContractDetailsPageProps) {
             <p className="text-muted-foreground text-center py-4">No hay documentos adjuntos</p>
           ) : (
             <div className="space-y-2">
-              {attachments.map((attachment) => (
+              {attachments.map((attachment: ContractAttachment) => (
                 <div key={attachment.id} className="flex justify-between items-center p-3 border rounded-md">
                   <div className="flex items-center gap-3">
                     <div className="bg-muted p-2 rounded">
@@ -295,7 +330,7 @@ export function ContractDetailsPage({ id }: ContractDetailsPageProps) {
                     <div>
                       <p className="font-medium">{attachment.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {(attachment.size / 1024).toFixed(2)} KB • {attachment.type}
+                        {(attachment.fileSize / 1024).toFixed(2)} KB • {attachment.fileType}
                       </p>
                     </div>
                   </div>
@@ -303,7 +338,7 @@ export function ContractDetailsPage({ id }: ContractDetailsPageProps) {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      onClick={() => window.open(attachment.url, '_blank')}
+                      onClick={() => window.open(attachment.fileUrl, '_blank')}
                     >
                       Descargar
                     </Button>

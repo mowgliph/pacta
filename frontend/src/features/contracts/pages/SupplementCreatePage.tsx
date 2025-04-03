@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from '@remix-run/react'
+import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,14 +10,10 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 
-interface SupplementCreatePageProps {
-  contractId: string
-}
-
 /**
  * Página para crear un nuevo suplemento para un contrato
  */
-export function SupplementCreatePage({ contractId }: SupplementCreatePageProps) {
+export default function SupplementCreatePage({ contractId }: { contractId: string }) {
   const navigate = useNavigate()
   const { showSuccess, showError } = useNotifications()
   
@@ -29,6 +25,8 @@ export function SupplementCreatePage({ contractId }: SupplementCreatePageProps) 
   const [description, setDescription] = useState('')
   const [effectiveDate, setEffectiveDate] = useState('')
   const [file, setFile] = useState<File | null>(null)
+  const [validity, setValidity] = useState('')
+  const [newAgreements, setNewAgreements] = useState('')
   
   // Hook para crear suplemento
   const { execute: createSupplement, isLoading: isSubmitting } = useCreateSupplement(contractId)
@@ -46,14 +44,19 @@ export function SupplementCreatePage({ contractId }: SupplementCreatePageProps) 
     try {
       // Preparar los datos
       const formData = new FormData()
-      const supplementData = {
+      
+      // Crear objeto de datos y convertirlo a JSON
+      const supplementData = JSON.stringify({
         name,
         description,
         effectiveDate,
-        contractId
-      }
+        contractId,
+        validity,
+        newAgreements
+      })
       
-      formData.append('data', JSON.stringify(supplementData))
+      // Añadir datos como campo "data"
+      formData.append('data', supplementData)
       
       // Añadir el archivo si existe
       if (file) {
@@ -183,6 +186,30 @@ export function SupplementCreatePage({ contractId }: SupplementCreatePageProps) 
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describa el propósito de este suplemento"
                 rows={4}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="validity">Validez</Label>
+              <Input
+                id="validity"
+                value={validity}
+                onChange={(e) => setValidity(e.target.value)}
+                placeholder="Ej: 6 meses, 1 año, etc."
+              />
+              <p className="text-sm text-muted-foreground">
+                Indique por cuánto tiempo será válido este suplemento
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="newAgreements">Nuevos acuerdos</Label>
+              <Textarea
+                id="newAgreements"
+                value={newAgreements}
+                onChange={(e) => setNewAgreements(e.target.value)}
+                placeholder="Resuma los nuevos acuerdos establecidos en este suplemento"
+                rows={3}
               />
             </div>
             

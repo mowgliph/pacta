@@ -3,7 +3,7 @@
  */
 
 // Importamos los tipos básicos del dashboard que necesitaremos
-import { SpecificStats, UserMetrics } from '../../dashboard/types';
+import { type SpecificStats, type UserMetrics } from '../../dashboard/types';
 
 // Re-exportamos los tipos compartidos con el dashboard
 export type { SpecificStats, UserMetrics };
@@ -11,7 +11,7 @@ export type { SpecificStats, UserMetrics };
 /**
  * Tipo para elementos en los gráficos
  */
-export interface ChartDataItem {
+export type ChartDataItem = {
   name: string;
   value: number;
   color?: string;
@@ -20,7 +20,7 @@ export interface ChartDataItem {
 /**
  * Tipo para los datos del gráfico de estadísticas
  */
-export interface StatisticsChartData {
+export type StatisticsChartData = {
   items: ChartDataItem[];
   total: number;
   title: string;
@@ -30,7 +30,7 @@ export interface StatisticsChartData {
 /**
  * Tipo para los datos de la tabla de estadísticas
  */
-export interface StatisticsTableItem {
+export type StatisticsTableItem = {
   id: string;
   name: string;
   value: number | string;
@@ -42,7 +42,7 @@ export interface StatisticsTableItem {
 /**
  * Tipo para las estadísticas de contratos por tipo
  */
-export interface ContractTypeStatistics {
+export type ContractTypeStatistics = {
   type: string;
   count: number;
   percentage: number;
@@ -52,7 +52,7 @@ export interface ContractTypeStatistics {
 /**
  * Tipo para las estadísticas de contratos por estado
  */
-export interface ContractStatusStatistics {
+export type ContractStatusStatistics = {
   status: string;
   count: number;
   percentage: number;
@@ -62,7 +62,7 @@ export interface ContractStatusStatistics {
 /**
  * Tipo para las estadísticas de actividad
  */
-export interface ActivityStatistics {
+export type ActivityStatistics = {
   type: string;
   count: number;
   percentage: number;
@@ -77,7 +77,7 @@ export interface ActivityStatistics {
 /**
  * Tipo para las estadísticas de usuario
  */
-export interface UserStatistics {
+export type UserStatistics = {
   role: string;
   count: number;
   percentage: number;
@@ -89,7 +89,7 @@ export interface UserStatistics {
 /**
  * Tipo para las estadísticas de la empresa
  */
-export interface CompanyStatistics {
+export type CompanyStatistics = {
   name: string;
   count: number;
   percentage: number;
@@ -100,7 +100,7 @@ export interface CompanyStatistics {
 /**
  * Tipo para las estadísticas de contratos expirados
  */
-export interface ExpiredContractStatistics {
+export type ExpiredContractStatistics = {
   month: string;
   count: number;
   byType: Record<string, number>;
@@ -109,7 +109,7 @@ export interface ExpiredContractStatistics {
 /**
  * Tipo para las estadísticas de suplementos
  */
-export interface SupplementStatistics {
+export type SupplementStatistics = {
   withSupplements: number;
   withoutSupplements: number;
   byMonth: {
@@ -122,7 +122,7 @@ export interface SupplementStatistics {
 /**
  * Tipo para las estadísticas de nuevos contratos
  */
-export interface NewContractStatistics {
+export type NewContractStatistics = {
   byMonth: {
     month: string;
     count: number;

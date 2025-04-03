@@ -3,9 +3,9 @@ import { z } from 'zod';
 // Login schema
 export const loginSchema = () => {
   return z.object({
-    email: z.string().email('Email inválido'),
+    username: z.string().min(3, 'El nombre de usuario debe tener al menos 3 caracteres'),
     password: z.string().min(1, 'La contraseña es requerida'),
-    rememberMe: z.boolean().optional(),
+    rememberMe: z.boolean().optional().default(false),
   });
 };
 

@@ -2,7 +2,7 @@ import React from 'react'
 import { IconAlertCircle, IconRefresh } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 
-interface ContractListErrorProps {
+type ContractListErrorProps = {
   error: string
   onRetry?: () => void
 }

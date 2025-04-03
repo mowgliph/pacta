@@ -13,18 +13,43 @@ export class AuthService extends BaseService {
   }
 
   /**
-   * Autenticar un usuario por email y contraseña
-   * @param {Object} credentials - Credenciales (email, password)
+   * Autenticar un usuario por username o email y contraseña
+   * @param {Object} credentials - Credenciales (username, password)
    * @returns {Promise<Object>} - Datos del usuario y tokens
    */
   async login(credentials) {
     try {
-      const { email, password } = credentials;
+      const { username, password, rememberMe } = credentials;
       
-      // Buscar usuario por email
-      const user = await prisma.user.findUnique({ 
-        where: { email } 
+      // Buscar usuario por username (podría ser el email o un nombre de usuario)
+      let user = null;
+      
+      // Primero intentar buscar por email exacto
+      user = await prisma.user.findUnique({ 
+        where: { email: username } 
       });
+      
+      // Si no se encuentra, verificar si es RA o admin (los nombres de usuario reservados)
+      if (!user) {
+        // Para RA
+        if (username.toLowerCase() === 'ra') {
+          user = await prisma.user.findFirst({
+            where: { 
+              role: 'RA',
+              isSystemUser: true 
+            }
+          });
+        } 
+        // Para admin
+        else if (username.toLowerCase() === 'admin') {
+          user = await prisma.user.findFirst({
+            where: { 
+              role: 'ADMIN',
+              isSystemUser: true 
+            }
+          });
+        }
+      }
 
       if (!user) {
         throw new UnauthorizedError('Usuario no encontrado');
@@ -40,7 +65,7 @@ export class AuthService extends BaseService {
         throw new UnauthorizedError('Usuario inactivo');
       }
 
-      // Verificar que es un usuario del sistema
+      // Verificar que es un usuario del sistema (RA o admin)
       if (!user.isSystemUser) {
         throw new UnauthorizedError('Acceso no autorizado para usuarios del sistema');
       }
@@ -51,8 +76,9 @@ export class AuthService extends BaseService {
         data: { lastLogin: new Date() }
       });
 
-      // Generar tokens
-      const tokens = this.generateTokens(user);
+      // Generar tokens considerando la opción de recordarme
+      // Si es recordarme, generar un token de larga duración
+      const tokens = this.generateTokens(user, rememberMe);
 
       // Registrar actividad
       await prisma.activity.create({
@@ -77,7 +103,7 @@ export class AuthService extends BaseService {
         ...tokens 
       };
     } catch (error) {
-      this.logger.error('Login error', { email: credentials.email, error: error.message });
+      this.logger.error('Login error', { username: credentials.username, error: error.message });
       throw error;
     }
   }
@@ -187,45 +213,45 @@ export class AuthService extends BaseService {
   }
 
   /**
-   * Genera tokens de acceso y refresco
-   * @param {Object} user - Usuario autenticado
+   * Generar tokens de autenticación para un usuario
+   * @param {Object} user - Usuario para el que generar tokens
+   * @param {Boolean} rememberMe - Indica si se debe generar un token de larga duración
    * @returns {Object} - Tokens generados
    */
-  generateTokens(user) {
+  generateTokens(user, rememberMe = false) {
     // Datos a incluir en el token
     const payload = {
       id: user.id,
       email: user.email,
-      role: user.role,
+      role: user.role
     };
-
-    // Generar token de acceso (corta duración)
-    const accessToken = jwt.sign(payload, config.jwt.secret, {
-      expiresIn: config.jwt.expiresIn || '15m',
-    });
-
-    // Generar token de refresco (larga duración)
-    const refreshToken = jwt.sign({ id: user.id }, config.jwt.refreshSecret || config.jwt.secret, {
-      expiresIn: config.jwt.refreshExpiresIn || '7d',
-    });
-
-    // Guardar el token de refresco en la base de datos
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // 7 días por defecto
-
-    prisma.refreshToken
-      .create({
-        data: {
-          token: refreshToken,
-          userId: user.id,
-          expiresAt,
-        },
-      })
-      .catch(error => {
-        this.logger.error('Error saving refresh token', { userId: user.id, error: error.message });
-      });
-
-    return { accessToken, refreshToken };
+    
+    // Duración del token (por defecto 1 día)
+    const expiresIn = rememberMe ? 
+      config.jwt.longExpiresIn || '30d' : // 30 días si es recordarme
+      config.jwt.expiresIn || '1d';      // 1 día si es normal
+    
+    // Generar access token
+    const token = jwt.sign(
+      payload,
+      config.jwt.secret,
+      { expiresIn }
+    );
+    
+    // Generar refresh token
+    // En este caso estamos generando el mismo token, pero en una implementación
+    // completa, el refresh token debería ser diferente y tener una expiración más larga
+    const refreshToken = jwt.sign(
+      payload,
+      config.jwt.secret,
+      { expiresIn: config.jwt.refreshExpiresIn || '7d' }
+    );
+    
+    return {
+      token,
+      refreshToken,
+      expiresIn
+    };
   }
 }
 

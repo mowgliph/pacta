@@ -2,7 +2,7 @@ import React from 'react'
 import { IconFileOff, IconRefresh } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 
-interface ContractListEmptyProps {
+type ContractListEmptyProps = {
   onRefresh?: () => void
 }
 

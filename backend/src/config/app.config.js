@@ -99,10 +99,13 @@ const config = {
 
   // JWT
   jwt: {
-    secret: process.env.JWT_SECRET || 'your-jwt-secret',
-    expiresIn: process.env.JWT_EXPIRATION || '24h',
-    refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
-    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRATION || '7d',
+    secret: process.env.JWT_SECRET || 'your-secret-key-for-development',
+    expiresIn: process.env.JWT_EXPIRES_IN || '1d',           // Duración normal (1 día)
+    longExpiresIn: process.env.JWT_LONG_EXPIRES_IN || '30d', // Larga duración para "recordarme" (30 días)
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d', // Duración del refresh token
+    cookieName: 'jwt',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: process.env.NODE_ENV === 'production',
   },
 
   // Cors

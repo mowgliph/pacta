@@ -40,6 +40,7 @@ export type ContractFilters = {
   limite: number | undefined
   ordenarPor: string | undefined
   direccionOrden: 'asc' | 'desc' | undefined
+  tipo: string | undefined
 }
 
 // Update the store type
@@ -50,3 +51,19 @@ export type ContractState = {
   cargando: boolean
   error: string | null
 }
+
+// Tipo de suplemento de contrato
+export type Supplement = {
+  id: string;
+  name: string;
+  description?: string;
+  effectiveDate: string;
+  documentUrl?: string;
+  validity?: string;
+  newAgreements?: string;
+  createdBy: string;
+  contractId: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+};

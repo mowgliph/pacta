@@ -1,149 +1,100 @@
 /**
  * Rutas para gestión de usuarios
  */
-import { BaseRoute } from './BaseRoute.js';
-import userController from '../controllers/UserController.js';
-import { authenticateToken, isAdmin } from '../middleware/auth.js';
-import { validate } from '../middleware/validate.js';
-import { ValidationService } from '../../services/ValidationService.js';
-import { z } from 'zod';
+import express from 'express';
+import UserController from '../controllers/UserController.js';
+import { authenticate } from '../middleware/auth.js';
+import { authorize } from '../middleware/authorizationMiddleware.js';
+import { validateUser, validateUserUpdate } from '../validators/userValidator.js';
+import { apiLimiter } from '../middleware/rateLimit.js';
 
-class UserRoutes extends BaseRoute {
-  constructor() {
-    super(userController);
-    this.validationService = new ValidationService();
-    this.initializeRoutes();
-  }
+const router = express.Router();
 
-  initializeRoutes() {
-    // Rutas públicas de autenticación (ahora se manejan en auth.js)
-    // Las dejamos aquí por compatibilidad
-    this.post(
-      '/auth/register',
-      validate(this.validationService.validators.user.userCreateSchema),
-      this.controller.register,
-    );
-    this.post(
-      '/auth/login',
-      validate(this.validationService.validators.auth.loginSchema),
-      this.controller.login,
-    );
+/**
+ * @route GET /api/users
+ * @desc Obtener lista de usuarios (paginada y con filtros)
+ * @access Private - Admin
+ */
+router.get('/', authenticate, authorize(['ADMIN']), UserController.getUsers);
 
-    // Rutas protegidas de perfil (requieren autenticación)
-    this.get('/profile', authenticateToken, this.controller.getProfile);
-    this.put(
-      '/profile',
-      [authenticateToken, validate(this.validationService.validators.user.userProfileSchema)],
-      this.controller.updateProfile,
-    );
-    this.post(
-      '/profile/change-password',
-      [authenticateToken, validate(this.validationService.validators.user.changePasswordSchema)],
-      this.controller.changePassword,
-    );
+/**
+ * @route GET /api/users/:id
+ * @desc Obtener un usuario por ID
+ * @access Private - Admin o propietario
+ */
+router.get('/:id', authenticate, UserController.getUserById);
 
-    // Rutas de administración (requieren rol admin)
-    this.get(
-      '/users',
-      [
-        authenticateToken,
-        isAdmin,
-        validate(this.validationService.validators.user.userQuerySchema, 'query'),
-      ],
-      this.controller.getAllUsers,
-    );
+/**
+ * @route POST /api/users
+ * @desc Crear un nuevo usuario
+ * @access Private - Admin
+ */
+router.post('/', 
+  authenticate, 
+  authorize(['ADMIN']), 
+  apiLimiter, 
+  validateUser, 
+  UserController.createUser
+);
 
-    this.get(
-      '/users/:id',
-      [
-        authenticateToken,
-        isAdmin,
-        validate(this.validationService.validators.user.userIdSchema, 'params'),
-      ],
-      this.controller.getUserById,
-    );
+/**
+ * @route PUT /api/users/:id
+ * @desc Actualizar un usuario
+ * @access Private - Admin o propietario
+ */
+router.put('/:id', 
+  authenticate, 
+  validateUserUpdate, 
+  UserController.updateUser
+);
 
-    this.post(
-      '/users',
-      [
-        authenticateToken,
-        isAdmin,
-        validate(this.validationService.validators.user.userCreateSchema),
-      ],
-      this.controller.createUser,
-    );
+/**
+ * @route DELETE /api/users/:id
+ * @desc Eliminar un usuario
+ * @access Private - Admin
+ */
+router.delete('/:id', authenticate, authorize(['ADMIN']), UserController.deleteUser);
 
-    this.put(
-      '/users/:id',
-      [
-        authenticateToken,
-        isAdmin,
-        validate(this.validationService.validators.user.userIdSchema, 'params'),
-        validate(this.validationService.validators.user.userUpdateSchema),
-      ],
-      this.controller.updateUser,
-    );
+/**
+ * @route GET /api/users/profile
+ * @desc Obtener perfil del usuario actual
+ * @access Private - Usuario autenticado
+ */
+router.get('/profile', authenticate, UserController.getProfile);
 
-    this.delete(
-      '/users/:id',
-      [
-        authenticateToken,
-        isAdmin,
-        validate(this.validationService.validators.user.userIdSchema, 'params'),
-      ],
-      this.controller.deleteUser,
-    );
+/**
+ * @route PUT /api/users/profile
+ * @desc Actualizar perfil del usuario actual
+ * @access Private - Usuario autenticado
+ */
+router.put('/profile', authenticate, UserController.updateProfile);
 
-    this.put(
-      '/users/:id/role',
-      [
-        authenticateToken,
-        isAdmin,
-        validate(this.validationService.validators.user.userIdSchema, 'params'),
-        validate(
-          z.object({
-            role: z.enum(['USER', 'ADMIN', 'MANAGER']),
-          }),
-        ),
-      ],
-      this.controller.updateUserRole,
-    );
+/**
+ * @route PUT /api/users/profile/password
+ * @desc Cambiar contraseña del usuario actual
+ * @access Private - Usuario autenticado
+ */
+router.put('/profile/password', authenticate, UserController.changePassword);
 
-    this.put(
-      '/users/:id/status',
-      [
-        authenticateToken,
-        isAdmin,
-        validate(this.validationService.validators.user.userIdSchema, 'params'),
-        validate(
-          z.object({
-            status: z.enum(['ACTIVE', 'INACTIVE', 'PENDING', 'SUSPENDED']),
-          }),
-        ),
-      ],
-      this.controller.updateUserStatus,
-    );
+/**
+ * @route GET /api/users/role/:role
+ * @desc Obtener usuarios por rol
+ * @access Private - Admin
+ */
+router.get('/role/:role', authenticate, authorize(['ADMIN']), UserController.getUsersByRole);
 
-    // Búsqueda de usuarios
-    this.get(
-      '/users/search',
-      [
-        authenticateToken,
-        isAdmin,
-        validate(this.validationService.validators.user.userQuerySchema, 'query'),
-      ],
-      this.controller.searchUsers,
-    );
+/**
+ * @route PATCH /api/users/:id/status
+ * @desc Actualizar estado de un usuario
+ * @access Private - Admin
+ */
+router.patch('/:id/status', authenticate, authorize(['ADMIN']), UserController.updateUserStatus);
 
-    // Preferencias de usuario
-    this.get('/profile/preferences', authenticateToken, this.controller.getUserPreferences);
+/**
+ * @route PATCH /api/users/:id/role
+ * @desc Actualizar rol de un usuario
+ * @access Private - Admin
+ */
+router.patch('/:id/role', authenticate, authorize(['ADMIN']), UserController.updateUserRole);
 
-    this.put(
-      '/profile/preferences',
-      [authenticateToken, validate(this.validationService.validators.user.userPreferencesSchema)],
-      this.controller.updateUserPreferences,
-    );
-  }
-}
-
-export default new UserRoutes().getRouter();
+export default router;

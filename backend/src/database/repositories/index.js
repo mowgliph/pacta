@@ -13,6 +13,7 @@ export { ActivityLogPrismaRepository } from './ActivityLogPrismaRepository.js';
 export { NotificationPrismaRepository } from './NotificationPrismaRepository.js';
 export { ReportPrismaRepository } from './ReportPrismaRepository.js';
 export { CompanyPrismaRepository } from './CompanyPrismaRepository.js';
+export { SupplementPrismaRepository } from './SupplementPrismaRepository.js';
 
 // Exportar instancias predeterminadas
 import userPrismaRepository from './UserPrismaRepository.js';
@@ -22,6 +23,7 @@ import notificationPrismaRepository from './NotificationPrismaRepository.js';
 import licensePrismaRepository from './LicensePrismaRepository.js';
 import activityLogPrismaRepository from './ActivityLogPrismaRepository.js';
 import reportPrismaRepository from './ReportPrismaRepository.js';
+import supplementPrismaRepository from './SupplementPrismaRepository.js';
 
 // Exportación predeterminada de repositorios
 export default {
@@ -31,5 +33,6 @@ export default {
   notification: notificationPrismaRepository,
   license: licensePrismaRepository,
   activityLog: activityLogPrismaRepository,
-  report: reportPrismaRepository
+  report: reportPrismaRepository,
+  supplement: supplementPrismaRepository
 };

@@ -5,11 +5,13 @@ import {
   IconCurrencyDollar, 
   IconEye,
   IconBuildingStore, 
-  IconTruckDelivery
+  IconTruckDelivery,
+  IconFiles
 } from '@tabler/icons-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { type Contract } from '../../services/contracts-service'
+import { ContractType } from '@/types/enums'
 
 // Formateador de fechas
 const formatDate = (dateString: string) => {
@@ -22,7 +24,7 @@ const formatDate = (dateString: string) => {
 }
 
 // Mapeo de estados a variantes de Badge
-const STATUS_VARIANTS = {
+const STATUS_VARIANTS: Record<string, string> = {
   active: 'success',
   pending: 'warning',
   expired: 'destructive',
@@ -30,7 +32,7 @@ const STATUS_VARIANTS = {
 }
 
 // Mapeo de estados a texto en español
-const STATUS_TEXT = {
+const STATUS_TEXT: Record<string, string> = {
   active: 'Activo',
   pending: 'Pendiente',
   expired: 'Expirado',
@@ -38,7 +40,7 @@ const STATUS_TEXT = {
 }
 
 // Propiedades del componente
-interface ContractCardProps {
+type ContractCardProps = {
   contract: Contract
   onClick?: () => void
 }
@@ -59,16 +61,20 @@ export const ContractCard: React.FC<ContractCardProps> = ({
     status, 
     type,
     value,
-    currency 
+    currency,
+    hasSupplements
   } = contract
   
   // Ícono según el tipo de contrato
-  const TypeIcon = type === 'client' ? IconBuildingStore : IconTruckDelivery
-  const typeLabel = type === 'client' ? 'Cliente' : 'Proveedor'
+  const TypeIcon = type === ContractType.CLIENT ? IconBuildingStore : IconTruckDelivery
+  const typeLabel = type === ContractType.CLIENT ? 'Cliente' : 'Proveedor'
+  
+  // Mapear el status a minúsculas para compatibilidad
+  const statusLowerCase = typeof status === 'string' ? status.toLowerCase() : '';
   
   // Variante de la insignia según el estado
-  const badgeVariant = STATUS_VARIANTS[status as keyof typeof STATUS_VARIANTS] || 'default'
-  const statusText = STATUS_TEXT[status as keyof typeof STATUS_TEXT] || status
+  const badgeVariant = STATUS_VARIANTS[statusLowerCase as keyof typeof STATUS_VARIANTS] || 'default'
+  const statusText = STATUS_TEXT[statusLowerCase as keyof typeof STATUS_TEXT] || status
   
   return (
     <div
@@ -77,7 +83,7 @@ export const ContractCard: React.FC<ContractCardProps> = ({
     >
       <div className="flex justify-between items-start gap-4">
         <div className="flex gap-3">
-          <div className={`p-2 rounded-md ${type === 'client' ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'}`}>
+          <div className={`p-2 rounded-md ${type === ContractType.CLIENT ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'}`}>
             <TypeIcon size={24} />
           </div>
           
@@ -87,6 +93,12 @@ export const ContractCard: React.FC<ContractCardProps> = ({
               <Badge variant={badgeVariant as any}>
                 {statusText}
               </Badge>
+              {hasSupplements && (
+                <Badge variant="outline" className="flex items-center gap-1 ml-1">
+                  <IconFiles size={14} />
+                  <span>Suplementos</span>
+                </Badge>
+              )}
             </div>
             
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
@@ -96,7 +108,7 @@ export const ContractCard: React.FC<ContractCardProps> = ({
               
               <div className="flex items-center gap-1">
                 <IconBuilding size={16} />
-                <span>{companyName}</span>
+                <span>{companyName || 'Sin empresa'}</span>
               </div>
               
               {value && (

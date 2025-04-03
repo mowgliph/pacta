@@ -1,5 +1,5 @@
-import { SpecificStats, UserMetrics } from '../types';
-import { StatisticsType } from '../hooks/useStatistics';
+import { type SpecificStats, type UserMetrics } from '../types';
+import { type StatisticsType } from '../hooks/useStatistics';
 
 /**
  * Genera datos mock para las estadísticas de contratos

@@ -64,12 +64,27 @@ router.get(
   contractController.getContractStats,
 );
 
+// Get contract statistics by type - solo lectura sin licencia
+router.get(
+  '/stats/by-type',
+  authenticateToken,
+  contractController.getContractStatsByType,
+);
+
 // Get contract by ID - solo lectura sin licencia
 router.get(
   '/:id',
   authenticateToken,
   validate(validationService.validators.contract.contractIdSchema, 'params'),
   contractController.getContractById,
+);
+
+// Descargar documento del contrato
+router.get(
+  '/:id/download',
+  authenticateToken,
+  validate(validationService.validators.contract.contractIdSchema, 'params'),
+  contractController.downloadContractDocument,
 );
 
 // Create new contract - requiere licencia
@@ -148,6 +163,64 @@ router.post(
   upload.single('document'),
   validate(validationService.validators.contract.contractIdSchema, 'params'),
   contractController.uploadDocument,
+);
+
+// Rutas para suplementos (supplements)
+
+// Obtener todos los suplementos de un contrato
+router.get(
+  '/:id/supplements',
+  authenticateToken,
+  validate(validationService.validators.contract.contractIdSchema, 'params'),
+  contractController.getContractSupplements,
+);
+
+// Crear nuevo suplemento para un contrato
+router.post(
+  '/:id/supplements',
+  authenticateToken,
+  requiresLicense,
+  upload.single('document'),
+  validateAll({
+    params: validationService.validators.contract.contractIdSchema,
+    body: validationService.validators.contract.supplementCreateSchema || {}
+  }),
+  contractController.createSupplement,
+);
+
+// Obtener suplemento específico
+router.get(
+  '/supplements/:id',
+  authenticateToken,
+  validate(validationService.validators.common.idSchema, 'params'),
+  contractController.getSupplementById,
+);
+
+// Descargar documento del suplemento
+router.get(
+  '/supplements/:id/download',
+  authenticateToken,
+  validate(validationService.validators.common.idSchema, 'params'),
+  contractController.downloadSupplementDocument,
+);
+
+// Actualizar suplemento específico
+router.put(
+  '/supplements/:id',
+  authenticateToken,
+  requiresLicense,
+  upload.single('document'),
+  validate(validationService.validators.common.idSchema, 'params'),
+  contractController.updateSupplement,
+);
+
+// Eliminar suplemento
+router.delete(
+  '/supplements/:id',
+  authenticateToken,
+  requiresLicense,
+  validate(validationService.validators.common.idSchema, 'params'),
+  contractController.deleteSupplement,
 );
 
 export default router;

@@ -8,7 +8,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 
-interface ContractFileUploadProps {
+type ContractFileUploadProps = {
   onChange: (file: File | null) => void
   accept?: string
   label?: string

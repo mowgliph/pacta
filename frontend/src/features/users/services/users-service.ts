@@ -1,10 +1,10 @@
 import { api } from '@/lib/api';
 import { 
-  UserDetails, 
-  UserSearchParams, 
-  UsersResponse, 
-  CreateUserData, 
-  UpdateUserData 
+  type UserDetails, 
+  type UserSearchParams, 
+  type UsersResponse, 
+  type CreateUserData, 
+  type UpdateUserData 
 } from '../types';
 
 /**

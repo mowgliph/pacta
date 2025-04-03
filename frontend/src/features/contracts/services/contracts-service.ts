@@ -1,38 +1,80 @@
 import { api } from '@/lib/api';
 
-// Tipo para contratos
+// Enums
+export enum ContractStatus {
+  DRAFT = 'DRAFT',
+  ACTIVE = 'ACTIVE',
+  EXPIRED = 'EXPIRED',
+  CANCELLED = 'CANCELLED',
+  RENEWAL = 'RENEWAL'
+}
+
+export enum ContractType {
+  CLIENT = 'CLIENT',
+  PROVIDER = 'PROVIDER',
+  EMPLOYEE = 'EMPLOYEE',
+  OTHER = 'OTHER'
+}
+
+// Tipo para contrato
 export type Contract = {
+  id: string;
+  numero: string;
+  fechaInicio: string;
+  objeto: string;
+  tipo: string;
+  denominador: string;
+  vigencia: number;
+  fechaFin?: string;
+  estado: ContractStatus;
+  title: string;
+  description?: string;
+  fileUrl?: string;
+  fileSize?: number;
+  fileMimeType?: string;
+  amount?: number;
+  currency?: string;
+  notes?: string;
+  hasSupplements: boolean;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+  lastModifiedBy?: string;
+  authorId: string;
+  companyId: string;
+  departmentId?: string;
+  company?: Company;
+};
+
+// Tipo para empresa
+export type Company = {
+  id: string;
+  name: string;
+  taxId?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  website?: string;
+  logo?: string;
+  industry?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+};
+
+// Tipo para adjuntos
+export type ContractAttachment = {
   id: string;
   name: string;
   description?: string;
-  contractNumber: string;  // Número único de contrato
-  companyId: string;
-  companyName: string;
-  startDate: string;
-  endDate: string;
-  status: 'active' | 'pending' | 'expired' | 'cancelled';
-  value: number;
-  currency: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+  contractId: string;
   createdAt: string;
   updatedAt: string;
-  attachments?: Attachment[];
-  supplements?: Supplement[];
-  tags?: string[];
-  type: 'client' | 'provider';  // Tipo de contrato: cliente o proveedor
-  authorizedBy?: string;  // Persona que autoriza
-  signatures?: string[];  // Firmas del contrato
-  additionalInfo?: Record<string, any>;  // Información adicional flexible
-}
-
-// Tipo para adjuntos
-export type Attachment = {
-  id: string;
-  name: string;
-  type: string;
-  url: string;
-  size: number;
-  createdAt: string;
-}
+};
 
 // Tipo para suplementos
 export type Supplement = {
@@ -42,33 +84,43 @@ export type Supplement = {
   effectiveDate: string;
   contractId: string;
   documentUrl?: string;
+  validity?: string;
+  newAgreements?: string;
+  createdBy: string;
   createdAt: string;
   updatedAt: string;
-}
+};
 
 // Parámetros para la búsqueda de contratos
 export type ContractSearchParams = {
-  page?: number;
-  limit?: number;
-  status?: 'active' | 'pending' | 'expired' | 'cancelled';
+  page: number;
+  limit: number;
+  status?: ContractStatus;
   companyId?: string;
   startDate?: string;
   endDate?: string;
   search?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
-  type?: 'client' | 'provider';  // Filtro por tipo de contrato
-  contractNumber?: string;  // Búsqueda por número de contrato
-}
+  type?: ContractType;
+  contractNumber?: string;
+  tags?: string[];
+  clientSector?: string;
+  providerCategory?: string;
+};
 
-// Respuesta paginada de contratos
-export type ContractsResponse = {
-  data: Contract[];
-  total: number;
+// Respuesta paginada
+export type Pagination = {
   page: number;
   limit: number;
+  totalItems: number;
   totalPages: number;
-}
+};
+
+export type SearchResponse<T> = {
+  data: T[];
+  pagination: Pagination;
+};
 
 // Datos para crear un contrato
 export type CreateContractData = {
@@ -78,15 +130,16 @@ export type CreateContractData = {
   companyId: string;
   startDate: string;
   endDate: string;
-  status: 'active' | 'pending' | 'expired' | 'cancelled';
-  value: number;
+  status: ContractStatus;
+  type: ContractType;
+  amount: number;
   currency: string;
   tags?: string[];
-  type: 'client' | 'provider';
   authorizedBy?: string;
   signatures?: string[];
   additionalInfo?: Record<string, any>;
-}
+  attachments?: FormData;
+};
 
 // Datos para crear un suplemento
 export type CreateSupplementData = {
@@ -95,164 +148,127 @@ export type CreateSupplementData = {
   effectiveDate: string;
   contractId: string;
   documentFile?: File;
-}
+};
 
 /**
- * Servicio para gestionar contratos
+ * Servicio para interactuar con la API de contratos
  */
-export const ContractsService = {
-  /**
-   * Obtiene todos los contratos con paginación y filtros
-   */
-  getContracts: (params: ContractSearchParams = {}) => 
-    api.get<ContractsResponse>('/contracts', { params }),
-  
-  /**
-   * Obtiene un contrato por su ID
-   */
-  getContract: (id: string) => 
-    api.get<Contract>(`/contracts/${id}`),
-
-  /**
-   * Busca un contrato por número
-   */
-  findContractByNumber: (contractNumber: string) =>
-    api.get<Contract[]>(`/contracts/search`, { params: { contractNumber } }),
-  
-  /**
-   * Crea un nuevo contrato
-   */
-  createContract: (data: CreateContractData, documentFile?: File) => {
-    const formData = new FormData();
+export const ContractService = {
+  // Búsqueda de contratos con filtros
+  searchContracts: async (searchTerm: string, params: Partial<ContractSearchParams>): Promise<SearchResponse<Contract>> => {
+    // Asegurarnos de que los parámetros son compatibles con la API
+    const apiParams: Record<string, any> = {
+      ...params,
+      search: searchTerm || params.search,
+      page: params.page || 1,
+      limit: params.limit || 10
+    };
     
-    // Añadir los datos del contrato como JSON
-    formData.append('data', JSON.stringify(data));
-    
-    // Añadir el archivo si existe
-    if (documentFile) {
-      formData.append('document', documentFile);
+    // Añadir el filtro de tipo si está presente
+    if (params.type) {
+      apiParams.type = params.type;
     }
     
-    return api.post<Contract>('/contracts', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+    // Realizar la solicitud a la API
+    const response = await api.get<SearchResponse<Contract>>('/contracts', {
+      params: apiParams
+    });
+    
+    return response;
+  },
+  
+  // Obtener todos los contratos por tipo
+  getContractsByType: async (type: ContractType): Promise<Contract[]> => {
+    return await api.get<Contract[]>('/contracts', {
+      params: { type, limit: 100 }
     });
   },
   
-  /**
-   * Actualiza un contrato existente
-   */
-  updateContract: (id: string, data: Partial<CreateContractData>, documentFile?: File) => {
-    if (documentFile) {
-      const formData = new FormData();
-      formData.append('data', JSON.stringify(data));
-      formData.append('document', documentFile);
-      
-      return api.put<Contract>(`/contracts/${id}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-    } else {
-      return api.put<Contract>(`/contracts/${id}`, data);
-    }
+  // Obtener estadísticas de contratos por tipo
+  getContractStatsByType: async (): Promise<{ client: number; provider: number; other: number }> => {
+    return await api.get<{ client: number; provider: number; other: number }>('/contracts/stats/by-type');
   },
   
-  /**
-   * Elimina un contrato
-   */
-  deleteContract: (id: string) => 
-    api.delete(`/contracts/${id}`),
-  
-  /**
-   * Obtiene los adjuntos de un contrato
-   */
-  getContractAttachments: (contractId: string) => 
-    api.get<Attachment[]>(`/contracts/${contractId}/attachments`),
-  
-  /**
-   * Sube un nuevo adjunto para un contrato
-   */
-  uploadAttachment: (contractId: string, file: File) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    return api.post<Attachment>(`/contracts/${contractId}/attachments`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  // Obtener un contrato por ID
+  getContract: async (id: string): Promise<Contract> => {
+    return await api.get<Contract>(`/contracts/${id}`);
   },
   
-  /**
-   * Elimina un adjunto
-   */
-  deleteAttachment: (contractId: string, attachmentId: string) => 
-    api.delete(`/contracts/${contractId}/attachments/${attachmentId}`),
-    
-  /**
-   * Obtiene los suplementos de un contrato
-   */
-  getContractSupplements: (contractId: string) => 
-    api.get<Supplement[]>(`/contracts/${contractId}/supplements`),
+  // Crear un nuevo contrato
+  createContract: async (data: CreateContractData): Promise<Contract> => {
+    return await api.post<Contract, CreateContractData>('/contracts', data);
+  },
   
-  /**
-   * Crea un nuevo suplemento para un contrato
-   */
-  createSupplement: (contractId: string, data: CreateSupplementData) => {
-    const formData = new FormData();
-    
-    // Añadir los datos del suplemento como JSON
-    formData.append('data', JSON.stringify(data));
-    
-    // Añadir el archivo si existe
-    if (data.documentFile) {
-      formData.append('document', data.documentFile);
-    }
-    
-    return api.post<Supplement>(`/contracts/${contractId}/supplements`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  // Actualizar un contrato existente
+  updateContract: async (id: string, data: CreateContractData): Promise<Contract> => {
+    return await api.put<Contract, CreateContractData>(`/contracts/${id}`, data);
   },
-
-  /**
-   * Obtiene un suplemento por su ID
-   */
-  getSupplement: (contractId: string, supplementId: string) => 
-    api.get<Supplement>(`/contracts/${contractId}/supplements/${supplementId}`),
-
-  /**
-   * Actualiza un suplemento existente
-   */
-  updateSupplement: (contractId: string, supplementId: string, data: Partial<CreateSupplementData>) => {
-    if (data.documentFile) {
-      const formData = new FormData();
-      const { documentFile, ...restData } = data;
-      formData.append('data', JSON.stringify(restData));
-      formData.append('document', documentFile);
-      
-      return api.put<Supplement>(`/contracts/${contractId}/supplements/${supplementId}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-    } else {
-      return api.put<Supplement>(`/contracts/${contractId}/supplements/${supplementId}`, data);
-    }
+  
+  // Eliminar un contrato
+  deleteContract: async (id: string): Promise<void> => {
+    await api.delete<void>(`/contracts/${id}`);
   },
-
-  /**
-   * Elimina un suplemento
-   */
-  deleteSupplement: (contractId: string, supplementId: string) => 
-    api.delete(`/contracts/${contractId}/supplements/${supplementId}`),
-
-  /**
-   * Búsqueda avanzada de contratos
-   */
-  advancedSearch: (params: ContractSearchParams) =>
-    api.get<ContractsResponse>('/contracts/advanced-search', { params }),
+  
+  // Cambiar el estado de un contrato
+  changeContractStatus: async (id: string, status: ContractStatus): Promise<Contract> => {
+    return await api.patch<Contract, { status: ContractStatus }>(`/contracts/${id}/status`, { status });
+  },
+  
+  // Obtener los adjuntos de un contrato
+  getContractAttachments: async (contractId: string): Promise<ContractAttachment[]> => {
+    return await api.get<ContractAttachment[]>(`/contracts/${contractId}/attachments`);
+  },
+  
+  // Añadir un adjunto a un contrato
+  addContractAttachment: async (contractId: string, formData: FormData): Promise<ContractAttachment> => {
+    return await api.post<ContractAttachment, FormData>(`/contracts/${contractId}/attachments`, formData);
+  },
+  
+  // Eliminar un adjunto de un contrato
+  deleteContractAttachment: async (attachmentId: string): Promise<void> => {
+    await api.delete<void>(`/attachments/${attachmentId}`);
+  },
+  
+  // Descargar el documento de un contrato
+  downloadContractDocument: async (contractId: string): Promise<void> => {
+    // Obtener la URL base de la API desde variables de entorno
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    
+    // Abrir la URL en una nueva pestaña
+    window.open(`${baseUrl}/contracts/${contractId}/download`, '_blank');
+  },
+  
+  // Obtener los suplementos de un contrato
+  getContractSupplements: async (contractId: string): Promise<Supplement[]> => {
+    return await api.get<Supplement[]>(`/contracts/${contractId}/supplements`);
+  },
+  
+  // Obtener un suplemento por ID
+  getSupplement: async (id: string): Promise<Supplement> => {
+    return await api.get<Supplement>(`/supplements/${id}`);
+  },
+  
+  // Descargar el documento de un suplemento
+  downloadSupplementDocument: async (supplementId: string): Promise<void> => {
+    // Obtener la URL base de la API desde variables de entorno
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    
+    // Abrir la URL en una nueva pestaña
+    window.open(`${baseUrl}/contracts/supplements/${supplementId}/download`, '_blank');
+  },
+  
+  // Crear un nuevo suplemento
+  createSupplement: async (contractId: string, formData: FormData): Promise<Supplement> => {
+    return await api.post<Supplement, FormData>(`/contracts/${contractId}/supplements`, formData);
+  },
+  
+  // Actualizar un suplemento existente
+  updateSupplement: async (id: string, formData: FormData): Promise<Supplement> => {
+    return await api.put<Supplement, FormData>(`/supplements/${id}`, formData);
+  },
+  
+  // Eliminar un suplemento
+  deleteSupplement: async (id: string): Promise<void> => {
+    await api.delete<void>(`/supplements/${id}`);
+  }
 }; 

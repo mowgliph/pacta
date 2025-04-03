@@ -1,5 +1,5 @@
-import React from 'react'
-import { useNavigate } from '@remix-run/react'
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -9,14 +9,10 @@ import { ContractForm } from '../components/ContractForm'
 import { useContract, useUpdateContract } from '../hooks/useContracts'
 import type { CreateContractData } from '../services/contracts-service'
 
-interface ContractEditPageProps {
-  id: string
-}
-
 /**
  * Página para editar un contrato existente
  */
-export function ContractEditPage({ id }: ContractEditPageProps) {
+export default function ContractEditPage({ id }: { id: string }) {
   const navigate = useNavigate()
   const { showSuccess, showError } = useNotifications()
   

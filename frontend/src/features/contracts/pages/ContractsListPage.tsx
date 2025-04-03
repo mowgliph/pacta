@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react'
-import { Link, useNavigate } from '@remix-run/react'
+import { Link, useNavigate } from 'react-router-dom'
 import { 
   IconPlus,
   IconSearch, 
@@ -13,11 +13,16 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { ContractList } from '../components/ContractList'
 import { useSearchContracts } from '../hooks/useContracts'
 import type { ContractSearchParams } from '../services/contracts-service'
+import { ContractFilterDialog } from '../components/ContractFilterDialog'
+
+type ContractsListPageProps = {
+  isPublic?: boolean;
+};
 
 /**
  * Página principal para mostrar la lista de contratos
  */
-export const ContractsListPage: React.FC = () => {
+export default function ContractsListPage({ isPublic = false }: ContractsListPageProps) {
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState('')
   const [searchParams, setSearchParams] = useState<ContractSearchParams>({
@@ -26,6 +31,7 @@ export const ContractsListPage: React.FC = () => {
     sortBy: 'createdAt',
     sortOrder: 'desc'
   })
+  const [filters, setFilters] = useState({})
   
   // Usar SWR para obtener los contratos
   const { 
@@ -64,6 +70,11 @@ export const ContractsListPage: React.FC = () => {
   // Refrescar los datos manualmente
   const handleRefresh = () => {
     refreshContracts()
+  }
+
+  const handleFilterChange = (newFilters: any) => {
+    setFilters(newFilters)
+    setSearchParams(prev => ({ ...prev, page: 1 }))
   }
   
   return (
@@ -106,9 +117,10 @@ export const ContractsListPage: React.FC = () => {
                 />
               </div>
             </form>
-            <Button size="icon" variant="outline" title="Filtrar resultados">
-              <IconFilter size={16} />
-            </Button>
+            <ContractFilterDialog
+              initialFilters={filters}
+              onFilterChange={handleFilterChange}
+            />
             <Button 
               size="icon" 
               variant="outline" 

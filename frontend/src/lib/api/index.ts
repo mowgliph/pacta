@@ -78,6 +78,7 @@ export const apiHelpers = {
   },
 };
 
-// Exportar utilidades para SWR
-export * from './swrConfig';
-export * from './swr-hooks'; 
+// Exportar utilidades para API
+export * from './client';
+export * from './BaseService';
+export * from './apiClient'; 

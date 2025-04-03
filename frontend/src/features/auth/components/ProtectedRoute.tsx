@@ -1,56 +1,44 @@
-import React, { useEffect, type ReactNode } from 'react';
-import { useStore } from '@/store';
-import { Navigate, useLocation } from '@remix-run/react';
+import { Navigate, useLocation, type To } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 import { type Role } from '@/types/enums';
-import { FullPageSpinner } from '@/components/ui/spinner'; // Asumiendo que tenemos un Spinner
 
 type ProtectedRouteProps = {
-  // Opcional: roles permitidos para esta ruta
-  allowedRoles?: Role[];
-  children?: ReactNode;
-}
+  children: React.ReactNode;
+  rolesPermitidos?: Role[];
+  redirectTo?: To;
+};
 
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, children }) => {
-  const { isAuthenticated, verifySession, isLoading, user, hasRole } = useStore(
-    (state) => ({ 
-      isAuthenticated: state.isAuthenticated, 
-      verifySession: state.verifySession, 
-      isLoading: state.isLoading,
-      user: state.user, 
-      hasRole: state.hasRole 
-    })
-  );
+/**
+ * Componente para proteger rutas basado en autenticación y roles
+ * Redirecciona a login si el usuario no está autenticado
+ * Redirecciona a la página de acceso denegado si no tiene los permisos necesarios
+ */
+export function ProtectedRoute({ 
+  children, 
+  rolesPermitidos = [], 
+  redirectTo = '/auth/access-denied' 
+}: ProtectedRouteProps) {
+  const { estaAutenticado, tienePermiso } = useAuth();
   const location = useLocation();
-  const isLoadingSession = isLoading && !user; // Estamos cargando la sesión inicial
 
-  useEffect(() => {
-    // Si no estamos logueados y no estamos cargando, intentar verificar sesión
-    if (!isAuthenticated && !isLoading) {
-      verifySession();
-    }
-  }, [isAuthenticated, isLoading, verifySession]);
-
-  // Mostrar spinner mientras se verifica la sesión por primera vez
-  if (isLoadingSession) {
-    return <FullPageSpinner />;
+  // Si el usuario no está autenticado, redirigir al login
+  if (!estaAutenticado) {
+    return <Navigate to="/auth/login" state={{ from: location.pathname }} replace />;
   }
 
-  // Si después de verificar, no estamos logueados, redirigir a login
-  if (!isAuthenticated) {
-    // Guardar la ruta a la que se intentaba acceder para redirigir después del login
-    const redirect = location.pathname;
-    return <Navigate to="/login" state={{ from: redirect !== '/login' ? redirect : undefined }} />;
+  // Si no se especifican roles, permitir acceso a cualquier usuario autenticado
+  if (rolesPermitidos.length === 0) {
+    return <>{children}</>;
   }
 
-  // Verificar roles si se especificaron
-  if (allowedRoles && allowedRoles.length > 0) {
-    if (!user || !hasRole(allowedRoles)) {
-      // Redirigir a una página de acceso denegado o al dashboard
-      // Podríamos mostrar un mensaje o redirigir a /unauthorized
-      return <Navigate to="/dashboard" />;
-    }
+  // Verificar si el usuario tiene alguno de los roles permitidos
+  const tieneAcceso = tienePermiso(rolesPermitidos);
+
+  // Si el usuario no tiene los roles necesarios, redirigir a la ruta especificada
+  if (!tieneAcceso) {
+    return <Navigate to={redirectTo} replace />;
   }
 
-  // Si está logueado y tiene los roles (si aplica), renderizar los hijos o Outlet
+  // Si pasa todas las verificaciones, mostrar el contenido protegido
   return <>{children}</>;
-}; 
+} 

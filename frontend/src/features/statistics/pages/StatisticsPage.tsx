@@ -13,7 +13,7 @@ import { toast } from '@/hooks/useToast';
 import { Button } from '@/components/ui/button';
 import { IconDownload } from '@tabler/icons-react';
 
-export function StatisticsPage() {
+export default function StatisticsPage() {
   const [activeTab, setActiveTab] = useState('overview');
 
   // Función para manejar el cambio de pestaña

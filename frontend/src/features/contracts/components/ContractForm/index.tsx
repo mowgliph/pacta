@@ -12,12 +12,12 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { CreateContractData } from '../../services/contracts-service'
+import { type CreateContractData } from '../../services/contracts-service'
 import { ContractFileUpload } from './ContractFileUpload'
 import { ContractTypeSelector } from './ContractTypeSelector'
 
 // Propiedades para el formulario de contrato
-interface ContractFormProps {
+type ContractFormProps = {
   onSubmit: (data: CreateContractData, documentFile?: File) => void
   isSubmitting?: boolean
   isCreating?: boolean
