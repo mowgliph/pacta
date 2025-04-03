@@ -2,7 +2,7 @@
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]() [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)]()
 
-PACTA es una aplicación de escritorio instalable localmente, diseñada para optimizar la gestión de contratos en empresas grandes. Su objetivo es proporcionar una solución integral para la administración eficiente de contratos, con énfasis en usabilidad, seguridad y visualización avanzada.
+PACTA es una aplicación web diseñada para optimizar la gestión de contratos en empresas grandes. Su objetivo es proporcionar una solución integral para la administración eficiente de contratos, con énfasis en usabilidad, seguridad y visualización avanzada.
 
 ---
 
@@ -37,70 +37,82 @@ PACTA es una plataforma diseñada para:
   Resumen visual de contratos, indicadores de rendimiento, gráficos interactivos y acciones rápidas.
 
 - **Gestión Integral de Contratos:**  
-  Listado completo de contratos con filtros por tipo, búsqueda avanzada y visualización detallada.
+  Listado completo de contratos con filtros avanzados por tipo, estado, fecha, búsqueda avanzada y visualización detallada.
 
 - **Gestión de Suplementos:**  
-  Mecanismo para modificar contratos preservando el historial completo de cambios.
+  Sistema completo para crear, visualizar y gestionar modificaciones a contratos preservando el historial completo de cambios.
 
 - **Autenticación y Control de Acceso:**  
-  Sistema de roles (RA y admin) con autenticación JWT, control robusto de permisos y cambio de contraseña.
+  Sistema de roles (Administrador, Gestor, Usuario) con autenticación JWT, control robusto de permisos y cambio de contraseña seguro.
+
+- **Dashboard Público y Autenticado:**
+  Vistas diferenciadas según el tipo de usuario, con información adaptada a sus necesidades y permisos.
 
 - **Diseño y Usabilidad:**  
-  Interfaz minimalista y moderna basada en Tailwind CSS, shadcn/UI y React con Vite.
+  Interfaz minimalista y moderna basada en Tailwind CSS, shadcn/UI y React con Vite, con transiciones y animaciones fluidas.
 
 - **Optimización de Desempeño:**  
-  Code splitting, lazy loading y caché inteligente para una experiencia de usuario ágil.
+  Code splitting, lazy loading, react-query para gestión de datos en caché y SWR para una experiencia de usuario ágil.
 
 - **Accesibilidad:**  
   Cumplimiento de estándares WCAG AA/AAA, diseño mobile-first, y micro-interacciones para una experiencia inclusiva.
 
-- **Innovación:**  
-  Posible integración de analíticas predictivas y recomendaciones basadas en IA para mejorar la gestión proactiva de contratos.
+- **Sistema de Actividades y Notificaciones:**
+  Registro de actividades y eventos del sistema, con notificaciones para vencimientos de contratos y cambios importantes.
 
 ---
 
 ## Tecnologías
 
 ### Frontend
-- **Framework:** React 19 y TypeScript
+- **Framework:** React 19 con TypeScript
 - **Build Tool:** Vite
-- **Estilos:** Tailwind CSS y shadcn/UI
-- **Enrutamiento:** TanStack Router
-- **Gestión de Estado:** Zustand y SWR
+- **Estilos:** Tailwind CSS, shadcn/UI y Lucide Icons
+- **Enrutamiento:** React Router v6
+- **Gestión de Estado:** Zustand para estado global
+- **Gestión de Datos:** React Query y SWR para fetching y caché
+- **Gráficos:** Recharts para visualizaciones
+- **Formularios:** React Hook Form con Zod para validación
+- **Componentes de Fecha:** date-fns para manipulación de fechas
 
 ### Backend
-- **Runtime:** Node.js con Express.js y TypeScript
-- **Persistencia:** Prisma ORM con SQLite
-- **Autenticación:** JWT
-- **Validación:** Zod
-- **Documentación:** Swagger/OpenAPI
+- **Runtime:** Node.js con Express.js
+- **Base de Datos:** SQLite con Prisma ORM 
+- **Autenticación:** JWT con bcrypt para encriptación
+- **Validación:** Express Validator
+- **Subida de Archivos:** Multer
+- **Logging:** Sistema personalizado de registro de actividades
 
 ---
 
 ## Arquitectura
 
 ### Frontend
-- **Dashboard y Navegación:**  
-  Interfaz con secciones de Contratos, Estadísticas y Perfil, complementada con micro-interacciones y animaciones sutiles.
-- **Modularidad:**  
-  Uso de componentes atómicos y reutilizables, facilitando la escalabilidad y el mantenimiento.
-- **Optimización:**  
-  Implementación de técnicas como code splitting, lazy loading y caché inteligente.
+- **Feature-First Architecture:**  
+  Organización por funcionalidades (contracts, dashboard, auth, users) para mejor mantenimiento y escalabilidad.
+- **Componentes Atómicos:**  
+  Construcción de UI con componentes pequeños, reutilizables y compositivos.
+- **Custom Hooks:**  
+  Lógica encapsulada en hooks personalizados para contratos, suplementos, dashboard y autenticación.
+- **Separación de Responsabilidades:**
+  Separación clara entre componentes de presentación, lógica de negocio y servicios.
 
 ### Backend
 - **API RESTful:**  
-  Endpoints organizados para usuarios, contratos, suplementos, empresas, notificaciones y estadísticas.
-- **Lógica de Negocio:**  
-  Manejo automático de estados, validación exhaustiva con Zod y control centralizado de errores.
-- **Seguridad:**  
-  Autenticación basada en JWT, control de roles y protección de endpoints críticos.
+  Endpoints organizados para usuarios, contratos, suplementos, empresas, estadísticas y actividades.
+- **Controladores y Servicios:**
+  Separación de la lógica de negocio en servicios independientes de los controladores.
+- **Middleware de Autenticación:**
+  Sistema de protección de rutas basado en tokens JWT y roles de usuario.
+- **Migraciones y Modelado:**
+  Gestión de base de datos mediante Prisma con migraciones versionadas.
 
 ---
 
 ## Instalación y Configuración
 
 ### Requisitos
-- Node.js (versión LTS recomendada)
+- Node.js (v16 o superior)
 - npm o yarn
 - SQLite (para el backend)
 
@@ -125,9 +137,15 @@ PACTA es una plataforma diseñada para:
      ```
 
 3. **Configurar variables de entorno:**
-   - Revisa los archivos `.env.example` y configura tus variables en cada carpeta (backend y frontend).
+   - Copia los archivos `.env.example` a `.env` en cada carpeta (backend y frontend) y configura tus variables.
 
-4. **Ejecutar la aplicación:**
+4. **Ejecutar migraciones de base de datos:**
+   ```bash
+   cd backend
+   npx prisma migrate dev
+   ```
+
+5. **Ejecutar la aplicación:**
    - **Backend:**
      ```bash
      npm run dev
@@ -142,21 +160,22 @@ PACTA es una plataforma diseñada para:
 ## Uso
 
 Una vez iniciada la aplicación:
-- **Dashboard:** Visualiza estadísticas, gráficos interactivos y accede a acciones rápidas.
-- **Contratos:** Gestiona, filtra y busca contratos con facilidad.
-- **Estadísticas:** Accede a análisis detallados, tendencias y reportes exportables.
-- **Perfil:** Administra tu información personal y configura las notificaciones y la seguridad.
+- **Dashboard:** Visualiza estadísticas, contratos por vencer, actividad reciente y gráficos interactivos.
+- **Contratos:** Gestiona, filtra, crea y edita contratos. Visualiza detalles y documentos adjuntos.
+- **Suplementos:** Gestiona modificaciones a contratos existentes con su propia documentación.
+- **Perfil y Configuración:** Administra tu información personal, cambia tu contraseña y ajusta preferencias.
 
 ---
 
 ## Desarrollo
 
-Para contribuir o personalizar la aplicación, consulta el archivo [desarrollo_de_pacta.txt](./docs/desarrollo_de_pacta.txt) que contiene el análisis profundo, cronograma y recomendaciones técnicas.
+Para contribuir o personalizar la aplicación, consulta el archivo [desarrollo_pacta.md](./docs/desarrollo_pacta.md) que contiene el análisis profundo, cronograma y recomendaciones técnicas.
 
-**Puntos clave:**
-- Sigue las mejores prácticas de desarrollo y actualiza regularmente las dependencias.
-- Realiza pruebas unitarias y de integración para mantener la estabilidad.
-- Utiliza herramientas de monitoreo para detectar y resolver problemas en producción.
+**Mejores prácticas:**
+- Utiliza los hooks personalizados y servicios existentes para mantener la consistencia.
+- Sigue el patrón establecido para componentes y funcionalidades.
+- Realiza pruebas unitarias para nuevas funcionalidades.
+- Documenta adecuadamente los cambios realizados.
 
 ---
 
