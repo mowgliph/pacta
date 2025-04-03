@@ -1,34 +1,25 @@
 Dejame darte contexto de como funciona. 
 
-Las rutas estaran programadas para que exista un dashboard publico y un dashboard para cuando el usuario haya iniciado sesion. Asi mismo funcionara para el resto de la aplicacion con paginas publicas a que todos los visitantes de la aplicacion puedan ver y las ediciones fundamentales seran requerido inicio de sesion. 
+Las rutas estaran programadas para que exista un dashboard publico y un dashboard 
+para cuando el usuario haya iniciado sesion. Asi mismo funcionara para el resto 
+de la aplicacion con paginas publicas a que todos los visitantes de la aplicacion 
+puedan ver y las ediciones fundamentales seran requerido inicio de sesion. 
 
-Vuelve a revisar cada lugar de la implementacion del modulo. Tanto para el frontend como para el backend. Que exista engranaje entre ambos. Asegurate que los archivos creados estan en su lugar siguiendo la estructuracion del projecto. Elimina, busca y analiza codigo redundante en este modulo de autenticacion y de gestion de usuarios en la aplicacion de PACTA. 
+Vuelve a revisar cada lugar de la implementacion del modulo. Tanto para el 
+frontend como para el backend. Que exista engranaje entre ambos. Asegurate que 
+los archivos creados estan en su lugar siguiendo la estructuracion del projecto. 
+Elimina, busca y analiza codigo redundante en este modulo de autenticacion y de 
+gestion de usuarios en la aplicacion de PACTA. 
 
-Realiza enfasis en la busqueda de codigo repetido y de archivos repetidos. Codigo redundante y eliminalos , modificalos o unificalos. Rectifica rutas para que apunte todo a su correspondiente. Asegurate de mantener concistencia absoluta en el codigo.
+Realiza enfasis en la busqueda de codigo repetido y de archivos repetidos. 
+Codigo redundante y eliminalos , modificalos o unificalos. Rectifica rutas para 
+que apunte todo a su correspondiente. Asegurate de mantener concistencia absoluta 
+en el codigo.
 
-Cuando hayas Analizado, Revisado, Todo el modulo y que este todo correctamente implementao tanto en el Backend como en el frontend. Solo Responde he terminado. Pero antes verifica que no se te este quedando nada de nada. 
+Cuando hayas Analizado, Revisado, Todo el modulo y que este todo correctamente 
+implementao tanto en el Backend como en el frontend. Solo Responde he terminado. 
+Pero antes verifica que no se te este quedando nada de nada. 
 
-Por lo que veo nos va quedando modificaciones con el modulo de contratos. 
 
-Agregando contexto del funcionamiento del modulo de contratos:
-En la pagina de los contratos donde estan todos los contratos. Tendran dos filtros importantes. Tipo de contratos clientes y tipos de contratos proveedor. Ademas de otros componentes de filtro de busquedas avanzadas. Cuando se busque el contrato al seleccionarlo se mostrara el contrato seleccionado con sus detalles y un boton para ver los suplementos que tiene ese contrato. Ademas de un boton para descargar el contrato almacenado en la base de datos en el backend, que previamente se haya subido a la hora de crear el contrato. Al mostrar los suplementos del contrato seleccionado apareceran las opciones disponibles para agregar nuevo suplemento al contrato. Que este suplemento actualizara el contrato. Recuerda que para estas acciones debe de estar autentificado con un usuario con permisos de administrador.
-
-Basado en mi análisis, falta implementar o finalizar lo siguiente:
-Módulo de contratos:
-Implementación completa de funcionalidad de suplementos
-Finalización de la integración entre frontend y backend para la descarga de contratos
-Completar los filtros de búsqueda para contratos de clientes y proveedores
-Implementar la vista detallada de suplementos
-Autenticación:
-Finalizar la integración de roles y permisos en todas las rutas
-Completar la implementación del cambio de contraseña
-Asegurar que todas las rutas protegidas requieran autenticación adecuada
-Dashboard:
-Implementar gráficos y estadísticas de contratos
-Mejorar la interfaz de usuario para el dashboard
-Integración general:
-Asegurar que todas las rutas del frontend se correspondan correctamente con el backend
-Eliminar código redundante y archivos duplicados
-Unificar servicios y componentes similares
-
-Responde con: si o no si se ha finalizado la implementacion del modulo. 
+Responde con un analisis de el estado de implementacion de PACTA. Que nos falta 
+para seguir desarrollando.

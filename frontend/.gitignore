@@ -99,3 +99,6 @@ debug.log
 
 # TypeScript
 *.tsbuildinfo
+
+# Package Lock
+package-lock.json
