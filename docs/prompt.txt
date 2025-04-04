@@ -5,11 +5,11 @@ para cuando el usuario haya iniciado sesion. Asi mismo funcionara para el resto
 de la aplicacion con paginas publicas a que todos los visitantes de la aplicacion 
 puedan ver y las ediciones fundamentales seran requerido inicio de sesion. 
 
-Vuelve a revisar cada lugar de la implementacion del modulo. Tanto para el 
+Vuelve a revisar cada lugar de la implementacion de los modulo. Tanto para el 
 frontend como para el backend. Que exista engranaje entre ambos. Asegurate que 
 los archivos creados estan en su lugar siguiendo la estructuracion del projecto. 
-Elimina, busca y analiza codigo redundante en este modulo de autenticacion y de 
-gestion de usuarios en la aplicacion de PACTA. 
+Elimina, busca y analiza codigo redundante en los modulos que estemos trabajando 
+en la aplicacion de PACTA. 
 
 Realiza enfasis en la busqueda de codigo repetido y de archivos repetidos. 
 Codigo redundante y eliminalos , modificalos o unificalos. Rectifica rutas para 
@@ -19,7 +19,6 @@ en el codigo.
 Cuando hayas Analizado, Revisado, Todo el modulo y que este todo correctamente 
 implementao tanto en el Backend como en el frontend. Solo Responde he terminado. 
 Pero antes verifica que no se te este quedando nada de nada. 
-
 
 Responde con un analisis de el estado de implementacion de PACTA. Que nos falta 
 para seguir desarrollando.
