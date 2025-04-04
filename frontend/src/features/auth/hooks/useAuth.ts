@@ -67,4 +67,4 @@ export const useAuth = () => {
     tienePermiso,
     redirigirPorRol
   };
-}; 
+};

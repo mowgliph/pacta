@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import type { ToastActionElement, ToastProps } from "@/components/ui/toast";
 
-import type { ToastActionElement, ToastProps } from "../components/ui/toast";
-
+// Configuración de toast
 const TOAST_LIMIT = 5;
-const TOAST_REMOVE_DELAY = 1000;
+const TOAST_REMOVE_DELAY = 5000;
 
 type ToasterToast = ToastProps & {
   id: string;
@@ -19,6 +19,7 @@ const actionTypes = {
   REMOVE_TOAST: "REMOVE_TOAST",
 } as const;
 
+// Contador para generar IDs únicos
 let count = 0;
 
 function generateId() {
@@ -50,6 +51,27 @@ type ToastState = {
   toasts: ToasterToast[];
 }
 
+// Mapa para gestionar los timeouts
+const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
+
+// Función para añadir un toast a la cola de eliminación
+const addToRemoveQueue = (toastId: string) => {
+  if (toastTimeouts.has(toastId)) {
+    return;
+  }
+
+  const timeout = setTimeout(() => {
+    toastTimeouts.delete(toastId);
+    dispatch({
+      type: actionTypes.REMOVE_TOAST,
+      toastId: toastId,
+    });
+  }, TOAST_REMOVE_DELAY);
+
+  toastTimeouts.set(toastId, timeout);
+};
+
+// Reducer para gestionar el estado de los toasts
 function toastReducer(state: ToastState, action: Action): ToastState {
   switch (action.type) {
     case actionTypes.ADD_TOAST:
@@ -69,25 +91,25 @@ function toastReducer(state: ToastState, action: Action): ToastState {
     case actionTypes.DISMISS_TOAST: {
       const { toastId } = action;
 
+      // Añadir toasts a la cola de eliminación
       if (toastId) {
-        return {
-          ...state,
-          toasts: state.toasts.map((t) =>
-            t.id === toastId
-              ? {
-                  ...t,
-                  open: false,
-                }
-              : t
-          ),
-        };
+        addToRemoveQueue(toastId);
+      } else {
+        state.toasts.forEach((toast) => {
+          addToRemoveQueue(toast.id);
+        });
       }
+
       return {
         ...state,
-        toasts: state.toasts.map((t) => ({
-          ...t,
-          open: false,
-        })),
+        toasts: state.toasts.map((t) =>
+          t.id === toastId || toastId === undefined
+            ? {
+                ...t,
+                open: false,
+              }
+            : t
+        ),
       };
     }
     case actionTypes.REMOVE_TOAST:
@@ -104,10 +126,13 @@ function toastReducer(state: ToastState, action: Action): ToastState {
   }
 }
 
+// Listeners para actualizar componentes
 const listeners: ((state: ToastState) => void)[] = [];
 
+// Estado en memoria
 let memoryState: ToastState = { toasts: [] };
 
+// Dispatch para ejecutar acciones
 function dispatch(action: Action) {
   memoryState = toastReducer(memoryState, action);
   listeners.forEach((listener) => {
@@ -115,8 +140,12 @@ function dispatch(action: Action) {
   });
 }
 
+// Tipo para crear un toast
 type Toast = Omit<ToasterToast, "id">;
 
+/**
+ * Función para crear un toast
+ */
 function toast({ ...props }: Toast) {
   const id = generateId();
 
@@ -147,10 +176,13 @@ function toast({ ...props }: Toast) {
   };
 }
 
+/**
+ * Hook para acceder y manipular toasts
+ */
 function useToast() {
   const [state, setState] = useState<ToastState>(memoryState);
 
-  useState(() => {
+  useEffect(() => {
     listeners.push(setState);
     return () => {
       const index = listeners.indexOf(setState);
@@ -158,7 +190,7 @@ function useToast() {
         listeners.splice(index, 1);
       }
     };
-  });
+  }, []);
 
   return {
     ...state,
@@ -167,4 +199,39 @@ function useToast() {
   };
 }
 
-export { useToast, toast }; 
+// Helpers específicos para casos comunes
+const showSuccess = (message: string) => {
+  return toast({
+    title: "Éxito",
+    description: message,
+    variant: "default",
+  });
+};
+
+const showError = (message: string) => {
+  return toast({
+    title: "Error",
+    description: message,
+    variant: "destructive",
+  });
+};
+
+const showWarning = (message: string) => {
+  return toast({
+    title: "Advertencia",
+    description: message,
+    variant: "default",
+    className: "bg-orange-600 text-white",
+  });
+};
+
+const showInfo = (message: string) => {
+  return toast({
+    title: "Información",
+    description: message,
+    variant: "default",
+    className: "bg-blue-600 text-white",
+  });
+};
+
+export { useToast, toast, showSuccess, showError, showWarning, showInfo };

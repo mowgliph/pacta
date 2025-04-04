@@ -1,47 +1,20 @@
-import { 
-  useQuery, 
-  useMutation, 
-  type UseQueryOptions, 
+import {
+  useMutation,
+  useQuery,
   type UseMutationOptions,
+  type UseQueryOptions,
   type QueryKey
 } from '@tanstack/react-query';
-import axios from 'axios';
+import { api } from '@/lib/api';
+import { handleServerError, handleServerErrorSilent } from '@/utils/handle-server-error';
 import { queryClient } from '@/lib/react-query';
-import { API_CONFIG } from '@/config/api';
 
-// Crea instancia de axios con configuración base
-const api = axios.create({
-  baseURL: API_CONFIG.baseURL || 'http://localhost:3001/api',
-  headers: API_CONFIG.headers,
-  timeout: API_CONFIG.timeout,
-});
-
-// Interceptor para agregar token a las peticiones
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Interceptor para manejar errores de respuesta
-api.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
-    // Maneja errores de autenticación
-    if (error.response?.status === 401) {
-      // Si no estamos en una ruta de autenticación, limpiar token
-      if (!window.location.pathname.includes('/auth/')) {
-        localStorage.removeItem('token');
-        window.location.href = '/auth/login';
-      }
-    }
-    return Promise.reject(error.response?.data || error);
-  }
-);
-
-// Hook para peticiones GET
+/**
+ * Hook para realizar una petición GET usando React Query
+ * @param url URL del endpoint
+ * @param queryKey Clave para almacenamiento en caché
+ * @param options Opciones adicionales para React Query
+ */
 export function useApiGet<TData = unknown>(
   url: string,
   queryKey: QueryKey,
@@ -50,68 +23,138 @@ export function useApiGet<TData = unknown>(
   return useQuery<TData, Error>({
     queryKey,
     queryFn: async () => {
-      const response = await api.get(url);
-      return response as TData;
+      try {
+        return await api.get<TData>(url);
+      } catch (error) {
+        throw handleServerErrorSilent(error);
+      }
     },
-    ...options,
+    ...options
   });
 }
 
-// Hook para peticiones POST
+/**
+ * Hook para realizar una petición POST usando React Query
+ * @param url URL del endpoint
+ * @param options Opciones adicionales para React Query
+ */
 export function useApiPost<TData = unknown, TVariables = unknown>(
   url: string,
   options?: UseMutationOptions<TData, Error, TVariables>
 ) {
   return useMutation<TData, Error, TVariables>({
-    mutationFn: async (variables) => {
-      const response = await api.post(url, variables);
-      return response as TData;
+    mutationFn: async (data) => {
+      try {
+        return await api.post<TData, TVariables>(url, data);
+      } catch (error) {
+        throw handleServerError(error);
+      }
     },
-    ...options,
+    ...options
   });
 }
 
-// Hook para peticiones PUT
+/**
+ * Hook para realizar una petición PUT usando React Query
+ * @param url URL del endpoint
+ * @param options Opciones adicionales para React Query
+ */
 export function useApiPut<TData = unknown, TVariables = unknown>(
   url: string,
   options?: UseMutationOptions<TData, Error, TVariables>
 ) {
   return useMutation<TData, Error, TVariables>({
-    mutationFn: async (variables) => {
-      const response = await api.put(url, variables);
-      return response as TData;
+    mutationFn: async (data) => {
+      try {
+        return await api.put<TData, TVariables>(url, data);
+      } catch (error) {
+        throw handleServerError(error);
+      }
     },
-    ...options,
+    ...options
   });
 }
 
-// Hook para peticiones PATCH
+/**
+ * Hook para realizar una petición PATCH usando React Query
+ * @param url URL del endpoint
+ * @param options Opciones adicionales para React Query
+ */
 export function useApiPatch<TData = unknown, TVariables = unknown>(
   url: string,
   options?: UseMutationOptions<TData, Error, TVariables>
 ) {
   return useMutation<TData, Error, TVariables>({
-    mutationFn: async (variables) => {
-      const response = await api.patch(url, variables);
-      return response as TData;
+    mutationFn: async (data) => {
+      try {
+        return await api.patch<TData, TVariables>(url, data);
+      } catch (error) {
+        throw handleServerError(error);
+      }
     },
-    ...options,
+    ...options
   });
 }
 
-// Hook para peticiones DELETE
+/**
+ * Hook para realizar una petición DELETE usando React Query
+ * @param url URL del endpoint
+ * @param options Opciones adicionales para React Query
+ */
 export function useApiDelete<TData = unknown>(
   url: string,
   options?: UseMutationOptions<TData, Error, string>
 ) {
   return useMutation<TData, Error, string>({
     mutationFn: async (id) => {
-      const response = await api.delete(`${url}/${id}`);
-      return response as TData;
+      try {
+        // Construir URL completa con ID
+        const fullUrl = `${url}${url.endsWith('/') ? '' : '/'}${id}`;
+        return await api.delete<TData>(fullUrl);
+      } catch (error) {
+        throw handleServerError(error);
+      }
     },
-    ...options,
+    ...options
   });
 }
 
-// Exportar la instancia de axios para uso directo
-export { api }; 
+/**
+ * Función para invalidar consultas relacionadas
+ * @param queryKeys Claves de consulta a invalidar
+ */
+export function invalidateRelatedQueries(queryKeys: QueryKey[]) {
+  queryKeys.forEach(key => {
+    queryClient.invalidateQueries({ queryKey: key });
+  });
+}
+
+/**
+ * Utilidad para prefetch de datos
+ * @param queryKey Clave de la consulta
+ * @param queryFn Función para obtener los datos
+ */
+export function prefetchQuery<TData>(queryKey: QueryKey, queryFn: () => Promise<TData>) {
+  return queryClient.prefetchQuery({
+    queryKey,
+    queryFn
+  });
+}
+
+export const useNotifications = () => {
+  // Funciones para mostrar diferentes tipos de notificaciones
+  return {
+    showSuccess: (message: string) => {
+      import('@/hooks/useToast').then(({ showSuccess }) => showSuccess(message));
+    },
+    showError: (message: string) => {
+      import('@/hooks/useToast').then(({ showError }) => showError(message));
+    },
+    showWarning: (message: string) => {
+      import('@/hooks/useToast').then(({ showWarning }) => showWarning(message));
+    },
+    showInfo: (message: string) => {
+      import('@/hooks/useToast').then(({ showInfo }) => showInfo(message));
+    }
+  };
+};

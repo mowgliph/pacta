@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "entry": ["src/main.tsx"],
+  "project": ["src/**/*.{ts,tsx}"],
+  "ignore": ["**/*.d.ts", "**/__tests__/**", "**/*.test.{ts,tsx}"],
+  "ignoreDependencies": [
+    "postcss",
+    "autoprefixer",
+    "tailwindcss",
+    "eslint",
+    "prettier",
+    "typescript",
+    "@vitejs/plugin-react-swc"
+  ],
+  "ignoreBinaries": ["vite"],
+  "rules": {
+    "exports": "error",
+    "files": "error",
+    "types": "error"
+  }
+}
