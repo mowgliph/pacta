@@ -30,7 +30,7 @@ class PurgeService {
       await this.cleanupMetadata();
 
       logger.info('Backup purge completed', {
-        duration: Date.now() - startTime
+        duration: Date.now() - startTime,
       });
     } catch (error) {
       logger.error('Backup purge failed:', error);
@@ -51,9 +51,9 @@ class PurgeService {
       where: {
         type: 'auto',
         createdAt: {
-          lt: cutoffDate
-        }
-      }
+          lt: cutoffDate,
+        },
+      },
     });
 
     for (const backup of oldBackups) {
@@ -69,11 +69,11 @@ class PurgeService {
    */
   async purgeManualBackups() {
     const maxManualBackups = config.backup.retention.manualBackupCount;
-    
+
     const manualBackups = await this.prisma.backup.findMany({
       where: { type: 'manual' },
       orderBy: { createdAt: 'desc' },
-      skip: maxManualBackups
+      skip: maxManualBackups,
     });
 
     for (const backup of manualBackups) {
@@ -91,11 +91,7 @@ class PurgeService {
   async deleteBackup(backup) {
     try {
       const backupPath = getNormalizedPath(
-        path.join(
-          config.backup.basePath,
-          config.backup.directories[backup.type],
-          backup.filename
-        )
+        path.join(config.backup.basePath, config.backup.directories[backup.type], backup.filename),
       );
 
       // Verificar integridad antes de eliminar
@@ -106,10 +102,10 @@ class PurgeService {
 
       // Eliminar archivo
       await fs.unlink(backupPath);
-      
+
       // Eliminar metadata
       await this.prisma.backup.delete({
-        where: { id: backup.id }
+        where: { id: backup.id },
       });
 
       logger.info(`Deleted backup: ${backup.filename}`);
@@ -124,10 +120,7 @@ class PurgeService {
    * @private
    */
   async cleanupOrphanedFiles() {
-    const backupDirs = [
-      config.backup.directories.auto,
-      config.backup.directories.manual
-    ];
+    const backupDirs = [config.backup.directories.auto, config.backup.directories.manual];
 
     for (const dir of backupDirs) {
       const dirPath = getNormalizedPath(path.join(config.backup.basePath, dir));
@@ -135,7 +128,7 @@ class PurgeService {
 
       for (const file of files) {
         const exists = await this.prisma.backup.findFirst({
-          where: { filename: file }
+          where: { filename: file },
         });
 
         if (!exists) {
@@ -155,18 +148,14 @@ class PurgeService {
 
     for (const backup of backups) {
       const backupPath = getNormalizedPath(
-        path.join(
-          config.backup.basePath,
-          config.backup.directories[backup.type],
-          backup.filename
-        )
+        path.join(config.backup.basePath, config.backup.directories[backup.type], backup.filename),
       );
 
       try {
         await fs.access(backupPath);
       } catch {
         await this.prisma.backup.delete({
-          where: { id: backup.id }
+          where: { id: backup.id },
         });
         logger.info(`Removed orphaned metadata for: ${backup.filename}`);
       }

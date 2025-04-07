@@ -20,11 +20,11 @@ export class CompanyController extends BaseController {
         const filters = {
           ...req.query,
           page: parseInt(req.query.page) || 1,
-          limit: parseInt(req.query.limit) || 10
+          limit: parseInt(req.query.limit) || 10,
         };
         return await this.companyService.getAllCompanies(filters);
       },
-      { filters: req.query }
+      { filters: req.query },
     );
   };
 
@@ -41,7 +41,7 @@ export class CompanyController extends BaseController {
         }
         return company;
       },
-      { companyId: req.params.id }
+      { companyId: req.params.id },
     );
   };
 
@@ -54,7 +54,7 @@ export class CompanyController extends BaseController {
         const validatedData = await this.validationService.validateCompanyData(req.body);
         return await this.companyService.createCompany(validatedData);
       },
-      { companyData: req.body }
+      { companyData: req.body },
     );
   };
 
@@ -68,7 +68,7 @@ export class CompanyController extends BaseController {
         const validatedData = await this.validationService.validateCompanyData(req.body);
         return await this.companyService.updateCompany(id, validatedData);
       },
-      { companyId: req.params.id, updates: req.body }
+      { companyId: req.params.id, updates: req.body },
     );
   };
 
@@ -82,7 +82,7 @@ export class CompanyController extends BaseController {
         await this.companyService.deleteCompany(id);
         return { message: 'Compañía eliminada exitosamente' };
       },
-      { companyId: req.params.id }
+      { companyId: req.params.id },
     );
   };
 
@@ -95,7 +95,7 @@ export class CompanyController extends BaseController {
         const { id } = req.params;
         return await this.companyService.getCompanyStats(id);
       },
-      { companyId: req.params.id }
+      { companyId: req.params.id },
     );
   };
 }

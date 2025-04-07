@@ -389,7 +389,7 @@ export class UserService extends BaseService {
       if (!user) {
         throw new NotFoundError('User not found');
       }
-      
+
       // Return user preferences from the user object
       // Adjust this according to how preferences are stored in your database
       return user.preferences || {};
@@ -405,17 +405,17 @@ export class UserService extends BaseService {
       if (!user) {
         throw new NotFoundError('User not found');
       }
-      
+
       // Validate preferences if needed
       if (!preferences || typeof preferences !== 'object') {
         throw new ValidationError('Invalid preferences format');
       }
-      
+
       // Update user preferences
       await this.userRepository.update(userId, { preferences });
       this.logger.info('User preferences updated', { userId });
       await this.cacheService.invalidateUserCache(userId);
-      
+
       return { success: true, preferences };
     } catch (error) {
       this.logger.error('Failed to update user preferences', { userId, error });

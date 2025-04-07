@@ -3,7 +3,6 @@ import { AnalyticsService } from '../services/AnalyticsService.js';
 import { ValidationService } from '../services/ValidationService.js';
 import { ValidationError } from '../utils/errors.js';
 
-
 export class AnalyticsController extends BaseController {
   constructor() {
     const analyticsService = new AnalyticsService();
@@ -21,7 +20,7 @@ export class AnalyticsController extends BaseController {
         const { days = 30, preset = 'monthly' } = req.query;
         return await this.analyticsService.getAnalyticsData(parseInt(days), preset);
       },
-      { days: req.query.days, preset: req.query.preset }
+      { days: req.query.days, preset: req.query.preset },
     );
   };
 
@@ -35,13 +34,18 @@ export class AnalyticsController extends BaseController {
         if (!dataType || !granularity || !startDate || !endDate) {
           throw new ValidationError('Parámetros incompletos');
         }
-        return await this.analyticsService.getHistoricalData(dataType, granularity, startDate, endDate);
+        return await this.analyticsService.getHistoricalData(
+          dataType,
+          granularity,
+          startDate,
+          endDate,
+        );
       },
-      { 
+      {
         dataType: req.query.dataType,
         granularity: req.query.granularity,
-        dateRange: { startDate: req.query.startDate, endDate: req.query.endDate }
-      }
+        dateRange: { startDate: req.query.startDate, endDate: req.query.endDate },
+      },
     );
   };
 
@@ -53,14 +57,14 @@ export class AnalyticsController extends BaseController {
       async () => {
         const { format } = req.params;
         const { days = 30 } = req.query;
-        
+
         if (!['pdf', 'excel', 'csv'].includes(format)) {
           throw new ValidationError('Formato no soportado');
         }
-        
+
         return await this.analyticsService.generateReport(format, parseInt(days));
       },
-      { format: req.params.format, days: req.query.days }
+      { format: req.params.format, days: req.query.days },
     );
   };
 
@@ -76,7 +80,7 @@ export class AnalyticsController extends BaseController {
         }
         return await this.analyticsService.getSpecificAnalysis(analysisType);
       },
-      { analysisType: req.params.analysisType }
+      { analysisType: req.params.analysisType },
     );
   };
 
@@ -88,7 +92,7 @@ export class AnalyticsController extends BaseController {
       async () => {
         return await this.analyticsService.getRiskContracts();
       },
-      {}
+      {},
     );
   };
 
@@ -100,7 +104,7 @@ export class AnalyticsController extends BaseController {
       async () => {
         return await this.analyticsService.getGeneralStats();
       },
-      {}
+      {},
     );
   };
 
@@ -113,7 +117,7 @@ export class AnalyticsController extends BaseController {
         const { startDate, endDate } = req.query;
         return await this.analyticsService.getActivityStats(startDate, endDate);
       },
-      { dateRange: { startDate: req.query.startDate, endDate: req.query.endDate } }
+      { dateRange: { startDate: req.query.startDate, endDate: req.query.endDate } },
     );
   };
 
@@ -125,7 +129,7 @@ export class AnalyticsController extends BaseController {
       async () => {
         return await this.analyticsService.getContractStats();
       },
-      {}
+      {},
     );
   };
 
@@ -138,7 +142,7 @@ export class AnalyticsController extends BaseController {
         const { userId } = req.params;
         return await this.analyticsService.getUserActivity(parseInt(userId));
       },
-      { userId: req.params.userId }
+      { userId: req.params.userId },
     );
   };
 }

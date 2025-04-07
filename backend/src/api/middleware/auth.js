@@ -5,10 +5,7 @@
 import jwt from 'jsonwebtoken';
 import prisma from '../../database/prisma.js';
 import { logger } from '../../utils/logger.js';
-import { 
-  UnauthorizedError, 
-  ForbiddenError, 
-} from '../../utils/errors.js';
+import { UnauthorizedError, ForbiddenError } from '../../utils/errors.js';
 import { LoggingService } from '../../services/LoggingService.js';
 import config from '../../config/app.config.js';
 import rateLimit from 'express-rate-limit';
@@ -27,7 +24,8 @@ export const loginLimiter = rateLimit({
   max: 5, // 5 intentos
   message: {
     status: 'error',
-    message: 'Demasiados intentos de inicio de sesión. Por favor, intenta nuevamente en 15 minutos.',
+    message:
+      'Demasiados intentos de inicio de sesión. Por favor, intenta nuevamente en 15 minutos.',
     code: 429,
   },
   standardHeaders: true,
@@ -277,7 +275,7 @@ export const authorize = roles => {
 };
 
 /**
- * Middleware para verificar rol de administrador 
+ * Middleware para verificar rol de administrador
  * (Atajo para authorize('ADMIN'))
  */
 export const isAdmin = (req, res, next) => {
@@ -434,9 +432,9 @@ export const requiresLicense = async (req, res, next) => {
         userId: req.user.id,
         active: true,
         expiryDate: {
-          gt: new Date() // Fecha de expiración mayor que la fecha actual
-        }
-      }
+          gt: new Date(), // Fecha de expiración mayor que la fecha actual
+        },
+      },
     });
 
     if (!license) {
@@ -461,23 +459,23 @@ export default {
   // Seguridad
   loginLimiter,
   sensitiveRouteLimiter,
-  
+
   // Validación
   validateLogin,
-  
+
   // Autenticación
   authenticate,
   authenticateToken,
   generateTokens,
   refreshAccessToken,
-  
+
   // Autorización
   authorize,
   isAdmin,
   authorizeOwnership,
   isOwnerOrAdmin,
   authorizePermission,
-  
+
   // Funcionalidades específicas
-  requiresLicense
+  requiresLicense,
 };

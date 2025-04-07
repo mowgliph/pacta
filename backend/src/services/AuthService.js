@@ -20,33 +20,33 @@ export class AuthService extends BaseService {
   async login(credentials) {
     try {
       const { username, password, rememberMe } = credentials;
-      
+
       // Buscar usuario por username (podría ser el email o un nombre de usuario)
       let user = null;
-      
+
       // Primero intentar buscar por email exacto
-      user = await prisma.user.findUnique({ 
-        where: { email: username } 
+      user = await prisma.user.findUnique({
+        where: { email: username },
       });
-      
+
       // Si no se encuentra, verificar si es RA o admin (los nombres de usuario reservados)
       if (!user) {
         // Para RA
         if (username.toLowerCase() === 'ra') {
           user = await prisma.user.findFirst({
-            where: { 
+            where: {
               role: 'RA',
-              isSystemUser: true 
-            }
+              isSystemUser: true,
+            },
           });
-        } 
+        }
         // Para admin
         else if (username.toLowerCase() === 'admin') {
           user = await prisma.user.findFirst({
-            where: { 
+            where: {
               role: 'ADMIN',
-              isSystemUser: true 
-            }
+              isSystemUser: true,
+            },
           });
         }
       }
@@ -73,7 +73,7 @@ export class AuthService extends BaseService {
       // Actualizar último login
       await prisma.user.update({
         where: { id: user.id },
-        data: { lastLogin: new Date() }
+        data: { lastLogin: new Date() },
       });
 
       // Generar tokens considerando la opción de recordarme
@@ -86,21 +86,21 @@ export class AuthService extends BaseService {
           action: 'LOGIN',
           description: 'Inicio de sesión exitoso',
           userId: user.id,
-          ipAddress: '',  // Se proporciona desde el controller
-          userAgent: ''   // Se proporciona desde el controller
-        }
+          ipAddress: '', // Se proporciona desde el controller
+          userAgent: '', // Se proporciona desde el controller
+        },
       });
 
-      return { 
+      return {
         user: {
           id: user.id,
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
           role: user.role,
-          isSystemUser: user.isSystemUser
+          isSystemUser: user.isSystemUser,
         },
-        ...tokens 
+        ...tokens,
       };
     } catch (error) {
       this.logger.error('Login error', { username: credentials.username, error: error.message });
@@ -178,10 +178,10 @@ export class AuthService extends BaseService {
       }
 
       const decoded = jwt.verify(token, config.jwt.secret);
-      
+
       // Buscar usuario
       const user = await prisma.user.findUnique({
-        where: { id: decoded.id }
+        where: { id: decoded.id },
       });
 
       if (!user) {
@@ -203,8 +203,8 @@ export class AuthService extends BaseService {
           firstName: user.firstName,
           lastName: user.lastName,
           role: user.role,
-          isSystemUser: user.isSystemUser
-        }
+          isSystemUser: user.isSystemUser,
+        },
       };
     } catch (error) {
       this.logger.error('Error verificando token', { error: error.message });
@@ -223,36 +223,30 @@ export class AuthService extends BaseService {
     const payload = {
       id: user.id,
       email: user.email,
-      role: user.role
+      role: user.role,
     };
-    
+
     // Duración del token (por defecto 1 día)
-    const expiresIn = rememberMe ? 
-      config.jwt.longExpiresIn || '30d' : // 30 días si es recordarme
-      config.jwt.expiresIn || '1d';      // 1 día si es normal
-    
+    const expiresIn = rememberMe
+      ? config.jwt.longExpiresIn || '30d' // 30 días si es recordarme
+      : config.jwt.expiresIn || '1d'; // 1 día si es normal
+
     // Generar access token
-    const token = jwt.sign(
-      payload,
-      config.jwt.secret,
-      { expiresIn }
-    );
-    
+    const token = jwt.sign(payload, config.jwt.secret, { expiresIn });
+
     // Generar refresh token
     // En este caso estamos generando el mismo token, pero en una implementación
     // completa, el refresh token debería ser diferente y tener una expiración más larga
-    const refreshToken = jwt.sign(
-      payload,
-      config.jwt.secret,
-      { expiresIn: config.jwt.refreshExpiresIn || '7d' }
-    );
-    
+    const refreshToken = jwt.sign(payload, config.jwt.secret, {
+      expiresIn: config.jwt.refreshExpiresIn || '7d',
+    });
+
     return {
       token,
       refreshToken,
-      expiresIn
+      expiresIn,
     };
   }
 }
 
-export default new AuthService(); 
+export default new AuthService();

@@ -16,7 +16,7 @@ export class ActivityLogPrismaRepository extends BasePrismaRepository {
   async logActivity(data) {
     return this.create({
       ...data,
-      timestamp: data.timestamp || new Date()
+      timestamp: data.timestamp || new Date(),
     });
   }
 
@@ -28,10 +28,14 @@ export class ActivityLogPrismaRepository extends BasePrismaRepository {
    */
   async getByUser(userId, options = {}) {
     const { page = 1, limit = 10 } = options;
-    return this.findAll({
-      where: { userId },
-      orderBy: { timestamp: 'desc' }
-    }, page, limit);
+    return this.findAll(
+      {
+        where: { userId },
+        orderBy: { timestamp: 'desc' },
+      },
+      page,
+      limit,
+    );
   }
 
   /**
@@ -42,10 +46,14 @@ export class ActivityLogPrismaRepository extends BasePrismaRepository {
    */
   async getByAction(action, options = {}) {
     const { page = 1, limit = 10 } = options;
-    return this.findAll({
-      where: { action },
-      orderBy: { timestamp: 'desc' }
-    }, page, limit);
+    return this.findAll(
+      {
+        where: { action },
+        orderBy: { timestamp: 'desc' },
+      },
+      page,
+      limit,
+    );
   }
 
   /**
@@ -57,13 +65,17 @@ export class ActivityLogPrismaRepository extends BasePrismaRepository {
    */
   async getByEntity(entityType, entityId, options = {}) {
     const { page = 1, limit = 10 } = options;
-    return this.findAll({
-      where: { 
-        entityType,
-        entityId
+    return this.findAll(
+      {
+        where: {
+          entityType,
+          entityId,
+        },
+        orderBy: { timestamp: 'desc' },
       },
-      orderBy: { timestamp: 'desc' }
-    }, page, limit);
+      page,
+      limit,
+    );
   }
 
   /**
@@ -75,18 +87,22 @@ export class ActivityLogPrismaRepository extends BasePrismaRepository {
    */
   async getByDateRange(startDate, endDate, options = {}) {
     const { page = 1, limit = 10 } = options;
-    return this.findAll({
-      where: {
-        timestamp: {
-          gte: startDate,
-          lte: endDate || new Date()
-        }
+    return this.findAll(
+      {
+        where: {
+          timestamp: {
+            gte: startDate,
+            lte: endDate || new Date(),
+          },
+        },
+        orderBy: { timestamp: 'desc' },
       },
-      orderBy: { timestamp: 'desc' }
-    }, page, limit);
+      page,
+      limit,
+    );
   }
 }
 
 // Crear y exportar instancia por defecto
 const activityLogPrismaRepository = new ActivityLogPrismaRepository();
-export default activityLogPrismaRepository; 
+export default activityLogPrismaRepository;

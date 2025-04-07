@@ -34,5 +34,5 @@ export default {
   license: licensePrismaRepository,
   activityLog: activityLogPrismaRepository,
   report: reportPrismaRepository,
-  supplement: supplementPrismaRepository
+  supplement: supplementPrismaRepository,
 };

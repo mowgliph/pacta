@@ -9,11 +9,11 @@ async function seedSystemUsers() {
   try {
     // Verificar si ya existen los usuarios del sistema
     const existingRA = await prisma.user.findFirst({
-      where: { role: 'RA' }
+      where: { role: 'RA' },
     });
 
     const existingAdmin = await prisma.user.findFirst({
-      where: { role: 'ADMIN' }
+      where: { role: 'ADMIN' },
     });
 
     // Crear usuario RA si no existe
@@ -27,8 +27,8 @@ async function seedSystemUsers() {
           lastName: 'System',
           role: 'RA',
           isSystemUser: true,
-          status: 'ACTIVE'
-        }
+          status: 'ACTIVE',
+        },
       });
       console.log('Usuario RA creado exitosamente');
     }
@@ -44,8 +44,8 @@ async function seedSystemUsers() {
           lastName: 'System',
           role: 'ADMIN',
           isSystemUser: true,
-          status: 'ACTIVE'
-        }
+          status: 'ACTIVE',
+        },
       });
       console.log('Usuario Admin creado exitosamente');
     }
@@ -59,4 +59,4 @@ async function seedSystemUsers() {
   }
 }
 
-export default seedSystemUsers; 
+export default seedSystemUsers;

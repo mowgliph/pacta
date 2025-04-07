@@ -20,7 +20,7 @@ export class NotificationController extends BaseController {
         const validatedQuery = await this.validationService.validateGetNotifications(req.query);
         return await this.notificationService.getUserNotifications(userId, validatedQuery);
       },
-      { userId: req.user.id, query: req.query }
+      { userId: req.user.id, query: req.query },
     );
   };
 
@@ -34,7 +34,7 @@ export class NotificationController extends BaseController {
         const userId = req.user.id;
         return await this.notificationService.markAsRead(id, userId);
       },
-      { notificationId: req.params.id, userId: req.user.id }
+      { notificationId: req.params.id, userId: req.user.id },
     );
   };
 
@@ -47,7 +47,7 @@ export class NotificationController extends BaseController {
         const userId = req.user.id;
         return await this.notificationService.markAllAsRead(userId);
       },
-      { userId: req.user.id }
+      { userId: req.user.id },
     );
   };
 
@@ -61,7 +61,7 @@ export class NotificationController extends BaseController {
         const userId = req.user.id;
         return await this.notificationService.deleteNotification(id, userId);
       },
-      { notificationId: req.params.id, userId: req.user.id }
+      { notificationId: req.params.id, userId: req.user.id },
     );
   };
 }

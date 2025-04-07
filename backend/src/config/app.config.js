@@ -41,7 +41,7 @@ const config = {
     // Configuración general
     enabled: process.env.BACKUP_ENABLED === 'true',
     basePath: process.env.BACKUP_BASE_PATH || './data/backups',
-    
+
     // Estructura de directorios
     directories: {
       auto: process.env.BACKUP_AUTO_DIR || 'automatic',
@@ -100,7 +100,7 @@ const config = {
   // JWT
   jwt: {
     secret: process.env.JWT_SECRET || 'your-secret-key-for-development',
-    expiresIn: process.env.JWT_EXPIRES_IN || '1d',           // Duración normal (1 día)
+    expiresIn: process.env.JWT_EXPIRES_IN || '1d', // Duración normal (1 día)
     longExpiresIn: process.env.JWT_LONG_EXPIRES_IN || '30d', // Larga duración para "recordarme" (30 días)
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d', // Duración del refresh token
     cookieName: 'jwt',

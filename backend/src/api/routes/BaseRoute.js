@@ -196,7 +196,7 @@ export class BaseRoute {
     // Si el segundo argumento es un arreglo, asumimos que son middlewares
     if (Array.isArray(handlerOrMiddlewares)) {
       this.router.get(path, ...handlerOrMiddlewares, handler);
-    } 
+    }
     // Si el segundo argumento es una función y el tercero no existe, asumimos que es el handler
     else if (typeof handlerOrMiddlewares === 'function' && !handler) {
       this.router.get(path, handlerOrMiddlewares);
@@ -219,7 +219,7 @@ export class BaseRoute {
     // Si el segundo argumento es un arreglo, asumimos que son middlewares
     if (Array.isArray(handlerOrMiddlewares)) {
       this.router.post(path, ...handlerOrMiddlewares, handler);
-    } 
+    }
     // Si el segundo argumento es una función y el tercero no existe, asumimos que es el handler
     else if (typeof handlerOrMiddlewares === 'function' && !handler) {
       this.router.post(path, handlerOrMiddlewares);
@@ -242,7 +242,7 @@ export class BaseRoute {
     // Si el segundo argumento es un arreglo, asumimos que son middlewares
     if (Array.isArray(handlerOrMiddlewares)) {
       this.router.put(path, ...handlerOrMiddlewares, handler);
-    } 
+    }
     // Si el segundo argumento es una función y el tercero no existe, asumimos que es el handler
     else if (typeof handlerOrMiddlewares === 'function' && !handler) {
       this.router.put(path, handlerOrMiddlewares);
@@ -263,7 +263,11 @@ export class BaseRoute {
    */
   delete(pathOrOptions, handlerOrMiddlewares, handler) {
     // Caso 1: Se llama con options (nueva forma con objeto de opciones)
-    if (typeof pathOrOptions === 'object' && !Array.isArray(pathOrOptions) && !handlerOrMiddlewares) {
+    if (
+      typeof pathOrOptions === 'object' &&
+      !Array.isArray(pathOrOptions) &&
+      !handlerOrMiddlewares
+    ) {
       const options = pathOrOptions || {};
       const { validate = false, log = true } = options;
       const mw = [];
@@ -279,12 +283,12 @@ export class BaseRoute {
       this.router.delete('/:id', ...mw, this.controller.delete.bind(this.controller));
       return this;
     }
-    
+
     // Caso 2: Se llama con path y middlewares/handler (forma tradicional)
     // Si el segundo argumento es un arreglo, asumimos que son middlewares
     if (Array.isArray(handlerOrMiddlewares)) {
       this.router.delete(pathOrOptions, ...handlerOrMiddlewares, handler);
-    } 
+    }
     // Si el segundo argumento es una función y el tercero no existe, asumimos que es el handler
     else if (typeof handlerOrMiddlewares === 'function' && !handler) {
       this.router.delete(pathOrOptions, handlerOrMiddlewares);
@@ -307,7 +311,7 @@ export class BaseRoute {
     // Si el segundo argumento es un arreglo, asumimos que son middlewares
     if (Array.isArray(handlerOrMiddlewares)) {
       this.router.patch(path, ...handlerOrMiddlewares, handler);
-    } 
+    }
     // Si el segundo argumento es una función y el tercero no existe, asumimos que es el handler
     else if (typeof handlerOrMiddlewares === 'function' && !handler) {
       this.router.patch(path, handlerOrMiddlewares);

@@ -28,7 +28,7 @@ export class LicenseService extends BaseService {
 
     // Verificar si la clave de licencia es un código de prueba
     const isTrial = Object.keys(LicenseValidator.TRIAL_CODES || {}).includes(licenseKey);
-    
+
     if (isTrial) {
       // El usuario actual viene del token JWT
       const userId = this.getCurrentUserId();
@@ -42,7 +42,7 @@ export class LicenseService extends BaseService {
 
     // Buscar si la licencia ya existe
     const existingLicense = await prisma.license.findUnique({
-      where: { licenseKey }
+      where: { licenseKey },
     });
 
     if (existingLicense && existingLicense.active) {
@@ -60,9 +60,9 @@ export class LicenseService extends BaseService {
         expiryDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // 1 año
         features: ['BASIC', 'REPORTS', 'ANALYTICS', 'EXPORT'],
         metadata: {
-          activationDate: new Date().toISOString()
-        }
-      }
+          activationDate: new Date().toISOString(),
+        },
+      },
     });
 
     // Registrar actividad
@@ -71,7 +71,7 @@ export class LicenseService extends BaseService {
     return {
       success: true,
       message: 'Licencia activada correctamente',
-      license
+      license,
     };
   }
 
@@ -82,7 +82,7 @@ export class LicenseService extends BaseService {
    */
   async deactivateLicense(id) {
     const license = await prisma.license.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!license) {
@@ -95,7 +95,7 @@ export class LicenseService extends BaseService {
 
     const updatedLicense = await prisma.license.update({
       where: { id },
-      data: { active: false }
+      data: { active: false },
     });
 
     // Registrar actividad
@@ -104,7 +104,7 @@ export class LicenseService extends BaseService {
     return {
       success: true,
       message: 'Licencia desactivada correctamente',
-      license: updatedLicense
+      license: updatedLicense,
     };
   }
 
@@ -118,19 +118,23 @@ export class LicenseService extends BaseService {
     const skip = (page - 1) * limit;
 
     const where = {};
-    
+
     // Aplicar filtros adicionales si existen
-    if (rest.type) where.type = rest.type;
-    if (rest.active !== undefined) where.active = rest.active === 'true';
+    if (rest.type) {
+      where.type = rest.type;
+    }
+    if (rest.active !== undefined) {
+      where.active = rest.active === 'true';
+    }
 
     const [licenses, total] = await Promise.all([
       prisma.license.findMany({
         where,
         skip,
         take: Number(limit),
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
       }),
-      prisma.license.count({ where })
+      prisma.license.count({ where }),
     ]);
 
     return {
@@ -139,8 +143,8 @@ export class LicenseService extends BaseService {
         page: Number(page),
         limit: Number(limit),
         total,
-        pages: Math.ceil(total / limit)
-      }
+        pages: Math.ceil(total / limit),
+      },
     };
   }
 
@@ -158,19 +162,19 @@ export class LicenseService extends BaseService {
     if (!LicenseValidator.isValidLicenseKey(licenseKey)) {
       return {
         isValid: false,
-        message: 'Formato de clave de licencia inválido'
+        message: 'Formato de clave de licencia inválido',
       };
     }
 
     // Buscar licencia
     const license = await prisma.license.findUnique({
-      where: { licenseKey }
+      where: { licenseKey },
     });
 
     if (!license) {
       return {
         isValid: false,
-        message: 'Licencia no encontrada'
+        message: 'Licencia no encontrada',
       };
     }
 
@@ -178,7 +182,7 @@ export class LicenseService extends BaseService {
       return {
         isValid: false,
         message: 'Licencia inactiva',
-        license
+        license,
       };
     }
 
@@ -186,14 +190,14 @@ export class LicenseService extends BaseService {
       return {
         isValid: false,
         message: 'Licencia expirada',
-        license
+        license,
       };
     }
 
     return {
       isValid: true,
       message: 'Licencia válida',
-      license
+      license,
     };
   }
 
@@ -208,7 +212,7 @@ export class LicenseService extends BaseService {
     }
 
     const license = await prisma.license.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!license) {
@@ -240,7 +244,7 @@ export class LicenseService extends BaseService {
 
     // Verificar si ya existe
     const existingLicense = await prisma.license.findUnique({
-      where: { licenseKey: data.licenseKey }
+      where: { licenseKey: data.licenseKey },
     });
 
     if (existingLicense) {
@@ -256,12 +260,12 @@ export class LicenseService extends BaseService {
       features: data.features || ['BASIC', 'REPORTS', 'ANALYTICS', 'EXPORT'],
       metadata: {
         creationDate: new Date().toISOString(),
-        ...data.metadata
-      }
+        ...data.metadata,
+      },
     };
 
     const license = await prisma.license.create({
-      data: licenseData
+      data: licenseData,
     });
 
     // Registrar actividad
@@ -283,7 +287,7 @@ export class LicenseService extends BaseService {
 
     // Verificar que la licencia existe
     const license = await prisma.license.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!license) {
@@ -296,14 +300,14 @@ export class LicenseService extends BaseService {
       metadata: {
         ...license.metadata,
         ...data.metadata,
-        lastUpdated: new Date().toISOString()
-      }
+        lastUpdated: new Date().toISOString(),
+      },
     };
 
     // Actualizar
     const updatedLicense = await prisma.license.update({
       where: { id },
-      data: updateData
+      data: updateData,
     });
 
     // Registrar actividad
@@ -324,7 +328,7 @@ export class LicenseService extends BaseService {
 
     // Verificar que la licencia existe
     const license = await prisma.license.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!license) {
@@ -333,7 +337,7 @@ export class LicenseService extends BaseService {
 
     // Eliminar
     await prisma.license.delete({
-      where: { id }
+      where: { id },
     });
 
     // Registrar actividad
@@ -349,24 +353,24 @@ export class LicenseService extends BaseService {
    */
   async generateLicenseKey(data = {}) {
     const licenseKey = LicenseValidator.generateLicenseKey();
-    
+
     // Si se proporcionan datos, crear la licencia
     if (Object.keys(data).length > 0) {
       const license = await this.createLicense({
         ...data,
         licenseKey,
-        active: false // Por defecto inactiva hasta que se active
+        active: false, // Por defecto inactiva hasta que se active
       });
-      
+
       return {
         licenseKey,
-        license
+        license,
       };
     }
-    
+
     return {
       licenseKey,
-      message: 'Clave de licencia generada correctamente'
+      message: 'Clave de licencia generada correctamente',
     };
   }
 
@@ -395,11 +399,11 @@ export class LicenseService extends BaseService {
           action,
           entityType,
           entityId,
-          details
-        }
+          details,
+        },
       });
     } catch (error) {
       console.error('Error al registrar actividad:', error);
     }
   }
-} 
+}

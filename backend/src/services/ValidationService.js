@@ -24,7 +24,7 @@ export class ValidationService {
       ...documentValidators,
       user: userValidators.user,
       auth: authValidators.auth,
-      backup: backupValidators.backup
+      backup: backupValidators.backup,
     };
   }
 

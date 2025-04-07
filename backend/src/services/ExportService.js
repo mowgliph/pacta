@@ -10,10 +10,10 @@ import config from '../config/app.config.js';
 import logger from '../utils/logger.js';
 import { getNormalizedPath } from '../utils/paths.js';
 import { verifyBackupIntegrity } from '../utils/backup.js';
-import { 
+import {
   createZipArchive,
   createTarArchive,
-  createEncryptedArchive
+  createEncryptedArchive,
 } from '../utils/exportFormats.js';
 
 class ExportService {
@@ -31,13 +31,13 @@ class ExportService {
     const {
       format = 'zip',
       compression = { enabled: true, level: 6 },
-      includeMetadata = true
+      includeMetadata = true,
     } = options;
 
     try {
       // Obtener backup
       const backup = await this.prisma.backup.findUnique({
-        where: { id: backupId }
+        where: { id: backupId },
       });
 
       if (!backup) {
@@ -46,11 +46,7 @@ class ExportService {
 
       // Verificar integridad
       const backupPath = getNormalizedPath(
-        path.join(
-          config.backup.basePath,
-          config.backup.directories[backup.type],
-          backup.filename
-        )
+        path.join(config.backup.basePath, config.backup.directories[backup.type], backup.filename),
       );
 
       const isValid = await verifyBackupIntegrity(backupPath, backup);
@@ -60,9 +56,9 @@ class ExportService {
 
       // Preparar directorio temporal
       const tempDir = getNormalizedPath(
-        path.join(config.backup.basePath, config.backup.directories.temp)
+        path.join(config.backup.basePath, config.backup.directories.temp),
       );
-      
+
       // Generar nombre único para la exportación
       const exportName = `export-${Date.now()}-${backup.filename}`;
       const exportPath = path.join(tempDir, exportName);
@@ -71,7 +67,7 @@ class ExportService {
       const exportedData = await this.processExport(backup, backupPath, {
         format,
         compression,
-        includeMetadata
+        includeMetadata,
       });
 
       // Guardar archivo exportado
@@ -87,18 +83,18 @@ class ExportService {
           compressionEnabled: compression.enabled,
           compressionLevel: compression.level,
           includesMetadata: includeMetadata,
-          createdAt: new Date()
-        }
+          createdAt: new Date(),
+        },
       });
 
       logger.info(`Backup exported successfully: ${exportName}`, {
         format,
-        size: exportedData.length
+        size: exportedData.length,
       });
 
       return {
         path: exportPath,
-        metadata: exportMeta
+        metadata: exportMeta,
       };
     } catch (error) {
       logger.error('Error exporting backup:', error);
@@ -142,11 +138,11 @@ class ExportService {
     return new Promise((resolve, reject) => {
       const gzip = createGzip({ level });
       const chunks = [];
-      
+
       gzip.on('data', chunk => chunks.push(chunk));
       gzip.on('end', () => resolve(Buffer.concat(chunks)));
       gzip.on('error', reject);
-      
+
       gzip.end(data);
     });
   }
@@ -161,15 +157,11 @@ class ExportService {
       type: backup.type,
       createdAt: backup.createdAt,
       size: backup.size,
-      version: config.version
+      version: config.version,
     };
 
     const metadataBuffer = Buffer.from(JSON.stringify(metadata));
-    return Buffer.concat([
-      data,
-      Buffer.from('\n---METADATA---\n'),
-      metadataBuffer
-    ]);
+    return Buffer.concat([data, Buffer.from('\n---METADATA---\n'), metadataBuffer]);
   }
 
   // Métodos específicos para cada formato de exportación

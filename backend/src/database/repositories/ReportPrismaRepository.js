@@ -17,7 +17,7 @@ export class ReportPrismaRepository extends BasePrismaRepository {
     return this.create({
       ...data,
       generatedAt: data.generatedAt || new Date(),
-      status: data.status || 'COMPLETED'
+      status: data.status || 'COMPLETED',
     });
   }
 
@@ -29,10 +29,14 @@ export class ReportPrismaRepository extends BasePrismaRepository {
    */
   async getByType(type, options = {}) {
     const { page = 1, limit = 10 } = options;
-    return this.findAll({
-      where: { type },
-      orderBy: { generatedAt: 'desc' }
-    }, page, limit);
+    return this.findAll(
+      {
+        where: { type },
+        orderBy: { generatedAt: 'desc' },
+      },
+      page,
+      limit,
+    );
   }
 
   /**
@@ -43,10 +47,14 @@ export class ReportPrismaRepository extends BasePrismaRepository {
    */
   async getByUser(userId, options = {}) {
     const { page = 1, limit = 10 } = options;
-    return this.findAll({
-      where: { userId },
-      orderBy: { generatedAt: 'desc' }
-    }, page, limit);
+    return this.findAll(
+      {
+        where: { userId },
+        orderBy: { generatedAt: 'desc' },
+      },
+      page,
+      limit,
+    );
   }
 
   /**
@@ -57,9 +65,9 @@ export class ReportPrismaRepository extends BasePrismaRepository {
   async markAsDownloaded(id) {
     return this.update(id, {
       downloadCount: {
-        increment: 1
+        increment: 1,
       },
-      lastDownloadedAt: new Date()
+      lastDownloadedAt: new Date(),
     });
   }
 
@@ -71,11 +79,11 @@ export class ReportPrismaRepository extends BasePrismaRepository {
   async getRecent(limit = 5) {
     return this.prisma.report.findMany({
       take: limit,
-      orderBy: { generatedAt: 'desc' }
+      orderBy: { generatedAt: 'desc' },
     });
   }
 }
 
 // Crear y exportar instancia por defecto
 const reportPrismaRepository = new ReportPrismaRepository();
-export default reportPrismaRepository; 
+export default reportPrismaRepository;

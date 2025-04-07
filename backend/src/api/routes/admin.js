@@ -4,9 +4,9 @@
 import express from 'express';
 import { authorize } from '../middleware/auth.js';
 import { sensitiveRouteLimiter } from '../middleware/rateLimit.js';
-import userController from '../controllers/UserController.js';
-import systemController from '../controllers/SystemController.js';
-import licenseController from '../controllers/LicenseController.js';
+import userController from '../../controllers/UserController.js';
+import systemController from '../../controllers/SystemController.js';
+import licenseController from '../../controllers/LicenseController.js';
 
 const router = express.Router();
 

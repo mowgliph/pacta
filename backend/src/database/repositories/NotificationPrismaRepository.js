@@ -165,7 +165,7 @@ export class NotificationPrismaRepository extends BasePrismaRepository {
         await this.prisma.notification.create({
           data: {
             type: 'EXPIRATION_WARNING',
-            title: `Contrato próximo a vencer`,
+            title: 'Contrato próximo a vencer',
             message: `El contrato "${contract.title}" vencerá en ${daysRemaining} días.`,
             userId: contract.authorId,
             contractId: contract.id,

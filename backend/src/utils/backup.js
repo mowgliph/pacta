@@ -22,7 +22,7 @@ export async function verifyBackupIntegrity(filePath, metadata) {
     if (stats.size !== metadata.size) {
       logger.warn('Backup size mismatch', {
         expected: metadata.size,
-        actual: stats.size
+        actual: stats.size,
       });
       return false;
     }
@@ -36,13 +36,10 @@ export async function verifyBackupIntegrity(filePath, metadata) {
         const decipher = createDecipheriv(
           config.backup.encryption.algorithm,
           Buffer.from(config.security.encryptionKey),
-          Buffer.from(metadata.iv, 'hex')
+          Buffer.from(metadata.iv, 'hex'),
         );
 
-        const decrypted = Buffer.concat([
-          decipher.update(data),
-          decipher.final()
-        ]);
+        const decrypted = Buffer.concat([decipher.update(data), decipher.final()]);
 
         // Verificar descompresión
         await new Promise((resolve, reject) => {

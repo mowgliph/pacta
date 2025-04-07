@@ -19,7 +19,7 @@ export async function createZipArchive(data, metadata) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     const archive = archiver('zip', {
-      zlib: { level: 9 }
+      zlib: { level: 9 },
     });
 
     archive.on('data', chunk => chunks.push(chunk));
@@ -35,12 +35,16 @@ export async function createZipArchive(data, metadata) {
     archive.append(data, { name: metadata.filename });
 
     // Agregar archivo de metadata
-    const metadataContent = JSON.stringify({
-      ...metadata,
-      exportedAt: new Date().toISOString(),
-      format: 'zip'
-    }, null, 2);
-    
+    const metadataContent = JSON.stringify(
+      {
+        ...metadata,
+        exportedAt: new Date().toISOString(),
+        format: 'zip',
+      },
+      null,
+      2,
+    );
+
     archive.append(metadataContent, { name: 'metadata.json' });
     archive.finalize();
   });
@@ -66,12 +70,16 @@ export async function createTarArchive(data, metadata) {
     pack.entry({ name: metadata.filename }, data);
 
     // Agregar metadata
-    const metadataContent = JSON.stringify({
-      ...metadata,
-      exportedAt: new Date().toISOString(),
-      format: 'tar'
-    }, null, 2);
-    
+    const metadataContent = JSON.stringify(
+      {
+        ...metadata,
+        exportedAt: new Date().toISOString(),
+        format: 'tar',
+      },
+      null,
+      2,
+    );
+
     pack.entry({ name: 'metadata.json' }, metadataContent);
     pack.finalize();
 
@@ -90,19 +98,16 @@ export async function createEncryptedArchive(data, metadata) {
   try {
     // Generar IV único
     const iv = crypto.randomBytes(16);
-    
+
     // Crear cipher con la clave de configuración
     const cipher = createCipheriv(
       config.backup.encryption.algorithm,
       Buffer.from(config.security.encryptionKey),
-      iv
+      iv,
     );
 
     // Cifrar datos
-    const encryptedData = Buffer.concat([
-      cipher.update(data),
-      cipher.final()
-    ]);
+    const encryptedData = Buffer.concat([cipher.update(data), cipher.final()]);
 
     // Crear contenedor con metadata
     const container = {
@@ -110,9 +115,9 @@ export async function createEncryptedArchive(data, metadata) {
       metadata: {
         ...metadata,
         exportedAt: new Date().toISOString(),
-        format: 'encrypted'
+        format: 'encrypted',
       },
-      data: encryptedData.toString('base64')
+      data: encryptedData.toString('base64'),
     };
 
     return Buffer.from(JSON.stringify(container));

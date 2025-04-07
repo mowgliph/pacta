@@ -24,7 +24,7 @@ export class DashboardController extends BaseController {
         const dashboardData = await this.dashboardService.getDashboardData({
           days: daysNum,
           userId,
-          isAdmin
+          isAdmin,
         });
 
         return {
@@ -32,14 +32,14 @@ export class DashboardController extends BaseController {
           license: dashboardData.license,
           contractTrends: dashboardData.contractTrends,
           contractCategories: dashboardData.contractCategories,
-          recentActivities: dashboardData.recentActivities
+          recentActivities: dashboardData.recentActivities,
         };
       },
-      { 
+      {
         days: req.query.days,
         userId: req.user.id,
-        role: req.user.role
-      }
+        role: req.user.role,
+      },
     );
   };
 
@@ -52,7 +52,7 @@ export class DashboardController extends BaseController {
         const { startDate, endDate } = req.query;
         return await this.dashboardService.getOverview(startDate, endDate);
       },
-      { dateRange: { startDate: req.query.startDate, endDate: req.query.endDate } }
+      { dateRange: { startDate: req.query.startDate, endDate: req.query.endDate } },
     );
   };
 
@@ -68,7 +68,7 @@ export class DashboardController extends BaseController {
         }
         return await this.dashboardService.getStatistics(type, period);
       },
-      { type: req.query.type, period: req.query.period }
+      { type: req.query.type, period: req.query.period },
     );
   };
 
@@ -81,7 +81,7 @@ export class DashboardController extends BaseController {
         const limit = parseInt(req.query.limit) || 10;
         return await this.dashboardService.getRecentActivity(limit);
       },
-      { limit: req.query.limit }
+      { limit: req.query.limit },
     );
   };
 
@@ -94,7 +94,7 @@ export class DashboardController extends BaseController {
         const userId = req.user.id;
         return await this.dashboardService.getUserMetrics(userId);
       },
-      { userId: req.user.id }
+      { userId: req.user.id },
     );
   };
 }

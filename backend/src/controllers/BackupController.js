@@ -21,11 +21,11 @@ export class BackupController extends BaseController {
         const filters = {
           ...req.query,
           page: parseInt(req.query.page) || 1,
-          limit: parseInt(req.query.limit) || 10
+          limit: parseInt(req.query.limit) || 10,
         };
         return await this.backupService.listBackups(filters);
       },
-      { filters: req.query }
+      { filters: req.query },
     );
   };
 
@@ -42,7 +42,7 @@ export class BackupController extends BaseController {
         }
         return result;
       },
-      { backupId: req.params.id }
+      { backupId: req.params.id },
     );
   };
 
@@ -54,7 +54,7 @@ export class BackupController extends BaseController {
       async () => {
         return await this.backupService.executeBackup(req.body);
       },
-      { options: req.body }
+      { options: req.body },
     );
   };
 
@@ -68,7 +68,7 @@ export class BackupController extends BaseController {
         await this.backupService.restoreBackup(id, req.body.options);
         return { message: 'Backup restaurado exitosamente' };
       },
-      { backupId: req.params.id, options: req.body.options }
+      { backupId: req.params.id, options: req.body.options },
     );
   };
 
@@ -81,7 +81,7 @@ export class BackupController extends BaseController {
         const { id } = req.params;
         return await this.exportService.exportBackup(id, req.body);
       },
-      { backupId: req.params.id, format: req.body.format }
+      { backupId: req.params.id, format: req.body.format },
     );
   };
 }

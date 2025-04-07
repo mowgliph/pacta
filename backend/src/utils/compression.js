@@ -16,11 +16,7 @@ import { logger } from './logger.js';
  * @returns {Promise<Buffer>} Buffer con los datos comprimidos
  */
 export async function compressDirectory(sourceDir, options = {}) {
-  const {
-    level = 9,
-    ignore = [],
-    includeBaseDir = false
-  } = options;
+  const { level = 9, ignore = [], includeBaseDir = false } = options;
 
   return new Promise(async (resolve, reject) => {
     try {
@@ -49,7 +45,7 @@ export async function compressDirectory(sourceDir, options = {}) {
       // Agregar archivos al ZIP
       for (const file of files) {
         const relativePath = path.relative(sourceDir, file);
-        
+
         // Verificar si el archivo debe ser ignorado
         if (ignore.some(pattern => relativePath.match(pattern))) {
           continue;
@@ -59,16 +55,13 @@ export async function compressDirectory(sourceDir, options = {}) {
         if (fileStats.isFile()) {
           const fileData = await fs.readFile(file);
           archive.append(fileData, {
-            name: includeBaseDir ? 
-              path.join(path.basename(sourceDir), relativePath) : 
-              relativePath
+            name: includeBaseDir ? path.join(path.basename(sourceDir), relativePath) : relativePath,
           });
         }
       }
 
       // Finalizar el archivo
       archive.finalize();
-
     } catch (error) {
       reject(error);
     }
@@ -83,13 +76,13 @@ export async function compressDirectory(sourceDir, options = {}) {
  */
 async function getFilesRecursively(dir) {
   const files = [];
-  
+
   async function scan(directory) {
     const entries = await fs.readdir(directory, { withFileTypes: true });
-    
+
     for (const entry of entries) {
       const fullPath = path.join(directory, entry.name);
-      
+
       if (entry.isDirectory()) {
         await scan(fullPath);
       } else {
@@ -97,7 +90,7 @@ async function getFilesRecursively(dir) {
       }
     }
   }
-  
+
   await scan(dir);
   return files;
 }
@@ -109,16 +102,13 @@ async function getFilesRecursively(dir) {
  * @returns {Promise<Buffer>} Buffer con los datos comprimidos
  */
 export async function compressFiles(files, options = {}) {
-  const {
-    level = 9,
-    comment = ''
-  } = options;
+  const { level = 9, comment = '' } = options;
 
   return new Promise((resolve, reject) => {
     const chunks = [];
     const archive = archiver('zip', {
       zlib: { level },
-      comment
+      comment,
     });
 
     archive.on('data', chunk => chunks.push(chunk));

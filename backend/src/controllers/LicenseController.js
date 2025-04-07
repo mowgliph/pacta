@@ -20,11 +20,11 @@ export class LicenseController extends BaseController {
         const filters = {
           ...req.query,
           page: parseInt(req.query.page) || 1,
-          limit: parseInt(req.query.limit) || 10
+          limit: parseInt(req.query.limit) || 10,
         };
         return await this.licenseService.getLicenseHistory(filters);
       },
-      { filters: req.query }
+      { filters: req.query },
     );
   };
 
@@ -41,7 +41,7 @@ export class LicenseController extends BaseController {
         }
         return license;
       },
-      { licenseId: req.params.id }
+      { licenseId: req.params.id },
     );
   };
 
@@ -53,7 +53,7 @@ export class LicenseController extends BaseController {
       async () => {
         return await this.licenseService.getCurrentLicense();
       },
-      { action: 'getLicenseStatus' }
+      { action: 'getLicenseStatus' },
     );
   };
 
@@ -66,7 +66,7 @@ export class LicenseController extends BaseController {
         const validatedData = await this.validationService.validateLicenseKey(req.body);
         return await this.licenseService.activateLicense(validatedData.licenseKey);
       },
-      { action: 'activateLicense' }
+      { action: 'activateLicense' },
     );
   };
 
@@ -79,7 +79,7 @@ export class LicenseController extends BaseController {
         const { id } = req.params;
         return await this.licenseService.deactivateLicense(id);
       },
-      { licenseId: req.params.id }
+      { licenseId: req.params.id },
     );
   };
 
@@ -92,11 +92,11 @@ export class LicenseController extends BaseController {
         const filters = {
           ...req.query,
           page: parseInt(req.query.page) || 1,
-          limit: parseInt(req.query.limit) || 10
+          limit: parseInt(req.query.limit) || 10,
         };
         return await this.licenseService.getLicenseHistory(filters);
       },
-      { filters: req.query }
+      { filters: req.query },
     );
   };
 
@@ -112,7 +112,7 @@ export class LicenseController extends BaseController {
         }
         return await this.licenseService.validateLicense(licenseKey);
       },
-      { action: 'validateLicense' }
+      { action: 'validateLicense' },
     );
   };
 
@@ -125,7 +125,7 @@ export class LicenseController extends BaseController {
         const validatedData = await this.validationService.validateLicenseCreation(req.body);
         return await this.licenseService.createLicense(validatedData);
       },
-      { licenseData: req.body }
+      { licenseData: req.body },
     );
   };
 
@@ -139,7 +139,7 @@ export class LicenseController extends BaseController {
         const validatedData = await this.validationService.validateLicenseUpdate(req.body);
         return await this.licenseService.updateLicense(id, validatedData);
       },
-      { licenseId: req.params.id, updates: req.body }
+      { licenseId: req.params.id, updates: req.body },
     );
   };
 
@@ -153,7 +153,7 @@ export class LicenseController extends BaseController {
         await this.licenseService.deleteLicense(id);
         return { message: 'Licencia eliminada correctamente' };
       },
-      { licenseId: req.params.id }
+      { licenseId: req.params.id },
     );
   };
 
@@ -166,7 +166,7 @@ export class LicenseController extends BaseController {
         const validatedData = await this.validationService.validateLicenseGeneration(req.body);
         return await this.licenseService.generateLicenseKey(validatedData);
       },
-      { licenseData: req.body }
+      { licenseData: req.body },
     );
   };
 }

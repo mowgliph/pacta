@@ -8,7 +8,9 @@ export class BaseRepository {
    */
   constructor() {
     if (this.constructor === BaseRepository) {
-      throw new Error('BaseRepository es una clase abstracta y no puede ser instanciada directamente');
+      throw new Error(
+        'BaseRepository es una clase abstracta y no puede ser instanciada directamente',
+      );
     }
   }
 
@@ -121,4 +123,4 @@ export class BaseRepository {
   async transaction(callback) {
     throw new Error('El método transaction() debe ser implementado por las clases hijas');
   }
-} 
+}

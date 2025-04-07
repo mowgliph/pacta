@@ -50,7 +50,7 @@ export const authorizeAdmin = (req, res, next) => {
  * @param {Function} getResourceUserIdFn - Función que obtiene el ID del usuario propietario del recurso
  * @returns {Function} Middleware de Express
  */
-export const authorizeResource = (getResourceUserIdFn) => {
+export const authorizeResource = getResourceUserIdFn => {
   return async (req, res, next) => {
     if (!req.user) {
       return next(new ForbiddenError('Usuario no autenticado'));
@@ -76,4 +76,4 @@ export const authorizeResource = (getResourceUserIdFn) => {
       return next(error);
     }
   };
-}; 
+};

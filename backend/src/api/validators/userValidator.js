@@ -23,11 +23,19 @@ const userCreateSchema = z.object({
 
 const userUpdateSchema = z.object({
   email: z.string().email({ message: 'Dirección de correo inválida' }).optional(),
-  firstName: z.string().min(2, { message: 'El nombre debe tener al menos 2 caracteres' }).optional(),
-  lastName: z.string().min(2, { message: 'El apellido debe tener al menos 2 caracteres' }).optional(),
-  role: z.enum(['ADMIN', 'RA', 'MANAGER', 'USER', 'VIEWER'], {
-    message: 'Rol inválido',
-  }).optional(),
+  firstName: z
+    .string()
+    .min(2, { message: 'El nombre debe tener al menos 2 caracteres' })
+    .optional(),
+  lastName: z
+    .string()
+    .min(2, { message: 'El apellido debe tener al menos 2 caracteres' })
+    .optional(),
+  role: z
+    .enum(['ADMIN', 'RA', 'MANAGER', 'USER', 'VIEWER'], {
+      message: 'Rol inválido',
+    })
+    .optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'SUSPENDED']).optional(),
   departmentId: z.string().uuid().optional().nullable(),
   phone: z.string().optional().nullable(),
@@ -36,23 +44,27 @@ const userUpdateSchema = z.object({
   permissions: z.array(z.string()).optional(),
 });
 
-const passwordChangeSchema = z.object({
-  oldPassword: z.string().min(1, { message: 'Contraseña actual requerida' }),
-  newPassword: z.string().min(8, { message: 'La contraseña debe tener al menos 8 caracteres' }),
-  confirmPassword: z.string().min(8, { message: 'La confirmación de contraseña es requerida' }),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: 'Las contraseñas no coinciden',
-  path: ['confirmPassword'],
-});
+const passwordChangeSchema = z
+  .object({
+    oldPassword: z.string().min(1, { message: 'Contraseña actual requerida' }),
+    newPassword: z.string().min(8, { message: 'La contraseña debe tener al menos 8 caracteres' }),
+    confirmPassword: z.string().min(8, { message: 'La confirmación de contraseña es requerida' }),
+  })
+  .refine(data => data.newPassword === data.confirmPassword, {
+    message: 'Las contraseñas no coinciden',
+    path: ['confirmPassword'],
+  });
 
-const resetPasswordSchema = z.object({
-  token: z.string().min(1, { message: 'Token requerido' }),
-  newPassword: z.string().min(8, { message: 'La contraseña debe tener al menos 8 caracteres' }),
-  confirmPassword: z.string().min(8, { message: 'La confirmación de contraseña es requerida' }),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: 'Las contraseñas no coinciden',
-  path: ['confirmPassword'],
-});
+const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1, { message: 'Token requerido' }),
+    newPassword: z.string().min(8, { message: 'La contraseña debe tener al menos 8 caracteres' }),
+    confirmPassword: z.string().min(8, { message: 'La confirmación de contraseña es requerida' }),
+  })
+  .refine(data => data.newPassword === data.confirmPassword, {
+    message: 'Las contraseñas no coinciden',
+    path: ['confirmPassword'],
+  });
 
 const userRoleUpdateSchema = z.object({
   role: z.enum(['ADMIN', 'RA', 'MANAGER', 'USER', 'VIEWER'], {
@@ -99,7 +111,9 @@ export const validatePasswordChange = (req, res, next) => {
     next();
   } catch (error) {
     if (error instanceof z.ZodError) {
-      next(new ValidationError('Datos de cambio de contraseña inválidos', error.flatten().fieldErrors));
+      next(
+        new ValidationError('Datos de cambio de contraseña inválidos', error.flatten().fieldErrors),
+      );
     } else {
       next(error);
     }
@@ -112,7 +126,12 @@ export const validateResetPassword = (req, res, next) => {
     next();
   } catch (error) {
     if (error instanceof z.ZodError) {
-      next(new ValidationError('Datos de restablecimiento de contraseña inválidos', error.flatten().fieldErrors));
+      next(
+        new ValidationError(
+          'Datos de restablecimiento de contraseña inválidos',
+          error.flatten().fieldErrors,
+        ),
+      );
     } else {
       next(error);
     }
@@ -143,4 +162,4 @@ export const validateUserStatusUpdate = (req, res, next) => {
       next(error);
     }
   }
-}; 
+};

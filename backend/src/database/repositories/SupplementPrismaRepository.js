@@ -21,15 +21,18 @@ export class SupplementPrismaRepository extends BasePrismaRepository {
       const supplements = await prisma.supplement.findMany({
         where: {
           contractId,
-          deletedAt: null
+          deletedAt: null,
         },
         orderBy: {
-          effectiveDate: 'desc'
-        }
+          effectiveDate: 'desc',
+        },
       });
       return supplements;
     } catch (error) {
-      this.logger.error('Error finding supplements by contract ID', { contractId, error: error.message });
+      this.logger.error('Error finding supplements by contract ID', {
+        contractId,
+        error: error.message,
+      });
       throw error;
     }
   }
@@ -44,8 +47,8 @@ export class SupplementPrismaRepository extends BasePrismaRepository {
       const supplement = await prisma.supplement.findUnique({
         where: {
           id,
-          deletedAt: null
-        }
+          deletedAt: null,
+        },
       });
       return supplement;
     } catch (error) {
@@ -64,8 +67,8 @@ export class SupplementPrismaRepository extends BasePrismaRepository {
       const supplement = await prisma.supplement.create({
         data: {
           ...data,
-          createdAt: new Date()
-        }
+          createdAt: new Date(),
+        },
       });
       return supplement;
     } catch (error) {
@@ -86,8 +89,8 @@ export class SupplementPrismaRepository extends BasePrismaRepository {
         where: { id },
         data: {
           ...data,
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       });
       return supplement;
     } catch (error) {
@@ -106,8 +109,8 @@ export class SupplementPrismaRepository extends BasePrismaRepository {
       const supplement = await prisma.supplement.update({
         where: { id },
         data: {
-          deletedAt: new Date()
-        }
+          deletedAt: new Date(),
+        },
       });
       return supplement;
     } catch (error) {
@@ -115,7 +118,7 @@ export class SupplementPrismaRepository extends BasePrismaRepository {
       throw error;
     }
   }
-  
+
   /**
    * Cuenta suplementos por contrato
    * @param {string} contractId - ID del contrato
@@ -126,15 +129,18 @@ export class SupplementPrismaRepository extends BasePrismaRepository {
       const count = await prisma.supplement.count({
         where: {
           contractId,
-          deletedAt: null
-        }
+          deletedAt: null,
+        },
       });
       return count;
     } catch (error) {
-      this.logger.error('Error counting supplements by contract ID', { contractId, error: error.message });
+      this.logger.error('Error counting supplements by contract ID', {
+        contractId,
+        error: error.message,
+      });
       throw error;
     }
   }
 }
 
-export default new SupplementPrismaRepository(); 
+export default new SupplementPrismaRepository();

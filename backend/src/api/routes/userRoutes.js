@@ -2,7 +2,7 @@
  * Rutas para gestión de usuarios
  */
 import express from 'express';
-import UserController from '../controllers/UserController.js';
+import UserController from '../../controllers/UserController.js';
 import { authenticate } from '../middleware/auth.js';
 import { authorize } from '../middleware/authorizationMiddleware.js';
 import { validateUser, validateUserUpdate } from '../validators/userValidator.js';
@@ -29,12 +29,13 @@ router.get('/:id', authenticate, UserController.getUserById);
  * @desc Crear un nuevo usuario
  * @access Private - Admin
  */
-router.post('/', 
-  authenticate, 
-  authorize(['ADMIN']), 
-  apiLimiter, 
-  validateUser, 
-  UserController.createUser
+router.post(
+  '/',
+  authenticate,
+  authorize(['ADMIN']),
+  apiLimiter,
+  validateUser,
+  UserController.createUser,
 );
 
 /**
@@ -42,11 +43,7 @@ router.post('/',
  * @desc Actualizar un usuario
  * @access Private - Admin o propietario
  */
-router.put('/:id', 
-  authenticate, 
-  validateUserUpdate, 
-  UserController.updateUser
-);
+router.put('/:id', authenticate, validateUserUpdate, UserController.updateUser);
 
 /**
  * @route DELETE /api/users/:id

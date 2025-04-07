@@ -63,14 +63,20 @@ export class License {
   }
 
   isExpiringSoon(days = 30) {
-    if (!this.isValid()) return false;
+    if (!this.isValid()) {
+      return false;
+    }
     return differenceInDays(new Date(this.expiryDate), new Date()) <= days;
   }
 
   canActivate() {
     // Comprobar si la licencia puede ser activada
-    if (this.active === false) return false;
-    if (new Date(this.expiryDate) < new Date()) return false;
+    if (this.active === false) {
+      return false;
+    }
+    if (new Date(this.expiryDate) < new Date()) {
+      return false;
+    }
     return true;
   }
 

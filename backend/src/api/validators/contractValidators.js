@@ -101,8 +101,14 @@ export const contractTagSchema = () => {
 // Contract query schema
 export const contractQuerySchema = () => {
   return z.object({
-    page: z.string().optional().transform(val => parseInt(val, 10) || 1),
-    limit: z.string().optional().transform(val => parseInt(val, 10) || 10),
+    page: z
+      .string()
+      .optional()
+      .transform(val => parseInt(val, 10) || 1),
+    limit: z
+      .string()
+      .optional()
+      .transform(val => parseInt(val, 10) || 10),
     status: z.enum(['ACTIVE', 'PENDING', 'EXPIRED', 'CANCELLED']).optional(),
     sortBy: z.string().optional(),
     sortOrder: z.enum(['asc', 'desc']).optional(),
@@ -156,5 +162,5 @@ export const contract = {
   contractStatsQuerySchema,
   contractTagsSchema,
   supplementCreateSchema,
-  supplementUpdateSchema
+  supplementUpdateSchema,
 };

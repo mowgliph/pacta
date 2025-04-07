@@ -23,11 +23,11 @@ export class UserController extends BaseController {
         const filters = {
           ...req.query,
           page: parseInt(req.query.page) || 1,
-          limit: parseInt(req.query.limit) || 10
+          limit: parseInt(req.query.limit) || 10,
         };
         return await this.userService.getAllUsers(filters);
       },
-      { filters: req.query }
+      { filters: req.query },
     );
   };
 
@@ -42,7 +42,7 @@ export class UserController extends BaseController {
         }
         return await this.userService.getTeamData();
       },
-      { role: req.user.role }
+      { role: req.user.role },
     );
   };
 
@@ -59,7 +59,7 @@ export class UserController extends BaseController {
         }
         return user;
       },
-      { userId: req.params.id }
+      { userId: req.params.id },
     );
   };
 
@@ -72,7 +72,7 @@ export class UserController extends BaseController {
         const userId = req.user.id;
         return await this.userService.getProfile(userId);
       },
-      { userId: req.user.id }
+      { userId: req.user.id },
     );
   };
 
@@ -85,7 +85,7 @@ export class UserController extends BaseController {
         const validatedData = await this.validationService.validateUserData(req.body);
         return await this.userService.createUser(validatedData);
       },
-      { userData: req.body }
+      { userData: req.body },
     );
   };
 
@@ -99,7 +99,7 @@ export class UserController extends BaseController {
         const validatedData = await this.validationService.validateUserUpdate(req.body);
         return await this.userService.updateUser(id, validatedData);
       },
-      { userId: req.params.id, updates: req.body }
+      { userId: req.params.id, updates: req.body },
     );
   };
 
@@ -113,7 +113,7 @@ export class UserController extends BaseController {
         const validatedData = await this.validationService.validateProfileUpdate(req.body);
         return await this.userService.updateProfile(userId, validatedData);
       },
-      { userId: req.user.id, updates: req.body }
+      { userId: req.user.id, updates: req.body },
     );
   };
 
@@ -125,14 +125,14 @@ export class UserController extends BaseController {
       async () => {
         const { id } = req.params;
         const { role } = req.body;
-        
+
         if (parseInt(id) === req.user.id) {
           throw new ForbiddenError('No puedes cambiar tu propio rol');
         }
 
         return await this.userService.updateUserRole(id, role, req.user.id);
       },
-      { userId: req.params.id, role: req.body.role, adminId: req.user.id }
+      { userId: req.params.id, role: req.body.role, adminId: req.user.id },
     );
   };
 
@@ -151,7 +151,7 @@ export class UserController extends BaseController {
 
         return await this.userService.updateUserStatus(id, status, req.user.id);
       },
-      { userId: req.params.id, status: req.body.status, adminId: req.user.id }
+      { userId: req.params.id, status: req.body.status, adminId: req.user.id },
     );
   };
 
@@ -166,7 +166,7 @@ export class UserController extends BaseController {
         await this.userService.changePassword(userId, validatedData);
         return { message: 'Contraseña actualizada exitosamente' };
       },
-      { userId: req.user.id }
+      { userId: req.user.id },
     );
   };
 
@@ -180,7 +180,7 @@ export class UserController extends BaseController {
         await this.userService.deleteUser(id);
         return { message: 'Usuario eliminado exitosamente' };
       },
-      { userId: req.params.id }
+      { userId: req.params.id },
     );
   };
 
@@ -196,7 +196,7 @@ export class UserController extends BaseController {
         }
         return await this.userService.searchUsers(q, parseInt(page), parseInt(limit));
       },
-      { query: req.query }
+      { query: req.query },
     );
   };
 
@@ -209,7 +209,7 @@ export class UserController extends BaseController {
         const userId = req.user.id;
         return await this.userService.getUserPreferences(userId);
       },
-      { userId: req.user.id }
+      { userId: req.user.id },
     );
   };
 
@@ -223,7 +223,7 @@ export class UserController extends BaseController {
         const validatedData = await this.validationService.validateUserPreferences(req.body);
         return await this.userService.updateUserPreferences(userId, validatedData);
       },
-      { userId: req.user.id, preferences: req.body }
+      { userId: req.user.id, preferences: req.body },
     );
   };
 }

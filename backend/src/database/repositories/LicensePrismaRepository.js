@@ -17,12 +17,12 @@ export class LicensePrismaRepository extends BasePrismaRepository {
       where: {
         active: true,
         expiryDate: {
-          gte: new Date()
-        }
+          gte: new Date(),
+        },
       },
       orderBy: {
-        createdAt: 'desc'
-      }
+        createdAt: 'desc',
+      },
     });
   }
 
@@ -34,10 +34,10 @@ export class LicensePrismaRepository extends BasePrismaRepository {
   async activateLicense(licenseKey) {
     return this.prisma.license.update({
       where: { licenseKey },
-      data: { 
+      data: {
         active: true,
-        activatedAt: new Date()
-      }
+        activatedAt: new Date(),
+      },
     });
   }
 
@@ -49,10 +49,10 @@ export class LicensePrismaRepository extends BasePrismaRepository {
   async deactivateLicense(licenseKey) {
     return this.prisma.license.update({
       where: { licenseKey },
-      data: { 
+      data: {
         active: false,
-        deactivatedAt: new Date()
-      }
+        deactivatedAt: new Date(),
+      },
     });
   }
 
@@ -64,7 +64,7 @@ export class LicensePrismaRepository extends BasePrismaRepository {
    */
   async hasFeatureAccess(licenseKey, feature) {
     const license = await this.prisma.license.findUnique({
-      where: { licenseKey }
+      where: { licenseKey },
     });
 
     if (!license || !license.active || license.expiryDate < new Date()) {
@@ -77,4 +77,4 @@ export class LicensePrismaRepository extends BasePrismaRepository {
 
 // Crear y exportar instancia por defecto
 const licensePrismaRepository = new LicensePrismaRepository();
-export default licensePrismaRepository; 
+export default licensePrismaRepository;

@@ -364,14 +364,14 @@ export class BaseController {
       logger.info(`Starting operation: ${operation.name || 'unnamed'}`, {
         method: req.method,
         path: req.path,
-        ...context
+        ...context,
       });
 
       const result = await operation();
 
       logger.debug(`Operation completed: ${operation.name || 'unnamed'}`, {
         success: true,
-        ...context
+        ...context,
       });
 
       return this.sendSuccess(res, result);
@@ -379,7 +379,7 @@ export class BaseController {
       logger.error(`Operation failed: ${operation.name || 'unnamed'}`, {
         code: error.code || 'OPERATION_ERROR',
         message: error.message,
-        context
+        context,
       });
       return this.handleError(error, res, operation.name);
     }

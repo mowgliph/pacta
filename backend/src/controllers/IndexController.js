@@ -20,10 +20,10 @@ export class IndexController extends BaseController {
           name: pkg.name,
           version: pkg.version,
           description: pkg.description,
-          environment: process.env.NODE_ENV || 'development'
+          environment: process.env.NODE_ENV || 'development',
         };
       },
-      { action: 'getApiInfo' }
+      { action: 'getApiInfo' },
     );
   };
 
@@ -41,10 +41,10 @@ export class IndexController extends BaseController {
           uptime: process.uptime(),
           timestamp: new Date().toISOString(),
           memory: process.memoryUsage(),
-          ...status
+          ...status,
         };
       },
-      { action: 'healthCheck' }
+      { action: 'healthCheck' },
     );
   };
 
@@ -56,7 +56,7 @@ export class IndexController extends BaseController {
       async () => {
         return await this.systemService.getMetrics();
       },
-      { action: 'getSystemMetrics' }
+      { action: 'getSystemMetrics' },
     );
   };
 }

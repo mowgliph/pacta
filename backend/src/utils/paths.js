@@ -11,18 +11,19 @@ import fs from 'fs';
  * @returns {string} Ruta del directorio AppData
  */
 export function getAppDataPath() {
-  const appDataPath = process.env.APPDATA || 
-    (process.platform === 'darwin' ? 
-      path.join(os.homedir(), 'Library', 'Application Support') : 
-      path.join(os.homedir(), '.local', 'share'));
-  
+  const appDataPath =
+    process.env.APPDATA ||
+    (process.platform === 'darwin'
+      ? path.join(os.homedir(), 'Library', 'Application Support')
+      : path.join(os.homedir(), '.local', 'share'));
+
   const pactaPath = path.join(appDataPath, 'PACTA');
-  
+
   // Crear directorio si no existe
   if (!fs.existsSync(pactaPath)) {
     fs.mkdirSync(pactaPath, { recursive: true });
   }
-  
+
   return pactaPath;
 }
 

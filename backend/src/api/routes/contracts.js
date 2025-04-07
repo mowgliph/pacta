@@ -3,7 +3,7 @@ import { authenticateToken, requiresLicense } from '../middleware/auth.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import contractController from '../controllers/ContractController.js';
+import contractController from '../../controllers/ContractController.js';
 import { validate, validateAll } from '../middleware/validate.js';
 import { ValidationService } from '../../services/ValidationService.js';
 
@@ -65,11 +65,7 @@ router.get(
 );
 
 // Get contract statistics by type - solo lectura sin licencia
-router.get(
-  '/stats/by-type',
-  authenticateToken,
-  contractController.getContractStatsByType,
-);
+router.get('/stats/by-type', authenticateToken, contractController.getContractStatsByType);
 
 // Get contract by ID - solo lectura sin licencia
 router.get(
@@ -183,7 +179,7 @@ router.post(
   upload.single('document'),
   validateAll({
     params: validationService.validators.contract.contractIdSchema,
-    body: validationService.validators.contract.supplementCreateSchema || {}
+    body: validationService.validators.contract.supplementCreateSchema || {},
   }),
   contractController.createSupplement,
 );

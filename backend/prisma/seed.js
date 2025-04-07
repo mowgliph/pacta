@@ -13,7 +13,7 @@ async function main() {
 
   // Crear usuarios del sistema (RA y admin)
   console.log('👤 Creando usuarios del sistema...');
-  
+
   // Usuario RA (Desarrollador)
   const raUser = await prisma.user.create({
     data: {
@@ -23,8 +23,8 @@ async function main() {
       lastName: 'Desarrollador',
       role: 'RA',
       isSystemUser: true,
-      status: 'ACTIVE'
-    }
+      status: 'ACTIVE',
+    },
   });
   console.log('✅ Usuario RA creado:', raUser.email);
 
@@ -37,8 +37,8 @@ async function main() {
       lastName: 'Sistema',
       role: 'ADMIN',
       isSystemUser: true,
-      status: 'ACTIVE'
-    }
+      status: 'ACTIVE',
+    },
   });
   console.log('✅ Usuario Admin creado:', adminUser.email);
 
@@ -49,33 +49,33 @@ async function main() {
         key: 'app_name',
         value: 'PACTA - Sistema de Gestión de Contratos',
         description: 'Nombre de la aplicación',
-        type: 'string'
+        type: 'string',
       },
       {
         key: 'company_name',
         value: 'Cliente PACTA',
         description: 'Nombre de la empresa cliente',
-        type: 'string'
+        type: 'string',
       },
       {
         key: 'notification_email',
         value: 'notificaciones@pacta.com',
         description: 'Email para notificaciones',
-        type: 'string'
+        type: 'string',
       },
       {
         key: 'enable_contract_renewals',
         value: 'true',
         description: 'Habilitar renovaciones de contratos',
-        type: 'boolean'
+        type: 'boolean',
       },
       {
         key: 'enable_email_notifications',
         value: 'true',
         description: 'Habilitar notificaciones por email',
-        type: 'boolean'
-      }
-    ]
+        type: 'boolean',
+      },
+    ],
   });
   console.log('⚙️ Configuraciones del sistema creadas');
 
@@ -83,10 +83,10 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error('❌ Error durante la ejecución del seed:', e);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
-  }); 
+  });
