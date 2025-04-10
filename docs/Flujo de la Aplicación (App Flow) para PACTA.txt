@@ -1,0 +1,56 @@
+Flujo de la Aplicación (App Flow) - PACTA
+.1 This doc provides a complete end-to-end rundown de la aplicación de PACTA
+Contexto: PACTA es una solución de escritorio para empresas grandes que necesitan gestionar contratos de manera eficiente, con un enfoque en la automatización y el control de vencimientos. Este flujo detalla cómo los usuarios interactúan con la aplicación, desde el acceso inicial hasta la gestión avanzada de contratos.
+Flujo End-to-End: 
+* Inicio (Modo Público): 
+o Pantalla inicial con descripción de PACTA y botón de "Iniciar Sesión". 
+o Vista pública limitada (ej. estadísticas generales anónimas).
+* Autenticación (Modo Privado): 
+o Pantalla de inicio de sesión (email/contraseña). 
+o Usuarios predefinidos (RA, Admin) o creados desde el módulo de perfiles. 
+o Redirige al Dashboard Principal.
+* Dashboard Principal: 
+o Resumen de contratos (Activos, Vencidos, Pendientes de Renovación). 
+o Gráficos de distribución (Recharts). 
+o Acciones rápidas: "Crear Contrato", "Ver Estadísticas", "Añadir Suplemento". 
+o Alertas de vencimientos próximos (Sonner).
+* Gestión de Contratos: 
+o Tabla interactiva (Tanstack Table) con filtros (tipo, estado, empresa). 
+o Búsqueda avanzada por número de contrato o empresa. 
+o Vista detallada: Historial de suplementos, estado, documentos asociados.
+* Estadísticas Avanzadas: 
+o Gráficos comparativos (Recharts). 
+o Métricas: Contratos por estado, tendencias de renovación. 
+o Exportar reportes (PDF/CSV).
+* Perfil de Usuario: 
+o Editar datos personales y contraseña. 
+o Configurar preferencias de notificaciones. 
+o RA/Admin: Crear nuevos usuarios (sin registro público).
+* Cerrar Sesión: Regresa al modo público.
+.2 Este documento es de suma importancia as it creates a graph for AI to plan its execution for each page
+Diagrama de Flujo (Texto para IA): 
+* Nodo 1: Inicio (Público) 
+o Acción: Mostrar pantalla inicial. 
+o Decisiones: Iniciar Sesión ? Nodo 2 | Ver Info Pública ? Nodo 1.1. 
+o Nodo 1.1: Vista Pública (Estadísticas Anónimas).
+* Nodo 2: Autenticación 
+o Acción: Formulario de inicio de sesión (React Hook Form). 
+o Decisiones: Éxito ? Nodo 3 | Fallo ? Nodo 2.1 (Notificación de error con Sonner).
+* Nodo 3: Dashboard Principal 
+o Acción: Mostrar estadísticas (Recharts), alertas (Sonner), acciones rápidas. 
+o Decisiones: Crear Contrato ? Nodo 4 | Ver Contratos ? Nodo 5 | Estadísticas ? Nodo 6 | Perfil ? Nodo 7.
+* Nodo 4: Crear Contrato 
+o Acción: Formulario (React Hook Form) para añadir contrato. 
+o Decisiones: Guardar ? Nodo 3 | Cancelar ? Nodo 3.
+* Nodo 5: Gestión de Contratos 
+o Acción: Mostrar tabla (Tanstack Table), filtros, búsqueda. 
+o Decisiones: Ver Detalles ? Nodo 5.1 | Añadir Suplemento ? Nodo 5.2. 
+o Nodo 5.1: Vista Detallada (Historial, documentos). 
+o Nodo 5.2: Formulario de Suplemento (React Hook Form).
+* Nodo 6: Estadísticas Avanzadas 
+o Acción: Mostrar gráficos (Recharts), exportar reportes. 
+o Decisiones: Volver ? Nodo 3.
+* Nodo 7: Perfil de Usuario 
+o Acción: Editar perfil, gestionar usuarios (RA/Admin). 
+o Decisiones: Guardar ? Nodo 3 | Cerrar Sesión ? Nodo 1.
+

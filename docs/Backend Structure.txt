@@ -1,0 +1,37 @@
+Backend Structure - PACTA
+.1 A document that explains the schema, tables, and policies
+Contexto: PACTA utiliza SQLite con Prisma para gestionar una base de datos local que almacena contratos, usuarios, notificaciones y más. El backend debe ser seguro, eficiente y escalable dentro de un entorno local.
+Schema (Basado en el Prisma Schema Proporcionado): 
+* User: Almacena usuarios (RA, Admin, etc.) con roles y estados. 
+* Company: Empresas asociadas a contratos. 
+* Department: Departamentos dentro de las empresas. 
+* Contract: Contratos con estados (Activo, Vencido, etc.) y relaciones (suplementos, documentos). 
+* Parte/ContratoParte: Partes involucradas en contratos. 
+* Obligacion, Entrega, Pago, Garantia: Detalles operativos de los contratos. 
+* Supplement: Suplementos para modificar contratos. 
+* Notification: Notificaciones automáticas. 
+* Activity/AccessLog: Registro de actividades y accesos. 
+* SystemSetting/Backup: Configuraciones y copias de seguridad.
+Policies (Seguridad): 
+* Autenticación: 
+o Auth.js para gestionar sesiones. 
+o Hash de contraseñas con bcrypt. 
+o Sesiones con JWT almacenados en SQLite (tabla AccessLog).
+* Autorización: 
+o Roles (RA, Admin) con permisos específicos (tabla Permiso). 
+o RA puede crear usuarios; Admin gestiona contratos.
+* Seguridad de Datos: 
+o Cifrado de copias de seguridad (tabla Backup). 
+o Validación de entradas con Joi para evitar inyecciones SQL.
+* Rate Limiting: Limitar intentos de login (express-rate-limit).
+.2 It contains all database tables that I need to create, storage, and all I need to application PACTA 
+* Tablas: Ya definidas en el schema proporcionado (User, Contract, Notification, etc.). 
+* Storage: 
+o Archivos (contratos, suplementos) se almacenan localmente en el directorio public/uploads. 
+o Ruta en SQLite: fileUrl en las tablas Contract y Supplement. 
+o Tamaño máximo por archivo: 10MB (validado en el backend).
+* Configuración Adicional: 
+o Índices para optimizar consultas (ej. @@index([numero]) en Contract). 
+o Migraciones con Prisma (prisma migrate dev). 
+o Copias de seguridad automáticas (tabla Backup) cada 24 horas.
+

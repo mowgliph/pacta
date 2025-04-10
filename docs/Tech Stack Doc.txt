@@ -1,0 +1,30 @@
+Tech Stack Doc - PACTA
+.1 This doc will explain every single detail about the stack AI needs to use to build la aplicación de PACTA
+Contexto: PACTA es una aplicación de escritorio que automatiza la gestión de contratos para empresas grandes, con un enfoque en seguridad, accesibilidad y funcionamiento offline. El stack debe ser moderno, popular y compatible con LLMs para facilitar el desarrollo asistido por IA.
+Frontend Stack: 
+* Framework: React 18 con Electron (para empaquetar como .exe). 
+* Router: Wouter (ligero y compatible con React). 
+* Estado Global: Zustand (simple y eficiente). 
+* Estilos: TailwindCSS con Shadcn UI (componentes accesibles). 
+* Librerías Adicionales: Flicking, Recharts, DnDKit, Sonner, Virtua, React Aria Modal, Framer Motion, React Hook Form, Tanstack Query, Tanstack Table.
+Backend Stack: 
+* Framework: Node.js 20 con Express (popular y bien documentado). 
+* Base de Datos: SQLite (ligera, ideal para apps locales). 
+* ORM: Prisma (para consultas seguras y tipadas). 
+* Autenticación: Auth.js (integrado con Express). 
+* Seguridad: Helmet (cabeceras HTTP seguras), bcrypt (hash de contraseñas), express-rate-limit (limitación de intentos de login). 
+* Logging: Winston (registro de actividades y errores).
+Distribución: 
+* Electron: Empaquetar frontend y backend en un instalador .exe. 
+* Electron Builder: Para generar el instalador con auto-actualizaciones.
+Herramientas de Desarrollo: 
+* Gestión de Dependencias: pnpm (rápido y eficiente). 
+* Linter: ESLint con configuración de Airbnb. 
+* Formateo: Prettier. 
+* Testing: Vitest (unit tests) y Playwright (e2e tests).
+.2 Asegurate de usar solo popular tech stacks, because LLMs like Claude, GPT or Gemini are trained on vastly adapted frameworks 
+* Justificación: 
+o React, Node.js, Express y SQLite son ampliamente utilizados y tienen extensa documentación, lo que facilita el soporte de LLMs. 
+o Prisma y TailwindCSS son estándares modernos con comunidades activas. 
+o Electron es la opción más popular para aplicaciones de escritorio con JavaScript.
+

@@ -1,25 +1,22 @@
-import path from 'path'
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react-swc'
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react-swc";
+import path from "path";
+import { componentTagger } from "lovable-tagger";
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [react()],
+// https://vitejs.dev/config/
+export default defineConfig(({ mode }) => ({
+  server: {
+    host: "::",
+    port: 3000,
+  },
+  plugins: [
+    react(),
+    mode === 'development' &&
+    componentTagger(),
+  ].filter(Boolean),
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
-
-      // fix loading all icon chunks in dev mode
-      // https://github.com/tabler/tabler-icons/issues/1233
-      '@tabler/icons-react': '@tabler/icons-react/dist/esm/icons/index.mjs',
+      "@": path.resolve(__dirname, "./src"),
     },
   },
-  optimizeDeps: {
-    include: ['tailwindcss'],
-    esbuildOptions: {
-      loader: {
-        '.js': 'jsx',
-      },
-    },
-  },
-})
+}));

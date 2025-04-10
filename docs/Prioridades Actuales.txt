@@ -1,0 +1,44 @@
+Prioridades Actuales para PACTA:
+
+1. Módulos Frontend Pendientes:
+- Gestión de Usuarios
+  
+  - Completar CRUD de usuarios
+  - Implementar gestión de roles y permisos
+  - Mejorar la interfaz de administración
+- Gestión de Contratos
+  
+  - Refinar el sistema de filtros
+  - Mejorar la visualización de detalles
+  - Implementar el sistema de suplementos
+  - Añadir gestión de documentos adjuntos
+- Dashboard y Estadísticas
+  
+  - Completar todas las visualizaciones de datos
+  - Implementar filtros temporales
+  - Añadir más métricas relevantes
+- Sistema de Notificaciones
+  
+  - Implementar notificaciones en tiempo real
+  - Configurar alertas de vencimientos
+  - Añadir centro de notificaciones
+2. Áreas para Refinar:
+- UI/UX
+  
+  - Mejorar las transiciones entre páginas
+  - Optimizar la experiencia móvil
+  - Pulir los componentes existentes
+- Rendimiento
+  
+  - Implementar lazy loading donde sea necesario
+  - Optimizar las consultas a la API
+  - Mejorar el manejo de caché
+- Funcionalidad Offline
+  
+  - Implementar estado offline
+  - Sincronización de datos
+  - Manejo de conflictos
+3. Documentación Durante el Desarrollo:
+   - Documentar componentes nuevos
+   - Mantener actualizada la documentación de la API
+   - Crear guías de uso para funcionalidades complejas

@@ -1,0 +1,51 @@
+Documento de Requerimientos del Proyecto (PRD) - PACTA
+.1 Overview
+Título del Proyecto: PACTA - Plataforma de Automatización y Control de Contratos Empresariales
+Fecha: 08 de abril de 2025
+Autor: [Tu Nombre]
+Resumen: PACTA es una aplicación de escritorio instalable localmente diseñada para optimizar la gestión de contratos en empresas grandes. Su objetivo es centralizar, organizar y automatizar el seguimiento de contratos, garantizando el cumplimiento de plazos y minimizando riesgos legales. La aplicación funciona tanto en entornos con conexión a internet como sin ella, utilizando una base de datos SQLite local y Prisma como ORM. PACTA se distribuye como un instalador .exe que ejecuta tanto el frontend como el backend localmente, con dos modos de acceso: público (sin autenticación) y privado (requiere inicio de sesión). Los usuarios se crean únicamente desde el módulo de perfiles, con roles predefinidos (RA y Admin).
+Objetivos Principales: 
+* Reducir errores en la gestión de contratos mediante automatización. 
+* Centralizar la documentación contractual en un repositorio seguro. 
+* Proporcionar alertas proactivas para evitar vencimientos no detectados. 
+* Ofrecer un dashboard intuitivo con estadísticas avanzadas y acciones rápidas.
+.2 Target Audience 
+* Empresas Grandes: Departamentos legales, financieros y de operaciones que gestionan múltiples contratos con clientes y proveedores. 
+* Usuarios Específicos: 
+o RA (Desarrollador): Gestiona configuraciones técnicas y usuarios del sistema. 
+o Admin (Administrativo): Gestiona contratos, suplementos y estadísticas. 
+o Manager, User, Viewer: Roles adicionales para escalabilidad futura.
+* Contexto de Uso: Empresas que necesitan una solución offline para entornos con conectividad limitada, con un enfoque en seguridad y accesibilidad.
+.3 User Flow 
+* Modo Público: 
+o Acceso a información general (ej. estadísticas anónimas, descripción de la app). 
+o Opción para iniciar sesión.
+* Modo Privado (Post-Autenticación): 
+o Dashboard Principal: Vista de estadísticas, contratos próximos a vencer, acciones rápidas (crear contrato, ver estadísticas). 
+o Gestión de Contratos: Filtrar, buscar, ver detalles, añadir suplementos. 
+o Estadísticas Avanzadas: Análisis detallado con gráficos y reportes exportables. 
+o Perfil de Usuario: Gestionar datos personales, contraseñas y notificaciones. 
+o Administración de Usuarios (RA/Admin): Crear nuevos usuarios con roles específicos.
+.4 Tech Stack 
+* Frontend: 
+o Framework: React (con Electron para escritorio). 
+o Librerías: Ver lista proporcionada (Shadcn UI, TailwindCSS, Recharts, etc.).
+* Backend: 
+o Framework: Node.js con Express. 
+o Base de Datos: SQLite con Prisma ORM. 
+o Autenticación: Auth.js.
+* Distribución: Electron para empaquetar la app como un instalador .exe.
+.5 Core Features 
+* Dashboard Estadístico: Resumen visual con gráficos, alertas y acciones rápidas. 
+* Gestión de Contratos: Filtrado avanzado, búsqueda, historial de suplementos. 
+* Notificaciones: Alertas automáticas para vencimientos y acciones pendientes. 
+* Perfiles de Usuario: Gestión de roles (RA, Admin) y contraseñas. 
+* Estadísticas Avanzadas: Métricas detalladas con gráficos exportables. 
+* Ciclo de Vida de Contratos: Automatización de estados (Activo, Vencido, etc.).
+.6 Scope of Work 
+* Fase 1 (Semanas 1-2): Configuración del entorno, diseño inicial del dashboard y autenticación. 
+* Fase 2 (Semanas 3-4): Desarrollo de gestión de contratos y estadísticas. 
+* Fase 3 (Semanas 5-6): Implementación de notificaciones, perfiles y suplementos. 
+* Fase 4 (Semanas 7-8): Pruebas, optimización y empaquetado como .exe. 
+* Entregables: Aplicación instalable, documentación técnica, guía de usuario.
+
