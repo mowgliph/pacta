@@ -1,0 +1,43 @@
+pacta/
+├── public/
+│   ├── uploads/
+│   └── index.html
+├── src/
+│   ├── backend/
+│   │   ├── uploads.js
+│   │   └── index.js
+│   ├── main/
+│   │   ├── index.js
+│   │   └── preload.js
+│   ├── renderer/
+│   │   ├── assets/
+│   │   │   └── logo.png
+│   │   ├── components/
+│   │   │   ├── Modal.jsx
+│   │   │   ├── Carousel.jsx
+│   │   │   ├── DraggableList.jsx
+│   │   │   └── VirtualizedList.jsx
+│   │   ├── pages/
+│   │   │   ├── Public.jsx
+│   │   │   ├── Auth.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── ContractManagement.jsx
+│   │   │   ├── AdvancedStatistics.jsx
+│   │   │   └── UserProfile.jsx
+│   │   ├── store/
+│   │   │   └── useStore.js
+│   │   ├── utils/
+│   │   │   └── toastConfig.js
+│   │   └── App.jsx
+├── prisma/
+│   └── schema.prisma
+├── backups/
+├── .env
+├── .eslintrc.json
+├── .prettierrc
+├── electron-builder.yml
+├── package.json
+├── playwright.config.js
+├── tsconfig.json
+├── vite.config.js
+└── vitest.config.js

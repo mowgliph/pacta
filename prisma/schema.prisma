@@ -1,0 +1,195 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            Int          @id @default(autoincrement())
+  username      String       @unique
+  email         String       @unique
+  password      String
+  role          Role         @default(User)
+  notifications Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  contracts     Contract[]
+  accessLogs    AccessLog[]
+  permissions   Permission[]
+}
+
+model Company {
+  id          Int        @id @default(autoincrement())
+  name        String       @unique
+  description String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  departments Department[]
+  contracts   Contract[]
+}
+
+model Department {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String
+  companyId   Int
+  company     Company    @relation(fields: [companyId], references: [id])
+  contracts   Contract[]
+}
+
+model Contract {
+  id            Int             @id @default(autoincrement())
+  name          String
+  description   String
+  startDate     DateTime
+  endDate       DateTime
+  status        ContractStatus  @default(Active)
+  fileUrl       String?         @unique
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  userId        Int
+  user          User            @relation(fields: [userId], references: [id])
+  companyId     Int?
+  company       Company?        @relation(fields: [companyId], references: [id])
+  departmentId  Int?
+  department    Department?     @relation(fields: [departmentId], references: [id])
+  obligations   Obligation[]
+  deliveries    Delivery[]
+  payments      Payment[]
+  guarantees    Guarantee[]
+  supplements   Supplement[]
+  activities    Activity[]
+}
+
+model ContractPart {
+  id           Int           @id @default(autoincrement())
+  contractId   Int
+  contract     Contract      @relation(fields: [contractId], references: [id])
+  partyName    String
+  partyRole    String
+  partyContact String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Obligation {
+  id         Int        @id @default(autoincrement())
+  contractId Int
+  contract   Contract   @relation(fields: [contractId], references: [id])
+  description String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Delivery {
+  id         Int        @id @default(autoincrement())
+  contractId Int
+  contract   Contract   @relation(fields: [contractId], references: [id])
+  description String
+  date       DateTime
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Payment {
+  id         Int        @id @default(autoincrement())
+  contractId Int
+  contract   Contract   @relation(fields: [contractId], references: [id])
+  amount     Float
+  date       DateTime
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Guarantee {
+  id         Int        @id @default(autoincrement())
+  contractId Int
+  contract   Contract   @relation(fields: [contractId], references: [id])
+  description String
+  startDate  DateTime
+  endDate    DateTime
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Supplement {
+  id         Int        @id @default(autoincrement())
+  contractId Int
+  contract   Contract   @relation(fields: [contractId], references: [id])
+  description String
+  fileUrl    String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Notification {
+  id         Int        @id @default(autoincrement())
+  userId     Int
+  user       User       @relation(fields: [userId], references: [id])
+  message    String
+  isRead     Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Activity {
+  id         Int        @id @default(autoincrement())
+  userId     Int
+  user       User       @relation(fields: [userId], references: [id])
+  contractId Int?
+  contract   Contract?  @relation(fields: [contractId], references: [id])
+  action     String
+  details    String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model AccessLog {
+  id         Int        @id @default(autoincrement())
+  userId     Int
+  user       User       @relation(fields: [userId], references: [id])
+  action     String
+  details    String
+  ip         String
+  userAgent  String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Permission {
+  id         Int        @id @default(autoincrement())
+  userId     Int
+  user       User       @relation(fields: [userId], references: [id])
+  resource   String
+  canCreate  Boolean    @default(false)
+  canRead    Boolean    @default(false)
+  canUpdate  Boolean    @default(false)
+  canDelete  Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Backup {
+  id         Int        @id @default(autoincrement())
+  filename   String
+  filepath   String
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  encrypted  Boolean    @default(true)
+}
+
+enum Role {
+  User
+  Admin
+  RA
+}
+
+enum ContractStatus {
+  Active
+  Expired
+  Pending
+  Terminated
+}

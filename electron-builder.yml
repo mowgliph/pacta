@@ -1,0 +1,16 @@
+appId: cu.pacta
+productName: PACTA
+directories:
+  output: build
+files:
+  - dist/**/*
+  - package.json
+win:
+  target:
+    - nsis
+mac:
+  target:
+    - zip
+linux:
+  target:
+    - AppImage
