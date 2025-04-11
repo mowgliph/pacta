@@ -1,6 +1,11 @@
-const { app, BrowserWindow, ipcMain, Menu, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, shell, dialog } = require('electron');
 const path = require('path');
 const fetch = require('node-fetch');
+const fs = require('fs');
+const FormData = require('form-data');
+
+// Variable global para almacenar el token JWT
+let currentAuthToken = null;
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
@@ -78,104 +83,163 @@ app.on('ready', () => {
   }
 });
 
+// Helper para añadir header de autorización
+const getAuthHeaders = () => {
+    const headers = {
+        'Content-Type': 'application/json',
+    };
+    if (currentAuthToken) {
+        headers['Authorization'] = `Bearer ${currentAuthToken}`;
+    }
+    return headers;
+};
+
+// Helper para añadir header de autorización a FormData (un poco diferente)
+const getAuthHeadersForFormData = () => {
+    const headers = {}; // No poner Content-Type, fetch lo hace solo para FormData
+    if (currentAuthToken) {
+        headers['Authorization'] = `Bearer ${currentAuthToken}`;
+    }
+    return headers;
+}
+
 // Manejadores de autenticación
 ipcMain.handle('auth:login', async (_, credentials) => {
-  const response = await fetch('http://localhost:3001/login', {
+  // Llamar al endpoint /api/auth/login
+  const response = await fetch('http://localhost:3001/api/auth/login', { // Corregir endpoint a /api/auth/login
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(credentials)
   });
-  return response.json();
+  const result = await response.json();
+  if (response.ok && result.token) {
+    // Guardar el token globalmente en éxito
+    currentAuthToken = result.token;
+    console.log('[Main Process] Token almacenado.');
+  } else {
+    currentAuthToken = null; // Limpiar si el login falla
+  }
+  // Devolver todo el resultado (que puede incluir mensaje de error o { token })
+  return result; 
+});
+
+// Nuevo manejador para logout
+ipcMain.handle('auth:logout', async () => {
+    console.log('[Main Process] Limpiando token almacenado.');
+    currentAuthToken = null;
+    // Podrías añadir una llamada al backend aquí si necesitas invalidar el token en el servidor
+    return { success: true };
 });
 
 // Manejadores de contratos
 ipcMain.handle('contracts:getAll', async () => {
-  const response = await fetch('http://localhost:3001/contracts');
+  const response = await fetch('http://localhost:3001/api/contracts', { headers: getAuthHeaders() });
+  if (!response.ok) throw new Error(`Error ${response.status} al obtener contratos`);
   return response.json();
 });
 
 ipcMain.handle('contracts:uploadDocument', async (_, { contractId, filePath }) => {
+  // FormData necesita manejo especial de headers
   const formData = new FormData();
-  formData.append('file', fs.createReadStream(filePath));
+  try {
+      // Asegurarse que el archivo existe antes de crear el stream
+      if (!fs.existsSync(filePath)) {
+          throw new Error(`El archivo no existe: ${filePath}`);
+      }
+      formData.append('document', fs.createReadStream(filePath)); // 'document' debe coincidir con upload.single()
+  } catch (err) {
+      console.error("Error creando read stream:", err);
+      throw new Error('Error al leer el archivo para subir.');
+  }
   
-  const response = await fetch(`http://localhost:3001/contracts/${contractId}/upload`, {
+  const response = await fetch(`http://localhost:3001/api/contracts/${contractId}/upload`, {
     method: 'POST',
-    body: formData
+    body: formData,
+    headers: getAuthHeadersForFormData() // Usar headers para FormData
   });
+  if (!response.ok) throw new Error(`Error ${response.status} al subir documento`);
   return response.json();
 });
 
 ipcMain.handle('contracts:getDetails', async (event, contractId) => {
-  const response = await fetch(`http://localhost:3001/contracts/${contractId}`);
+  const response = await fetch(`http://localhost:3001/api/contracts/${contractId}`, { headers: getAuthHeaders() });
   if (!response.ok) {
-    throw new Error(`Error fetching contract details: ${response.statusText}`);
+    throw new Error(`Error ${response.status} al obtener detalles del contrato`);
   }
   return response.json();
 });
 
 ipcMain.handle('contracts:create', async (event, contractData) => {
-  const response = await fetch('http://localhost:3001/contracts', {
+  // Nota: Si la creación incluye subida directa (como está ahora contract.route.js POST /),
+  // esta llamada simple no funcionará, necesitaría enviar FormData.
+  // Asumiremos que el frontend envía solo JSON aquí y usa /upload después.
+  const response = await fetch('http://localhost:3001/api/contracts', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(contractData)
   });
   if (!response.ok) {
-    throw new Error(`Error creating contract: ${response.statusText}`);
+    const errorData = await response.json().catch(() => ({})); // Intenta obtener detalles del error
+    throw new Error(errorData.message || `Error ${response.status} al crear contrato`);
   }
   return response.json();
 });
 
 ipcMain.handle('contracts:update', async (event, { contractId, contractData }) => {
-  const response = await fetch(`http://localhost:3001/contracts/${contractId}`, {
+  const response = await fetch(`http://localhost:3001/api/contracts/${contractId}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: getAuthHeaders(),
     body: JSON.stringify(contractData)
   });
   if (!response.ok) {
-    throw new Error(`Error updating contract: ${response.statusText}`);
+     const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Error ${response.status} al actualizar contrato`);
   }
   return response.json();
 });
 
 ipcMain.handle('contracts:delete', async (event, contractId) => {
-  const response = await fetch(`http://localhost:3001/contracts/${contractId}`, {
+  const response = await fetch(`http://localhost:3001/api/contracts/${contractId}`, {
     method: 'DELETE',
+    headers: getAuthHeaders()
   });
-  // DELETE podría no devolver cuerpo, así que solo verificamos el status
   if (!response.ok) {
-    throw new Error(`Error deleting contract: ${response.statusText}`);
+     const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Error ${response.status} al eliminar contrato`);
   }
-  // Puedes devolver algo si es necesario, ej. { success: true }
-  return { success: true }; // O simplemente no devolver nada si invoke no lo necesita
+  // DELETE exitoso no devuelve cuerpo, status 204
+  return { success: true }; 
 });
 
 ipcMain.handle('contracts:addSupplement', async (event, { contractId, supplementData }) => {
-  const url = `http://localhost:3001/contracts/${contractId}/supplements`;
+  const url = `http://localhost:3001/api/contracts/${contractId}/supplements`;
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' /* + Auth Headers si es necesario */ },
+    headers: getAuthHeaders(),
     body: JSON.stringify(supplementData)
   });
   if (!response.ok) {
-    throw new Error(`Error añadiendo suplemento: ${response.statusText}`);
+     const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Error ${response.status} al añadir suplemento`);
   }
-  return response.json(); // Devuelve el suplemento creado (o lo que devuelva el backend)
+  return response.json();
 });
 
 ipcMain.handle('contracts:editSupplement', async (event, { contractId, supplementId, supplementData }) => {
-  const url = `http://localhost:3001/contracts/${contractId}/supplements/${supplementId}`;
+  const url = `http://localhost:3001/api/contracts/${contractId}/supplements/${supplementId}`;
   const response = await fetch(url, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' /* + Auth Headers */ },
+    headers: getAuthHeaders(),
     body: JSON.stringify(supplementData)
   });
   if (!response.ok) {
-    throw new Error(`Error actualizando suplemento: ${response.statusText}`);
+     const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Error ${response.status} al actualizar suplemento`);
   }
-  return response.json(); // Devuelve el suplemento actualizado
+  return response.json();
 });
 
-// Manejadores de archivos
+// Manejadores de archivos (no requieren auth generalmente)
 ipcMain.handle('files:select', async () => {
   const result = await dialog.showOpenDialog({
     properties: ['openFile'],
@@ -183,7 +247,8 @@ ipcMain.handle('files:select', async () => {
       { name: 'Documentos', extensions: ['pdf', 'doc', 'docx'] }
     ]
   });
-  return result.filePaths[0];
+  // Retorna undefined si se cancela, lo cual es manejado por el renderer
+  return result.filePaths[0]; 
 });
 
 // Añadir manejador para abrir archivos
@@ -216,36 +281,47 @@ function enviarNotificacionVencimiento(contrato) {
 
 // Manejadores de perfil de usuario
 ipcMain.handle('profile:fetch', async (event) => {
-  // Aquí necesitarás una forma de identificar al usuario actual.
-  // Podría ser a través de un token almacenado o pasando el ID de usuario desde el renderer si lo tienes.
-  // Asumiremos que el backend puede identificar al usuario por la sesión/token enviado.
-  // ¡IMPORTANTE! Asegúrate de que el backend requiere autenticación para esta ruta.
-  const response = await fetch('http://localhost:3001/profile', {
-    method: 'GET',
-    // Headers adicionales si son necesarios para la autenticación (ej. Authorization: Bearer token)
-    // headers: { 'Authorization': `Bearer ${getToken()}` }
+  const response = await fetch('http://localhost:3001/api/users/profile', { // Usar la ruta correcta /api/users/profile
+      method: 'GET',
+      headers: getAuthHeaders()
   });
   if (!response.ok) {
-    // Lanza un error si la respuesta no fue exitosa
-    throw new Error(`Error fetching profile: ${response.statusText}`);
+     const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Error ${response.status} al obtener perfil`);
   }
   return response.json();
 });
 
 ipcMain.handle('profile:update', async (event, profileData) => {
-  // De nuevo, asegúrate de que el backend requiere autenticación.
-  const response = await fetch('http://localhost:3001/profile', {
-    method: 'PUT', // o PATCH
-    headers: {
-      'Content-Type': 'application/json',
-      // Headers de autenticación si son necesarios
-      // 'Authorization': `Bearer ${getToken()}`
-    },
+  const response = await fetch('http://localhost:3001/api/users/profile', { // Usar la ruta correcta /api/users/profile
+    method: 'PUT',
+    headers: getAuthHeaders(),
     body: JSON.stringify(profileData)
   });
   if (!response.ok) {
-    throw new Error(`Error updating profile: ${response.statusText}`);
+     const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Error ${response.status} al actualizar perfil`);
   }
-  // Devuelve los datos actualizados del perfil
   return response.json();
+});
+
+// Manejador IPC para Estadísticas
+ipcMain.handle('statistics:fetch', async (event, filters) => {
+  const url = 'http://localhost:3001/api/statistics';
+  try {
+    const response = await fetch(url, { 
+        method: 'GET', 
+        headers: getAuthHeaders() // Usar helper para añadir token
+    });
+    if (!response.ok) {
+      let errorBody = {};
+      try { errorBody = await response.json(); } catch(e) {}
+      console.error(`Error ${response.status} fetching statistics:`, errorBody);
+      throw new Error(errorBody.message || `Error ${response.status} al obtener estadísticas`);
+    }
+    return response.json();
+  } catch (error) {
+      console.error("Error en manejador IPC statistics:fetch:", error);
+      throw error;
+  }
 });

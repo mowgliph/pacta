@@ -10,21 +10,22 @@ import { Label } from '@/renderer/components/ui/label';
 
 const Auth = () => {
   const [, navigate] = useLocation();
-  const setUser = useStore((state) => state.setUser);
+  const setUserAndToken = useStore((state) => state.setUserAndToken);
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [isLoading, setIsLoading] = useState(false);
 
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
-      const user = await loginUser(data.username, data.password);
+      const result = await loginUser(data.username, data.password);
 
-      if (user) {
-        setUser(user);
+      if (result && result.token) {
+        setUserAndToken(result.user || null, result.token);
         toast({ title: 'Éxito', description: 'Inicio de sesión correcto.' });
         navigate('/dashboard', { replace: true });
       } else {
-        toast({ title: 'Error', description: 'Credenciales inválidas.', variant: 'destructive' });
+        const errorMessage = result?.message || 'Credenciales inválidas.';
+        toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
       }
     } catch (error) {
       console.error("Login error:", error);

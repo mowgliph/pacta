@@ -214,6 +214,38 @@ export const openFile = async (filePath) => {
   }
 };
 
+/**
+ * Obtiene datos estadísticos del backend.
+ * @param {object} filters - Filtros opcionales (ej. rango de fechas).
+ * @returns {Promise<object|null>} Objeto con datos estadísticos o null en caso de error.
+ */
+export const fetchStatistics = async (filters = {}) => {
+  try {
+    // Añadir filtros como query params si es necesario
+    // const queryString = new URLSearchParams(filters).toString();
+    // const channel = `statistics:fetch?${queryString}`;
+    const statisticsData = await window.electron.ipcRenderer.invoke('statistics:fetch', filters);
+    return statisticsData;
+  } catch (error) {
+    console.error('Error al obtener estadísticas:', error);
+    return null;
+  }
+};
+
+/**
+ * Solicita al proceso principal limpiar el token de autenticación almacenado.
+ * @returns {Promise<void>}
+ */
+export const logoutUser = async () => {
+  try {
+    await window.electron.ipcRenderer.invoke('auth:logout');
+  } catch (error) {
+    // Manejar el error si es necesario, aunque el logout en el frontend
+    // probablemente procederá de todas formas.
+    console.error('Error durante el logout en el proceso principal:', error);
+  }
+};
+
 // --- Fin de funciones API de contratos ---
 
 // --- Agrega aquí otras funciones API según necesites ---
