@@ -4,23 +4,28 @@ const rateLimit = require('express-rate-limit');
 const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
+const cors = require('cors');
+const { PrismaClient } = require('@prisma/client');
 const config = require('./config');
 
 // Import routes
 const authRoutes = require('./routes/auth.route');
 const userRoutes = require('./routes/user.route');
 const contractRoutes = require('./routes/contract.route');
-const { saveFile, deleteFile } = require('./upload');
 
 const prisma = new PrismaClient();
 const app = express();
-const port = 3001;
+const port = process.env.BACKEND_PORT || 3001;
 
+app.use(cors());
 app.use(helmet());
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
 }));
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
@@ -591,6 +596,53 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`Backend server running at http://localhost:${port}`);
+// Ruta de health check (opcional)
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
 });
+
+// Middleware para manejar errores 404 (ruta no encontrada)
+app.use((req, res, next) => {
+  res.status(404).json({ message: 'Ruta no encontrada' });
+});
+
+// Middleware para manejar otros errores (ej. de Prisma, etc.)
+app.use((err, req, res, next) => {
+  console.error('[Global Error Handler]:', err);
+  // Podrías añadir manejo específico para errores de Prisma aquí
+  res.status(err.status || 500).json({
+    message: err.message || 'Error interno del servidor',
+    // Solo incluir stack en desarrollo
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+  });
+});
+
+// --- Inicialización del Servidor ---
+const server = app.listen(port, () => {
+  console.log(`Backend server escuchando en http://localhost:${port}`);
+});
+
+// --- Manejo de Cierre Limpio (opcional pero recomendado) ---
+const gracefulShutdown = async () => {
+  console.log('Recibida señal de cierre, cerrando servidor HTTP...');
+  server.close(async () => {
+    console.log('Servidor HTTP cerrado.');
+    // Cerrar conexión de Prisma
+    try {
+        await prisma.$disconnect();
+        console.log('Conexión Prisma desconectada.');
+    } catch (e) {
+        console.error('Error desconectando Prisma:', e);
+    }
+    process.exit(0);
+  });
+
+  // Forzar cierre después de un timeout
+  setTimeout(() => {
+    console.error('No se pudo cerrar conexiones a tiempo, forzando cierre.');
+    process.exit(1);
+  }, 10000); // 10 segundos
+};
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown); // Capturar Ctrl+C

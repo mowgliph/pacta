@@ -1,111 +1,142 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { useNavigate } from 'wouter';
-import useStore from '../store/useStore';
-import ModalComponent from '../components/modal';
+import { toast } from '@/renderer/hooks/use-toast';
+import { useLocation } from 'wouter';
+import useStore from '@/renderer/store/useStore';
+import { fetchUserProfile, updateUserProfile } from '@/renderer/api/electronAPI';
+import { Button } from "@/renderer/components/ui/button";
+import { Input } from "@/renderer/components/ui/input";
+import { Label } from "@/renderer/components/ui/label";
+import { Checkbox } from "@/renderer/components/ui/checkbox";
 
 const UserProfile = () => {
-  const navigate = useNavigate();
-  const { logout } = useStore();
-  const { register, handleSubmit, formState: { errors } } = useForm();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [, navigate] = useLocation();
+  const { user, setUser, logout } = useStore((state) => ({
+    user: state.user,
+    setUser: state.setUser,
+    logout: state.logout,
+  }));
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm();
+
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      setIsLoadingData(true);
+      try {
+        const profileData = await fetchUserProfile();
+        if (profileData) {
+          reset({
+            username: profileData.username,
+            email: profileData.email,
+            notifications: profileData.settings?.notifications || false,
+          });
+        } else {
+          toast({ title: 'Error', description: 'No se pudieron cargar los datos del perfil.', variant: 'destructive' });
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        toast({ title: 'Error', description: 'Ocurrió un error al cargar el perfil.', variant: 'destructive' });
+      } finally {
+        setIsLoadingData(false);
+      }
+    };
+
+    loadProfile();
+  }, [reset]);
 
   const onSubmit = async (data) => {
-    try {
-      const response = await fetch('http://localhost:3001/profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+    const updateData = { ...data };
+    if (!updateData.password) {
+      delete updateData.password;
+    }
 
-      if (response.ok) {
-        toast.success('Perfil actualizado con éxito');
+    try {
+      const updatedProfile = await updateUserProfile(updateData);
+      if (updatedProfile) {
+        toast({ title: 'Éxito', description: 'Perfil actualizado correctamente.' });
+        reset(updatedProfile);
       } else {
-        toast.error('Error al actualizar el perfil');
+        toast({ title: 'Error', description: 'No se pudo actualizar el perfil.', variant: 'destructive' });
       }
     } catch (error) {
-      toast.error('Ocurrió un error');
+      console.error("Error updating profile:", error);
+      toast({ title: 'Error', description: `Ocurrió un error al actualizar: ${error.message || 'Error desconocido'}`, variant: 'destructive' });
     }
   };
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate('/auth', { replace: true });
   };
 
+  if (isLoadingData) {
+    return <div className="p-8 text-center">Cargando perfil...</div>;
+  }
+
   return (
-    <div className="p-8">
-      <h1 className="text-title mb-4">Perfil de Usuario</h1>
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-8 rounded shadow-lg">
-        <div className="mb-4">
-          <label htmlFor="username" className="block mb-2 text-subtitle">Username</label>
-          <input
-            type="text"
+    <div className="p-8 max-w-2xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Perfil de Usuario</h1>
+        <Button variant="outline" onClick={handleLogout}>Cerrar Sesión</Button>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-6 rounded-lg shadow space-y-4">
+        <div>
+          <Label htmlFor="username">Nombre de Usuario</Label>
+          <Input
             id="username"
-            {...register('username', { required: 'Username is required' })}
-            className="w-full p-2 border rounded"
+            type="text"
+            {...register('username', { required: 'El nombre de usuario es requerido' })}
+            readOnly
+            className="bg-gray-100"
           />
-          {errors.username && <p className="text-red-500 text-sm">{errors.username.message}</p>}
+          {errors.username && <p className="text-sm text-red-600 mt-1">{errors.username.message}</p>}
         </div>
-        <div className="mb-4">
-          <label htmlFor="email" className="block mb-2 text-subtitle">Email</label>
-          <input
-            type="email"
+
+        <div>
+          <Label htmlFor="email">Email</Label>
+          <Input
             id="email"
-            {...register('email', { required: 'Email is required', pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: "Invalid email address" } })}
-            className="w-full p-2 border rounded"
+            type="email"
+            {...register('email', {
+              required: 'El email es requerido',
+              pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: "Dirección de email inválida" }
+            })}
+            disabled={isSubmitting}
           />
-          {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+          {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>}
         </div>
-        <div className="mb-4">
-          <label htmlFor="password" className="block mb-2 text-subtitle">Nueva Contraseña</label>
-          <input
-            type="password"
+
+        <div>
+          <Label htmlFor="password">Nueva Contraseña (dejar en blanco para no cambiar)</Label>
+          <Input
             id="password"
+            type="password"
             {...register('password')}
-            className="w-full p-2 border rounded"
+            disabled={isSubmitting}
+            autoComplete="new-password"
           />
         </div>
-        <div className="mb-4">
-          <label htmlFor="notifications" className="block mb-2 text-subtitle">Notificaciones</label>
-          <input
-            type="checkbox"
+
+        <div className="flex items-center space-x-2">
+          <Checkbox
             id="notifications"
             {...register('notifications')}
-            className="mr-2"
+            disabled={isSubmitting}
           />
-          <label htmlFor="notifications" className="text-secondary-gray">Recibir notificaciones</label>
+          <Label htmlFor="notifications" className="font-normal">Recibir notificaciones por email</Label>
         </div>
-        <button type="submit" className="bg-primary-blue text-white p-2 rounded">Guardar</button>
-        <button className="ml-4 bg-error-red text-white p-2 rounded" onClick={() => setIsModalOpen(true)}>Cerrar Sesión</button>
+
+        <Button type="submit" disabled={isSubmitting} className="w-full">
+          {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
+        </Button>
       </form>
-      {isModalOpen && (
-        <ModalComponent title="Confirmar Cierre de Sesión" onClose={() => setIsModalOpen(false)}>
-          <p className="text-secondary-gray">¿Estás seguro de que quieres cerrar sesión?</p>
-          <div className="flex justify-end space-x-4">
-            <button
-              id="cancel-modal"
-              className="bg-secondary-gray text-white p-2 rounded"
-              onClick={() => setIsModalOpen(false)}
-            >
-              Cancelar
-            </button>
-            <button
-              id="confirm-modal"
-              className="bg-error-red text-white p-2 rounded"
-              onClick={() => {
-                setIsModalOpen(false);
-                handleLogout();
-              }}
-            >
-              Confirmar
-            </button>
-          </div>
-        </ModalComponent>
-      )}
     </div>
   );
 };

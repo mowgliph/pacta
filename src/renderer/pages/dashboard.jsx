@@ -1,8 +1,8 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { toast } from 'sonner';
-import { useNavigate } from 'wouter';
-import AnimatedButton from '../components/animatedButton';
+import { useLocation } from 'wouter';
+import useStore from '@/renderer/store/useStore';
+import { Button } from "@/renderer/components/ui/button";
 
 const data = [
   { name: 'Jan', pv: 2400, amt: 2400 },
@@ -15,12 +15,27 @@ const data = [
 ];
 
 const Dashboard = () => {
-  const navigate = useNavigate();
+  const [, navigate] = useLocation();
+  const logout = useStore((state) => state.logout);
+  const user = useStore((state) => state.user);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/auth', { replace: true });
+  };
 
   return (
     <div className="p-8">
-      <h1 className="text-title mb-4">Dashboard</h1>
-      <div className="mb-8">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <div className="flex items-center space-x-4">
+          {user && <span className="text-gray-600">Hola, {user.username || 'Usuario'}!</span>}
+          <Button variant="outline" onClick={handleLogout}>Cerrar Sesión</Button>
+        </div>
+      </div>
+
+      <div className="mb-8 bg-white p-4 rounded shadow">
+        <h2 className="text-xl font-semibold mb-2">Actividad Reciente (Ejemplo)</h2>
         <LineChart
           width={730}
           height={250}
@@ -37,18 +52,19 @@ const Dashboard = () => {
           <YAxis />
           <Tooltip />
           <Legend />
-          <Line type="monotone" dataKey="pv" stroke="#8884d8" activeDot={{ r: 8 }} />
-          <Line type="monotone" dataKey="amt" stroke="#82ca9d" />
+          <Line type="monotone" dataKey="pv" name="Visitas" stroke="#8884d8" activeDot={{ r: 8 }} />
+          <Line type="monotone" dataKey="amt" name="Contratos" stroke="#82ca9d" />
         </LineChart>
       </div>
-      <div className="flex space-x-4">
-        <AnimatedButton onClick={() => navigate('/contracts')}>Crear Contrato</AnimatedButton>
-        <AnimatedButton onClick={() => navigate('/contracts')}>Ver Contratos</AnimatedButton>
-        <AnimatedButton onClick={() => navigate('/statistics')}>Ver Estadísticas</AnimatedButton>
-        <AnimatedButton onClick={() => navigate('/profile')}>Perfil</AnimatedButton>
+
+      <div className="flex space-x-4 mb-8">
+        <Button onClick={() => navigate('/contracts')}>Gestionar Contratos</Button>
+        <Button onClick={() => navigate('/statistics')}>Ver Estadísticas</Button>
+        <Button onClick={() => navigate('/profile')}>Mi Perfil</Button>
       </div>
-      <div className="mt-8">
-        <p className="text-error-red">Alerta: Contrato XYZ vence en 3 días.</p>
+
+      <div className="mt-8 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+        <p><span className="font-bold">Alerta:</span> Contrato XYZ vence en 3 días.</p>
       </div>
     </div>
   );

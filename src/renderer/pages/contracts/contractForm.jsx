@@ -1,108 +1,255 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { useParams, useLocation } from 'wouter';
+import { toast } from '@/renderer/hooks/use-toast';
+import {
+  createContract,
+  updateContract,
+  fetchContractDetails,
+  selectFile,
+} from '@/renderer/api/electronAPI';
+import { Button } from '@/renderer/components/ui/button';
+import { Input } from '@/renderer/components/ui/input';
+import { Label } from '@/renderer/components/ui/label';
+import { Textarea } from '@/renderer/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/renderer/components/ui/select';
+import { Calendar } from '@/renderer/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/renderer/components/ui/popover';
+import { CalendarIcon, UploadCloudIcon } from 'lucide-react';
+import { cn } from '@/renderer/lib/utils';
 
-const ContractForm = ({ onSubmit, initialData = null }) => {
-  const [formData, setFormData] = useState(initialData || {
-    name: '',
-    description: '',
-    startDate: '',
-    endDate: '',
-    status: 'Active',
-    file: null
+const formatDateForInput = (date) => {
+  if (!date) return '';
+  try {
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
+    return d.toISOString().split('T')[0];
+  } catch (e) {
+    return '';
+  }
+};
+
+const ContractForm = () => {
+  const params = useParams();
+  const [, navigate] = useLocation();
+  const contractId = params.id;
+  const isEditing = !!contractId;
+
+  const [isLoadingData, setIsLoadingData] = useState(isEditing);
+  const [selectedFileName, setSelectedFileName] = useState('');
+  const [selectedFilePath, setSelectedFilePath] = useState('');
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm({
+    defaultValues: {
+      name: '',
+      type: '',
+      description: '',
+      startDate: '',
+      endDate: '',
+      status: 'Active',
+    },
   });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (formData.file) {
-      const filePath = await window.electronAPI.files.select();
-      formData.fileUrl = filePath;
+  useEffect(() => {
+    if (isEditing) {
+      const loadContract = async () => {
+        setIsLoadingData(true);
+        try {
+          const contractData = await fetchContractDetails(contractId);
+          if (contractData) {
+            reset({
+              name: contractData.name,
+              type: contractData.type,
+              description: contractData.description,
+              startDate: formatDateForInput(contractData.startDate),
+              endDate: formatDateForInput(contractData.endDate),
+              status: contractData.status,
+            });
+          } else {
+            toast({ title: 'Error', description: 'No se encontró el contrato.', variant: 'destructive' });
+            navigate('/contracts');
+          }
+        } catch (error) {
+          console.error("Error fetching contract details:", error);
+          toast({ title: 'Error', description: 'No se pudieron cargar los datos del contrato.', variant: 'destructive' });
+          navigate('/contracts');
+        } finally {
+          setIsLoadingData(false);
+        }
+      };
+      loadContract();
+    } else {
+      reset();
+      setSelectedFileName('');
+      setSelectedFilePath('');
     }
-    onSubmit(formData);
+  }, [isEditing, contractId, reset, navigate]);
+
+  const handleFileSelect = async () => {
+    const filePath = await selectFile();
+    if (filePath) {
+      setSelectedFilePath(filePath);
+      const fileName = filePath.split(/\\|\//).pop();
+      setSelectedFileName(fileName || 'Archivo seleccionado');
+    }
   };
 
+  const onSubmit = async (data) => {
+    try {
+      let result = null;
+      const payload = {
+        ...data,
+        ...(selectedFilePath && { documentPath: selectedFilePath }),
+      };
+
+      if (isEditing) {
+        result = await updateContract(contractId, payload);
+      } else {
+        result = await createContract(payload);
+      }
+
+      if (result) {
+        toast({
+          title: 'Éxito',
+          description: `Contrato ${isEditing ? 'actualizado' : 'creado'} correctamente.`,
+        });
+        navigate('/contracts');
+      } else {
+        toast({ title: 'Error', description: `No se pudo ${isEditing ? 'actualizar' : 'crear'} el contrato.`, variant: 'destructive' });
+      }
+    } catch (error) {
+      console.error("Error submitting contract:", error);
+      toast({ title: 'Error', description: `Ocurrió un error: ${error.message || 'Error desconocido'}`, variant: 'destructive' });
+    }
+  };
+
+  if (isLoadingData) {
+    return <div className="p-8 text-center">Cargando datos del contrato...</div>;
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-4 mt-4">
-      <h2 className="text-xl font-semibold mb-4">
-        {initialData ? 'Editar Contrato' : 'Nuevo Contrato'}
-      </h2>
-      
-      <div className="space-y-4">
+    <div className="p-8 max-w-3xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6">
+        {isEditing ? 'Editar Contrato' : 'Crear Nuevo Contrato'}
+      </h1>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-6 rounded-lg shadow space-y-6">
         <div>
-          <label className="block text-sm font-medium">Nombre</label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={e => setFormData({...formData, name: e.target.value})}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-            required
+          <Label htmlFor="name">Nombre del Contrato</Label>
+          <Input
+            id="name"
+            {...register('name', { required: 'El nombre es requerido' })}
+            disabled={isSubmitting}
+            className="mt-1"
           />
+          {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>}
         </div>
 
         <div>
-          <label className="block text-sm font-medium">Descripción</label>
-          <textarea
-            value={formData.description}
-            onChange={e => setFormData({...formData, description: e.target.value})}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-            rows="3"
-            required
+          <Label htmlFor="type">Tipo de Contrato</Label>
+          <Input
+            id="type"
+            {...register('type')}
+            disabled={isSubmitting}
+            placeholder="Ej. Acuerdo de Servicio, NDA"
+            className="mt-1"
+          />
+          {errors.type && <p className="text-sm text-red-600 mt-1">{errors.type.message}</p>}
+        </div>
+
+        <div>
+          <Label htmlFor="description">Descripción</Label>
+          <Textarea
+            id="description"
+            {...register('description')}
+            rows={4}
+            disabled={isSubmitting}
+            className="mt-1"
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium">Fecha Inicio</label>
-            <input
+            <Label htmlFor="startDate">Fecha de Inicio</Label>
+            <Input
+              id="startDate"
               type="date"
-              value={formData.startDate}
-              onChange={e => setFormData({...formData, startDate: e.target.value})}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              required
+              {...register('startDate')}
+              disabled={isSubmitting}
+              className="mt-1"
             />
+            {errors.startDate && <p className="text-sm text-red-600 mt-1">{errors.startDate.message}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium">Fecha Fin</label>
-            <input
+            <Label htmlFor="endDate">Fecha de Vencimiento</Label>
+            <Input
+              id="endDate"
               type="date"
-              value={formData.endDate}
-              onChange={e => setFormData({...formData, endDate: e.target.value})}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-              required
+              {...register('endDate')}
+              disabled={isSubmitting}
+              className="mt-1"
             />
+            {errors.endDate && <p className="text-sm text-red-600 mt-1">{errors.endDate.message}</p>}
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium">Estado</label>
-          <select
-            value={formData.status}
-            onChange={e => setFormData({...formData, status: e.target.value})}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
-          >
-            <option value="Active">Activo</option>
-            <option value="Pending">Pendiente</option>
-            <option value="Expired">Vencido</option>
-            <option value="Terminated">Terminado</option>
-          </select>
+          <Label htmlFor="status">Estado</Label>
+          <Controller
+            name="status"
+            control={control}
+            render={({ field }) => (
+              <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Selecciona un estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Active">Activo</SelectItem>
+                  <SelectItem value="Pending">Pendiente</SelectItem>
+                  <SelectItem value="Expired">Vencido</SelectItem>
+                  <SelectItem value="Terminated">Terminado</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
         </div>
 
         <div>
-          <label className="block text-sm font-medium">Documento</label>
-          <input
-            type="file"
-            onChange={e => setFormData({...formData, file: e.target.files[0]})}
-            className="mt-1 block w-full"
-            accept=".pdf,.doc,.docx"
-          />
+          <Label>Documento Principal</Label>
+          <div className="mt-1 flex items-center space-x-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleFileSelect}
+              disabled={isSubmitting}
+            >
+              <UploadCloudIcon className="mr-2 h-4 w-4" />
+              Seleccionar Archivo
+            </Button>
+            {selectedFileName && (
+                <span className="text-sm text-gray-600 truncate" title={selectedFileName}>
+                    {selectedFileName}
+                 </span>
+            )}
+          </div>
         </div>
-      </div>
 
-      <button
-        type="submit"
-        className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700"
-      >
-        {initialData ? 'Actualizar' : 'Crear'} Contrato
-      </button>
-    </form>
+        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+           <Button type="button" variant="ghost" onClick={() => navigate('/contracts')} disabled={isSubmitting}>
+             Cancelar
+           </Button>
+           <Button type="submit" disabled={isSubmitting}>
+             {isSubmitting ? (isEditing ? 'Guardando...' : 'Creando...') : (isEditing ? 'Guardar Cambios' : 'Crear Contrato')}
+           </Button>
+        </div>
+      </form>
+    </div>
   );
 };
 
