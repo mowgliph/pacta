@@ -1,9 +1,17 @@
+/** @type {import('tailwindcss').Config} */
 module.exports = {
     darkMode: ["class"],
     content: [
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
+  	container: {
+  		center: true,
+  		padding: "2rem",
+  		screens: {
+  			"2xl": "1400px",
+  		},
+  	},
   	extend: {
   		colors: {
   			'dark-bg': '#1E293B',
@@ -13,9 +21,9 @@ module.exports = {
   			'success-green': '#34D399',
   			'error-red': '#F87171',
   			'secondary-gray': '#D1D5DB',
-  			background: 'hsl(var(--background))',
+  			background_hsl: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
-  			card: {
+  			card_hsl: {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
   			},
@@ -35,7 +43,7 @@ module.exports = {
   				DEFAULT: 'hsl(var(--muted))',
   				foreground: 'hsl(var(--muted-foreground))'
   			},
-  			accent: {
+  			accent_hsl: {
   				DEFAULT: 'hsl(var(--accent))',
   				foreground: 'hsl(var(--accent-foreground))'
   			},
@@ -52,13 +60,33 @@ module.exports = {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
-  			}
+  			},
+  			brand: {
+  				DEFAULT: '#A0D9B4',
+  				dark: '#2A9D8F',
+  				light: '#E8F5E9',
+  			},
+  			accent: {
+  				purple: '#D8B4FE',
+  				blue: '#A5B4FC',
+  				green: '#A0D9B4',
+  			},
+  			text: {
+  				DEFAULT: '#1F2937',
+  				secondary: '#6B7280',
+  				light: '#9CA3AF',
+  			},
+  			background: {
+  				DEFAULT: '#F9FAFB',
+  				card: '#FFFFFF',
+  			},
   		},
   		fontFamily: {
   			inter: [
   				'Inter',
   				'sans-serif'
-  			]
+  			],
+  			sans: ['Inter', 'sans-serif'],
   		},
   		fontSize: {
   			title: [
@@ -87,7 +115,21 @@ module.exports = {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
-  		}
+  		},
+  		keyframes: {
+  			"accordion-down": {
+  				from: { height: 0 },
+  				to: { height: "var(--radix-accordion-content-height)" },
+  			},
+  			"accordion-up": {
+  				from: { height: "var(--radix-accordion-content-height)" },
+  				to: { height: 0 },
+  			},
+  		},
+  		animation: {
+  			"accordion-down": "accordion-down 0.2s ease-out",
+  			"accordion-up": "accordion-up 0.2s ease-out",
+  		},
   	}
   },
   plugins: [require("tailwindcss-animate")],

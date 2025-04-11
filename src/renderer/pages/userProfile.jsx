@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { toast } from '@/renderer/hooks/use-toast';
 import { useLocation } from 'wouter';
 import useStore from '@/renderer/store/useStore';
@@ -8,6 +8,8 @@ import { Button } from "@/renderer/components/ui/button";
 import { Input } from "@/renderer/components/ui/input";
 import { Label } from "@/renderer/components/ui/label";
 import { Checkbox } from "@/renderer/components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/renderer/components/ui/card";
+import { Loader2 } from 'lucide-react';
 
 const UserProfile = () => {
   const [, navigate] = useLocation();
@@ -48,7 +50,7 @@ const UserProfile = () => {
     };
 
     loadProfile();
-  }, [reset]);
+  }, [reset, toast]);
 
   const onSubmit = async (data) => {
     const updateData = { ...data };
@@ -76,67 +78,78 @@ const UserProfile = () => {
   };
 
   if (isLoadingData) {
-    return <div className="p-8 text-center">Cargando perfil...</div>;
+    return (
+      <div className="flex justify-center items-center p-10">
+        <Loader2 className="h-8 w-8 animate-spin mr-3" />
+        <span>Cargando perfil...</span>
+      </div>
+    );
   }
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Perfil de Usuario</h1>
-        <Button variant="outline" onClick={handleLogout}>Cerrar Sesión</Button>
-      </div>
+    <div className="space-y-6">
+      <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Perfil de Usuario</h1>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-6 rounded-lg shadow space-y-4">
-        <div>
-          <Label htmlFor="username">Nombre de Usuario</Label>
-          <Input
-            id="username"
-            type="text"
-            {...register('username', { required: 'El nombre de usuario es requerido' })}
-            readOnly
-            className="bg-gray-100"
-          />
-          {errors.username && <p className="text-sm text-red-600 mt-1">{errors.username.message}</p>}
-        </div>
+      <Card>
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <CardContent className="p-6 space-y-4">
+            <div>
+              <Label htmlFor="username">Nombre de Usuario</Label>
+              <Input
+                id="username"
+                type="text"
+                {...register('username', { required: 'El nombre de usuario es requerido' })}
+                readOnly
+                className="mt-1 bg-gray-100"
+              />
+              {errors.username && <p className="text-sm text-red-600 mt-1">{errors.username.message}</p>}
+            </div>
 
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            {...register('email', {
-              required: 'El email es requerido',
-              pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: "Dirección de email inválida" }
-            })}
-            disabled={isSubmitting}
-          />
-          {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>}
-        </div>
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                {...register('email', {
+                  required: 'El email es requerido',
+                  pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: "Dirección de email inválida" }
+                })}
+                disabled={isSubmitting}
+                className="mt-1"
+              />
+              {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>}
+            </div>
 
-        <div>
-          <Label htmlFor="password">Nueva Contraseña (dejar en blanco para no cambiar)</Label>
-          <Input
-            id="password"
-            type="password"
-            {...register('password')}
-            disabled={isSubmitting}
-            autoComplete="new-password"
-          />
-        </div>
+            <div>
+              <Label htmlFor="password">Nueva Contraseña (dejar en blanco para no cambiar)</Label>
+              <Input
+                id="password"
+                type="password"
+                {...register('password')}
+                disabled={isSubmitting}
+                autoComplete="new-password"
+                className="mt-1"
+              />
+            </div>
 
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="notifications"
-            {...register('notifications')}
-            disabled={isSubmitting}
-          />
-          <Label htmlFor="notifications" className="font-normal">Recibir notificaciones por email</Label>
-        </div>
-
-        <Button type="submit" disabled={isSubmitting} className="w-full">
-          {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
-        </Button>
-      </form>
+            <div className="flex items-center space-x-2 pt-2">
+              <Checkbox
+                id="notifications"
+                {...register('notifications')}
+                disabled={isSubmitting}
+              />
+              <Label htmlFor="notifications" className="font-normal cursor-pointer">
+                Recibir notificaciones por email
+              </Label>
+            </div>
+          </CardContent>
+          <CardFooter className="border-t px-6 py-4">
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
+            </Button>
+          </CardFooter>
+        </form>
+      </Card>
     </div>
   );
 };

@@ -71,7 +71,7 @@ const AdvancedStatistics = () => {
     // Convertir { Active: 10, Pending: 5 } a [{ name: 'Active', count: 10 }, { name: 'Pending', count: 5 }]
     const statusChartData = Object.entries(statsData.statusCounts || {}).map(([status, count]) => ({ 
         name: status, 
-        Contratos: count // La clave 'Contratos' se usará en la barra del gráfico
+        Contratos: count 
     }));
 
     content = (
@@ -134,15 +134,17 @@ const AdvancedStatistics = () => {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Estadísticas Avanzadas</h1>
-        <div>
-          <Button variant="outline" onClick={() => navigate('/dashboard')} className="mr-2">Volver</Button>
-          <Button onClick={exportReport}>Exportar Reporte</Button>
-        </div>
+    <div className="space-y-6"> { /* Asegurar espaciado */}
+      {/* Encabezado Consistente */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Estadísticas Avanzadas</h1>
+        {/* Botón Exportar (funcionalidad pendiente) */}
+        <Button onClick={exportReport}>Exportar Reporte</Button>
+        {/* Quitar botón Volver si ya está en Sidebar */} 
       </div>
-      <div className="mt-4">
+      
+      {/* Mostrar contenido (carga, error o datos) */}
+      <div className="mt-4"> { /* O quitar este div si space-y-6 es suficiente */} 
         {content}
       </div>
     </div>

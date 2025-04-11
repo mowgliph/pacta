@@ -64,7 +64,7 @@ const ContractList = ({ contracts = [], onDelete }) => {
                 </Button>
               </TableCell>
             </TableRow>
-          ))}
+        ))}
         </TableBody>
       </Table>
     </div>

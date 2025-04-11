@@ -15,6 +15,8 @@ import ContractForm from './contractForm';
 import ContractFilters from './contractFilters';
 import ContractDetails from './contractDetails';
 import { Button } from "@/renderer/components/ui/button"; // Para el botón de crear
+import { Card, CardContent, CardHeader, CardTitle } from "@/renderer/components/ui/card"; // Importar Card
+import { Loader2, PlusCircle } from 'lucide-react'; // Iconos
 
 const ContractManagement = () => {
   const [, navigate] = useLocation();
@@ -42,7 +44,7 @@ const ContractManagement = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [/* filters */]); // Dependencia de los filtros si se usan
+  }, [/* filters */ toast]); // Añadir toast
 
   // Cargar contratos al montar y cuando cambien los filtros (si se implementan)
   useEffect(() => {
@@ -68,34 +70,42 @@ const ContractManagement = () => {
 
   let content;
   if (isLoading) {
-    content = <div className="text-center p-4">Cargando contratos...</div>;
+    content = (
+        <div className="flex justify-center items-center p-10">
+            <Loader2 className="h-8 w-8 animate-spin mr-3" />
+            <span>Cargando contratos...</span>
+        </div>
+    );
   } else if (error) {
-    content = <div className="text-center p-4 text-red-600">{error}</div>;
+    content = <p className="text-red-600 text-center p-4">{error}</p>;
   } else {
     // Pasa los contratos y la función de eliminar a ContractList
     content = <ContractList contracts={contracts} onDelete={handleDelete} />;
   }
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Gestión de Contratos</h1>
-        {/* Botón para navegar a la página/modal de creación */}
-        <Button onClick={() => navigate('/contracts/new')}>Crear Nuevo Contrato</Button>
-      </div>
+    <div className="space-y-6">
+        {/* Encabezado Consistente */}
+        <div className="flex justify-between items-center">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Gestión de Contratos</h1>
+            <Button onClick={() => navigate('/contracts/new')}>
+                <PlusCircle className="mr-2 h-4 w-4"/>
+                Crear Nuevo Contrato
+            </Button>
+        </div>
 
-      {/* Filtros (si se implementan) */}
+      {/* Filtros (si se implementan irían aquí, quizás en una Card separada) */}
       {/* <ContractFilters filters={filters} onFilterChange={setFilters} /> */}
 
-      {/* Contenido: Lista o estado de carga/error */}
-      <div className="mt-4">
-        {content}
-      </div>
-
-      {/* Aquí podrías tener lógica para mostrar un modal de creación/edición 
-          o manejar rutas anidadas para /contracts/new, /contracts/:id/edit */} 
-      {/* Ejemplo: <Route path="/contracts/new"><ContractForm onSubmit={handleCreate} /></Route> */}
-      {/* Ejemplo: <Route path="/contracts/:id/edit"><ContractForm contractId={params.id} onSubmit={handleUpdate} /></Route> */}
+      {/* Lista/Tabla de Contratos dentro de una Card */}
+      {/* No añadimos padding a CardContent si la tabla ya tiene el suyo */}
+      <Card>
+          {/* Podríamos añadir un CardHeader si queremos un título dentro de la Card */}
+          {/* <CardHeader><CardTitle>Lista de Contratos</CardTitle></CardHeader> */}
+          <CardContent className="p-0"> { /* Sin padding para que la tabla ocupe todo */}
+            {content} { /* Renderiza la lista/tabla o el estado de carga/error */} 
+          </CardContent>
+      </Card>
 
     </div>
   );

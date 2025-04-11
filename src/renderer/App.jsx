@@ -10,6 +10,7 @@ import UserProfile from './pages/userProfile';
 import ContractForm from './pages/contracts/contractForm';
 import ContractDetails from './pages/contracts/contractDetails';
 import { Toaster } from "@/renderer/components/ui/toaster"
+import Layout from '@/renderer/components/Layout';
 
 // Componente para proteger rutas
 const PrivateRoute = ({ component: Component, ...rest }) => {
@@ -21,6 +22,13 @@ const PrivateRoute = ({ component: Component, ...rest }) => {
     </Route>
   );
 };
+
+// Componente para envolver rutas privadas con el Layout
+const PrivateLayout = ({ component: Component, ...rest }) => (
+  <Layout>
+    <Component {...rest} />
+  </Layout>
+);
 
 const App = () => {
   const user = useStore((state) => state.user);
@@ -36,14 +44,35 @@ const App = () => {
             {user ? <Redirect to="/dashboard" /> : <Auth />}
           </Route>
 
-          {/* Rutas Privadas */}
-          <PrivateRoute path="/dashboard" component={Dashboard} />
-          <PrivateRoute path="/contracts" component={ContractManagement} />
-          <PrivateRoute path="/contracts/new" component={ContractForm} />
-          <PrivateRoute path="/contracts/:id/edit" component={ContractForm} />
-          <PrivateRoute path="/contracts/:id" component={ContractDetails} />
-          <PrivateRoute path="/statistics" component={AdvancedStatistics} />
-          <PrivateRoute path="/profile" component={UserProfile} />
+          {/* Rutas Privadas (envueltas con Layout) */}
+          <PrivateRoute 
+            path="/dashboard" 
+            component={() => <PrivateLayout component={Dashboard} />} 
+          />
+          <PrivateRoute 
+            path="/contracts" 
+            component={() => <PrivateLayout component={ContractManagement} />} 
+          />
+          <PrivateRoute 
+            path="/contracts/new" 
+            component={() => <PrivateLayout component={ContractForm} />} 
+          />
+          <PrivateRoute 
+            path="/contracts/:id/edit" 
+            component={(params) => <PrivateLayout component={ContractForm} {...params} />}
+          />
+          <PrivateRoute 
+            path="/contracts/:id" 
+            component={(params) => <PrivateLayout component={ContractDetails} {...params} />}
+          />
+          <PrivateRoute 
+            path="/statistics" 
+            component={() => <PrivateLayout component={AdvancedStatistics} />} 
+          />
+          <PrivateRoute 
+            path="/profile" 
+            component={() => <PrivateLayout component={UserProfile} />} 
+          />
 
           {/* Redirección por defecto si ninguna ruta coincide (opcional) */}
           {/* Podrías redirigir a / o /dashboard dependiendo de si está logueado */}
