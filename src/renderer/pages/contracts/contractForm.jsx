@@ -17,6 +17,8 @@ import { Calendar } from '@/renderer/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/renderer/components/ui/popover';
 import { CalendarIcon, UploadCloudIcon } from 'lucide-react';
 import { cn } from '@/renderer/lib/utils';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { ContractSchema } from '@/utils/validation/schemas';
 
 const formatDateForInput = (date) => {
   if (!date) return '';
@@ -40,19 +42,20 @@ const ContractForm = () => {
   const [selectedFilePath, setSelectedFilePath] = useState('');
 
   const {
-    register,
+    control,
     handleSubmit,
     reset,
-    control,
     formState: { errors, isSubmitting },
   } = useForm({
+    resolver: zodResolver(ContractSchema),
     defaultValues: {
       name: '',
       type: '',
       description: '',
-      startDate: '',
-      endDate: '',
+      startDate: new Date(),
+      endDate: new Date(),
       status: 'Active',
+      fileUrl: ''
     },
   });
 
@@ -102,17 +105,16 @@ const ContractForm = () => {
 
   const onSubmit = async (data) => {
     try {
-      let result = null;
       const payload = {
         ...data,
+        startDate: new Date(data.startDate),
+        endDate: new Date(data.endDate),
         ...(selectedFilePath && { documentPath: selectedFilePath }),
       };
 
-      if (isEditing) {
-        result = await updateContract(contractId, payload);
-      } else {
-        result = await createContract(payload);
-      }
+      const result = isEditing 
+        ? await updateContract(contractId, payload)
+        : await createContract(payload);
 
       if (result) {
         toast({
@@ -121,11 +123,15 @@ const ContractForm = () => {
         });
         navigate('/contracts');
       } else {
-        toast({ title: 'Error', description: `No se pudo ${isEditing ? 'actualizar' : 'crear'} el contrato.`, variant: 'destructive' });
+        throw new Error(`No se pudo ${isEditing ? 'actualizar' : 'crear'} el contrato.`);
       }
     } catch (error) {
       console.error("Error submitting contract:", error);
-      toast({ title: 'Error', description: `Ocurrió un error: ${error.message || 'Error desconocido'}`, variant: 'destructive' });
+      toast({ 
+        title: 'Error', 
+        description: error.message || 'Error desconocido', 
+        variant: 'destructive' 
+      });
     }
   };
 
@@ -140,114 +146,151 @@ const ContractForm = () => {
       </h1>
 
       <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-6 rounded-lg shadow space-y-6">
-        <div>
-          <Label htmlFor="name">Nombre del Contrato</Label>
-          <Input
-            id="name"
-            {...register('name', { required: 'El nombre es requerido' })}
-            disabled={isSubmitting}
-            className="mt-1"
-          />
-          {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>}
-        </div>
-
-        <div>
-          <Label htmlFor="type">Tipo de Contrato</Label>
-          <Input
-            id="type"
-            {...register('type')}
-            disabled={isSubmitting}
-            placeholder="Ej. Acuerdo de Servicio, NDA"
-            className="mt-1"
-          />
-          {errors.type && <p className="text-sm text-red-600 mt-1">{errors.type.message}</p>}
-        </div>
-
-        <div>
-          <Label htmlFor="description">Descripción</Label>
-          <Textarea
-            id="description"
-            {...register('description')}
-            rows={4}
-            disabled={isSubmitting}
-            className="mt-1"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          {/* Name field */}
           <div>
-            <Label htmlFor="startDate">Fecha de Inicio</Label>
-            <Input
-              id="startDate"
-              type="date"
-              {...register('startDate')}
-              disabled={isSubmitting}
-              className="mt-1"
+            <Label htmlFor="name">Nombre del Contrato</Label>
+            <Controller
+              name="name"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  id="name"
+                  disabled={isSubmitting}
+                  className={cn("mt-1", errors.name && "border-red-500")}
+                />
+              )}
             />
-            {errors.startDate && <p className="text-sm text-red-600 mt-1">{errors.startDate.message}</p>}
+            {errors.name && <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>}
           </div>
+
+          {/* Type field */}
           <div>
-            <Label htmlFor="endDate">Fecha de Vencimiento</Label>
-            <Input
-              id="endDate"
-              type="date"
-              {...register('endDate')}
-              disabled={isSubmitting}
-              className="mt-1"
+            <Label htmlFor="type">Tipo de Contrato</Label>
+            <Controller
+              name="type"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  id="type"
+                  disabled={isSubmitting}
+                  placeholder="Ej. Acuerdo de Servicio, NDA"
+                  className={cn("mt-1", errors.type && "border-red-500")}
+                />
+              )}
             />
-            {errors.endDate && <p className="text-sm text-red-600 mt-1">{errors.endDate.message}</p>}
+            {errors.type && <p className="text-sm text-red-600 mt-1">{errors.type.message}</p>}
+          </div>
+
+          {/* Description field */}
+          <div>
+            <Label htmlFor="description">Descripción</Label>
+            <Controller
+              name="description"
+              control={control}
+              render={({ field }) => (
+                <Textarea
+                  {...field}
+                  id="description"
+                  rows={4}
+                  disabled={isSubmitting}
+                  className={cn("mt-1", errors.description && "border-red-500")}
+                />
+              )}
+            />
+            {errors.description && <p className="text-sm text-red-600 mt-1">{errors.description.message}</p>}
+          </div>
+
+          {/* Dates */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Start Date */}
+            <div>
+              <Label>Fecha de Inicio</Label>
+              <Controller
+                name="startDate"
+                control={control}
+                render={({ field }) => (
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    disabled={(date) => date < new Date()}
+                    className={cn("rounded-md border", errors.startDate && "border-red-500")}
+                  />
+                )}
+              />
+              {errors.startDate && <p className="text-sm text-red-600 mt-1">{errors.startDate.message}</p>}
+            </div>
+
+            {/* End Date */}
+            <div>
+              <Label>Fecha de Fin</Label>
+              <Controller
+                name="endDate"
+                control={control}
+                render={({ field }) => (
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    disabled={(date) => date < field.value}
+                    className={cn("rounded-md border", errors.endDate && "border-red-500")}
+                  />
+                )}
+              />
+              {errors.endDate && <p className="text-sm text-red-600 mt-1">{errors.endDate.message}</p>}
+            </div>
+          </div>
+
+          {/* Status */}
+          <div>
+            <Label>Estado</Label>
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <SelectTrigger className={cn(errors.status && "border-red-500")}>
+                    <SelectValue placeholder="Seleccionar estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Activo</SelectItem>
+                    <SelectItem value="Inactive">Inactivo</SelectItem>
+                    <SelectItem value="Pending">Pendiente</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.status && <p className="text-sm text-red-600 mt-1">{errors.status.message}</p>}
+          </div>
+
+          {/* File Upload */}
+          <div>
+            <Label>Documento Adjunto</Label>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleFileSelect}
+                className={cn(errors.fileUrl && "border-red-500")}
+              >
+                <UploadCloudIcon className="mr-2 h-4 w-4" />
+                {selectedFileName || 'Seleccionar archivo'}
+              </Button>
+            </div>
+            {errors.fileUrl && <p className="text-sm text-red-600 mt-1">{errors.fileUrl.message}</p>}
           </div>
         </div>
 
-        <div>
-          <Label htmlFor="status">Estado</Label>
-          <Controller
-            name="status"
-            control={control}
-            render={({ field }) => (
-              <Select onValueChange={field.onChange} value={field.value} disabled={isSubmitting}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Selecciona un estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Active">Activo</SelectItem>
-                  <SelectItem value="Pending">Pendiente</SelectItem>
-                  <SelectItem value="Expired">Vencido</SelectItem>
-                  <SelectItem value="Terminated">Terminado</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          />
-        </div>
-
-        <div>
-          <Label>Documento Principal</Label>
-          <div className="mt-1 flex items-center space-x-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleFileSelect}
-              disabled={isSubmitting}
-            >
-              <UploadCloudIcon className="mr-2 h-4 w-4" />
-              Seleccionar Archivo
-            </Button>
-            {selectedFileName && (
-                <span className="text-sm text-gray-600 truncate" title={selectedFileName}>
-                    {selectedFileName}
-                 </span>
-            )}
-          </div>
-        </div>
-
-        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-           <Button type="button" variant="ghost" onClick={() => navigate('/contracts')} disabled={isSubmitting}>
-             Cancelar
-           </Button>
-           <Button type="submit" disabled={isSubmitting}>
-             {isSubmitting ? (isEditing ? 'Guardando...' : 'Creando...') : (isEditing ? 'Guardar Cambios' : 'Crear Contrato')}
-           </Button>
-        </div>
+        <Button 
+          type="submit" 
+          className="w-full"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? 'Guardando...' : (isEditing ? 'Actualizar Contrato' : 'Crear Contrato')}
+        </Button>
       </form>
     </div>
   );

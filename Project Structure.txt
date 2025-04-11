@@ -4,6 +4,18 @@ pacta/
 │   └── index.html
 ├── src/
 │   ├── backend/
+│   │   ├── config/
+│   │   │   └── index.js
+│   │   ├── middleware/
+│   │   │   ├── auth.middleware.js
+│   │   │   ├── contract.permission.middleware.js
+│   │   │   └── upload.middleware.js
+│   │   ├── routes/
+│   │   │   ├── auth.route.js
+│   │   │   ├── contract.route.js
+│   │   │   └── user.route.js
+│   │   ├── utils/
+│   │   │   └── schemas.zod.js
 │   │   ├── uploads.js
 │   │   └── index.js
 │   ├── main/
@@ -13,31 +25,58 @@ pacta/
 │   │   ├── assets/
 │   │   │   └── logo.png
 │   │   ├── components/
+│   │   │   ├── ui/
+│   │   │   │   ├── button.tsx
+│   │   │   │   ├── calendar.tsx
+│   │   │   │   ├── dialog.tsx
+│   │   │   │   ├── input.tsx
+│   │   │   │   ├── textarea.tsx
+│   │   │   │   └── toaster.tsx
+│   │   │   ├── Layout.jsx
 │   │   │   ├── Modal.jsx
 │   │   │   ├── Carousel.jsx
 │   │   │   ├── DraggableList.jsx
 │   │   │   └── VirtualizedList.jsx
 │   │   ├── pages/
-│   │   │   ├── Public.jsx
-│   │   │   ├── Auth.jsx
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── ContractManagement.jsx
-│   │   │   ├── AdvancedStatistics.jsx
-│   │   │   └── UserProfile.jsx
+│   │   │   ├── contracts/
+│   │   │   │   ├── contractDetails.jsx
+│   │   │   │   ├── contractFilters.jsx
+│   │   │   │   ├── contractForm.jsx
+│   │   │   │   ├── contractList.jsx
+│   │   │   │   ├── contractManagement.jsx
+│   │   │   │   └── SupplementModal.jsx
+│   │   │   ├── public.jsx
+│   │   │   ├── auth.jsx
+│   │   │   ├── dashboard.jsx
+│   │   │   ├── advancedStatistics.jsx
+│   │   │   └── userProfile.jsx
 │   │   ├── store/
 │   │   │   └── useStore.js
 │   │   ├── utils/
 │   │   │   └── toastConfig.js
+│   │   ├── hooks/
+│   │   │   └── use-toast.js
+│   │   ├── lib/
+│   │   │   └── utils.ts
+│   │   ├── api/
+│   │   │   └── electronAPI.js
 │   │   └── App.jsx
 ├── prisma/
 │   └── schema.prisma
-├── backups/
+├── data/
+│   ├── backups/
+│   └── uploads/
+├── docs/
+│   ├── pacta.md
+│   └── CHANGELOG.md
 ├── .env
 ├── .eslintrc.json
 ├── .prettierrc
+├── components.json
 ├── electron-builder.yml
 ├── package.json
 ├── playwright.config.js
+├── tailwind.config.js
 ├── tsconfig.json
 ├── vite.config.js
 └── vitest.config.js

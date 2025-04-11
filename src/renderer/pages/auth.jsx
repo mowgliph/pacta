@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { AuthSchema } from '@/utils/validation/schemas';
 import { toast } from '@/renderer/hooks/use-toast';
 import { useLocation } from 'wouter';
 import useStore from '@/renderer/store/useStore';
@@ -11,7 +13,9 @@ import { Label } from '@/renderer/components/ui/label';
 const Auth = () => {
   const [, navigate] = useLocation();
   const setUserAndToken = useStore((state) => state.setUserAndToken);
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(AuthSchema)
+  });
   const [isLoading, setIsLoading] = useState(false);
 
   const onSubmit = async (data) => {
