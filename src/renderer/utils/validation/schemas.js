@@ -170,4 +170,55 @@ export const PermisosRolSchema = z.object({
   )
 });
 
+export const EmpresaSchema = z.object({
+  nombre: z.string()
+    .min(3, 'El nombre de la empresa debe tener al menos 3 caracteres')
+    .max(100, 'El nombre no puede exceder 100 caracteres'),
+  rif: z.string()
+    .regex(/^[JGVE]-\d{8}-\d$/, 'Formato de RIF inválido'),
+  direccion: z.string()
+    .max(500, 'La dirección no puede exceder 500 caracteres'),
+  contactoPrincipal: z.object({
+    nombre: z.string(),
+    telefono: z.string(),
+    email: z.string().email('Email de contacto inválido')
+  })
+});
+
+export const DepartamentoSchema = z.object({
+  nombre: z.string()
+    .min(2, 'El nombre del departamento debe tener al menos 2 caracteres'),
+  descripcion: z.string().optional(),
+  responsable: z.string(),
+  presupuesto: z.number().optional()
+});
+
+export const AuditoriaSchema = z.object({
+  accion: z.enum(['crear', 'modificar', 'eliminar', 'ver']),
+  entidad: z.string(),
+  detalles: z.string(),
+  fecha: z.date(),
+  usuario: z.string(),
+  cambios: z.array(z.object({
+    campo: z.string(),
+    valorAnterior: z.any(),
+    valorNuevo: z.any()
+  })).optional()
+});
+
+
+export const ValidacionesAvanzadasSchema = z.object({
+  reglas: z.array(z.object({
+    campo: z.string(),
+    tipo: z.enum(['requerido', 'dependiente', 'condicional']),
+    condicion: z.string(),
+    mensaje: z.string()
+  })),
+  dependencias: z.array(z.object({
+    campoOrigen: z.string(),
+    campoDependiente: z.string(),
+    tipo: z.enum(['habilitar', 'deshabilitar', 'mostrar', 'ocultar'])
+  }))
+});
+
 

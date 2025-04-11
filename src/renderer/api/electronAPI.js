@@ -82,13 +82,26 @@ export const crearContrato = async (datosContrato) => {
   }
 };
 
+// Enhance existing validation
 export const actualizarContrato = async (contratoId, datosContrato) => {
   try {
     const datosValidados = ContractSchema.parse(datosContrato);
+    
+    // Add pre-validation checks
+    if (datosValidados.status === 'Inactive' && datosValidados.hasActiveSupplements) {
+      throw new Error('No se puede inactivar un contrato con suplementos activos');
+    }
+
     const contratoActualizado = await window.electron.ipcRenderer.invoke('contracts:update', {
       contratoId,
       datosContrato: datosValidados
     });
+
+    // Add response validation
+    if (!contratoActualizado?.id) {
+      throw new Error('Respuesta inválida del servidor');
+    }
+
     return contratoActualizado;
   } catch (error) {
     if (error instanceof z.ZodError) {

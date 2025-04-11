@@ -19,6 +19,7 @@ import { CalendarIcon, UploadCloudIcon } from 'lucide-react';
 import { cn } from '@/renderer/lib/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ContractSchema } from '@/utils/validation/schemas';
+import { handleValidationError } from '@/renderer/utils/errorHandler';
 
 const formatDateForInput = (date) => {
   if (!date) return '';
@@ -122,15 +123,15 @@ const ContractForm = () => {
           description: `Contrato ${isEditing ? 'actualizado' : 'creado'} correctamente.`,
         });
         navigate('/contracts');
-      } else {
-        throw new Error(`No se pudo ${isEditing ? 'actualizar' : 'crear'} el contrato.`);
       }
     } catch (error) {
-      console.error("Error submitting contract:", error);
-      toast({ 
-        title: 'Error', 
-        description: error.message || 'Error desconocido', 
-        variant: 'destructive' 
+      const validationErrors = handleValidationError(error);
+      validationErrors.forEach(err => {
+        toast({ 
+          title: 'Error de Validación', 
+          description: `${err.campo}: ${err.mensaje}`,
+          variant: 'destructive' 
+        });
       });
     }
   };

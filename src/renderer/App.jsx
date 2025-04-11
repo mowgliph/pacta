@@ -11,6 +11,7 @@ import ContractForm from './pages/contracts/contractForm';
 import ContractDetails from './pages/contracts/contractDetails';
 import { Toaster } from "@/renderer/components/ui/toaster"
 import Layout from '@/renderer/components/Layout';
+import { motion } from 'framer-motion';
 
 // Componente para proteger rutas
 const PrivateRoute = ({ component: Component, ...rest }) => {
@@ -23,11 +24,38 @@ const PrivateRoute = ({ component: Component, ...rest }) => {
   );
 };
 
-// Componente para envolver rutas privadas con el Layout
+const pageVariants = {
+  initial: { opacity: 0, x: -20 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: 20 }
+};
+
+// Componente unificado para envolver rutas privadas con el Layout
 const PrivateLayout = ({ component: Component, ...rest }) => (
-  <Layout>
-    <Component {...rest} />
-  </Layout>
+  <motion.div
+    variants={pageVariants}
+    initial="initial"
+    animate="animate"
+    exit="exit"
+    transition={{ duration: 0.4, ease: "easeInOut" }}
+  >
+    <Layout>
+      <Component {...rest} />
+    </Layout>
+  </motion.div>
+);
+
+const PublicLayout = ({ children }) => (
+  <motion.div
+    variants={pageVariants}
+    initial="initial"
+    animate="animate"
+    exit="exit"
+    transition={{ duration: 0.4, ease: "easeInOut" }}
+    className="min-h-screen bg-background"
+  >
+    {children}
+  </motion.div>
 );
 
 const App = () => {
@@ -35,15 +63,18 @@ const App = () => {
 
   return (
     <React.Fragment>
-      {/* Usa Switch para renderizar solo la primera ruta que coincida */}
       <Router>
         <Switch>
-          <Route path="/" component={Public} />
-          <Route path="/auth">
-            {/* Si el usuario ya está autenticado, redirige al dashboard */}
-            {user ? <Redirect to="/dashboard" /> : <Auth />}
+          <Route path="/">
+            {user ? (
+              <Redirect to="/dashboard" />
+            ) : (
+              <PublicLayout>
+                <Public />
+              </PublicLayout>
+            )}
           </Route>
-
+          
           {/* Rutas Privadas (envueltas con Layout) */}
           <PrivateRoute 
             path="/dashboard" 

@@ -33,8 +33,13 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem
+    --radius: 0.5rem;
+    /* Responsive variables */
+    --header-height: 4rem;
+    --sidebar-width: 16rem;
+    --content-max-width: 1400px;
   }
+  
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
@@ -64,6 +69,13 @@
 }
 
 @layer base {
+  /* Responsive base styles */
+  html {
+    -webkit-text-size-adjust: 100%;
+    @apply text-[14px] md:text-[16px] lg:text-[16px];
+  }
+
+  /* Keep existing base styles */
   * {
     @apply border-border;
   }
@@ -72,5 +84,65 @@
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Add responsive typography */
+  h1 {
+    @apply text-2xl md:text-3xl lg:text-4xl font-bold leading-tight;
+  }
+
+  h2 {
+    @apply text-xl md:text-2xl lg:text-3xl font-semibold leading-tight;
+  }
+
+  h3 {
+    @apply text-lg md:text-xl lg:text-2xl font-semibold leading-tight;
+  }
+}
+
+@layer components {
+  .section-padding {
+    @apply py-6 md:py-8 lg:py-12;
+  }
+
+  .content-padding {
+    @apply p-4 md:p-6 lg:p-8;
+  }
+
+  .responsive-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6;
+  }
+
+  .card-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4;
+  }
+
+  .form-container {
+    @apply w-full max-w-sm md:max-w-md lg:max-w-lg mx-auto;
+  }
+
+  .responsive-container {
+    @apply w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  .safe-paddings {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
   }
 }

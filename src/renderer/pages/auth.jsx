@@ -9,6 +9,7 @@ import { loginUser } from '@/renderer/api/electronAPI';
 import { Button } from '@/renderer/components/ui/button';
 import { Input } from '@/renderer/components/ui/input';
 import { Label } from '@/renderer/components/ui/label';
+import { LoadingSpinner } from "@/renderer/components/ui/loading-spinner";
 
 const Auth = () => {
   const [, navigate] = useLocation();
@@ -40,9 +41,19 @@ const Auth = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center">Iniciar Sesión en PACTA</h2>
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+      className="flex items-center justify-center min-h-screen bg-gray-100"
+    >
+      <motion.div
+        initial={{ scale: 0.95 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md"
+      >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
             <Label htmlFor="username">Usuario</Label>
@@ -68,12 +79,27 @@ const Auth = () => {
             />
             {errors.password && <p className="text-sm text-red-600 mt-1">{errors.password.message}</p>}
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Iniciando...' : 'Iniciar Sesión'}
+          <Button 
+            type="submit" 
+            className="w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center"
+              >
+                <LoadingSpinner size="small" className="mr-2" />
+                Iniciando sesión...
+              </motion.div>
+            ) : (
+              "Iniciar Sesión"
+            )}
           </Button>
         </form>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

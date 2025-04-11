@@ -26,7 +26,6 @@ Backend:
 - Mejorar sistema de backups automáticos
 
 2. Mejoras de Arquitectura:
-- Implementar arquitectura de módulos (feature-first)
 - Separar lógica de negocio en servicios
 - Añadir capa de abstracción para la base de datos
 - Implementar patrón Repository
