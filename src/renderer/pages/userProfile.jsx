@@ -10,6 +10,10 @@ import { Label } from "@/renderer/components/ui/label";
 import { Checkbox } from "@/renderer/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/renderer/components/ui/card";
 import { Loader2 } from 'lucide-react';
+import { Skeleton, SkeletonCard } from '@/renderer/components/ui/skeleton';
+import { HoverElevation, HoverScale, HoverGlow, HoverBounce } from '@/renderer/components/ui/micro-interactions';
+import { User, Settings, Shield } from 'lucide-react';
+import { Save } from 'lucide-react';
 
 const UserProfile = () => {
   const [, navigate] = useLocation();
@@ -79,77 +83,242 @@ const UserProfile = () => {
 
   if (isLoadingData) {
     return (
-      <div className="flex justify-center items-center p-10">
-        <Loader2 className="h-8 w-8 animate-spin mr-3" />
-        <span>Cargando perfil...</span>
+      <div className="space-y-6 p-4 md:p-6 lg:p-8">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Información Personal</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Preferencias</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Skeleton className="h-5 w-5" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Skeleton className="h-5 w-5" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-end space-x-4">
+          <Skeleton className="h-10 w-24" />
+          <Skeleton className="h-10 w-24" />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Perfil de Usuario</h1>
+    <div className="space-y-6 p-4 md:p-6 lg:p-8" role="main" aria-label="Perfil de usuario">
+      <div className="flex justify-between items-center">
+        <HoverScale>
+          <h1 className="text-2xl font-bold" aria-level="1">Mi Perfil</h1>
+        </HoverScale>
+        <HoverBounce>
+          <Button 
+            onClick={handleSubmit(onSubmit)}
+            className="flex items-center"
+            aria-label="Guardar cambios del perfil"
+          >
+            <Save className="mr-2 h-4 w-4" aria-hidden="true" />
+            Guardar Cambios
+          </Button>
+        </HoverBounce>
+      </div>
 
-      <Card>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <CardContent className="p-6 space-y-4">
+      <div className="grid gap-6 md:grid-cols-2" role="region" aria-label="Información del perfil">
+        <HoverElevation>
+          <Card role="article" aria-label="Información personal">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <User className="h-5 w-5 mr-2" aria-hidden="true" />
+                Información Personal
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-foreground">
+                  Nombre Completo
+                </label>
+                <div className="mt-1">
+                  <Input
+                    id="name"
+                    {...register('name')}
+                    className={errors.name ? 'border-red-500' : ''}
+                    aria-required="true"
+                    aria-describedby="name-error"
+                  />
+                </div>
+                {errors.name && (
+                  <p className="mt-2 text-sm text-red-600" id="name-error" role="alert">
+                    {errors.name.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-foreground">
+                  Correo Electrónico
+                </label>
+                <div className="mt-1">
+                  <Input
+                    id="email"
+                    type="email"
+                    {...register('email')}
+                    className={errors.email ? 'border-red-500' : ''}
+                    aria-required="true"
+                    aria-describedby="email-error"
+                  />
+                </div>
+                {errors.email && (
+                  <p className="mt-2 text-sm text-red-600" id="email-error" role="alert">
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-foreground">
+                  Teléfono
+                </label>
+                <div className="mt-1">
+                  <Input
+                    id="phone"
+                    {...register('phone')}
+                    className={errors.phone ? 'border-red-500' : ''}
+                  />
+                </div>
+                {errors.phone && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {errors.phone.message}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </HoverElevation>
+
+        <HoverElevation>
+          <Card role="article" aria-label="Preferencias de cuenta">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Settings className="h-5 w-5 mr-2" aria-hidden="true" />
+                Preferencias
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center">
+                <Input
+                  type="checkbox"
+                  id="notifications"
+                  {...register('notifications')}
+                  className="h-4 w-4 text-primary focus:ring-primary border-input rounded"
+                  aria-label="Recibir notificaciones"
+                />
+                <Label htmlFor="notifications" className="ml-2 block text-sm text-foreground">
+                  Recibir notificaciones
+                </Label>
+              </div>
+
+              <div className="flex items-center">
+                <Input
+                  type="checkbox"
+                  id="darkMode"
+                  {...register('darkMode')}
+                  className="h-4 w-4 text-primary focus:ring-primary border-input rounded"
+                  aria-label="Modo oscuro"
+                />
+                <Label htmlFor="darkMode" className="ml-2 block text-sm text-foreground">
+                  Modo oscuro
+                </Label>
+              </div>
+            </CardContent>
+          </Card>
+        </HoverElevation>
+      </div>
+
+      <HoverGlow>
+        <Card role="article" aria-label="Seguridad de la cuenta">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Shield className="h-5 w-5 mr-2" aria-hidden="true" />
+              Seguridad
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="username">Nombre de Usuario</Label>
-              <Input
-                id="username"
-                type="text"
-                {...register('username', { required: 'El nombre de usuario es requerido' })}
-                readOnly
-                className="mt-1 bg-gray-100"
-              />
-              {errors.username && <p className="text-sm text-red-600 mt-1">{errors.username.message}</p>}
+              <label htmlFor="currentPassword" className="block text-sm font-medium text-foreground">
+                Contraseña Actual
+              </label>
+              <div className="mt-1">
+                <Input
+                  id="currentPassword"
+                  type="password"
+                  {...register('currentPassword')}
+                  className={errors.currentPassword ? 'border-red-500' : ''}
+                  aria-required="true"
+                  aria-describedby="current-password-error"
+                />
+              </div>
+              {errors.currentPassword && (
+                <p className="mt-2 text-sm text-red-600" id="current-password-error" role="alert">
+                  {errors.currentPassword.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                {...register('email', {
-                  required: 'El email es requerido',
-                  pattern: { value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i, message: "Dirección de email inválida" }
-                })}
-                disabled={isSubmitting}
-                className="mt-1"
-              />
-              {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>}
-            </div>
-
-            <div>
-              <Label htmlFor="password">Nueva Contraseña (dejar en blanco para no cambiar)</Label>
-              <Input
-                id="password"
-                type="password"
-                {...register('password')}
-                disabled={isSubmitting}
-                autoComplete="new-password"
-                className="mt-1"
-              />
-            </div>
-
-            <div className="flex items-center space-x-2 pt-2">
-              <Checkbox
-                id="notifications"
-                {...register('notifications')}
-                disabled={isSubmitting}
-              />
-              <Label htmlFor="notifications" className="font-normal cursor-pointer">
-                Recibir notificaciones por email
-              </Label>
+              <label htmlFor="newPassword" className="block text-sm font-medium text-foreground">
+                Nueva Contraseña
+              </label>
+              <div className="mt-1">
+                <Input
+                  id="newPassword"
+                  type="password"
+                  {...register('newPassword')}
+                  className={errors.newPassword ? 'border-red-500' : ''}
+                  aria-required="true"
+                  aria-describedby="new-password-error"
+                />
+              </div>
+              {errors.newPassword && (
+                <p className="mt-2 text-sm text-red-600" id="new-password-error" role="alert">
+                  {errors.newPassword.message}
+                </p>
+              )}
             </div>
           </CardContent>
-          <CardFooter className="border-t px-6 py-4">
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Guardando...' : 'Guardar Cambios'}
-            </Button>
-          </CardFooter>
-        </form>
-      </Card>
+        </Card>
+      </HoverGlow>
     </div>
   );
 };

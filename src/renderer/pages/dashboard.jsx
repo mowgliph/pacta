@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { fetchStatistics } from '@/renderer/api/electronAPI';
 import { motion } from 'framer-motion';
+import { SkeletonCard, SkeletonList, SkeletonChart } from '@/renderer/components/ui/skeleton';
+import { HoverElevation, HoverScale, HoverGlow, HoverBounce } from '@/renderer/components/ui/micro-interactions';
 
 const mockExpiringContracts = [
   { id: '1', name: 'Contrato Alpha', endDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) },
@@ -100,16 +102,20 @@ const Dashboard = () => {
   const finalExpiringSoonCount = statsData?.expiringSoonCount ?? expiringContracts.length;
 
   const StatCard = ({ title, value, description, icon: Icon, colorClass = 'purple' }) => (
-    <Card className={`bg-${colorClass}-50 border-${colorClass}-200 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700`}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className={`text-sm font-medium text-${colorClass}-700 dark:text-${colorClass}-300`}>{title}</CardTitle>
-        {Icon && <Icon className={`h-4 w-4 text-${colorClass}-500 dark:text-${colorClass}-400`} />}
-      </CardHeader>
-      <CardContent>
-        <div className={`text-2xl font-bold text-${colorClass}-800 dark:text-${colorClass}-200`}>{value}</div>
-        {description && <p className={`text-xs text-${colorClass}-600 dark:text-${colorClass}-400`}>{description}</p>}
-      </CardContent>
-    </Card>
+    <HoverElevation>
+      <HoverGlow>
+        <Card className={`bg-${colorClass}-50 border-${colorClass}-200 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700`}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className={`text-sm font-medium text-${colorClass}-700 dark:text-${colorClass}-300`}>{title}</CardTitle>
+            {Icon && <Icon className={`h-4 w-4 text-${colorClass}-500 dark:text-${colorClass}-400`} />}
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold text-${colorClass}-800 dark:text-${colorClass}-200`}>{value}</div>
+            {description && <p className={`text-xs text-${colorClass}-600 dark:text-${colorClass}-400`}>{description}</p>}
+          </CardContent>
+        </Card>
+      </HoverGlow>
+    </HoverElevation>
   );
 
   const ActionButton = ({ text, icon: Icon, onClick }) => (
@@ -125,6 +131,75 @@ const Dashboard = () => {
     </motion.div>
   );
 
+  if (isLoading) {
+    return (
+      <motion.div 
+        className="space-y-8 p-4 md:p-6 lg:p-8 bg-background text-foreground"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4 }}
+      >
+        <div className="mb-6">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-64 mt-2" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+          
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <AlertTriangle className="h-5 w-5 mr-2" />
+                  Contratos Próximos a Vencer
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SkeletonList count={3} />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <History className="h-5 w-5 mr-2" />
+                  Actividad Reciente
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <SkeletonList count={3} />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Estadísticas de Contratos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SkeletonChart />
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Distribución por Estado</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SkeletonChart />
+            </CardContent>
+          </Card>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div 
         className="space-y-8 p-4 md:p-6 lg:p-8 bg-background text-foreground"
@@ -133,7 +208,9 @@ const Dashboard = () => {
         transition={{ duration: 0.4 }}
     >
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+        <HoverScale>
+          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+        </HoverScale>
         <p className="text-sm text-muted-foreground">{user ? `Bienvenido de nuevo, ${user.username}!` : 'Resumen general del sistema'}</p>
       </div>
 
@@ -141,42 +218,81 @@ const Dashboard = () => {
         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
           <StatCard 
             title="Contratos Totales" 
-            value={isLoading ? '...' : totalContracts} 
+            value={totalContracts} 
             description="Registrados en el sistema"
             icon={FileText}
             colorClass="blue"
           />
           <StatCard 
             title="Contratos Activos" 
-            value={isLoading ? '...' : statusCounts.Active} 
+            value={statusCounts.Active} 
             description="Actualmente vigentes"
             icon={TrendingUp}
             colorClass="green"
           />
         </div>
         
-        <Card className="flex flex-col shadow-sm bg-card dark:bg-gray-800 border dark:border-gray-700">
-          <CardHeader className="border-b pb-3 dark:border-gray-600">
-            <CardTitle className="flex items-center text-base font-semibold text-foreground">
-              <AlertTriangle className="h-5 w-5 mr-2 text-orange-500"/> 
-              Vencen Pronto ({isLoading ? '...' : finalExpiringSoonCount})
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto max-h-60 px-4 py-2 text-sm space-y-2 mt-2 custom-scrollbar">
-            {isLoading ? (
-                <p className="text-center text-muted-foreground pt-4">Cargando...</p>
-            ) : expiringContracts.length > 0 ? expiringContracts.map(c => (
-                <Link key={c.id} href={`/contracts/${c.id}`}>
-                    <a className="flex justify-between items-center border-b pb-1.5 last:border-b-0 hover:bg-accent dark:hover:bg-gray-700 p-1 rounded transition-colors cursor-pointer dark:border-gray-700">
-                        <span className="text-muted-foreground truncate pr-2 text-xs font-medium">{c.name}</span>
-                        <span className="text-orange-600 dark:text-orange-400 font-semibold text-xs flex-shrink-0">{getFormattedDate(c.endDate)}</span>
-                    </a>
-                </Link>
-            )) : (
-                <p className="text-center text-muted-foreground pt-4 text-xs">Ningún contrato vence pronto.</p>
-            )}
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <HoverBounce>
+            <Card className="shadow-sm bg-card dark:bg-gray-800 border dark:border-gray-700">
+              <CardHeader className="border-b pb-3 dark:border-gray-600">
+                <CardTitle className="flex items-center text-base font-semibold text-foreground">
+                  <AlertTriangle className="h-5 w-5 mr-2 text-orange-500"/> 
+                  Vencen Pronto ({finalExpiringSoonCount})
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 overflow-y-auto max-h-60 px-4 py-2 text-sm space-y-2 mt-2 custom-scrollbar">
+                {expiringContracts.length > 0 ? expiringContracts.map(c => (
+                  <HoverBackground key={c.id}>
+                    <Link href={`/contracts/${c.id}`}>
+                      <a className="flex justify-between items-center border-b pb-1.5 last:border-b-0 hover:bg-accent dark:hover:bg-gray-700 p-1 rounded transition-colors cursor-pointer dark:border-gray-700">
+                        <span className="font-medium">{c.name}</span>
+                        <span className="text-muted-foreground">{getFormattedDate(c.endDate)}</span>
+                      </a>
+                    </Link>
+                  </HoverBackground>
+                )) : (
+                  <p className="text-center text-muted-foreground py-4">No hay contratos próximos a vencer.</p>
+                )}
+              </CardContent>
+            </Card>
+          </HoverBounce>
+
+          <HoverBounce>
+            <Card className="shadow-sm bg-card dark:bg-gray-800 border dark:border-gray-700">
+              <CardHeader className="border-b pb-3 dark:border-gray-600">
+                <CardTitle className="flex items-center text-base font-semibold text-foreground">
+                  <History className="h-5 w-5 mr-2 text-muted-foreground"/> 
+                  Actividad Reciente (Suplementos)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4">
+                {recentSupplements.length > 0 ? (
+                  <ul className="space-y-3">
+                    {recentSupplements.slice(0, 5).map(s => (
+                      <HoverBackground key={s.id}>
+                        <li className="flex items-start space-x-3 border-b pb-2 last:border-b-0 dark:border-gray-700">
+                          <FilePlus className="h-4 w-4 mt-0.5 text-brand dark:text-brand-light flex-shrink-0"/>
+                          <div className="flex-1">
+                            <p className="text-sm text-muted-foreground leading-snug">
+                              <span className="font-medium text-foreground">{s.description || 'Descripción no disponible'}</span> para el contrato 
+                              <Link href={`/contracts/${s.contractId}`}>
+                                <a className="text-blue-600 hover:underline ml-1 font-medium dark:text-blue-400">{s.contractName || `ID ${s.contractId}`}</a>
+                              </Link>
+                            </p>
+                            <p className="text-xs text-muted-foreground/80 mt-0.5">{getFormattedDate(s.date)}</p>
+                          </div>
+                        </li>
+                      </HoverBackground>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-center text-muted-foreground py-4 text-sm">No hay actividad reciente de suplementos.</p>
+                )}
+              </CardContent>
+            </Card>
+          </HoverBounce>
+        </div>
       </div>
 
       <div>
@@ -186,39 +302,6 @@ const Dashboard = () => {
           <ActionButton text="Ver Contratos" icon={ListChecks} onClick={() => navigate('/contracts')} />
         </div>
       </div>
-
-      <Card className="shadow-sm bg-card dark:bg-gray-800 border dark:border-gray-700">
-        <CardHeader className="border-b pb-3 dark:border-gray-600">
-          <CardTitle className="flex items-center text-base font-semibold text-foreground">
-             <History className="h-5 w-5 mr-2 text-muted-foreground"/> 
-             Actividad Reciente (Suplementos)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-4">
-          {isLoading ? (
-               <p className="text-center text-muted-foreground py-4">Cargando...</p>
-          ) : recentSupplements.length > 0 ? (
-            <ul className="space-y-3">
-              {recentSupplements.slice(0, 5).map(s => (
-                <li key={s.id} className="flex items-start space-x-3 border-b pb-2 last:border-b-0 dark:border-gray-700">
-                  <FilePlus className="h-4 w-4 mt-0.5 text-brand dark:text-brand-light flex-shrink-0"/>
-                  <div className="flex-1">
-                    <p className="text-sm text-muted-foreground leading-snug">
-                      <span className="font-medium text-foreground">{s.description || 'Descripción no disponible'}</span> para el contrato 
-                      <Link href={`/contracts/${s.contractId}`}>
-                        <a className="text-blue-600 hover:underline ml-1 font-medium dark:text-blue-400">{s.contractName || `ID ${s.contractId}`}</a>
-                      </Link>
-                    </p>
-                    <p className="text-xs text-muted-foreground/80 mt-0.5">{getFormattedDate(s.date)}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-center text-muted-foreground py-4 text-sm">No hay actividad reciente de suplementos.</p>
-          )}
-        </CardContent>
-      </Card>
 
     </motion.div>
   );

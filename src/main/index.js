@@ -211,32 +211,136 @@ ipcMain.handle('contracts:delete', async (event, contractId) => {
   return { success: true }; 
 });
 
-ipcMain.handle('contracts:addSupplement', async (event, { contractId, supplementData }) => {
-  const url = `http://localhost:3001/api/contracts/${contractId}/supplements`;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(supplementData)
-  });
-  if (!response.ok) {
-     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `Error ${response.status} al añadir suplemento`);
+// Manejador para selección de archivos
+ipcMain.handle('dialog:selectFile', async (event, options) => {
+  try {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: options.filters || [
+        { name: 'Documentos', extensions: ['pdf', 'doc', 'docx'] }
+      ]
+    });
+
+    if (!result.canceled && result.filePaths.length > 0) {
+      return result.filePaths[0];
+    }
+    return null;
+  } catch (error) {
+    console.error('Error al seleccionar archivo:', error);
+    throw new Error('Error al seleccionar el archivo');
   }
-  return response.json();
 });
 
-ipcMain.handle('contracts:editSupplement', async (event, { contractId, supplementId, supplementData }) => {
-  const url = `http://localhost:3001/api/contracts/${contractId}/supplements/${supplementId}`;
-  const response = await fetch(url, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(supplementData)
-  });
-  if (!response.ok) {
-     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `Error ${response.status} al actualizar suplemento`);
+// Manejador para subir archivos
+ipcMain.handle('files:upload', async (event, { filePath, contractId }) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', fs.createReadStream(filePath));
+    formData.append('contractId', contractId);
+
+    const response = await fetch('http://localhost:3001/api/files/upload', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Error ${response.status} al subir archivo`);
+    }
+
+    const result = await response.json();
+    return result.fileUrl;
+  } catch (error) {
+    console.error('Error al subir archivo:', error);
+    throw error;
   }
-  return response.json();
+});
+
+// Manejador para añadir suplemento
+ipcMain.handle('contracts:addSupplement', async (event, { contractId, supplementData }) => {
+  try {
+    let fileUrl = null;
+    
+    // Si hay un archivo, subirlo primero
+    if (supplementData.rutaArchivo) {
+      fileUrl = await event.sender.invoke('files:upload', {
+        filePath: supplementData.rutaArchivo,
+        contractId
+      });
+    }
+
+    const url = `http://localhost:3001/api/contracts/${contractId}/supplements`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        ...supplementData,
+        fileUrl
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Error ${response.status} al añadir suplemento`);
+    }
+
+    const result = await response.json();
+    
+    // Enviar notificación
+    enviarNotificacionSuplemento({
+      ...result,
+      contractName: result.contract?.name || `Contrato ${contractId}`
+    }, 'creacion');
+
+    return result;
+  } catch (error) {
+    console.error('Error al añadir suplemento:', error);
+    throw error;
+  }
+});
+
+// Manejador para editar suplemento
+ipcMain.handle('contracts:editSupplement', async (event, { contractId, supplementId, supplementData }) => {
+  try {
+    let fileUrl = supplementData.fileUrl;
+    
+    // Si hay un nuevo archivo, subirlo
+    if (supplementData.rutaArchivo && supplementData.rutaArchivo !== fileUrl) {
+      fileUrl = await event.sender.invoke('files:upload', {
+        filePath: supplementData.rutaArchivo,
+        contractId
+      });
+    }
+
+    const url = `http://localhost:3001/api/contracts/${contractId}/supplements/${supplementId}`;
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        ...supplementData,
+        fileUrl
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Error ${response.status} al actualizar suplemento`);
+    }
+
+    const result = await response.json();
+    
+    // Enviar notificación
+    enviarNotificacionSuplemento({
+      ...result,
+      contractName: result.contract?.name || `Contrato ${contractId}`
+    }, 'modificacion');
+
+    return result;
+  } catch (error) {
+    console.error('Error al editar suplemento:', error);
+    throw error;
+  }
 });
 
 // Manejadores de archivos (no requieren auth generalmente)

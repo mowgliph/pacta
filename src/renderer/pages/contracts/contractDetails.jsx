@@ -4,9 +4,12 @@ import { fetchContractDetails, addSupplement, editSupplement, openFile } from '@
 import { Button } from '@/renderer/components/ui/button';
 import { useToast } from '@/renderer/hooks/use-toast';
 import SupplementModal from './SupplementModal';
-import { Loader2, Edit, FileText, PlusCircle } from 'lucide-react';
+import { Loader2, Edit, FileText, PlusCircle, Plus } from 'lucide-react';
 import useStore from '@/renderer/store/useStore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/renderer/components/ui/card";
+import { SkeletonCard, SkeletonList } from '@/renderer/components/ui/skeleton';
+import { HoverElevation, HoverScale, HoverGlow, HoverBounce, HoverBackground } from '@/renderer/components/ui/micro-interactions';
+import { Calendar } from 'lucide-react';
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
@@ -110,11 +113,79 @@ const ContractDetails = () => {
   };
 
   if (isLoading) {
-    return <div className="p-8 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /> Cargando detalles...</div>;
+    return (
+      <div className="space-y-6 p-4 md:p-6 lg:p-8">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <HoverElevation>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Información General</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <SkeletonCard />
+                </CardContent>
+              </Card>
+            </HoverElevation>
+
+            <HoverGlow>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Detalles del Contrato</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <SkeletonList count={4} />
+                </CardContent>
+              </Card>
+            </HoverGlow>
+          </div>
+
+          <div className="space-y-6">
+            <HoverBounce>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Archivos Adjuntos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <SkeletonList count={3} />
+                </CardContent>
+              </Card>
+            </HoverBounce>
+
+            <HoverBounce>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Suplementos</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <SkeletonList count={3} />
+                </CardContent>
+              </Card>
+            </HoverBounce>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="p-8 text-center text-red-600">{error}</div>;
+    return (
+      <div className="p-4 md:p-6 lg:p-8">
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive">Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-destructive">{error}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   if (!contractData) {
@@ -123,127 +194,180 @@ const ContractDetails = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4 md:p-6 lg:p-8" role="main" aria-label="Detalles del contrato">
       <div className="flex justify-between items-center">
-        <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground truncate">{contractData.name}</h1>
-            <p className="text-sm text-muted-foreground">Detalles del Contrato</p>
-        </div>
-        {canEdit && (
-            <Button
-              variant="outline"
-              onClick={() => navigate(`/contracts/${contractId}/edit`)}
+        <HoverScale>
+          <h1 className="text-2xl font-bold" aria-level="1">Detalles del Contrato</h1>
+        </HoverScale>
+        <div className="flex space-x-4">
+          <HoverBounce>
+            <Button 
+              onClick={() => setIsSupplementModalOpen(true)}
+              className="flex items-center"
+              aria-label="Agregar suplemento al contrato"
             >
-              <Edit className="mr-2 h-4 w-4" />
-              Editar Contrato
+              <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
+              Agregar Suplemento
             </Button>
-        )}
+          </HoverBounce>
+          <HoverBounce>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/contracts')}
+              aria-label="Volver a la lista de contratos"
+            >
+              Volver
+            </Button>
+          </HoverBounce>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Información General</CardTitle>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-sm">
-                  <div className="space-y-1"><p className="text-muted-foreground text-xs">Nombre</p> <p className="font-medium">{contractData.name || '-'}</p></div>
-                  <div className="space-y-1"><p className="text-muted-foreground text-xs">Tipo</p> <p>{contractData.type || '-'}</p></div>
-                  <div className="space-y-1"><p className="text-muted-foreground text-xs">Estado</p> <p>{contractData.status || '-'}</p></div>
-                  <div className="space-y-1"><p className="text-muted-foreground text-xs">Fecha Inicio</p> <p>{formatDate(contractData.startDate)}</p></div>
-                  <div className="space-y-1"><p className="text-muted-foreground text-xs">Fecha Vencimiento</p> <p>{formatDate(contractData.endDate)}</p></div>
-              </CardContent>
-            </Card>
+      <div className="grid gap-6 md:grid-cols-2" role="region" aria-label="Información del contrato">
+        <HoverElevation>
+          <Card role="article" aria-label="Información general">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <FileText className="h-5 w-5 mr-2" aria-hidden="true" />
+                Información General
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground">
+                  Nombre del Contrato
+                </label>
+                <p className="mt-1 text-sm text-muted-foreground" aria-label={`Nombre del contrato: ${contractData.name}`}>
+                  {contractData.name}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground">
+                  Cliente
+                </label>
+                <p className="mt-1 text-sm text-muted-foreground" aria-label={`Cliente: ${contractData.client}`}>
+                  {contractData.client}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground">
+                  Estado
+                </label>
+                <p className="mt-1 text-sm text-muted-foreground" aria-label={`Estado del contrato: ${contractData.status}`}>
+                  {contractData.status}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </HoverElevation>
 
-            {contractData.description && (
-                 <Card>
-                    <CardHeader><CardTitle>Descripción</CardTitle></CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-foreground whitespace-pre-wrap">{contractData.description}</p>
-                    </CardContent>
-                </Card>
-            )}
-          </div>
+        <HoverElevation>
+          <Card role="article" aria-label="Detalles del contrato">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Calendar className="h-5 w-5 mr-2" aria-hidden="true" />
+                Fechas y Montos
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground">
+                  Fecha de Inicio
+                </label>
+                <p className="mt-1 text-sm text-muted-foreground" aria-label={`Fecha de inicio: ${formatDate(contractData.startDate)}`}>
+                  {formatDate(contractData.startDate)}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground">
+                  Fecha de Fin
+                </label>
+                <p className="mt-1 text-sm text-muted-foreground" aria-label={`Fecha de fin: ${formatDate(contractData.endDate)}`}>
+                  {formatDate(contractData.endDate)}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground">
+                  Monto Total
+                </label>
+                <p className="mt-1 text-sm text-muted-foreground" aria-label={`Monto total: ${formatCurrency(contractData.amount)}`}>
+                  {formatCurrency(contractData.amount)}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </HoverElevation>
+      </div>
 
-          <div className="space-y-6">
-              {contractData.documentPath && (
-                 <Card>
-                    <CardHeader><CardTitle>Documento Principal</CardTitle></CardHeader>
-                    <CardContent className="flex items-center space-x-3">
-                        <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0"/>
-                        <span className="flex-1 truncate text-sm text-foreground">{contractData.documentPath.split(/\\\\|\//).pop()}</span>
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleOpenFile(contractData.documentPath)}
-                        >
-                          Abrir
-                        </Button>
-                    </CardContent>
-                </Card>
-              )}
-
-              <Card>
-                <CardHeader className="flex flex-row justify-between items-center">
-                  <CardTitle>Suplementos</CardTitle>
-                  {canEdit && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedSupplement(null);
-                          setIsSupplementModalOpen(true);
-                        }}
-                      >
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Añadir
-                      </Button>
-                  )}
-                </CardHeader>
-                <CardContent>
-                  {contractData.supplements?.length > 0 ? (
-                    <div className="space-y-3">
-                      {contractData.supplements.map(supplement => (
-                        <div
-                          key={supplement.id}
-                          className="border rounded-md p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-background dark:bg-gray-700/30 shadow-sm"
-                        >
-                          <div className="mb-2 sm:mb-0 flex-1 mr-4">
-                            <p className="text-sm font-medium text-foreground">{supplement.description || 'Sin descripción'}</p>
-                            <p className="text-xs text-muted-foreground">{formatDate(supplement.createdAt)}</p>
-                          </div>
-                          <div className="flex space-x-2 flex-shrink-0">
-                            {supplement.filePath && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleOpenFile(supplement.filePath)}
-                              >
-                                <FileText className="mr-1 h-4 w-4" /> Ver Doc.
-                              </Button>
-                            )}
-                            {canEdit && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedSupplement(supplement);
-                                    setIsSupplementModalOpen(true);
-                                  }}
-                                >
-                                  <Edit className="mr-1 h-4 w-4" /> Editar
-                                </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+      <div className="grid gap-6 md:grid-cols-2" role="region" aria-label="Documentos y suplementos">
+        <HoverGlow>
+          <Card role="article" aria-label="Documentos adjuntos">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <FileText className="h-5 w-5 mr-2" aria-hidden="true" />
+                Documentos Adjuntos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {contractData.documents?.map((doc) => (
+                  <div key={doc.id} className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <FileText className="h-4 w-4 mr-2 text-muted-foreground" aria-hidden="true" />
+                      <span className="text-sm" aria-label={`Documento: ${doc.name}`}>
+                        {doc.name}
+                      </span>
                     </div>
-                  ) : (
-                    <p className="text-muted-foreground text-sm text-center py-4">No hay suplementos registrados.</p>
-                  )}
-                </CardContent>
-              </Card>
-          </div>
+                    <HoverBackground>
+                      <button
+                        onClick={() => handleOpenFile(doc.filePath)}
+                        className="text-primary hover:text-primary/80"
+                        aria-label={`Descargar documento ${doc.name}`}
+                      >
+                        Descargar
+                      </button>
+                    </HoverBackground>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </HoverGlow>
+
+        <HoverGlow>
+          <Card role="article" aria-label="Suplementos">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
+                Suplementos
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {contractData.supplements?.map((supplement) => (
+                  <div key={supplement.id} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium" aria-label={`Suplemento: ${supplement.description}`}>
+                        {supplement.description}
+                      </p>
+                      <p className="text-xs text-muted-foreground" aria-label={`Monto: ${formatCurrency(supplement.amount)}`}>
+                        {formatCurrency(supplement.amount)}
+                      </p>
+                    </div>
+                    <HoverBackground>
+                      <button
+                        onClick={() => handleOpenFile(supplement.filePath)}
+                        className="text-primary hover:text-primary/80"
+                        aria-label={`Ver detalles del suplemento ${supplement.description}`}
+                      >
+                        Ver Detalles
+                      </button>
+                    </HoverBackground>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </HoverGlow>
       </div>
 
       <SupplementModal
