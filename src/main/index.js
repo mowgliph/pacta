@@ -3,6 +3,10 @@ const path = require('path');
 const fetch = require('node-fetch');
 const fs = require('fs');
 const FormData = require('form-data');
+const { ObjectId } = require('mongodb');
+const db = require('../db');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
 
 // Variable global para almacenar el token JWT
 let currentAuthToken = null;
@@ -532,6 +536,130 @@ ipcMain.handle('public:statistics', async () => {
     return formattedData;
   } catch (error) {
     console.error('Error en public:statistics:', error);
+    throw error;
+  }
+});
+
+// Manejadores IPC para contratos
+ipcMain.handle('get-contracts', async () => {
+  try {
+    const contracts = await prisma.contract.findMany({
+      include: {
+        supplements: true
+      }
+    });
+    return contracts;
+  } catch (error) {
+    console.error('Error al obtener contratos:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('get-contract-details', async (event, contractId) => {
+  try {
+    const contract = await prisma.contract.findUnique({
+      where: { id: contractId },
+      include: {
+        supplements: true
+      }
+    });
+    if (!contract) {
+      throw new Error('Contrato no encontrado');
+    }
+    return contract;
+  } catch (error) {
+    console.error('Error al obtener detalles del contrato:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('create-contract', async (event, contractData) => {
+  try {
+    const contract = await prisma.contract.create({
+      data: {
+        ...contractData,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    });
+    return contract.id;
+  } catch (error) {
+    console.error('Error al crear contrato:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('update-contract', async (event, contractId, contractData) => {
+  try {
+    const contract = await prisma.contract.update({
+      where: { id: contractId },
+      data: {
+        ...contractData,
+        updatedAt: new Date()
+      }
+    });
+    return true;
+  } catch (error) {
+    console.error('Error al actualizar contrato:', error);
+    throw error;
+  }
+});
+
+// Manejadores IPC para suplementos
+ipcMain.handle('add-supplement', async (event, contractId, supplementData) => {
+  try {
+    const supplement = await prisma.supplement.create({
+      data: {
+        ...supplementData,
+        contractId: contractId,
+        createdAt: new Date()
+      }
+    });
+    return true;
+  } catch (error) {
+    console.error('Error al agregar suplemento:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('edit-supplement', async (event, contractId, supplementId, supplementData) => {
+  try {
+    const supplement = await prisma.supplement.update({
+      where: { id: supplementId },
+      data: {
+        ...supplementData,
+        updatedAt: new Date()
+      }
+    });
+    return true;
+  } catch (error) {
+    console.error('Error al editar suplemento:', error);
+    throw error;
+  }
+});
+
+// Manejador IPC para estadísticas
+ipcMain.handle('get-statistics', async () => {
+  try {
+    const totalContracts = await prisma.contract.count();
+    const activeContracts = await prisma.contract.count({
+      where: { status: 'active' }
+    });
+    const expiringContracts = await prisma.contract.count({
+      where: {
+        endDate: {
+          lt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        }
+      }
+    });
+
+    return {
+      totalContracts,
+      activeContracts,
+      expiringContracts
+    };
+  } catch (error) {
+    console.error('Error al obtener estadísticas:', error);
     throw error;
   }
 });

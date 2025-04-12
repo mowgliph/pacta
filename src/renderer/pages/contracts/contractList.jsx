@@ -1,73 +1,134 @@
 import React from 'react';
-import { Link } from 'wouter';
+import { useLocation } from 'wouter';
+import { useContracts, useDeleteContract } from '@/renderer/api/queryHooks';
 import { Button } from "@/renderer/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/renderer/components/ui/table";
-import { Trash2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/renderer/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/renderer/components/ui/table";
+import { Badge } from "@/renderer/components/ui/badge";
+import { HoverGlow } from '@/renderer/components/ui/micro-interactions';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { toast } from '@/renderer/hooks/use-toast';
+import { Skeleton } from "@/renderer/components/ui/skeleton";
 
-const formatDate = (dateString) => {
-  if (!dateString) return 'N/A';
-  try {
-    return new Date(dateString).toLocaleDateString();
-  } catch (e) {
-    return 'Fecha inválida';
+const ContractList = ({ filters, onContractSelect }) => {
+  const [, navigate] = useLocation();
+  const { data: contracts = [], isLoading, error } = useContracts(filters);
+  const { mutate: deleteContract, isLoading: isDeleting } = useDeleteContract();
+
+  const handleDelete = async (contractId) => {
+    try {
+      await deleteContract(contractId);
+      toast({ title: 'Éxito', description: 'Contrato eliminado exitosamente' });
+    } catch (error) {
+      console.error("Error deleting contract:", error);
+      toast({ 
+        title: 'Error', 
+        description: error.message || 'Error al eliminar el contrato', 
+        variant: 'destructive' 
+      });
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    const variants = {
+      active: "bg-green-500",
+      pending: "bg-yellow-500",
+      expired: "bg-red-500",
+      cancelled: "bg-gray-500"
+    };
+    return <Badge className={variants[status]}>{status}</Badge>;
+  };
+
+  if (isLoading) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Lista de Contratos</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
-};
 
-const ContractList = ({ contracts = [], onDelete }) => {
-  if (contracts.length === 0) {
-    return <p className="text-center text-gray-500 py-4">No se encontraron contratos.</p>;
+  if (error) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Error</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-red-500">Error al cargar los contratos</div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Nombre</TableHead>
-            <TableHead>Tipo</TableHead>
-            <TableHead>Estado</TableHead>
-            <TableHead>Fecha de Vencimiento</TableHead>
-            <TableHead className="text-right">Acciones</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {contracts.map((contract) => (
-            <TableRow key={contract.id}>
-              <TableCell className="font-medium">{contract.name || 'Sin Nombre'}</TableCell>
-              <TableCell>{contract.type || 'N/A'}</TableCell>
-              <TableCell>{contract.status || 'N/A'}</TableCell>
-              <TableCell>{formatDate(contract.endDate)}</TableCell>
-              <TableCell className="text-right space-x-2">
-                <Link href={`/contracts/${contract.id}`}>
-                  <Button variant="outline" size="sm" asChild>
-                    <a href={`/contracts/${contract.id}`}>Ver Detalles</a>
-                  </Button>
-                </Link>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (window.confirm(`¿Estás seguro de que quieres eliminar el contrato "${contract.name || 'este contrato'}"?`)) {
-                      onDelete(contract.id);
-                    }
-                  }}
-                  aria-label="Eliminar contrato"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TableCell>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Lista de Contratos</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID</TableHead>
+              <TableHead>Cliente</TableHead>
+              <TableHead>Fecha Inicio</TableHead>
+              <TableHead>Fecha Fin</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead>Acciones</TableHead>
             </TableRow>
-        ))}
-        </TableBody>
-      </Table>
-    </div>
+          </TableHeader>
+          <TableBody>
+            {contracts.map((contract) => (
+              <TableRow key={contract.id}>
+                <TableCell>{contract.id}</TableCell>
+                <TableCell>{contract.clientName}</TableCell>
+                <TableCell>
+                  {format(new Date(contract.startDate), 'PPP', { locale: es })}
+                </TableCell>
+                <TableCell>
+                  {format(new Date(contract.endDate), 'PPP', { locale: es })}
+                </TableCell>
+                <TableCell>{getStatusBadge(contract.status)}</TableCell>
+                <TableCell>
+                  <div className="flex gap-2">
+                    <HoverGlow>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onContractSelect(contract.id)}
+                        disabled={isDeleting}
+                      >
+                        Ver Detalles
+                      </Button>
+                    </HoverGlow>
+                    <HoverGlow>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(contract.id)}
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? 'Eliminando...' : 'Eliminar'}
+                      </Button>
+                    </HoverGlow>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 };
 

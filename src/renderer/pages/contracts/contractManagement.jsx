@@ -1,13 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'wouter'; // Para navegación
 import { toast } from '@/renderer/hooks/use-toast'; // Usar el hook de toast
-import {
-  fetchContracts,
-  createContract,
-  updateContract,
-  deleteContract,
-  fetchContractDetails // Aunque se use en ContractDetails, lo preparamos
-} from '@/renderer/api/electronAPI'; // Importa las funciones API correctas
+import { contractService } from '@/renderer/services';
 import useStore from '@/renderer/store/useStore'; // Importar useStore
 
 // Importa los subcomponentes (asegúrate que las rutas sean correctas)
@@ -26,8 +20,9 @@ const ContractManagement = () => {
   const [contracts, setContracts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  // Mantendremos los filtros simples por ahora, la lógica de filtrado real iría aquí o en el backend
   const [filters, setFilters] = useState({});
+  const [selectedContract, setSelectedContract] = useState(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   // Obtener rol del usuario
   const userRole = useStore((state) => state.user?.role);
@@ -39,24 +34,51 @@ const ContractManagement = () => {
   // Función para cargar contratos
   const loadContracts = useCallback(async () => {
     setIsLoading(true);
-    setError(null);
     try {
-      // Aquí podrías pasar los `filters` si la API los soporta
-      const fetchedContracts = await fetchContracts(/* filters */);
-      setContracts(fetchedContracts || []);
+      const data = await contractService.getAllContracts();
+      setContracts(data);
+      setError(null);
     } catch (err) {
       console.error("Error loading contracts:", err);
-      setError('No se pudieron cargar los contratos.');
-      toast({ title: 'Error', description: 'No se pudieron cargar los contratos.', variant: 'destructive' });
+      setError('No se pudieron cargar los contratos');
+      toast({ title: 'Error', description: 'No se pudieron cargar los contratos', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
-  }, [/* filters */ toast]); // Añadir toast
+  }, []);
 
   // Cargar contratos al montar y cuando cambien los filtros (si se implementan)
   useEffect(() => {
     loadContracts();
   }, [loadContracts]);
+
+  const handleCreateContract = async (contractData) => {
+    try {
+      const result = await contractService.createContract(contractData);
+      if (result) {
+        toast({ title: 'Éxito', description: 'Contrato creado exitosamente' });
+        setIsFormOpen(false);
+        loadContracts();
+      }
+    } catch (error) {
+      console.error("Error creating contract:", error);
+      toast({ title: 'Error', description: error.message || 'Error al crear el contrato', variant: 'destructive' });
+    }
+  };
+
+  const handleUpdateContract = async (contractId, contractData) => {
+    try {
+      const result = await contractService.updateContract(contractId, contractData);
+      if (result) {
+        toast({ title: 'Éxito', description: 'Contrato actualizado exitosamente' });
+        setSelectedContract(null);
+        loadContracts();
+      }
+    } catch (error) {
+      console.error("Error updating contract:", error);
+      toast({ title: 'Error', description: error.message || 'Error al actualizar el contrato', variant: 'destructive' });
+    }
+  };
 
   // --- Lógica para Crear/Actualizar/Eliminar --- 
   // Estas funciones probablemente se pasarán a `ContractList` o `ContractDetails`
@@ -64,7 +86,7 @@ const ContractManagement = () => {
   
   const handleDelete = async (id) => {
     // Añadir confirmación aquí si se desea
-    const success = await deleteContract(id);
+    const success = await contractService.deleteContract(id);
     if (success) {
       toast({ title: 'Éxito', description: 'Contrato eliminado correctamente.' });
       loadContracts(); // Recargar la lista

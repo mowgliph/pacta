@@ -11,6 +11,7 @@ import {
   EsquemaRelacionesContrato
 } from '../utils/validation/schemas';
 import { z } from 'zod';
+import { ipcRenderer } from 'electron';
 
 export const iniciarSesion = async (username, password) => {
   try {
@@ -221,16 +222,33 @@ export const fetchRecentSupplementActivity = async (limit = 5) => {
   }
 };
 
-/**
- * Obtiene estadísticas públicas para el dashboard.
- * @returns {Promise<Object|null>} Objeto con estadísticas o null en caso de error.
- */
+// Funciones para contratos
+export const fetchContracts = async () => {
+  return ipcRenderer.invoke('get-contracts');
+};
+
+export const fetchContractDetails = async (contractId) => {
+  return ipcRenderer.invoke('get-contract-details', contractId);
+};
+
+export const createContract = async (contractData) => {
+  return ipcRenderer.invoke('create-contract', contractData);
+};
+
+export const updateContract = async (contractId, contractData) => {
+  return ipcRenderer.invoke('update-contract', contractId, contractData);
+};
+
+// Funciones para suplementos
+export const addSupplement = async (contractId, supplementData) => {
+  return ipcRenderer.invoke('add-supplement', contractId, supplementData);
+};
+
+export const editSupplement = async (contractId, supplementId, supplementData) => {
+  return ipcRenderer.invoke('edit-supplement', contractId, supplementId, supplementData);
+};
+
+// Funciones para estadísticas
 export const fetchStatistics = async () => {
-  try {
-    const stats = await window.electron.ipcRenderer.invoke('public:statistics');
-    return stats;
-  } catch (error) {
-    console.error('Error al obtener estadísticas públicas:', error);
-    return null;
-  }
+  return ipcRenderer.invoke('get-statistics');
 };

@@ -13,7 +13,7 @@ import {
     History,
     FilePlus
 } from 'lucide-react';
-import { fetchStatistics } from '@/renderer/api/electronAPI';
+import { statisticsService } from '@/renderer/services';
 import { motion } from 'framer-motion';
 import { SkeletonCard, SkeletonList, SkeletonChart } from '@/renderer/components/ui/skeleton';
 import { HoverElevation, HoverScale, HoverGlow, HoverBounce } from '@/renderer/components/ui/micro-interactions';
@@ -53,29 +53,8 @@ const Dashboard = () => {
     const loadStats = async () => {
       setIsLoading(true);
       try {
-        let data = await fetchStatistics();
-        
-        if (!data || Object.keys(data).length === 0) {
-            console.warn("API returned no data or empty data, using mock data for dashboard.");
-            data = {
-                totalContracts: data?.totalContracts ?? 15,
-                statusCounts: data?.statusCounts ?? { Active: 10, Pending: 3, Expired: 2 },
-                expiringSoonCount: data?.expiringSoonCount ?? mockExpiringContracts.length,
-                expiringContracts: data?.expiringContracts ?? mockExpiringContracts,
-                recentSupplements: data?.recentSupplements ?? mockRecentSupplements,
-            };
-        } else {
-            data.expiringContracts = data.expiringContracts ?? mockExpiringContracts;
-            data.recentSupplements = data.recentSupplements ?? mockRecentSupplements;
-            data.expiringSoonCount = data.expiringSoonCount ?? data.expiringContracts.length;
-        }
-        
-        const parseDates = (items) => items.map(item => ({...item, date: item.date ? new Date(item.date) : undefined, endDate: item.endDate ? new Date(item.endDate) : undefined }));
-        data.expiringContracts = parseDates(data.expiringContracts);
-        data.recentSupplements = parseDates(data.recentSupplements);
-
-        setStatsData(data);
-        
+        const stats = await statisticsService.getGeneralStatistics();
+        setStatsData(stats);
       } catch (err) { 
         console.error("Error fetching stats, using mock data:", err);
         setStatsData({

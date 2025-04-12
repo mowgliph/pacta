@@ -1,192 +1,155 @@
 import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { SupplementSchema } from '@/utils/validation/schemas';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/renderer/components/ui/dialog';
-import { Button } from '@/renderer/components/ui/button';
-import { Input } from '@/renderer/components/ui/input';
-import { Textarea } from '@/renderer/components/ui/textarea';
-import { Calendar } from '@/renderer/components/ui/calendar';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/renderer/components/ui/form';
-import { toast } from 'sonner';
-import { Loader2, FileText, Upload, Plus } from 'lucide-react';
+import { useAddSupplement, useEditSupplement } from '@/renderer/api/queryHooks';
+import { Button } from "@/renderer/components/ui/button";
+import { Input } from "@/renderer/components/ui/input";
+import { Label } from "@/renderer/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/renderer/components/ui/card";
+import { HoverGlow } from '@/renderer/components/ui/micro-interactions';
+import { toast } from '@/renderer/hooks/use-toast';
+import { Skeleton } from "@/renderer/components/ui/skeleton";
 
-const SupplementModal = ({ isOpen, onClose, onSubmit, initialData = null }) => {
-  const [isUploading, setIsUploading] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-
-  const form = useForm({
-    resolver: zodResolver(SupplementSchema),
-    defaultValues: initialData || {
-      descripcion: '',
-      fecha: new Date(),
-      rutaArchivo: ''
-    }
+const SupplementModal = ({ contractId, supplement, onClose }) => {
+  const [formData, setFormData] = useState({
+    amount: supplement?.amount || '',
+    description: supplement?.description || '',
+    date: supplement?.date || new Date().toISOString().split('T')[0]
   });
 
-  const handleFileSelect = async () => {
-    try {
-      setIsUploading(true);
-      const result = await window.electron.ipcRenderer.invoke('dialog:selectFile', {
-        filters: [
-          { name: 'Documentos', extensions: ['pdf', 'doc', 'docx'] }
-        ]
-      });
+  const { mutate: addSupplement, isLoading: isAdding } = useAddSupplement();
+  const { mutate: editSupplement, isLoading: isEditing } = useEditSupplement();
 
-      if (result) {
-        setSelectedFile(result);
-        form.setValue('rutaArchivo', result);
-        toast.success('Archivo seleccionado correctamente');
-      }
-    } catch (error) {
-      console.error('Error al seleccionar archivo:', error);
-      toast.error('Error al seleccionar el archivo');
-    } finally {
-      setIsUploading(false);
-    }
+  const isLoading = isAdding || isEditing;
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleSubmit = async (data) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      setIsUploading(true);
-      await onSubmit(data);
-      toast.success(initialData ? 'Suplemento actualizado' : 'Suplemento creado');
+      if (supplement) {
+        await editSupplement({ 
+          contractId, 
+          supplementId: supplement.id, 
+          data: formData 
+        });
+        toast({ title: 'Éxito', description: 'Suplemento actualizado exitosamente' });
+      } else {
+        await addSupplement({ 
+          contractId, 
+          data: formData 
+        });
+        toast({ title: 'Éxito', description: 'Suplemento agregado exitosamente' });
+      }
       onClose();
     } catch (error) {
-      console.error('Error al procesar suplemento:', error);
-      toast.error(error.message || 'Error al procesar el suplemento');
-    } finally {
-      setIsUploading(false);
+      console.error("Error submitting supplement:", error);
+      toast({ 
+        title: 'Error', 
+        description: error.message || 'Error al procesar el suplemento', 
+        variant: 'destructive' 
+      });
     }
   };
 
+  if (isLoading) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle>{supplement ? 'Editar Suplemento' : 'Nuevo Suplemento'}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent 
-        className="sm:max-w-[425px]"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="supplement-modal-title"
-        aria-describedby="supplement-modal-description"
-      >
-        <DialogHeader>
-          <DialogTitle id="supplement-modal-title" className="flex items-center">
-            <Plus className="h-5 w-5 mr-2" aria-hidden="true" />
-            {initialData ? 'Editar Suplemento' : 'Nuevo Suplemento'}
-          </DialogTitle>
-          <DialogDescription id="supplement-modal-description">
-            {initialData ? 'Modifica los detalles del suplemento' : 'Agrega un nuevo suplemento al contrato'}
-          </DialogDescription>
-        </DialogHeader>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4" role="form" aria-label="Formulario de suplemento">
-            <FormField
-              control={form.control}
-              name="descripcion"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descripción</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Descripción del suplemento..."
-                      className="resize-none"
-                      aria-required="true"
-                      aria-describedby="description-error"
-                    />
-                  </FormControl>
-                  {form.formState.errors.descripcion && (
-                    <p className="mt-2 text-sm text-red-600" id="description-error" role="alert">
-                      {form.formState.errors.descripcion.message}
-                    </p>
-                  )}
-                </FormItem>
-              )}
+    <Card className="w-full max-w-md mx-auto">
+      <CardHeader>
+        <CardTitle>{supplement ? 'Editar Suplemento' : 'Nuevo Suplemento'}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="amount">Monto</Label>
+            <Input
+              id="amount"
+              name="amount"
+              type="number"
+              value={formData.amount}
+              onChange={handleChange}
+              required
+              disabled={isLoading}
             />
+          </div>
 
-            <FormField
-              control={form.control}
-              name="fecha"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Fecha</FormLabel>
-                  <FormControl>
-                    <Calendar
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      className="rounded-md border"
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
+          <div className="space-y-2">
+            <Label htmlFor="description">Descripción</Label>
+            <Input
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              required
+              disabled={isLoading}
             />
+          </div>
 
-            <FormField
-              control={form.control}
-              name="rutaArchivo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Documento</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleFileSelect}
-                        disabled={isUploading}
-                        className="w-full"
-                        aria-label={isUploading ? 'Cargando archivo' : selectedFile ? 'Cambiar archivo' : 'Seleccionar archivo'}
-                      >
-                        {isUploading ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : selectedFile ? (
-                          <>
-                            <FileText className="h-4 w-4 mr-2" />
-                            {selectedFile.split('/').pop()}
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="h-4 w-4 mr-2" />
-                            Seleccionar archivo
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </FormControl>
-                </FormItem>
-              )}
+          <div className="space-y-2">
+            <Label htmlFor="date">Fecha</Label>
+            <Input
+              id="date"
+              name="date"
+              type="date"
+              value={formData.date}
+              onChange={handleChange}
+              required
+              disabled={isLoading}
             />
+          </div>
 
-            <DialogFooter>
+          <div className="flex justify-end gap-2">
+            <HoverGlow>
               <Button 
                 type="button" 
                 variant="outline" 
                 onClick={onClose}
-                aria-label="Cancelar y cerrar modal"
+                disabled={isLoading}
               >
                 Cancelar
               </Button>
+            </HoverGlow>
+            <HoverGlow>
               <Button 
                 type="submit"
-                aria-label={initialData ? 'Guardar cambios del suplemento' : 'Crear nuevo suplemento'}
+                disabled={isLoading}
               >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    Procesando...
-                  </>
-                ) : initialData ? (
-                  'Actualizar'
-                ) : (
-                  'Crear'
-                )}
+                {isLoading ? 'Procesando...' : (supplement ? 'Actualizar' : 'Agregar')}
               </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+            </HoverGlow>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

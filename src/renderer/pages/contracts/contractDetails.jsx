@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'wouter';
-import { fetchContractDetails, addSupplement, editSupplement, openFile } from '@/renderer/api/electronAPI';
+import { contractService, supplementService } from '@/renderer/services';
 import { Button } from '@/renderer/components/ui/button';
 import { useToast } from '@/renderer/hooks/use-toast';
 import SupplementModal from './SupplementModal';
@@ -51,7 +51,7 @@ const ContractDetails = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const data = await fetchContractDetails(contractId);
+        const data = await contractService.getContractDetails(contractId);
         if (data) {
           setContractData(data);
         } else {
@@ -74,9 +74,9 @@ const ContractDetails = () => {
     try {
       let result;
       if (selectedSupplement) {
-        result = await editSupplement(contractId, selectedSupplement.id, supplementData);
+        result = await supplementService.editSupplement(contractId, selectedSupplement.id, supplementData);
       } else {
-        result = await addSupplement(contractId, supplementData);
+        result = await supplementService.addSupplement(contractId, supplementData);
       }
 
       if (result) {
@@ -84,7 +84,7 @@ const ContractDetails = () => {
           title: selectedSupplement ? 'Suplemento actualizado' : 'Suplemento añadido',
           description: 'La operación se completó exitosamente'
         });
-        const updatedData = await fetchContractDetails(contractId);
+        const updatedData = await contractService.getContractDetails(contractId);
         if (updatedData) setContractData(updatedData);
         setIsSupplementModalOpen(false);
         setSelectedSupplement(null);
