@@ -1,6 +1,7 @@
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
+import { es } from 'date-fns/locale'
 
 import { cn } from "@/renderer/lib/utils"
 import { buttonVariants } from "@/renderer/components/ui/button"
@@ -15,6 +16,9 @@ function Calendar({
 }: CalendarProps) {
   return (
     <DayPicker
+      locale={es}
+      role="application"
+      aria-label="Calendario"
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
       classNames={{
@@ -58,17 +62,40 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: ({ className, ...props }) => (
-          <ChevronLeft className={cn("h-4 w-4", className)} {...props} />
+        IconLeft: ({ ...props }) => (
+          <button
+            type="button"
+            {...props}
+            aria-label="Mes anterior"
+            className={cn(
+              "inline-flex items-center justify-center rounded-md p-1",
+              "hover:bg-accent hover:text-accent-foreground",
+              "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            )}
+          >
+            <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          </button>
         ),
-        IconRight: ({ className, ...props }) => (
-          <ChevronRight className={cn("h-4 w-4", className)} {...props} />
+        IconRight: ({ ...props }) => (
+          <button
+            type="button"
+            {...props}
+            aria-label="Mes siguiente"
+            className={cn(
+              "inline-flex items-center justify-center rounded-md p-1",
+              "hover:bg-accent hover:text-accent-foreground",
+              "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            )}
+          >
+            <ChevronRight className="h-4 w-4" aria-hidden="true" />
+          </button>
         ),
       }}
       {...props}
     />
   )
 }
+
 Calendar.displayName = "Calendar"
 
 export { Calendar }
