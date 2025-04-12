@@ -9,7 +9,7 @@ import AdvancedStatistics from './pages/advancedStatistics';
 import UserProfile from './pages/userProfile';
 import ContractForm from './pages/contracts/contractForm';
 import ContractDetails from './pages/contracts/contractDetails';
-import { Toaster } from "@/renderer/components/ui/toaster"
+import { Toaster } from 'sonner';
 import Layout from '@/renderer/components/Layout';
 import { motion } from 'framer-motion';
 
@@ -112,7 +112,13 @@ const App = () => {
           </Route>
         </Switch>
       </Router>
-      <Toaster />
+      <Toaster 
+        position="top-right"
+        richColors
+        closeButton
+        expand={true}
+        duration={5000}
+      />
     </React.Fragment>
   );
 };

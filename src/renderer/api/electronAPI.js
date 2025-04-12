@@ -189,3 +189,48 @@ export const cerrarSesion = async () => {
     console.error('Error durante el cierre de sesión:', error);
   }
 };
+
+/**
+ * Obtiene contratos activos próximos a vencer.
+ * @param {number} days - Número de días hacia adelante para buscar vencimientos.
+ * @returns {Promise<Array|null>} Lista de contratos o null en caso de error.
+ */
+export const fetchExpiringContracts = async (days = 30) => {
+  try {
+    // El canal podría incluir los días: 'expiring-contracts:fetch?days=30'
+    const contracts = await window.electron.ipcRenderer.invoke('expiring-contracts:fetch', days);
+    return contracts;
+  } catch (error) {
+    console.error(`Error al obtener contratos que vencen en ${days} días:`, error);
+    return null;
+  }
+};
+
+/**
+ * Obtiene la actividad reciente de suplementos (creación/modificación).
+ * @param {number} limit - Número máximo de registros a obtener.
+ * @returns {Promise<Array|null>} Lista de actividades/suplementos o null en caso de error.
+ */
+export const fetchRecentSupplementActivity = async (limit = 5) => {
+  try {
+    const activity = await window.electron.ipcRenderer.invoke('supplement-activity:fetch', limit);
+    return activity;
+  } catch (error) {
+    console.error(`Error al obtener actividad reciente de suplementos:`, error);
+    return null;
+  }
+};
+
+/**
+ * Obtiene estadísticas públicas para el dashboard.
+ * @returns {Promise<Object|null>} Objeto con estadísticas o null en caso de error.
+ */
+export const fetchStatistics = async () => {
+  try {
+    const stats = await window.electron.ipcRenderer.invoke('public:statistics');
+    return stats;
+  } catch (error) {
+    console.error('Error al obtener estadísticas públicas:', error);
+    return null;
+  }
+};

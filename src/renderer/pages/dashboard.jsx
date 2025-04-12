@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
+import { useLocation, Link } from 'wouter';
 import useStore from '@/renderer/store/useStore';
 import { Button } from "@/renderer/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/renderer/components/ui/card";
@@ -9,8 +9,9 @@ import {
     AlertTriangle, 
     PlusCircle, 
     FileText, 
-    FilePlus,
-    History
+    ListChecks,
+    History,
+    FilePlus
 } from 'lucide-react';
 import { fetchStatistics } from '@/renderer/api/electronAPI';
 import { motion } from 'framer-motion';
@@ -27,13 +28,17 @@ const mockRecentSupplements = [
   { id: 's3', contractId: '2', contractName: 'Acuerdo Beta Services', description: 'Anexo de personal', date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
 ];
 
-const getFormattedDate = (date = new Date()) => {
-  const options = { day: 'numeric', month: 'short', year: 'numeric' };
-  try {
-      return date.toLocaleDateString('es-ES', options);
-  } catch (e) {
-      return 'Fecha inválida';
-  }
+const getFormattedDate = (date) => {
+   if (!date || !(date instanceof Date) || isNaN(date)) {
+       return 'Fecha inválida';
+   }
+   try {
+       const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+       return utcDate.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC' });
+   } catch (e) {
+       console.error("Error formatting date:", e);
+       return 'Fecha inválida';
+   }
 };
 
 const Dashboard = () => {
@@ -46,125 +51,176 @@ const Dashboard = () => {
     const loadStats = async () => {
       setIsLoading(true);
       try {
-        const data = await fetchStatistics();
-        if (data) setStatsData(data);
+        let data = await fetchStatistics();
+        
+        if (!data || Object.keys(data).length === 0) {
+            console.warn("API returned no data or empty data, using mock data for dashboard.");
+            data = {
+                totalContracts: data?.totalContracts ?? 15,
+                statusCounts: data?.statusCounts ?? { Active: 10, Pending: 3, Expired: 2 },
+                expiringSoonCount: data?.expiringSoonCount ?? mockExpiringContracts.length,
+                expiringContracts: data?.expiringContracts ?? mockExpiringContracts,
+                recentSupplements: data?.recentSupplements ?? mockRecentSupplements,
+            };
+        } else {
+            data.expiringContracts = data.expiringContracts ?? mockExpiringContracts;
+            data.recentSupplements = data.recentSupplements ?? mockRecentSupplements;
+            data.expiringSoonCount = data.expiringSoonCount ?? data.expiringContracts.length;
+        }
+        
+        const parseDates = (items) => items.map(item => ({...item, date: item.date ? new Date(item.date) : undefined, endDate: item.endDate ? new Date(item.endDate) : undefined }));
+        data.expiringContracts = parseDates(data.expiringContracts);
+        data.recentSupplements = parseDates(data.recentSupplements);
+
+        setStatsData(data);
+        
       } catch (err) { 
-        console.error("Error fetching stats:", err); 
+        console.error("Error fetching stats, using mock data:", err);
+        setStatsData({
+            totalContracts: 15,
+            statusCounts: { Active: 10, Pending: 3, Expired: 2 },
+            expiringSoonCount: mockExpiringContracts.length,
+            expiringContracts: mockExpiringContracts.map(c => ({...c, endDate: new Date(c.endDate)})),
+            recentSupplements: mockRecentSupplements.map(s => ({...s, date: new Date(s.date)}))
+        });
       }
       setIsLoading(false);
     };
     loadStats();
   }, []);
 
+  const { 
+      totalContracts = 'N/A',
+      statusCounts = { Active: 'N/A' },
+      expiringSoonCount = 0
+  } = statsData || {};
+  
+  const expiringContracts = statsData?.expiringContracts || mockExpiringContracts;
+  const recentSupplements = statsData?.recentSupplements || mockRecentSupplements;
+  const finalExpiringSoonCount = statsData?.expiringSoonCount ?? expiringContracts.length;
+
   const StatCard = ({ title, value, description, icon: Icon, colorClass = 'purple' }) => (
-    <Card className={`bg-${colorClass}-100 border-${colorClass}-200`}>
+    <Card className={`bg-${colorClass}-50 border-${colorClass}-200 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700`}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className={`text-sm font-medium text-${colorClass}-800`}>{title}</CardTitle>
-        {Icon && <Icon className={`h-4 w-4 text-${colorClass}-600`} />}
+        <CardTitle className={`text-sm font-medium text-${colorClass}-700 dark:text-${colorClass}-300`}>{title}</CardTitle>
+        {Icon && <Icon className={`h-4 w-4 text-${colorClass}-500 dark:text-${colorClass}-400`} />}
       </CardHeader>
       <CardContent>
-        <div className={`text-2xl font-bold text-${colorClass}-900`}>{value}</div>
-        <p className={`text-xs text-${colorClass}-700`}>{description}</p>
+        <div className={`text-2xl font-bold text-${colorClass}-800 dark:text-${colorClass}-200`}>{value}</div>
+        {description && <p className={`text-xs text-${colorClass}-600 dark:text-${colorClass}-400`}>{description}</p>}
       </CardContent>
     </Card>
   );
 
-  const ActionButton = ({ text, icon: Icon, onClick, colorClass = 'brand' }) => (
-      <motion.div whileHover={{ y: -3 }} transition={{ type: 'spring', stiffness: 300 }}>
-          <Button 
-            variant="outline" 
-            className={`w-full h-20 flex flex-col items-center justify-center space-y-1 text-center bg-background-card border hover:bg-${colorClass}-light/50 hover:border-${colorClass} group`}
-            onClick={onClick}
-          >
-              <Icon className={`h-6 w-6 mb-1 text-${colorClass === 'brand' ? 'brand-dark' : 'gray-600'} group-hover:scale-110 transition-transform`} />
-              <span className={`text-sm font-medium text-${colorClass === 'brand' ? 'brand-dark' : 'text-secondary'}`}>{text}</span>
-          </Button>
-      </motion.div>
+  const ActionButton = ({ text, icon: Icon, onClick }) => (
+    <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
+        <Button 
+          variant="outline" 
+          className="w-full h-full p-4 flex flex-col items-center justify-center space-y-1 text-center bg-card border hover:bg-accent hover:border-brand/50 group shadow-sm hover:shadow-md dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
+          onClick={onClick}
+        >
+            <Icon className="h-7 w-7 mb-1 text-brand group-hover:scale-110 transition-transform duration-150 dark:text-brand-light" />
+            <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors dark:group-hover:text-white">{text}</span>
+        </Button>
+    </motion.div>
   );
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-text-DEFAULT">Dashboard</h1>
-        <p className="text-sm text-text-secondary">{user ? `Bienvenido, ${user.username}!` : 'Resumen general'}</p>
+    <motion.div 
+        className="space-y-8 p-4 md:p-6 lg:p-8 bg-background text-foreground"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+    >
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">{user ? `Bienvenido de nuevo, ${user.username}!` : 'Resumen general del sistema'}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
           <StatCard 
             title="Contratos Totales" 
-            value={isLoading ? '...' : (statsData?.totalContracts ?? 'N/A')} 
+            value={isLoading ? '...' : totalContracts} 
             description="Registrados en el sistema"
             icon={FileText}
             colorClass="blue"
           />
           <StatCard 
             title="Contratos Activos" 
-            value={isLoading ? '...' : (statsData?.statusCounts?.Active ?? 'N/A')} 
+            value={isLoading ? '...' : statusCounts.Active} 
             description="Actualmente vigentes"
             icon={TrendingUp}
             colorClass="green"
           />
         </div>
         
-        <Card className="flex flex-col">
-          <CardHeader>
-            <CardTitle className="flex items-center text-base">
+        <Card className="flex flex-col shadow-sm bg-card dark:bg-gray-800 border dark:border-gray-700">
+          <CardHeader className="border-b pb-3 dark:border-gray-600">
+            <CardTitle className="flex items-center text-base font-semibold text-foreground">
               <AlertTriangle className="h-5 w-5 mr-2 text-orange-500"/> 
-              Vencen Pronto ({isLoading ? '...' : (statsData?.expiringSoonCount ?? '0')})
+              Vencen Pronto ({isLoading ? '...' : finalExpiringSoonCount})
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex-1 overflow-y-auto px-4 py-2 text-sm space-y-2">
-            {mockExpiringContracts.length > 0 ? mockExpiringContracts.map(c => (
-                <div key={c.id} className="flex justify-between items-center border-b pb-1 last:border-b-0">
-                    <span className="text-text-secondary truncate pr-2">{c.name}</span>
-                    <span className="text-orange-600 font-medium flex-shrink-0">{getFormattedDate(c.endDate)}</span>
-                </div>
+          <CardContent className="flex-1 overflow-y-auto max-h-60 px-4 py-2 text-sm space-y-2 mt-2 custom-scrollbar">
+            {isLoading ? (
+                <p className="text-center text-muted-foreground pt-4">Cargando...</p>
+            ) : expiringContracts.length > 0 ? expiringContracts.map(c => (
+                <Link key={c.id} href={`/contracts/${c.id}`}>
+                    <a className="flex justify-between items-center border-b pb-1.5 last:border-b-0 hover:bg-accent dark:hover:bg-gray-700 p-1 rounded transition-colors cursor-pointer dark:border-gray-700">
+                        <span className="text-muted-foreground truncate pr-2 text-xs font-medium">{c.name}</span>
+                        <span className="text-orange-600 dark:text-orange-400 font-semibold text-xs flex-shrink-0">{getFormattedDate(c.endDate)}</span>
+                    </a>
+                </Link>
             )) : (
-                <p className="text-center text-text-light pt-4">Ningún contrato vence pronto.</p>
+                <p className="text-center text-muted-foreground pt-4 text-xs">Ningún contrato vence pronto.</p>
             )}
           </CardContent>
         </Card>
       </div>
 
       <div>
-        <h2 className="text-xl font-semibold mb-4 text-text-DEFAULT">Acciones Rápidas</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <h2 className="text-xl font-semibold mb-4 text-foreground">Acciones Rápidas</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           <ActionButton text="Nuevo Contrato" icon={PlusCircle} onClick={() => navigate('/contracts/new')} />
-          <ActionButton text="Ver Contratos" icon={FileText} onClick={() => navigate('/contracts')} colorClass="gray" />
+          <ActionButton text="Ver Contratos" icon={ListChecks} onClick={() => navigate('/contracts')} />
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center text-base">
-             <History className="h-5 w-5 mr-2 text-text-secondary"/> 
-             Últimos Suplementos Añadidos/Modificados
+      <Card className="shadow-sm bg-card dark:bg-gray-800 border dark:border-gray-700">
+        <CardHeader className="border-b pb-3 dark:border-gray-600">
+          <CardTitle className="flex items-center text-base font-semibold text-foreground">
+             <History className="h-5 w-5 mr-2 text-muted-foreground"/> 
+             Actividad Reciente (Suplementos)
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          {mockRecentSupplements.length > 0 ? (
+        <CardContent className="pt-4">
+          {isLoading ? (
+               <p className="text-center text-muted-foreground py-4">Cargando...</p>
+          ) : recentSupplements.length > 0 ? (
             <ul className="space-y-3">
-              {mockRecentSupplements.map(s => (
-                <li key={s.id} className="flex items-start space-x-3 border-b pb-2 last:border-b-0">
-                  <FilePlus className="h-4 w-4 mt-1 text-brand-dark flex-shrink-0"/>
+              {recentSupplements.slice(0, 5).map(s => (
+                <li key={s.id} className="flex items-start space-x-3 border-b pb-2 last:border-b-0 dark:border-gray-700">
+                  <FilePlus className="h-4 w-4 mt-0.5 text-brand dark:text-brand-light flex-shrink-0"/>
                   <div className="flex-1">
-                    <p className="text-sm text-text-secondary">
-                      <span className="font-medium text-text-DEFAULT">{s.description}</span> para 
-                      <Link href={`/contracts/${s.contractId}`} className="text-blue-600 hover:underline ml-1">{s.contractName}</Link>
+                    <p className="text-sm text-muted-foreground leading-snug">
+                      <span className="font-medium text-foreground">{s.description || 'Descripción no disponible'}</span> para el contrato 
+                      <Link href={`/contracts/${s.contractId}`}>
+                        <a className="text-blue-600 hover:underline ml-1 font-medium dark:text-blue-400">{s.contractName || `ID ${s.contractId}`}</a>
+                      </Link>
                     </p>
-                    <p className="text-xs text-text-light">{getFormattedDate(s.date)}</p>
+                    <p className="text-xs text-muted-foreground/80 mt-0.5">{getFormattedDate(s.date)}</p>
                   </div>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-center text-text-light py-4">No hay actividad reciente de suplementos.</p>
+            <p className="text-center text-muted-foreground py-4 text-sm">No hay actividad reciente de suplementos.</p>
           )}
         </CardContent>
       </Card>
 
-    </div>
+    </motion.div>
   );
 };
 

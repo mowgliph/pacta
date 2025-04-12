@@ -11,9 +11,11 @@ import {
     FileText, // Sell Reports / Contracts
     Settings, // Settings
     LogOut, // Log Out
-    Eye // Añadir icono Eye
+    Eye, // Añadir icono Eye
+    X
 } from 'lucide-react';
 import logo from '@/renderer/assets/logo.png'; // Asumiendo que tienes un logo
+import Notifications from './Notifications';
 
 // Helper para clases de enlaces activos
 const NavLink = ({ href, children, icon: Icon }) => {
@@ -46,6 +48,11 @@ const Sidebar = ({ onClose }) => {
   const handleNavigation = (path) => {
     if (onClose) onClose();
     navigate(path);
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
   };
 
   return (
@@ -86,6 +93,11 @@ const Sidebar = ({ onClose }) => {
           ))}
         </div>
       </nav>
+
+      {/* Notifications */}
+      <div className="border-t border-border p-4">
+        <Notifications />
+      </div>
 
       {/* User section with responsive padding */}
       <div className="border-t border-border p-4">

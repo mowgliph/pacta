@@ -13,6 +13,7 @@ const authRoutes = require('./routes/auth.route');
 const userRoutes = require('./routes/user.route');
 const contractRoutes = require('./routes/contract.route');
 const statisticsRoutes = require('./routes/statistics.route');
+const publicRoutes = require('./routes/public.route');
 
 const prisma = new PrismaClient();
 const app = express();
@@ -618,11 +619,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-// --- Montaje de Rutas con Prefijo /api ---
+// Register routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/statistics', statisticsRoutes);
+app.use('/api/public', publicRoutes);
 
 // --- Inicialización del Servidor ---
 const server = app.listen(port, () => {

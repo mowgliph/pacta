@@ -173,19 +173,43 @@ router.post('/:contractId/supplements',
   /* upload.single('supplementFile'), */
   async (req, res) => {
   const { contractId } = req.params;
+  const userId = req.user.id; // Obtener ID del usuario autenticado
+  
   try {
     // Validar con Zod
     const { description } = createSupplementSchema.parse(req.body);
-    let filePath = null; // Manejar archivo si se sube
+    // let filePath = null; // Manejar archivo si se sube
     // if (req.file) { filePath = req.file.path; }
+
+    const contract = await prisma.contract.findUnique({ 
+        where: { id: parseInt(contractId) }, 
+        select: { name: true } // Necesitamos el nombre para los detalles de la actividad
+    });
+    if (!contract) {
+        return res.status(404).json({ message: 'Contrato asociado no encontrado.' });
+    }
 
     const supplement = await prisma.supplement.create({
       data: {
         description,
-        filePath,
+        // filePath,
         contractId: parseInt(contractId),
       }
     });
+
+    // --- Registrar Actividad --- 
+    await prisma.activity.create({
+        data: {
+            userId: userId,
+            contractId: parseInt(contractId),
+            action: 'CREATE_SUPPLEMENT', // Usar un string consistente
+            // Incluir descripción del suplemento o un mensaje genérico
+            details: `Se añadió suplemento: ${description}`,
+            // No necesitamos ip o userAgent aquí, pero podrían añadirse
+        }
+    });
+    // --------------------------
+
     res.status(201).json(supplement);
 
   } catch (error) {
@@ -203,7 +227,9 @@ router.put('/:contractId/supplements/:supplementId',
   checkContractOwnershipOrAdmin,
   /* upload.single('supplementFile'), */
   async (req, res) => {
-  const { supplementId } = req.params;
+  const { contractId, supplementId } = req.params; // Obtener ambos IDs
+  const userId = req.user.id; // Obtener ID del usuario
+
   try {
     // Validar con Zod
     const validatedData = updateSupplementSchema.parse(req.body);
@@ -213,10 +239,41 @@ router.put('/:contractId/supplements/:supplementId',
       return res.status(400).json({ message: 'No se proporcionaron datos válidos para actualizar.' });
     }
 
+    // Obtener datos del suplemento y contrato antes de actualizar (para detalles)
+    const existingSupplement = await prisma.supplement.findUnique({
+        where: { id: parseInt(supplementId) },
+        select: { description: true, contract: { select: { name: true } } }
+    });
+    if (!existingSupplement) {
+        // Este caso también lo captura el error P2025 de abajo, pero es más explícito aquí
+        return res.status(404).json({ message: 'Suplemento no encontrado para actualizar.' });
+    }
+
     const supplement = await prisma.supplement.update({
       where: { id: parseInt(supplementId) }, 
       data: validatedData,
     });
+
+    // --- Registrar Actividad --- 
+    // Crear una descripción de los cambios (simple por ahora)
+    let changesDescription = 'Se actualizó el suplemento.';
+    if (validatedData.description && validatedData.description !== existingSupplement.description) {
+        changesDescription = `Se actualizó descripción del suplemento (antes: \"${existingSupplement.description}\", ahora: \"${validatedData.description}\")`;
+    } else if (validatedData.filePath) {
+        changesDescription = `Se actualizó el archivo del suplemento.`;
+    }
+    
+    await prisma.activity.create({
+        data: {
+            userId: userId,
+            contractId: parseInt(contractId),
+            action: 'UPDATE_SUPPLEMENT', // Usar un string consistente
+            details: changesDescription,
+            // Podrías incluir el ID del suplemento en details si es útil
+        }
+    });
+    // --------------------------
+
     res.json(supplement);
 
   } catch (error) {

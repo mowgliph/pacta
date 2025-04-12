@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   BarChart,
@@ -10,23 +10,56 @@ import {
   ResponsiveContainer
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/renderer/components/ui/card";
-
-const mockData = {
-  contractStats: [
-    { month: 'Ene', activos: 65, vencidos: 12 },
-    { month: 'Feb', activos: 59, vencidos: 15 },
-    { month: 'Mar', activos: 80, vencidos: 8 },
-    { month: 'Abr', activos: 81, vencidos: 10 },
-    { month: 'May', activos: 76, vencidos: 20 },
-    { month: 'Jun', activos: 85, vencidos: 7 },
-  ],
-  totalContracts: 245,
-  activeContracts: 185,
-  expiringContracts: 15,
-  averageContractDuration: "6 meses"
-};
+import { fetchStatistics } from '@/renderer/api/electronAPI';
 
 const PublicStats = () => {
+  const [statsData, setStatsData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadStats = async () => {
+      setIsLoading(true);
+      try {
+        const data = await fetchStatistics();
+        setStatsData(data);
+      } catch (error) {
+        console.error("Error cargando estadísticas públicas:", error);
+      }
+      setIsLoading(false);
+    };
+    loadStats();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="space-y-6"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardHeader>
+                <div className="h-4 w-24 bg-muted rounded" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-8 w-16 bg-muted rounded" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </motion.div>
+    );
+  }
+
+  const {
+    totalContracts = 0,
+    activeContracts = 0,
+    expiringContracts = 0,
+    contractStats = []
+  } = statsData || {};
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -34,9 +67,7 @@ const PublicStats = () => {
       transition={{ duration: 0.5 }}
       className="space-y-6"
     >
-      {/* Enhance grid responsiveness */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Add loading skeleton animation */}
         <motion.div
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -53,13 +84,34 @@ const PublicStats = () => {
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                {mockData.totalContracts}
+                {totalContracts}
               </motion.span>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Add new metric card */}
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="overflow-hidden">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-sm font-medium">Contratos Activos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <motion.span 
+                className="text-3xl font-bold text-green-500 block"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                {activeContracts}
+              </motion.span>
+            </CardContent>
+          </Card>
+        </motion.div>
+
         <motion.div
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -74,16 +126,37 @@ const PublicStats = () => {
                 className="text-3xl font-bold text-yellow-500 block"
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.4 }}
               >
-                {mockData.expiringContracts}
+                {expiringContracts}
+              </motion.span>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <Card className="overflow-hidden">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-sm font-medium">Tasa de Renovación</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <motion.span 
+                className="text-3xl font-bold text-blue-500 block"
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                {activeContracts > 0 ? Math.round((activeContracts / totalContracts) * 100) : 0}%
               </motion.span>
             </CardContent>
           </Card>
         </motion.div>
       </div>
 
-      {/* Enhanced chart section */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -97,7 +170,7 @@ const PublicStats = () => {
           <CardContent>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={mockData.contractStats}>
+                <BarChart data={contractStats}>
                   <CartesianGrid strokeDasharray="3 3" className="opacity-50" />
                   <XAxis dataKey="month" />
                   <YAxis />

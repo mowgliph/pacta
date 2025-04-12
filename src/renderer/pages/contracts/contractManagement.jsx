@@ -8,6 +8,7 @@ import {
   deleteContract,
   fetchContractDetails // Aunque se use en ContractDetails, lo preparamos
 } from '@/renderer/api/electronAPI'; // Importa las funciones API correctas
+import useStore from '@/renderer/store/useStore'; // Importar useStore
 
 // Importa los subcomponentes (asegúrate que las rutas sean correctas)
 import ContractList from './contractList';
@@ -25,6 +26,10 @@ const ContractManagement = () => {
   const [error, setError] = useState(null);
   // Mantendremos los filtros simples por ahora, la lógica de filtrado real iría aquí o en el backend
   const [filters, setFilters] = useState({});
+
+  // Obtener rol del usuario
+  const userRole = useStore((state) => state.user?.role);
+  const canCreate = userRole === 'Admin' || userRole === 'RA';
 
   // Podríamos añadir estado para el contrato seleccionado si queremos mostrar detalles aquí mismo
   // const [selectedContractId, setSelectedContractId] = useState(null);
@@ -79,8 +84,8 @@ const ContractManagement = () => {
   } else if (error) {
     content = <p className="text-red-600 text-center p-4">{error}</p>;
   } else {
-    // Pasa los contratos y la función de eliminar a ContractList
-    content = <ContractList contracts={contracts} onDelete={handleDelete} />;
+    // Pasar canDelete (o el rol) a ContractList
+    content = <ContractList contracts={contracts} onDelete={handleDelete} userRole={userRole} />;
   }
 
   return (
@@ -88,10 +93,13 @@ const ContractManagement = () => {
         {/* Encabezado Consistente */}
         <div className="flex justify-between items-center">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Gestión de Contratos</h1>
-            <Button onClick={() => navigate('/contracts/new')}>
-                <PlusCircle className="mr-2 h-4 w-4"/>
-                Crear Nuevo Contrato
-            </Button>
+            {/* Mostrar botón solo si tiene permiso */}
+            {canCreate && (
+                <Button onClick={() => navigate('/contracts/new')}>
+                    <PlusCircle className="mr-2 h-4 w-4"/>
+                    Crear Nuevo Contrato
+                </Button>
+            )}
         </div>
 
       {/* Filtros (si se implementan irían aquí, quizás en una Card separada) */}

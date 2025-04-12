@@ -32,7 +32,6 @@ Backend:
 
 3. Nuevas Características Recomendadas:
 - Sistema de búsqueda offline con Lunr.js
-- Modo oscuro/claro con next-themes
 - Sistema de plantillas para contratos
 - Historial de cambios con versionado
 - Sistema de etiquetas para contratos
@@ -57,7 +56,7 @@ Optimizaciones:
 - Completar sistema de autenticación
 - Implementar roles y permisos
 - Finalizar CRUD de contratos
-- Implementar dashboard básico
+- Implementar dashboard completo public / private
 2. Fase Secundaria:
 - Sistema de notificaciones
 - Exportación de reportes
@@ -71,7 +70,6 @@ Optimizaciones:
 ### Sugerencias Adicionales
 1. Seguridad:
 - Implementar cifrado de datos sensibles
-- Añadir autenticación de dos factores
 - Mejorar validación de archivos
 - Implementar logs de auditoría
 2. Mantenibilidad:
@@ -79,3 +77,9 @@ Optimizaciones:
 - Mejorar documentación de código
 - Implementar CI/CD
 - Añadir monitoreo de errores
+
+
+-Procede con el siguiente enfoque, revisar cada archivo en el proceso para que no exista codigo que este corgado. Asegurate de que no estes modificando 
+y/o agregando codigo que ya exista , no repitas codigo. por eso lee primero lo que ya esta creado. 
+Realiza los ajustes en partes pequeñas para una mejor edicion de los archivos grandes. 
+No supongas nada en casos que no este implementado?. Revisa el codigo sino esta agrega las modificaciones. De estar y este incompleto modifica el codigo

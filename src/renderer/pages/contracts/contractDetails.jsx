@@ -5,12 +5,19 @@ import { Button } from '@/renderer/components/ui/button';
 import { useToast } from '@/renderer/hooks/use-toast';
 import SupplementModal from './SupplementModal';
 import { Loader2, Edit, FileText, PlusCircle } from 'lucide-react';
+import useStore from '@/renderer/store/useStore';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/renderer/components/ui/card";
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A';
   try {
-    return new Date(dateString).toLocaleDateString();
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+    if (!(date instanceof Date) || isNaN(date)) return 'Fecha inválida';
+    
+    const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    return utcDate.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC' });
   } catch (e) {
+    console.error("Error formatting date:", dateString, e);
     return 'Fecha inválida';
   }
 };
@@ -27,6 +34,9 @@ const ContractDetails = () => {
 
   const [isSupplementModalOpen, setIsSupplementModalOpen] = useState(false);
   const [selectedSupplement, setSelectedSupplement] = useState(null);
+  
+  const userRole = useStore((state) => state.user?.role);
+  const canEdit = userRole === 'Admin' || userRole === 'RA';
 
   useEffect(() => {
     const loadDetails = async () => {
@@ -113,108 +123,127 @@ const ContractDetails = () => {
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-6 pb-4 border-b">
-        <h1 className="text-2xl font-bold truncate">Detalles: {contractData.name}</h1>
-        <Button
-          variant="outline"
-          onClick={() => navigate(`/contracts/${contractId}/edit`)}
-        >
-          <Edit className="mr-2 h-4 w-4" />
-          Editar
-        </Button>
-      </div>
-
-      <div className="space-y-6">
-        <section>
-          <h2 className="text-xl font-semibold mb-3">Información General</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm bg-gray-50 p-4 rounded-md shadow-sm">
-            <div><strong className="text-gray-600 block mb-1">Nombre:</strong> {contractData.name || '-'}</div>
-            <div><strong className="text-gray-600 block mb-1">Tipo:</strong> {contractData.type || '-'}</div>
-            <div><strong className="text-gray-600 block mb-1">Estado:</strong> {contractData.status || '-'}</div>
-            <div><strong className="text-gray-600 block mb-1">Fecha Inicio:</strong> {formatDate(contractData.startDate)}</div>
-            <div><strong className="text-gray-600 block mb-1">Fecha Vencimiento:</strong> {formatDate(contractData.endDate)}</div>
-          </div>
-        </section>
-
-        {contractData.description && (
-          <section>
-            <h2 className="text-xl font-semibold mb-3">Descripción</h2>
-            <p className="text-gray-700 bg-gray-50 p-4 rounded-md whitespace-pre-wrap shadow-sm">{contractData.description}</p>
-          </section>
-        )}
-
-        {contractData.documentPath && (
-          <section>
-            <h2 className="text-xl font-semibold mb-3">Documento Principal</h2>
-            <div className="flex items-center space-x-3 bg-gray-50 p-4 rounded-md shadow-sm">
-              <FileText className="h-5 w-5 text-gray-600 flex-shrink-0"/>
-              <span className="flex-1 truncate text-gray-700">{contractData.documentPath.split(/\\\\|\//).pop()}</span>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => handleOpenFile(contractData.documentPath)}
-              >
-                Abrir
-              </Button>
-            </div>
-          </section>
-        )}
-
-        <section>
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-xl font-semibold">Suplementos</h2>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground truncate">{contractData.name}</h1>
+            <p className="text-sm text-muted-foreground">Detalles del Contrato</p>
+        </div>
+        {canEdit && (
             <Button
               variant="outline"
-              size="sm"
-              onClick={() => {
-                setSelectedSupplement(null);
-                setIsSupplementModalOpen(true);
-              }}
+              onClick={() => navigate(`/contracts/${contractId}/edit`)}
             >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Añadir Suplemento
+              <Edit className="mr-2 h-4 w-4" />
+              Editar Contrato
             </Button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Información General</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-sm">
+                  <div className="space-y-1"><p className="text-muted-foreground text-xs">Nombre</p> <p className="font-medium">{contractData.name || '-'}</p></div>
+                  <div className="space-y-1"><p className="text-muted-foreground text-xs">Tipo</p> <p>{contractData.type || '-'}</p></div>
+                  <div className="space-y-1"><p className="text-muted-foreground text-xs">Estado</p> <p>{contractData.status || '-'}</p></div>
+                  <div className="space-y-1"><p className="text-muted-foreground text-xs">Fecha Inicio</p> <p>{formatDate(contractData.startDate)}</p></div>
+                  <div className="space-y-1"><p className="text-muted-foreground text-xs">Fecha Vencimiento</p> <p>{formatDate(contractData.endDate)}</p></div>
+              </CardContent>
+            </Card>
+
+            {contractData.description && (
+                 <Card>
+                    <CardHeader><CardTitle>Descripción</CardTitle></CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-foreground whitespace-pre-wrap">{contractData.description}</p>
+                    </CardContent>
+                </Card>
+            )}
           </div>
-          {contractData.supplements?.length > 0 ? (
-            <div className="space-y-3 bg-gray-50 p-4 rounded-md shadow-sm">
-              {contractData.supplements.map(supplement => (
-                <div
-                  key={supplement.id}
-                  className="border rounded-md p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white shadow-sm"
-                >
-                  <div className="mb-2 sm:mb-0 flex-1 mr-4">
-                    <p className="font-medium text-gray-800">{supplement.description || 'Sin descripción'}</p>
-                    <p className="text-xs text-gray-500">{formatDate(supplement.date)}</p>
-                  </div>
-                  <div className="flex space-x-2 flex-shrink-0">
-                    {supplement.filePath && (
+
+          <div className="space-y-6">
+              {contractData.documentPath && (
+                 <Card>
+                    <CardHeader><CardTitle>Documento Principal</CardTitle></CardHeader>
+                    <CardContent className="flex items-center space-x-3">
+                        <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0"/>
+                        <span className="flex-1 truncate text-sm text-foreground">{contractData.documentPath.split(/\\\\|\//).pop()}</span>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleOpenFile(contractData.documentPath)}
+                        >
+                          Abrir
+                        </Button>
+                    </CardContent>
+                </Card>
+              )}
+
+              <Card>
+                <CardHeader className="flex flex-row justify-between items-center">
+                  <CardTitle>Suplementos</CardTitle>
+                  {canEdit && (
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        onClick={() => handleOpenFile(supplement.filePath)}
+                        onClick={() => {
+                          setSelectedSupplement(null);
+                          setIsSupplementModalOpen(true);
+                        }}
                       >
-                        <FileText className="mr-1 h-4 w-4" /> Ver Doc.
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Añadir
                       </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedSupplement(supplement);
-                        setIsSupplementModalOpen(true);
-                      }}
-                    >
-                      <Edit className="mr-1 h-4 w-4" /> Editar
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-500 text-sm bg-gray-50 p-4 rounded-md shadow-sm">No hay suplementos registrados.</p>
-          )}
-        </section>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  {contractData.supplements?.length > 0 ? (
+                    <div className="space-y-3">
+                      {contractData.supplements.map(supplement => (
+                        <div
+                          key={supplement.id}
+                          className="border rounded-md p-3 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-background dark:bg-gray-700/30 shadow-sm"
+                        >
+                          <div className="mb-2 sm:mb-0 flex-1 mr-4">
+                            <p className="text-sm font-medium text-foreground">{supplement.description || 'Sin descripción'}</p>
+                            <p className="text-xs text-muted-foreground">{formatDate(supplement.createdAt)}</p>
+                          </div>
+                          <div className="flex space-x-2 flex-shrink-0">
+                            {supplement.filePath && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleOpenFile(supplement.filePath)}
+                              >
+                                <FileText className="mr-1 h-4 w-4" /> Ver Doc.
+                              </Button>
+                            )}
+                            {canEdit && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setSelectedSupplement(supplement);
+                                    setIsSupplementModalOpen(true);
+                                  }}
+                                >
+                                  <Edit className="mr-1 h-4 w-4" /> Editar
+                                </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground text-sm text-center py-4">No hay suplementos registrados.</p>
+                  )}
+                </CardContent>
+              </Card>
+          </div>
       </div>
 
       <SupplementModal

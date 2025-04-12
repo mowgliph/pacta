@@ -18,12 +18,12 @@ function createWindow() {
     },
   });
 
-  const backendProcess = spawn('node', [path.join(__dirname, '../../backend/server.js')], {
+  const backendProcess = spawn('node', [path.join(__dirname, '../../backend/index.js')], {
     stdio: 'inherit',
     cwd: path.join(__dirname, '../../backend'),
   });
 
-  mainWindow.loadURL('http://localhost:3000').catch((err) => {
+  mainWindow.loadURL('http://localhost:3001').catch((err) => {
     console.error('Error cargando frontend:', err);
     mainWindow.loadFile(path.join(__dirname, '../../public/error.html'));
   });
@@ -37,7 +37,7 @@ function createWindow() {
 
 // Manejar peticiones al backend
 ipcMain.handle('backend-request', async (event, { method, endpoint, data }) => {
-  const url = `http://localhost:5000${endpoint}`;
+  const url = `http://localhost:3001${endpoint}`;
   const options = {
     method,
     headers: { 'Content-Type': 'application/json' },
@@ -267,16 +267,59 @@ ipcMain.handle('files:open', async (event, filePath) => {
   }
 });
 
-// Sistema de notificaciones
-function enviarNotificacionVencimiento(contrato) {
+// Sistema de notificaciones mejorado
+function enviarNotificacion(tipo, mensaje, datos = {}) {
   const windows = BrowserWindow.getAllWindows();
   if (windows.length > 0) {
     windows[0].webContents.send('notification:new', {
-      type: 'contract_expiring',
-      message: `El contrato ${contrato.name} vencerá pronto`,
-      data: contrato
+      type,
+      message: mensaje,
+      data: datos,
+      timestamp: new Date().toISOString()
     });
   }
+}
+
+// Manejador para notificaciones de contratos
+function enviarNotificacionContrato(contrato, tipo) {
+  let mensaje = '';
+  switch (tipo) {
+    case 'vencimiento':
+      mensaje = `El contrato ${contrato.name} vencerá pronto`;
+      break;
+    case 'creacion':
+      mensaje = `Se ha creado el contrato ${contrato.name}`;
+      break;
+    case 'modificacion':
+      mensaje = `Se ha modificado el contrato ${contrato.name}`;
+      break;
+    default:
+      mensaje = `Actualización en el contrato ${contrato.name}`;
+  }
+  
+  enviarNotificacion(`contract_${tipo}`, mensaje, contrato);
+}
+
+// Manejador para notificaciones de suplementos
+function enviarNotificacionSuplemento(suplemento, tipo) {
+  let mensaje = '';
+  switch (tipo) {
+    case 'creacion':
+      mensaje = `Se ha añadido un suplemento al contrato ${suplemento.contractName}`;
+      break;
+    case 'modificacion':
+      mensaje = `Se ha modificado un suplemento del contrato ${suplemento.contractName}`;
+      break;
+    default:
+      mensaje = `Actualización en suplementos del contrato ${suplemento.contractName}`;
+  }
+  
+  enviarNotificacion(`supplement_${tipo}`, mensaje, suplemento);
+}
+
+// Manejador para notificaciones del sistema
+function enviarNotificacionSistema(tipo, mensaje, datos = {}) {
+  enviarNotificacion(`system_${tipo}`, mensaje, datos);
 }
 
 // Manejadores de perfil de usuario
@@ -323,5 +366,68 @@ ipcMain.handle('statistics:fetch', async (event, filters) => {
   } catch (error) {
       console.error("Error en manejador IPC statistics:fetch:", error);
       throw error;
+  }
+});
+
+// --- Manejadores IPC Adicionales para Dashboard ---
+
+ipcMain.handle('expiring-contracts:fetch', async (event, days = 30) => {
+  // Construir la URL del backend para obtener contratos que vencen pronto
+  const url = `http://localhost:3001/api/contracts/expiring?days=${parseInt(days, 10)}`;
+  try {
+    const response = await fetch(url, { headers: getAuthHeaders() });
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      throw new Error(errorBody.message || `Error ${response.status} al obtener contratos por vencer`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error("Error en IPC expiring-contracts:fetch:", error);
+    throw error;
+  }
+});
+
+ipcMain.handle('supplement-activity:fetch', async (event, limit = 5) => {
+  // Construir la URL del backend para obtener actividad reciente de suplementos
+  const url = `http://localhost:3001/api/supplements/activity?limit=${parseInt(limit, 10)}`; // Endpoint hipotético
+  try {
+    const response = await fetch(url, { headers: getAuthHeaders() });
+     if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      throw new Error(errorBody.message || `Error ${response.status} al obtener actividad de suplementos`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error("Error en IPC supplement-activity:fetch:", error);
+    throw error;
+  }
+});
+
+// Manejador para estadísticas públicas
+ipcMain.handle('public:statistics', async () => {
+  try {
+    const response = await fetch('http://localhost:3001/api/public/statistics', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error ${response.status} al obtener estadísticas públicas`);
+    }
+    
+    const data = await response.json();
+    
+    // Procesar y formatear los datos para el dashboard
+    const formattedData = {
+      totalContracts: data.totalContracts || 0,
+      activeContracts: data.activeContracts || 0,
+      expiringContracts: data.expiringContracts || 0,
+      contractStats: data.contractStats || []
+    };
+    
+    return formattedData;
+  } catch (error) {
+    console.error('Error en public:statistics:', error);
+    throw error;
   }
 });

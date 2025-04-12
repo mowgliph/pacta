@@ -23,32 +23,81 @@ router.get('/', authenticateJWT, async (req, res) => {
       return acc;
     }, {}); // Ej: { Active: 10, Pending: 5, Expired: 2 }
 
-    // 2. Contratos Próximos a Vencer (ej. próximos 30 días)
+    // 2. Contratos Próximos a Vencer (Contador y Lista)
     const today = new Date();
-    const next30Days = new Date();
+    // Resetear hora a 00:00:00 para evitar problemas con la comparación de fechas
+    today.setHours(0, 0, 0, 0);
+    const next30Days = new Date(today);
     next30Days.setDate(today.getDate() + 30);
     
-    const expiringSoonCount = await prisma.contract.count({
-      where: {
+    const expiringSoonWhere = {
         endDate: {
-          gte: today,       // Mayor o igual a hoy
-          lte: next30Days,  // Menor o igual a dentro de 30 días
+          gte: today,       
+          lte: next30Days,  
         },
-        status: 'Active' // Solo considerar contratos activos
-      },
+        status: 'Active' 
+    };
+
+    const expiringSoonCount = await prisma.contract.count({ where: expiringSoonWhere });
+
+    // Nueva consulta: Obtener los detalles de los próximos 5 a vencer
+    const expiringContracts = await prisma.contract.findMany({
+        where: expiringSoonWhere,
+        orderBy: {
+            endDate: 'asc' // Los más cercanos primero
+        },
+        take: 5, // Limitar a 5
+        select: { // Seleccionar solo los campos necesarios
+            id: true,
+            name: true,
+            endDate: true
+        }
     });
 
-    // 3. (Opcional) Podrías añadir más estadísticas aquí:
-    //    - Valor total de contratos (si tuvieras un campo 'value')
-    //    - Contratos por tipo (si el campo 'type' se usa consistentemente)
-    //    - Actividad reciente (basado en el modelo Activity)
+    // 3. Actividad Reciente (Suplementos)
+    // Asume un modelo 'Activity' con relación a 'Contract' y un campo 'action' o similar
+    // O podría basarse en el modelo 'Supplement' si tiene fecha de creación/modificación
+    const recentSupplementsActivity = await prisma.activity.findMany({
+        where: {
+            // Filtrar por acciones relacionadas a suplementos
+            // Ajusta estos valores según tu lógica de 'action'
+            action: {
+                in: ['CREATE_SUPPLEMENT', 'UPDATE_SUPPLEMENT'] 
+            }
+        },
+        orderBy: {
+            createdAt: 'desc' // Los más recientes primero
+        },
+        take: 5, // Limitar a 5
+        select: {
+            id: true,
+            description: true, // O el campo relevante que describa la acción
+            createdAt: true, // La fecha de la actividad
+            contract: { // Incluir datos del contrato asociado
+                select: {
+                    id: true,
+                    name: true
+                }
+            }
+        }
+    });
+    
+    // Formatear para el frontend (opcional pero recomendado)
+    const recentSupplements = recentSupplementsActivity.map(activity => ({
+        id: activity.id,
+        description: activity.description || 'Actividad registrada', 
+        date: activity.createdAt,
+        contractId: activity.contract.id,
+        contractName: activity.contract.name || `ID ${activity.contract.id}`
+    }));
 
     // --- Ensamblar Respuesta --- 
     const statisticsData = {
       totalContracts,
       statusCounts, 
       expiringSoonCount,
-      // Añadir otras estadísticas aquí
+      expiringContracts, 
+      recentSupplements, // Añadir la lista de actividades
     };
 
     res.json(statisticsData);
