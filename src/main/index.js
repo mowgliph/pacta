@@ -3,14 +3,18 @@ const path = require('path');
 const fetch = require('node-fetch');
 const fs = require('fs');
 const FormData = require('form-data');
-const { ObjectId } = require('mongodb');
 const db = require('../db');
 const { PrismaClient } = require('@prisma/client');
+require('dotenv').config();
+
+// Get the API URL from .env, with fallback
+const API_URL = process.env.API_URL || 'http://localhost:3000';
 const prisma = new PrismaClient();
 
 // Variable global para almacenar el token JWT
 let currentAuthToken = null;
 
+// Update the createWindow function
 function createWindow() {
   const mainWindow = new BrowserWindow({
     width: 1280,
@@ -27,7 +31,7 @@ function createWindow() {
     cwd: path.join(__dirname, '../../backend'),
   });
 
-  mainWindow.loadURL('http://localhost:3000').catch((err) => {
+  mainWindow.loadURL(API_URL).catch((err) => {
     console.error('Error cargando frontend:', err);
     mainWindow.loadFile(path.join(__dirname, '../../public/error.html'));
   });
@@ -41,7 +45,7 @@ function createWindow() {
 
 // Manejar peticiones al backend
 ipcMain.handle('backend-request', async (event, { method, endpoint, data }) => {
-  const url = `http://localhost:3000${endpoint}`;
+  const url = `${API_URL}${endpoint}`;
   const options = {
     method,
     headers: { 'Content-Type': 'application/json' },
@@ -110,7 +114,7 @@ const getAuthHeadersForFormData = () => {
 // Manejadores de autenticación
 ipcMain.handle('auth:login', async (_, credentials) => {
   // Llamar al endpoint /api/auth/login
-  const response = await fetch('http://localhost:3000/api/auth/login', { // Corregir endpoint a /api/auth/login
+  const response = await fetch(`${API_URL}/api/auth/login`, { // Corregir endpoint a /api/auth/login
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(credentials)
@@ -137,7 +141,7 @@ ipcMain.handle('auth:logout', async () => {
 
 // Manejadores de contratos
 ipcMain.handle('contracts:getAll', async () => {
-  const response = await fetch('http://localhost:3000/api/contracts', { headers: getAuthHeaders() });
+  const response = await fetch(`${API_URL}/api/contracts`, { headers: getAuthHeaders() });
   if (!response.ok) throw new Error(`Error ${response.status} al obtener contratos`);
   return response.json();
 });
@@ -156,7 +160,7 @@ ipcMain.handle('contracts:uploadDocument', async (_, { contractId, filePath }) =
       throw new Error('Error al leer el archivo para subir.');
   }
   
-  const response = await fetch(`http://localhost:3000/api/contracts/${contractId}/upload`, {
+  const response = await fetch(`${API_URL}/api/contracts/${contractId}/upload`, {
     method: 'POST',
     body: formData,
     headers: getAuthHeadersForFormData() // Usar headers para FormData
@@ -166,7 +170,7 @@ ipcMain.handle('contracts:uploadDocument', async (_, { contractId, filePath }) =
 });
 
 ipcMain.handle('contracts:getDetails', async (event, contractId) => {
-  const response = await fetch(`http://localhost:3000/api/contracts/${contractId}`, { headers: getAuthHeaders() });
+  const response = await fetch(`${API_URL}/api/contracts/${contractId}`, { headers: getAuthHeaders() });
   if (!response.ok) {
     throw new Error(`Error ${response.status} al obtener detalles del contrato`);
   }
@@ -177,7 +181,7 @@ ipcMain.handle('contracts:create', async (event, contractData) => {
   // Nota: Si la creación incluye subida directa (como está ahora contract.route.js POST /),
   // esta llamada simple no funcionará, necesitaría enviar FormData.
   // Asumiremos que el frontend envía solo JSON aquí y usa /upload después.
-  const response = await fetch('http://localhost:3000/api/contracts', {
+  const response = await fetch(`${API_URL}/api/contracts`, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(contractData)
@@ -190,7 +194,7 @@ ipcMain.handle('contracts:create', async (event, contractData) => {
 });
 
 ipcMain.handle('contracts:update', async (event, { contractId, contractData }) => {
-  const response = await fetch(`http://localhost:3000/api/contracts/${contractId}`, {
+  const response = await fetch(`${API_URL}/api/contracts/${contractId}`, {
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify(contractData)
@@ -203,7 +207,7 @@ ipcMain.handle('contracts:update', async (event, { contractId, contractData }) =
 });
 
 ipcMain.handle('contracts:delete', async (event, contractId) => {
-  const response = await fetch(`http://localhost:3000/api/contracts/${contractId}`, {
+  const response = await fetch(`${API_URL}/api/contracts/${contractId}`, {
     method: 'DELETE',
     headers: getAuthHeaders()
   });
@@ -242,7 +246,7 @@ ipcMain.handle('files:upload', async (event, { filePath, contractId }) => {
     formData.append('file', fs.createReadStream(filePath));
     formData.append('contractId', contractId);
 
-    const response = await fetch('http://localhost:3000/api/files/upload', {
+    const response = await fetch(`${API_URL}/api/files/upload`, {
       method: 'POST',
       headers: getAuthHeaders(),
       body: formData
@@ -274,7 +278,7 @@ ipcMain.handle('contracts:addSupplement', async (event, { contractId, supplement
       });
     }
 
-    const url = `http://localhost:3000/api/contracts/${contractId}/supplements`;
+    const url = `${API_URL}/api/contracts/${contractId}/supplements`;
     const response = await fetch(url, {
       method: 'POST',
       headers: getAuthHeaders(),
@@ -317,7 +321,7 @@ ipcMain.handle('contracts:editSupplement', async (event, { contractId, supplemen
       });
     }
 
-    const url = `http://localhost:3000/api/contracts/${contractId}/supplements/${supplementId}`;
+    const url = `${API_URL}/api/contracts/${contractId}/supplements/${supplementId}`;
     const response = await fetch(url, {
       method: 'PUT',
       headers: getAuthHeaders(),
@@ -432,7 +436,7 @@ function enviarNotificacionSistema(tipo, mensaje, datos = {}) {
 
 // Manejadores de perfil de usuario
 ipcMain.handle('profile:fetch', async (event) => {
-  const response = await fetch('http://localhost:3000/api/users/profile', { // Usar la ruta correcta /api/users/profile
+  const response = await fetch(`${API_URL}/api/users/profile`, { // Usar la ruta correcta /api/users/profile
       method: 'GET',
       headers: getAuthHeaders()
   });
@@ -444,7 +448,7 @@ ipcMain.handle('profile:fetch', async (event) => {
 });
 
 ipcMain.handle('profile:update', async (event, profileData) => {
-  const response = await fetch('http://localhost:3000/api/users/profile', { // Usar la ruta correcta /api/users/profile
+  const response = await fetch(`${API_URL}/api/users/profile`, { // Usar la ruta correcta /api/users/profile
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify(profileData)
@@ -458,7 +462,7 @@ ipcMain.handle('profile:update', async (event, profileData) => {
 
 // Manejador IPC para Estadísticas
 ipcMain.handle('statistics:fetch', async (event, filters) => {
-  const url = 'http://localhost:3000/api/statistics';
+  const url = `${API_URL}/api/statistics`;
   try {
     const response = await fetch(url, { 
         method: 'GET', 
@@ -481,7 +485,7 @@ ipcMain.handle('statistics:fetch', async (event, filters) => {
 
 ipcMain.handle('expiring-contracts:fetch', async (event, days = 30) => {
   // Construir la URL del backend para obtener contratos que vencen pronto
-  const url = `http://localhost:3000/api/contracts/expiring?days=${parseInt(days, 10)}`;
+  const url = `${API_URL}/api/contracts/expiring?days=${parseInt(days, 10)}`;
   try {
     const response = await fetch(url, { headers: getAuthHeaders() });
     if (!response.ok) {
@@ -497,7 +501,7 @@ ipcMain.handle('expiring-contracts:fetch', async (event, days = 30) => {
 
 ipcMain.handle('supplement-activity:fetch', async (event, limit = 5) => {
   // Construir la URL del backend para obtener actividad reciente de suplementos
-  const url = `http://localhost:3000/api/supplements/activity?limit=${parseInt(limit, 10)}`; // Endpoint hipotético
+  const url = `${API_URL}/api/supplements/activity?limit=${parseInt(limit, 10)}`; // Endpoint hipotético
   try {
     const response = await fetch(url, { headers: getAuthHeaders() });
      if (!response.ok) {
@@ -514,7 +518,7 @@ ipcMain.handle('supplement-activity:fetch', async (event, limit = 5) => {
 // Manejador para estadísticas públicas
 ipcMain.handle('public:statistics', async () => {
   try {
-    const response = await fetch('http://localhost:3000/api/public/statistics', {
+    const response = await fetch(`${API_URL}/api/public/statistics`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     });
