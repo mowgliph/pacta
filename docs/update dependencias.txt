@@ -1,0 +1,197 @@
+# Plan de Actualización de Dependencias - PACTA
+
+## 1. Análisis de Versiones Actuales vs Nuevas
+
+### Dependencias Principales:
+```json
+{
+  "actual": {
+    "electron": "^24.3.0",
+    "electron-builder": "^23.6.0",
+    "@types/node": "^18.16.18",
+    "vite": "^4.3.9"
+  },
+  "nueva": {
+    "electron": "^28.2.0",
+    "electron-builder": "^24.9.1",
+    "@types/node": "^20.11.0",
+    "vite": "^5.0.12"
+  }
+}
+```
+
+## 2. Pasos de Actualización
+
+### 2.1 Preparación del Entorno
+```bash
+# Crear nueva rama para actualizaciones
+git checkout -b update-dependencies
+
+# Limpiar caché y node_modules
+pnpm store prune
+rm -rf node_modules
+rm -rf dist
+```
+
+### 2.2 Actualización de Dependencias
+```bash
+# Actualizar Electron y builder
+pnpm add electron@latest electron-builder@latest -D
+
+# Actualizar dependencias de desarrollo
+pnpm add @types/node@latest vite@latest -D
+
+# Reinstalar todas las dependencias
+pnpm install
+```
+
+### 2.3 Actualizaciones de Configuración
+
+#### vite.config.js
+```javascript
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+
+export default defineConfig({
+  plugins: [react()],
+  base: './',
+  server: {
+    port: 3000,
+    strictPort: true,
+    host: '127.0.0.1',
+    open: false
+  },
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src')
+    }
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: '.',
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html')
+      }
+    }
+  },
+  optimizeDeps: {
+    exclude: ['electron']
+  }
+});
+```
+
+#### src/main/index.js
+```javascript
+const { app, BrowserWindow } = require('electron');
+const path = require('path');
+
+async function createWindow() {
+  const win = new BrowserWindow({
+    width: 1200,
+    height: 800,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: true,
+      sandbox: false
+    }
+  });
+
+  if (process.env.NODE_ENV !== 'production') {
+    await win.loadURL('http://127.0.0.1:3000');
+    win.webContents.openDevTools();
+  } else {
+    await win.loadFile(path.join(__dirname, '../dist/index.html'));
+  }
+}
+
+app.whenReady().then(createWindow);
+
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
+  }
+});
+
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
+});
+```
+
+## 3. Verificación y Pruebas
+
+### 3.1 Verificación de Instalación
+```bash
+# Verificar versiones instaladas
+pnpm list electron
+pnpm list vite
+```
+
+### 3.2 Pruebas
+```bash
+# Ejecutar tests
+pnpm test
+
+# Verificar build
+pnpm run build
+
+# Probar en modo desarrollo
+pnpm run electron_dev
+```
+
+## 4. Consideraciones de Compatibilidad
+
+### 4.1 React y React DOM (v18)
+- Mantener versión actual por estabilidad
+- Compatible con todas las dependencias
+- Soporte LTS activo
+
+### 4.2 Vite (v5)
+- Mejoras de rendimiento
+- Better HMR (Hot Module Replacement)
+- Mejor soporte para TypeScript
+
+### 4.3 Electron (v28)
+- Chromium actualizado
+- Mejor seguridad
+- Soporte mejorado para ES Modules
+- Mejor rendimiento IPC
+
+## 5. Rollback Plan
+
+En caso de problemas:
+```bash
+# Revertir a versiones anteriores
+git checkout main
+git branch -D update-dependencies
+
+# Reinstalar dependencias originales
+pnpm install
+```
+
+## 6. Monitoreo Post-Actualización
+
+- Verificar rendimiento de la aplicación
+- Monitorear uso de memoria
+- Verificar tiempos de carga
+- Comprobar funcionalidades críticas:
+  * Autenticación
+  * Gestión de contratos
+  * Generación de reportes
+  * Funcionalidades offline
+
+## 7. Próximos Pasos
+
+1. Ejecutar actualización en ambiente de desarrollo
+2. Realizar pruebas exhaustivas
+3. Documentar cualquier problema encontrado
+4. Planificar actualización en producción
+
+## 8. Notas Adicionales
+
+- Mantener backup del package.json original
+- Documentar cualquier cambio en la API de Electron
+- Actualizar documentación si es necesario
