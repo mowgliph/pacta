@@ -6,7 +6,7 @@
     "start": "vite",
     "build": "vite build",
     "serve": "vite preview",
-    "electron_dev": "concurrently \"npm run start\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron_dev": "concurrently \"cross-env BROWSER=none npm run start\" \"wait-on tcp:3000 && electron .\"",
     "electron_build": "electron-builder",
     "prisma_migrate": "prisma migrate dev --name init",
     "prisma_studio": "prisma studio"

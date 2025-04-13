@@ -8,17 +8,19 @@ datasource db {
 }
 
 model User {
-  id            Int          @id @default(autoincrement())
-  username      String       @unique
-  email         String       @unique
+  id            Int            @id @default(autoincrement())
+  username      String         @unique
+  email         String         @unique
   password      String
-  role          Role         @default(User)
-  notifications Boolean      @default(true)
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  role          String         @default("User") // Changed from enum to String
+  notifications Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   contracts     Contract[]
   accessLogs    AccessLog[]
   permissions   Permission[]
+  activities    Activity[]     // Added missing relation
+  notifications Notification[] // Added missing relation
 }
 
 model Company {
@@ -41,18 +43,18 @@ model Department {
 }
 
 model Contract {
-  id            Int             @id @default(autoincrement())
+  id            Int       @id @default(autoincrement())
   name          String
   type          String?
   description   String
   startDate     DateTime
   endDate       DateTime
-  status        ContractStatus  @default(Active)
+  status        String    @default("Active") // Changed from enum to String
   documentPath  String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   userId        Int
-  user          User            @relation(fields: [userId], references: [id])
+  user          User      @relation(fields: [userId], references: [id])
   companyId     Int?
   company       Company?        @relation(fields: [companyId], references: [id])
   departmentId  Int?
