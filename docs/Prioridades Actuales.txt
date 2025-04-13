@@ -1,16 +1,4 @@
 ### Estado Actual vs PRD y App Flow
-1. Alineación con PRD:
-- ✅ La estructura básica está implementada (frontend/backend/electron)
-- ✅ Implementación inicial de gestión de contratos
-- ✅ Uso de SQLite con Prisma
-- ❌ Falta implementación completa del modo público/privado
-- ❌ Sistema de roles incompleto (RA/Admin)
-2. Alineación con App Flow:
-- ✅ Estructura de rutas básica implementada
-- ✅ Componentes de contratos y suplementos iniciados
-- ❌ Falta implementación completa del dashboard público
-- ❌ Sistema de notificaciones incompleto
-- ❌ Exportación de reportes pendiente
 
 Recomendaciones de Modernización
 1. Robustez y Seguridad: 
@@ -44,6 +32,7 @@ Recomendaciones de Modernización
 * Filtros Din�micos: Permitir filtrar estad�sticas por rango de fechas o tipo de contrato. 
 * Gr�ficos Interactivos: Hacer los gr�ficos de Recharts interactivos (zoom, tooltips). 
 * KPIs Personalizados: Permitir a los usuarios definir m�tricas clave (ej. "Tasa de Renovaci�n").
+* Permitir a los usuarios personalizar las estadisticas en el dashboard a su gusto.
 
 8. Mejoras en Gesti�n de Contratos: 
 * Vista de Cronolog�a: Mostrar una l�nea de tiempo de los eventos del contrato (creaci�n, suplementos, vencimiento). 

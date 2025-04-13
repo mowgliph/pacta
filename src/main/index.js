@@ -31,7 +31,12 @@ function createWindow() {
     cwd: path.join(__dirname, '../../backend'),
   });
 
-  mainWindow.loadURL(API_URL).catch((err) => {
+  const isDev = process.env.NODE_ENV !== 'production';
+  const url = isDev 
+    ? `${API_URL}` 
+    : `file://${path.join(__dirname, '../dist/index.html')}`;
+
+  mainWindow.loadURL(url).catch((err) => {
     console.error('Error cargando frontend:', err);
     mainWindow.loadFile(path.join(__dirname, '../../public/error.html'));
   });
