@@ -13,70 +13,46 @@
 - ❌ Exportación de reportes pendiente
 
 Recomendaciones de Modernización
-Actualizaciones Técnicas:
-Frontend:
-- Añadir TanStack Query para gestión de estado servidor
-- Implementar Zod para validación de formularios
-- Integrar Framer Motion para animaciones fluidas
+1. Robustez y Seguridad: 
+* Cifrado de Datos Sensibles: Cifrar campos como password y fileUrl en SQLite usando crypto. 
+* Auditor�a de Seguridad: Implementar auditor�as peri�dicas (tabla AccessLog) para detectar accesos no autorizados. 
+* Copias de Seguridad Incrementales: A�adir soporte para backups incrementales (tabla Backup).
 
-Backend:
-- Implementar sistema de caché con SQLite
-- Añadir sistema de logs con Winston
-- Implementar rate limiting para seguridad
-- Mejorar sistema de backups automáticos
+2. Accesibilidad: 
+* Soporte WCAG 2.1: Usar React Aria Modal para modales accesibles y asegurar contraste de colores. 
+* Modo Alto Contraste: A�adir un tema de alto contraste para usuarios con discapacidades visuales.
 
-2. Mejoras de Arquitectura:
-- Separar lógica de negocio en servicios
-- Añadir capa de abstracción para la base de datos
-- Implementar patrón Repository
+3. Entendibilidad: 
+* Tutoriales Interactivos: A�adir un tutorial guiado al iniciar la app por primera vez (usar Framer Motion para animaciones). 
+* Tooltips Explicativos: Incluir tooltips (Shadcn UI) en cada secci�n para explicar funciones (ej. "Filtrar contratos por estado"). 
+* Documentaci�n Contextual: A�adir un bot�n de "Ayuda" en cada pantalla con explicaciones detalladas.
 
-3. Nuevas Características Recomendadas:
-- Sistema de búsqueda offline con Lunr.js
-- Sistema de plantillas para contratos
-- Historial de cambios con versionado
-- Sistema de etiquetas para contratos
-- Dashboard configurable por usuario
+4. Modernidad: 
+* Animaciones Suaves: Usar Framer Motion para transiciones entre pantallas. 
+* Dise�o Minimalista: Simplificar la UI para evitar sobrecarga visual (ej. usar iconos claros y espaciado amplio).
 
-Mejoras de UX/UI:
-- Implementar skeleton loaders
-- Añadir micro-interacciones
-- Mejorar accesibilidad (ARIA labels)
-- Implementar tooltips informativos
-- Añadir tour guiado para nuevos usuarios
+5. Posibles Caracter�sticas de Uso: 
+* Importaci�n/Exportaci�n de Contratos: Permitir importar contratos desde CSV y exportarlos. 
+* Plantillas de Contratos: Permitir crear plantillas predefinidas para contratos recurrentes.
 
-Optimizaciones:
-- Implementar lazy loading para rutas
-- Optimizar carga de imágenes
-- Mejorar sistema de caché
-- Implementar compresión de archivos
-- Añadir service workers para offline
+6. Acciones R�pidas en el Dashboard: 
+* A�adir Contrato R�pido: Modal con campos m�nimos (t�tulo, empresa, fecha). 
+* Archivar Contratos: Bot�n para archivar contratos vencidos directamente desde el dashboard. 
+* Ver Notificaciones Pendientes: Mostrar un contador de notificaciones no le�das.
 
-### Prioridades de Implementación
-1. Fase Inmediata:
-- Completar sistema de autenticación
-- Implementar roles y permisos
-- Finalizar CRUD de contratos
-- Implementar dashboard completo public / private
-2. Fase Secundaria:
-- Sistema de notificaciones
-- Exportación de reportes
-- Gestión de suplementos
-- Mejoras de UI/UX
-3. Fase Final:
-- Optimizaciones de rendimiento
-- Implementación offline completa
-- Sistema de backups
-- Documentación técnica
-### Sugerencias Adicionales
-1. Seguridad:
-- Implementar cifrado de datos sensibles
-- Mejorar validación de archivos
-- Implementar logs de auditoría
-2. Mantenibilidad:
-- Añadir más pruebas unitarias
-- Mejorar documentación de código
-- Implementar CI/CD
-- Añadir monitoreo de errores
+7. Mejoras en Estad�sticas: 
+* Filtros Din�micos: Permitir filtrar estad�sticas por rango de fechas o tipo de contrato. 
+* Gr�ficos Interactivos: Hacer los gr�ficos de Recharts interactivos (zoom, tooltips). 
+* KPIs Personalizados: Permitir a los usuarios definir m�tricas clave (ej. "Tasa de Renovaci�n").
+
+8. Mejoras en Gesti�n de Contratos: 
+* Vista de Cronolog�a: Mostrar una l�nea de tiempo de los eventos del contrato (creaci�n, suplementos, vencimiento). 
+* B�squeda Predictiva: Implementar b�squeda predictiva con Tanstack Query. 
+* A�adir Suplementos: Permitir arrastrar y soltar documentos (DnDKit) al crear suplementos.
+
+9. Notificaciones Mejoradas: 
+* Notificaciones Personalizables: Permitir configurar el tiempo de aviso (ej. 7 d�as antes, 1 d�a antes). 
+* Historial de Notificaciones: Mostrar un historial de notificaciones enviadas (tabla Notification).
 
 
 -Procede con el siguiente enfoque, revisar cada archivo en el proceso para que no exista codigo que este corgado. Asegurate de que no estes modificando 
