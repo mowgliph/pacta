@@ -4,15 +4,17 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
-  base: './',
+  root: path.join(__dirname, 'src', 'renderer'),
+  publicDir: 'public',
   server: {
     port: 3000,
     strictPort: true,
-    open: false
+    host: true
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src')
-    }
+      '@': path.join(__dirname, 'src')
+    },
+    extensions: ['.js', '.jsx', '.ts', '.tsx']
   }
 });

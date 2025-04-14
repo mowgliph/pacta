@@ -1,6 +1,6 @@
 import { fetchStatistics } from '../api/electronAPI';
 
-export const statisticsService = {
+const statisticsService = {
   // Obtener estadísticas generales
   getGeneralStatistics: async () => {
     try {
@@ -57,4 +57,6 @@ export const statisticsService = {
       count
     }));
   }
-}; 
+};
+
+export default statisticsService;

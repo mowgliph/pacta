@@ -1,6 +1,6 @@
 import { addSupplement, editSupplement } from '../api/electronAPI';
 
-export const supplementService = {
+const supplementService = {
   // Agregar un suplemento a un contrato
   addSupplement: async (contractId, supplementData) => {
     try {
@@ -41,4 +41,6 @@ export const supplementService = {
   calculateTotalSupplements: (supplements) => {
     return supplements.reduce((total, supplement) => total + supplement.amount, 0);
   }
-}; 
+};
+
+export default supplementService;

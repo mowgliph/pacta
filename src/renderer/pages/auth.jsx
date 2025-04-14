@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AuthSchema } from '@/utils/validation/schemas';
+import { AuthSchema } from '@/renderer/utils/validation/schemas';
 import { toast } from '@/renderer/hooks/use-toast';
 import { useLocation } from 'wouter';
 import useStore from '@/renderer/store/useStore';

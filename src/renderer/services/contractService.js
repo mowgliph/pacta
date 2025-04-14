@@ -1,6 +1,6 @@
 import { fetchContracts, fetchContractDetails, createContract, updateContract } from '../api/electronAPI';
 
-export const contractService = {
+const contractService = {
   // Obtener todos los contratos
   getAllContracts: async () => {
     try {
@@ -56,4 +56,6 @@ export const contractService = {
 
     return true;
   }
-}; 
+};
+
+export default contractService;

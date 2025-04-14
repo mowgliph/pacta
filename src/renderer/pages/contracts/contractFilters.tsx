@@ -1,5 +1,4 @@
 import React from 'react';
-import { contractService } from '@/renderer/services';
 import { Button } from "@/renderer/components/ui/button";
 import { Input } from "@/renderer/components/ui/input";
 import { Label } from "@/renderer/components/ui/label";
@@ -13,15 +12,26 @@ import {
   SelectValue,
 } from "@/renderer/components/ui/select";
 
-const ContractFilters = ({ onFilterChange }) => {
-  const [filters, setFilters] = React.useState({
+interface ContractFilters {
+  status: string;
+  clientName: string;
+  startDate: string;
+  endDate: string;
+}
+
+interface ContractFiltersProps {
+  onFilterChange: (filters: ContractFilters) => void;
+}
+
+const ContractFilters: React.FC<ContractFiltersProps> = ({ onFilterChange }) => {
+  const [filters, setFilters] = React.useState<ContractFilters>({
     status: '',
     clientName: '',
     startDate: '',
     endDate: ''
   });
 
-  const handleChange = (name, value) => {
+  const handleChange = (name: keyof ContractFilters, value: string) => {
     const newFilters = {
       ...filters,
       [name]: value
@@ -31,7 +41,7 @@ const ContractFilters = ({ onFilterChange }) => {
   };
 
   const handleReset = () => {
-    const resetFilters = {
+    const resetFilters: ContractFilters = {
       status: '',
       clientName: '',
       startDate: '',
@@ -73,7 +83,7 @@ const ContractFilters = ({ onFilterChange }) => {
               id="clientName"
               value={filters.clientName}
               onChange={(e) => handleChange('clientName', e.target.value)}
-              placeholder="Buscar por nombre"
+              placeholder="Nombre del cliente"
             />
           </div>
 
@@ -100,7 +110,11 @@ const ContractFilters = ({ onFilterChange }) => {
 
         <div className="flex justify-end mt-4">
           <HoverGlow>
-            <Button variant="outline" onClick={handleReset}>
+            <Button
+              variant="outline"
+              onClick={handleReset}
+              className="mr-2"
+            >
               Limpiar Filtros
             </Button>
           </HoverGlow>

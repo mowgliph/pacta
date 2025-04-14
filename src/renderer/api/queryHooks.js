@@ -1,5 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { contractService, supplementService, statisticsService } from '@/renderer/services';
+import { 
+  contractService, 
+  supplementService, 
+  statisticsService 
+} from '@/renderer/services';
 
 // Hooks para contratos
 export const useContracts = (filters = {}) => {
@@ -78,4 +82,4 @@ export const useStatistics = () => {
     queryFn: () => statisticsService.getGeneralStatistics(),
     staleTime: 1000 * 60 * 15, // 15 minutos
   });
-}; 
+};

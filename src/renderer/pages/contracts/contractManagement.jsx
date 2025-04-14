@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useLocation } from 'wouter'; // Para navegación
-import { toast } from '@/renderer/hooks/use-toast'; // Usar el hook de toast
+import { useLocation } from 'wouter';
+import { toast } from '@/renderer/hooks/use-toast';
 import { contractService } from '@/renderer/services';
 import useStore from '@/renderer/store/useStore'; // Importar useStore
 

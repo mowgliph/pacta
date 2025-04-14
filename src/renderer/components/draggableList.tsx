@@ -1,9 +1,29 @@
 import React from 'react';
-import { DndContext, closestCenter } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core';
+import { 
+  SortableContext, 
+  verticalListSortingStrategy, 
+  useSortable, 
+  arrayMove 
+} from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-const SortableItem = ({ id, children }) => {
+interface Item {
+  id: string | number;
+  name: string;
+}
+
+interface SortableItemProps {
+  id: string | number;
+  children: React.ReactNode;
+}
+
+interface DraggableListProps {
+  items: Item[];
+  setItems: React.Dispatch<React.SetStateAction<Item[]>>;
+}
+
+const SortableItem: React.FC<SortableItemProps> = ({ id, children }) => {
   const {
     attributes,
     listeners,
@@ -30,11 +50,11 @@ const SortableItem = ({ id, children }) => {
   );
 };
 
-const DraggableList = ({ items, setItems }) => {
-  const handleDragEnd = (event) => {
+const DraggableList: React.FC<DraggableListProps> = ({ items, setItems }) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (active.id !== over.id) {
+    if (over && active.id !== over.id) {
       setItems((items) => {
         const oldIndex = items.findIndex(item => item.id === active.id);
         const newIndex = items.findIndex(item => item.id === over.id);

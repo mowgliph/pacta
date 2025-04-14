@@ -14,13 +14,11 @@ const queryClient = new QueryClient({
   },
 });
 
-const Root = () => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <App />
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
-  );
-};
+const Root = () => (
+  <QueryClientProvider client={queryClient}>
+    <App />
+    <ReactQueryDevtools initialIsOpen={false} />
+  </QueryClientProvider>
+);
 
 export default Root;
