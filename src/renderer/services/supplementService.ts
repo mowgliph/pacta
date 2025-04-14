@@ -1,4 +1,4 @@
-import { contractAPI, electronAPI } from '../api/electronAPI';
+import { electronAPI } from '../api/electronAPI';
 import type { Supplement } from '../types/contracts';
 
 class SupplementService {
@@ -13,7 +13,7 @@ class SupplementService {
         supplementData.fileUrl = fileUrl;
       }
 
-      return await contractAPI.invoke('contracts:addSupplement', {
+      return await electronAPI.invoke('contracts:addSupplement', {
         contractId,
         supplementData
       });

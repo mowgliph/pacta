@@ -1,4 +1,4 @@
-import { contractAPI } from '../api/electronAPI';
+import { electronAPI } from '../api/electronAPI';
 
 class StatisticsService {
   async getStatistics() {

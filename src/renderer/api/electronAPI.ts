@@ -10,43 +10,59 @@ declare global {
   }
 }
 
-class ContractAPI {
-  async getAll(filters?: ContractFilters): Promise<Contract[]> {
-    return window.electronAPI.invoke('contracts:getAll', filters);
+export class ElectronAPI {
+  private static instance: ElectronAPI;
+  
+  private constructor() {}
+
+  static getInstance(): ElectronAPI {
+    if (!ElectronAPI.instance) {
+      ElectronAPI.instance = new ElectronAPI();
+    }
+    return ElectronAPI.instance;
   }
 
-  async getDetails(id: string): Promise<Contract> {
-    return window.electronAPI.invoke('contracts:getDetails', id);
+  async invoke<T>(channel: string, ...args: any[]): Promise<T> {
+    return window.electronAPI.invoke(channel, ...args);
   }
 
-  async create(data: Partial<Contract>): Promise<Contract> {
-    return window.electronAPI.invoke('contracts:create', data);
+  // Métodos específicos para contratos
+  async getContracts(filters?: ContractFilters): Promise<Contract[]> {
+    return this.invoke('contracts:getAll', filters);
   }
 
-  async update(id: string, data: Partial<Contract>): Promise<Contract> {
-    return window.electronAPI.invoke('contracts:update', { contractId: id, data });
+  async getContractDetails(id: string): Promise<Contract> {
+    return this.invoke('contracts:getDetails', id);
   }
 
-  async delete(id: string): Promise<boolean> {
-    return window.electronAPI.invoke('contracts:delete', id);
+  async createContract(data: Partial<Contract>): Promise<Contract> {
+    return this.invoke('contracts:create', data);
+  }
+
+  async updateContract(id: string, data: Partial<Contract>): Promise<Contract> {
+    return this.invoke('contracts:update', { contractId: id, data });
+  }
+
+  async deleteContract(id: string): Promise<boolean> {
+    return this.invoke('contracts:delete', id);
   }
 
   async uploadDocument(file: File): Promise<string> {
-    return window.electronAPI.invoke('contracts:uploadDocument', {
+    return this.invoke('contracts:uploadDocument', {
       filePath: file.path,
       fileName: file.name
     });
   }
 
   async addSupplement(contractId: string, data: any): Promise<any> {
-    return window.electronAPI.invoke('contracts:addSupplement', {
+    return this.invoke('contracts:addSupplement', {
       contractId,
       ...data
     });
   }
 
   async editSupplement(contractId: string, supplementId: string, data: any): Promise<any> {
-    return window.electronAPI.invoke('contracts:editSupplement', {
+    return this.invoke('contracts:editSupplement', {
       contractId,
       supplementId,
       ...data
@@ -54,4 +70,5 @@ class ContractAPI {
   }
 }
 
-export const contractAPI = new ContractAPI();
+// Exportar una instancia única
+export const electronAPI = ElectronAPI.getInstance();
