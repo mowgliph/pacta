@@ -12,7 +12,7 @@ interface SkeletonTableProps extends SkeletonProps {
   columns?: number;
 }
 
-const Skeleton: React.FC<SkeletonProps> = ({ className = '', children, ...props }) => {
+export const Skeleton: React.FC<SkeletonProps> = ({ className = '', children, ...props }) => {
   return (
     <motion.div
       className={cn("animate-pulse bg-muted rounded-md", className)}

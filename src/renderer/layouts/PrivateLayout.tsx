@@ -5,17 +5,26 @@ import { Button } from '@/renderer/components/ui/button';
 import { HoverScale, HoverGlow } from '@/renderer/components/ui/micro-interactions';
 import { Notifications } from '@/renderer/components/Notifications';
 
-const PrivateLayout = ({ children }) => {
+interface NavigationItem {
+  name: string;
+  href: string;
+}
+
+interface PrivateLayoutProps {
+  children: React.ReactNode;
+}
+
+const PrivateLayout: React.FC<PrivateLayoutProps> = ({ children }) => {
   const [location] = useLocation();
   const { user, logout } = useStore();
 
-  const navigation = [
+  const navigation: NavigationItem[] = [
     { name: 'Dashboard', href: '/dashboard' },
     { name: 'Contratos', href: '/contracts' },
     { name: 'Estadísticas', href: '/statistics' },
   ];
 
-  const handleLogout = async () => {
+  const handleLogout = async (): Promise<void> => {
     await logout();
   };
 
@@ -99,4 +108,4 @@ const PrivateLayout = ({ children }) => {
   );
 };
 
-export default PrivateLayout; 
+export default PrivateLayout;

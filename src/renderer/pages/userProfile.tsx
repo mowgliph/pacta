@@ -9,20 +9,32 @@ import { HoverGlow } from '@/renderer/components/ui/micro-interactions';
 import { toast } from '@/renderer/hooks/use-toast';
 import useStore from '@/renderer/store/useStore';
 
-const UserProfile = () => {
+interface ProfileData {
+  name: string;
+  email: string;
+  role: string;
+}
+
+interface StatsData {
+  totalContracts: number;
+  activeContracts: number;
+  expiringContracts: number;
+}
+
+const UserProfile: React.FC = () => {
   const [, navigate] = useLocation();
   const { user, updateUser } = useStore();
-  const [profileData, setProfileData] = useState({
+  const [profileData, setProfileData] = useState<ProfileData>({
     name: '',
     email: '',
     role: ''
   });
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<StatsData>({
     totalContracts: 0,
     activeContracts: 0,
     expiringContracts: 0
   });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     if (user) {
@@ -35,7 +47,7 @@ const UserProfile = () => {
     }
   }, [user]);
 
-  const loadStats = async () => {
+  const loadStats = async (): Promise<void> => {
     try {
       const statistics = await statisticsService.getGeneralStatistics();
       setStats(statistics);
@@ -51,7 +63,7 @@ const UserProfile = () => {
     }
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
     setProfileData(prev => ({
       ...prev,
@@ -59,12 +71,12 @@ const UserProfile = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     try {
       await updateUser(profileData);
       toast({ title: 'Éxito', description: 'Perfil actualizado exitosamente' });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating profile:", error);
       toast({ 
         title: 'Error', 

@@ -11,16 +11,29 @@ import { es } from 'date-fns/locale';
 import { toast } from '@/renderer/hooks/use-toast';
 import { Skeleton } from "@/renderer/components/ui/skeleton";
 
-const ContractList = ({ filters, onContractSelect }) => {
+interface Contract {
+  id: string;
+  clientName: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+}
+
+interface ContractListProps {
+  filters?: Record<string, unknown>;
+  onContractSelect: (id: string) => void;
+}
+
+const ContractList: React.FC<ContractListProps> = ({ filters, onContractSelect }) => {
   const [, navigate] = useLocation();
   const { data: contracts = [], isLoading, error } = useContracts(filters);
   const { mutate: deleteContract, isLoading: isDeleting } = useDeleteContract();
 
-  const handleDelete = async (contractId) => {
+  const handleDelete = async (contractId: string): Promise<void> => {
     try {
       await deleteContract(contractId);
       toast({ title: 'Éxito', description: 'Contrato eliminado exitosamente' });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting contract:", error);
       toast({ 
         title: 'Error', 
@@ -30,8 +43,8 @@ const ContractList = ({ filters, onContractSelect }) => {
     }
   };
 
-  const getStatusBadge = (status) => {
-    const variants = {
+  const getStatusBadge = (status: string): JSX.Element => {
+    const variants: Record<string, string> = {
       active: "bg-green-500",
       pending: "bg-yellow-500",
       expired: "bg-red-500",

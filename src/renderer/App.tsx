@@ -13,8 +13,18 @@ import { Toaster } from 'sonner';
 import Layout from '@/renderer/components/Layout';
 import { motion } from 'framer-motion';
 
-// Componente para proteger rutas
-const PrivateRoute = ({ component: Component, ...rest }) => {
+interface PrivateRouteProps {
+  component: React.ComponentType<any>;
+  path: string;
+  [key: string]: any;
+}
+
+interface LayoutProps {
+  component: React.ComponentType<any>;
+  [key: string]: any;
+}
+
+const PrivateRoute: React.FC<PrivateRouteProps> = ({ component: Component, ...rest }) => {
   const user = useStore((state) => state.user);
 
   return (
@@ -30,8 +40,7 @@ const pageVariants = {
   exit: { opacity: 0, x: 20 }
 };
 
-// Componente unificado para envolver rutas privadas con el Layout
-const PrivateLayout = ({ component: Component, ...rest }) => (
+const PrivateLayout: React.FC<LayoutProps> = ({ component: Component, ...rest }) => (
   <motion.div
     variants={pageVariants}
     initial="initial"
@@ -45,7 +54,11 @@ const PrivateLayout = ({ component: Component, ...rest }) => (
   </motion.div>
 );
 
-const PublicLayout = ({ children }) => (
+interface PublicLayoutProps {
+  children: React.ReactNode;
+}
+
+const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => (
   <motion.div
     variants={pageVariants}
     initial="initial"
@@ -58,7 +71,7 @@ const PublicLayout = ({ children }) => (
   </motion.div>
 );
 
-const App = () => {
+const App: React.FC = () => {
   const user = useStore((state) => state.user);
 
   return (
@@ -105,8 +118,6 @@ const App = () => {
             component={() => <PrivateLayout component={UserProfile} />} 
           />
 
-          {/* Redirección por defecto si ninguna ruta coincide (opcional) */}
-          {/* Podrías redirigir a / o /dashboard dependiendo de si está logueado */}
           <Route>
             <Redirect to={user ? "/dashboard" : "/"} />
           </Route>

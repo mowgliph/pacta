@@ -2,7 +2,11 @@ import React from 'react';
 import { Link } from 'wouter';
 import { HoverScale } from '@/renderer/components/ui/micro-interactions';
 
-const PublicLayout = ({ children }) => {
+interface PublicLayoutProps {
+  children: React.ReactNode;
+}
+
+const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b" role="banner">
@@ -45,4 +49,4 @@ const PublicLayout = ({ children }) => {
   );
 };
 
-export default PublicLayout; 
+export default PublicLayout;

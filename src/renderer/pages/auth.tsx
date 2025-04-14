@@ -15,18 +15,38 @@ import { motion } from 'framer-motion';
 import { LoadingSpinner } from "@/renderer/components/ui/loading-spinner";
 import { HoverElevation, HoverScale, HoverGlow, HoverBounce } from '@/renderer/components/ui/micro-interactions';
 
-const Auth = () => {
+interface FormInputs {
+  username: string;
+  password: string;
+  email: string;
+}
+
+interface LoginResponse {
+  token?: string;
+  user?: {
+    name: string;
+    email: string;
+    role: string;
+  };
+  message?: string;
+}
+
+const Auth: React.FC = () => {
   const [, navigate] = useLocation();
   const setUserAndToken = useStore((state) => state.setUserAndToken);
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  const { 
+    register, 
+    handleSubmit, 
+    formState: { errors } 
+  } = useForm<FormInputs>({
     resolver: zodResolver(AuthSchema)
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: FormInputs): Promise<void> => {
     setIsLoading(true);
     try {
-      const result = await loginUser(data.username, data.password);
+      const result: LoginResponse = await loginUser(data.username, data.password);
 
       if (result && result.token) {
         setUserAndToken(result.user || null, result.token);
@@ -38,7 +58,11 @@ const Auth = () => {
       }
     } catch (error) {
       console.error("Login error:", error);
-      toast({ title: 'Error', description: 'Ocurrió un error durante el inicio de sesión.', variant: 'destructive' });
+      toast({ 
+        title: 'Error', 
+        description: 'Ocurrió un error durante el inicio de sesión.', 
+        variant: 'destructive' 
+      });
     } finally {
       setIsLoading(false);
     }

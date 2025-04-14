@@ -23,15 +23,36 @@ import {
 import { SkeletonCard, SkeletonChart, SkeletonTable } from '@/renderer/components/ui/skeleton';
 import { HoverElevation, HoverScale, HoverGlow, HoverBounce } from '@/renderer/components/ui/micro-interactions';
 
-const AdvancedStatistics = () => {
+interface StatsData {
+  totalContracts: number;
+  activeContracts: number;
+  expiringContracts: number;
+  statusCounts?: Record<string, number>;
+  monthlyStats?: Array<{
+    month: string;
+    activos: number;
+    vencidos: number;
+  }>;
+  statusDistribution?: Array<{
+    status: string;
+    count: number;
+  }>;
+}
+
+interface StatusChartData {
+  name: string;
+  Contratos: number;
+}
+
+const AdvancedStatistics: React.FC = () => {
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const [statsData, setStatsData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [statsData, setStatsData] = useState<StatsData | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadStats = async () => {
+    const loadStats = async (): Promise<void> => {
       setIsLoading(true);
       setError(null);
       try {
@@ -53,9 +74,17 @@ const AdvancedStatistics = () => {
     loadStats();
   }, [toast]);
 
-  const exportReport = () => {
+  const exportReport = (): void => {
     toast({ title: 'Info', description: 'Funcionalidad de exportar reporte pendiente.' });
   };
+
+  // Transform status counts to chart data
+  const statusChartData: StatusChartData[] = statsData?.statusCounts 
+    ? Object.entries(statsData.statusCounts).map(([status, count]) => ({ 
+        name: status, 
+        Contratos: count 
+    }))
+    : [];
 
   let content;
   if (isLoading) {

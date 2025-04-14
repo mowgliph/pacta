@@ -14,7 +14,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const Root = () => (
+const Root: React.FC = () => (
   <QueryClientProvider client={queryClient}>
     <App />
     <ReactQueryDevtools initialIsOpen={false} />

@@ -1,31 +1,23 @@
 import React from 'react';
-import { AlertCircle } from 'lucide-react';
-import { Button } from '@/renderer/components/ui/button';
-import { cn } from '@/renderer/lib/utils';
+import { XCircle } from 'lucide-react';
+import { Button } from './ui/button';
 
 interface ErrorStateProps {
-  title?: string;
   message?: string;
   onRetry?: () => void;
-  className?: string;
 }
 
-const ErrorState: React.FC<ErrorStateProps> = ({
-  title = 'Ha ocurrido un error',
-  message = 'No se pudo completar la operación solicitada.',
-  onRetry,
-  className
+const ErrorState: React.FC<ErrorStateProps> = ({ 
+  message = 'Ha ocurrido un error',
+  onRetry 
 }) => {
   return (
-    <div className={cn('flex flex-col items-center justify-center gap-4 p-6 text-center', className)}>
-      <AlertCircle className="h-12 w-12 text-destructive" />
-      <div className="space-y-2">
-        <h3 className="text-lg font-semibold">{title}</h3>
-        <p className="text-sm text-muted-foreground">{message}</p>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+      <XCircle className="h-12 w-12 text-destructive" />
+      <p className="text-destructive font-medium">{message}</p>
       {onRetry && (
         <Button onClick={onRetry} variant="outline">
-          Intentar nuevamente
+          Reintentar
         </Button>
       )}
     </div>

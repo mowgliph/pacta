@@ -8,11 +8,39 @@ import { HoverGlow } from '@/renderer/components/ui/micro-interactions';
 import { toast } from '@/renderer/hooks/use-toast';
 import { Skeleton } from "@/renderer/components/ui/skeleton";
 
-const SupplementModal = ({ contractId, supplement, onClose }) => {
-  const [formData, setFormData] = useState({
-    amount: supplement?.amount || '',
-    description: supplement?.description || '',
-    date: supplement?.date || new Date().toISOString().split('T')[0]
+interface Supplement {
+  id: string;
+  title?: string;
+  amount: number;
+  description: string;
+  date: string;
+}
+
+interface SupplementFormData {
+  title: string;
+  amount: string | number;
+  description: string;
+  date: string;
+}
+
+interface SupplementModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (supplementData: SupplementFormData) => Promise<void>;
+  initialData: Supplement | null;
+}
+
+const SupplementModal: React.FC<SupplementModalProps> = ({
+  isOpen,
+  onClose,
+  onSubmit,
+  initialData
+}) => {
+  const [formData, setFormData] = useState<SupplementFormData>({
+    title: initialData?.title || '',
+    amount: initialData?.amount || '',
+    description: initialData?.description || '',
+    date: initialData?.date || new Date().toISOString().split('T')[0]
   });
 
   const { mutate: addSupplement, isLoading: isAdding } = useAddSupplement();
@@ -20,7 +48,7 @@ const SupplementModal = ({ contractId, supplement, onClose }) => {
 
   const isLoading = isAdding || isEditing;
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -28,25 +56,13 @@ const SupplementModal = ({ contractId, supplement, onClose }) => {
     }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     try {
-      if (supplement) {
-        await editSupplement({ 
-          contractId, 
-          supplementId: supplement.id, 
-          data: formData 
-        });
-        toast({ title: 'Éxito', description: 'Suplemento actualizado exitosamente' });
-      } else {
-        await addSupplement({ 
-          contractId, 
-          data: formData 
-        });
-        toast({ title: 'Éxito', description: 'Suplemento agregado exitosamente' });
-      }
+      await onSubmit(formData);
+      toast({ title: 'Éxito', description: 'Operación completada exitosamente' });
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting supplement:", error);
       toast({ 
         title: 'Error', 
@@ -60,7 +76,7 @@ const SupplementModal = ({ contractId, supplement, onClose }) => {
     return (
       <Card className="w-full max-w-md mx-auto">
         <CardHeader>
-          <CardTitle>{supplement ? 'Editar Suplemento' : 'Nuevo Suplemento'}</CardTitle>
+          <CardTitle>{initialData ? 'Editar Suplemento' : 'Nuevo Suplemento'}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -85,10 +101,22 @@ const SupplementModal = ({ contractId, supplement, onClose }) => {
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
-        <CardTitle>{supplement ? 'Editar Suplemento' : 'Nuevo Suplemento'}</CardTitle>
+        <CardTitle>{initialData ? 'Editar Suplemento' : 'Nuevo Suplemento'}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Título</Label>
+            <Input
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              required
+              disabled={isLoading}
+            />
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="amount">Monto</Label>
             <Input
@@ -143,7 +171,7 @@ const SupplementModal = ({ contractId, supplement, onClose }) => {
                 type="submit"
                 disabled={isLoading}
               >
-                {isLoading ? 'Procesando...' : (supplement ? 'Actualizar' : 'Agregar')}
+                {isLoading ? 'Procesando...' : (initialData ? 'Actualizar' : 'Agregar')}
               </Button>
             </HoverGlow>
           </div>

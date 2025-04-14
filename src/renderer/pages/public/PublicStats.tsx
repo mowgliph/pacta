@@ -17,16 +17,35 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from "@/renderer/components/ui/card";
 import { fetchStatistics } from '@/renderer/api/electronAPI';
-import { SkeletonCard, SkeletonChart } from '@/renderer/components/ui/skeleton';
-import { HoverScale, HoverElevation, HoverGlow } from '@/renderer/components/ui/hover-effects';
+import { Skeleton, SkeletonCard, SkeletonChart } from '@/renderer/components/ui/skeleton';
+import { HoverScale, HoverElevation, HoverGlow } from "@/renderer/components/ui/micro-interactions";
 import { FileText, CheckCircle, Plus } from 'lucide-react';
 
-const PublicStats = () => {
-  const [statsData, setStatsData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+interface StatsData {
+  totalContracts: number;
+  activeContracts: number;
+  expiringContracts: number;
+  totalSupplements?: number;
+  contractStats: Array<{
+    name: string;
+    value: number;
+  }>;
+  statusDistribution: Array<{
+    name: string;
+    value: number;
+  }>;
+  monthlyTrend: Array<{
+    month: string;
+    value: number;
+  }>;
+}
+
+const PublicStats: React.FC = () => {
+  const [statsData, setStatsData] = useState<StatsData | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const loadStats = async () => {
+    const loadStats = async (): Promise<void> => {
       setIsLoading(true);
       try {
         const data = await fetchStatistics();
@@ -38,6 +57,17 @@ const PublicStats = () => {
     };
     loadStats();
   }, []);
+
+  const {
+    totalContracts = 0,
+    activeContracts = 0,
+    expiringContracts = 0,
+    contractStats = [],
+    statusDistribution = [],
+    monthlyTrend = []
+  } = statsData || {};
+
+  const COLORS: string[] = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
   if (isLoading) {
     return (
@@ -81,22 +111,11 @@ const PublicStats = () => {
     );
   }
 
-  const {
-    totalContracts = 0,
-    activeContracts = 0,
-    expiringContracts = 0,
-    contractStats = [],
-    statusDistribution = [],
-    monthlyTrend = []
-  } = statsData || {};
-
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
-
   return (
     <div className="space-y-6 p-4 md:p-6 lg:p-8" role="main" aria-label="Estadísticas públicas">
       <div className="text-center" role="banner" aria-label="Encabezado de estadísticas">
         <HoverScale>
-          <h1 className="text-3xl font-bold" aria-level="1">Estadísticas Públicas</h1>
+          <h1 className="text-3xl font-bold" aria-level={1}>Estadísticas Públicas</h1>
         </HoverScale>
         <p className="mt-2 text-muted-foreground" aria-label="Descripción de las estadísticas">
           Visualización de datos generales sobre contratos y suplementos

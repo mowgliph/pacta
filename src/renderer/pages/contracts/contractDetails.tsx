@@ -7,15 +7,88 @@ import SupplementModal from './SupplementModal';
 import { Loader2, Edit, FileText, PlusCircle, Plus } from 'lucide-react';
 import useStore from '@/renderer/store/useStore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/renderer/components/ui/card";
-import { SkeletonCard, SkeletonList } from '@/renderer/components/ui/skeleton';
+import { SkeletonCard, SkeletonList, Skeleton } from '@/renderer/components/ui/skeleton';
 import { HoverElevation, HoverScale, HoverGlow, HoverBounce, HoverBackground } from '@/renderer/components/ui/micro-interactions';
 import { Calendar } from 'lucide-react';
 
-const formatDate = (dateString) => {
+interface Document {
+  id: string;
+  name: string;
+  filePath: string;
+}
+
+interface Supplement {
+  id: string;
+  description: string;
+  amount: number;
+  filePath: string;
+  date: string;
+  title?: string;
+}
+
+interface ContractData {
+  id: string;
+  name: string;
+  client: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  amount: number;
+  documents?: Document[];
+  supplements?: Supplement[];
+}
+
+interface ServerContract {
+  id: number;
+  name: string;
+  companyName?: string;
+  status: string;
+  startDate: Date;
+  endDate: Date;
+  amount: number;
+  documents?: Array<{
+    id: number;
+    name: string;
+    filePath?: string;
+    fileUrl?: string;
+  }>;
+  supplements?: Array<{
+    id: number;
+    title?: string;
+    description: string;
+    amount: number;
+    date: Date;
+    filePath?: string;
+    fileUrl?: string;
+  }>;
+}
+
+interface SupplementFormData {
+  title: string;
+  amount: string | number;
+  description: string;
+  date: string;
+}
+
+interface SupplementData {
+  title: string;
+  amount: number;
+  description: string;
+  date: Date;
+}
+
+interface SupplementModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSubmit: (supplementData: SupplementFormData) => Promise<void>;
+  initialData?: Supplement | null;
+}
+
+const formatDate = (dateString: string | Date | undefined): string => {
   if (!dateString) return 'N/A';
   try {
     const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-    if (!(date instanceof Date) || isNaN(date)) return 'Fecha inválida';
+    if (!(date instanceof Date) || isNaN(date.getTime())) return 'Fecha inválida';
     
     const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     return utcDate.toLocaleDateString('es-ES', { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'UTC' });
@@ -25,19 +98,27 @@ const formatDate = (dateString) => {
   }
 };
 
-const ContractDetails = () => {
+const formatCurrency = (amount: number): string => {
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'CUP',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount);
+};
+
+const ContractDetails: React.FC = () => {
   const params = useParams();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const contractId = params.id;
 
-  const [contractData, setContractData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [contractData, setContractData] = useState<ContractData | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isSupplementModalOpen, setIsSupplementModalOpen] = useState<boolean>(false);
+  const [selectedSupplement, setSelectedSupplement] = useState<Supplement | null>(null);
 
-  const [isSupplementModalOpen, setIsSupplementModalOpen] = useState(false);
-  const [selectedSupplement, setSelectedSupplement] = useState(null);
-  
   const userRole = useStore((state) => state.user?.role);
   const canEdit = userRole === 'Admin' || userRole === 'RA';
 
@@ -53,7 +134,29 @@ const ContractDetails = () => {
       try {
         const data = await contractService.getContractDetails(contractId);
         if (data) {
-          setContractData(data);
+          const mappedData: ContractData = {
+            id: data.id.toString(),
+            name: data.name || '',
+            client: data.companyName || '',
+            status: data.status || 'Active',
+            startDate: data.startDate ? new Date(data.startDate).toISOString().split('T')[0] : '',
+            endDate: data.endDate ? new Date(data.endDate).toISOString().split('T')[0] : '',
+            amount: typeof data.amount === 'number' ? data.amount : 0,
+            documents: Array.isArray(data.documents) ? data.documents.map((doc: { id: number; name: string; filePath?: string; fileUrl?: string; }) => ({
+              id: doc.id.toString(),
+              name: doc.name || 'Documento sin nombre',
+              filePath: doc.filePath || doc.fileUrl || ''
+            })) : [],
+            supplements: Array.isArray(data.supplements) ? data.supplements.map((sup: { id: number; title?: string; description: string; amount: number; date: Date; filePath?: string; fileUrl?: string; }) => ({
+              id: sup.id.toString(),
+              title: sup.title || '',
+              description: sup.description || '',
+              amount: typeof sup.amount === 'number' ? sup.amount : 0,
+              filePath: sup.filePath || sup.fileUrl || '',
+              date: sup.date ? new Date(sup.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+            })) : []
+          };
+          setContractData(mappedData);
         } else {
           setError('No se encontró el contrato.');
           toast({ title: 'Error', description: 'No se encontró el contrato.', variant: 'destructive' });
@@ -69,46 +172,101 @@ const ContractDetails = () => {
     loadDetails();
   }, [contractId, toast]);
 
-  const handleSupplementSubmit = async (supplementData) => {
+  const handleSupplementSubmit = async (supplementData: SupplementFormData): Promise<void> => {
+    if (!contractId) {
+      toast({
+        title: 'Error',
+        description: 'ID de contrato no válido',
+        variant: 'destructive'
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
+      const formattedData: SupplementData = {
+        ...supplementData,
+        amount: typeof supplementData.amount === 'string' 
+          ? parseFloat(supplementData.amount) 
+          : supplementData.amount,
+        date: new Date(supplementData.date)
+      };
+
       let result;
       if (selectedSupplement) {
-        result = await supplementService.editSupplement(contractId, selectedSupplement.id, supplementData);
+        result = await supplementService.editSupplement(
+          contractId,
+          selectedSupplement.id,
+          formattedData
+        );
       } else {
-        result = await supplementService.addSupplement(contractId, supplementData);
+        result = await supplementService.addSupplement(
+          contractId,
+          formattedData
+        );
       }
-
+  
       if (result) {
         toast({
           title: selectedSupplement ? 'Suplemento actualizado' : 'Suplemento añadido',
           description: 'La operación se completó exitosamente'
         });
+
         const updatedData = await contractService.getContractDetails(contractId);
-        if (updatedData) setContractData(updatedData);
+        if (updatedData) {
+          const mappedData: ContractData = {
+            id: updatedData.id.toString(),
+            name: updatedData.name || '',
+            client: updatedData.companyName || '',
+            status: updatedData.status || 'Active',
+            startDate: updatedData.startDate ? new Date(updatedData.startDate).toISOString().split('T')[0] : '',
+            endDate: updatedData.endDate ? new Date(updatedData.endDate).toISOString().split('T')[0] : '',
+            amount: typeof updatedData.amount === 'number' ? updatedData.amount : 0,
+            documents: Array.isArray(updatedData.documents) ? updatedData.documents.map(doc => ({
+              id: doc.id.toString(),
+              name: doc.name || 'Documento sin nombre',
+              filePath: doc.filePath || doc.fileUrl || ''
+            })) : [],
+            supplements: Array.isArray(updatedData.supplements) ? updatedData.supplements.map(sup => ({
+              id: sup.id.toString(),
+              title: sup.title || '',
+              description: sup.description || '',
+              amount: typeof sup.amount === 'number' ? sup.amount : 0,
+              filePath: sup.filePath || sup.fileUrl || '',
+              date: sup.date ? new Date(sup.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+            })) : []
+          };
+          setContractData(mappedData);
+        }
         setIsSupplementModalOpen(false);
         setSelectedSupplement(null);
       } else {
-         throw new Error('La operación del suplemento falló.');
+        throw new Error('La operación del suplemento falló.');
       }
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error procesando suplemento:", error);
+      const errorMessage = error instanceof Error ? error.message : 'No se pudo procesar el suplemento';
       toast({
         title: 'Error',
-        description: error.message || 'No se pudo procesar el suplemento',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {
-       setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleOpenFile = async (filePath) => {
+  const handleOpenFile = async (filePath: string): Promise<void> => {
     try {
-      await openFile(filePath);
-    } catch (error) {
+      await window.electron.ipcRenderer.invoke('files:open', filePath);
+    } catch (error: unknown) {
       console.error("Error al abrir archivo desde detalles:", error);
-      toast({ title: 'Error', description: `No se pudo abrir el archivo: ${error.message || 'Error desconocido'}`, variant: 'destructive' });
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      toast({ 
+        title: 'Error', 
+        description: `No se pudo abrir el archivo: ${errorMessage}`, 
+        variant: 'destructive' 
+      });
     }
   };
 
@@ -189,7 +347,6 @@ const ContractDetails = () => {
   }
 
   if (!contractData) {
-    // Si no hay error pero tampoco datos (puede pasar si la API devuelve null)
     return <div className="p-8 text-center text-gray-500">No hay datos del contrato disponibles.</div>;
   }
 
@@ -197,7 +354,7 @@ const ContractDetails = () => {
     <div className="space-y-6 p-4 md:p-6 lg:p-8" role="main" aria-label="Detalles del contrato">
       <div className="flex justify-between items-center">
         <HoverScale>
-          <h1 className="text-2xl font-bold" aria-level="1">Detalles del Contrato</h1>
+          <h1 className="text-2xl font-bold" aria-level={1}>Detalles del Contrato</h1>
         </HoverScale>
         <div className="flex space-x-4">
           <HoverBounce>

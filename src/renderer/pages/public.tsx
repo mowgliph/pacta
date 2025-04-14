@@ -1,12 +1,18 @@
 import React from 'react';
 import { useNavigate } from 'wouter';
 import { motion } from 'framer-motion';
-import { ArrowRight, BarChart2, Shield, Clock } from 'lucide-react';
+import { ArrowRight, BarChart2, Shield, Clock, LucideIcon } from 'lucide-react';
 import { Button } from "@/renderer/components/ui/button";
 import PublicStats from './public/PublicStats';
 import { HoverElevation, HoverScale, HoverGlow, HoverBounce } from '@/renderer/components/ui/micro-interactions';
 
-const FeatureCard = ({ icon: Icon, title, description }) => (
+interface FeatureCardProps {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}
+
+const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, description }) => (
   <HoverElevation>
     <motion.div
       className="bg-card p-6 rounded-xl shadow-sm"
@@ -18,14 +24,14 @@ const FeatureCard = ({ icon: Icon, title, description }) => (
     >
       <Icon className="h-8 w-8 text-primary mb-4" aria-hidden="true" />
       <HoverScale>
-        <h3 className="text-lg font-semibold mb-2" aria-level="3">{title}</h3>
+        <h3 className="text-lg font-semibold mb-2" aria-level={3}>{title}</h3>
       </HoverScale>
       <p className="text-muted-foreground">{description}</p>
     </motion.div>
   </HoverElevation>
 );
 
-const Public = () => {
+const Public: React.FC = () => {
   const navigate = useNavigate();
 
   return (
@@ -44,7 +50,7 @@ const Public = () => {
           animate={{ y: 0 }}
         >
           <HoverScale>
-            <h1 className="text-4xl font-bold mb-4" aria-level="1">PACTA</h1>
+            <h1 className="text-4xl font-bold mb-4" aria-level={1}>PACTA</h1>
           </HoverScale>
           <p className="text-xl text-muted-foreground mb-8">
             Plataforma de Automatización y Control de Contratos Empresariales
@@ -94,7 +100,7 @@ const Public = () => {
         >
           <div className="max-w-6xl mx-auto px-4">
             <HoverScale>
-              <h2 className="text-2xl font-bold mb-8 text-center" aria-level="2">Estadísticas Globales</h2>
+              <h2 className="text-2xl font-bold mb-8 text-center" aria-level={2}>Estadísticas Globales</h2>
             </HoverScale>
             <PublicStats />
           </div>

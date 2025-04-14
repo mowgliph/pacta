@@ -3,6 +3,7 @@ import { Route, Switch, Redirect } from 'wouter';
 import useStore from '@/renderer/store/useStore';
 import PublicLayout from '@/renderer/layouts/PublicLayout';
 import PrivateLayout from '@/renderer/layouts/PrivateLayout';
+import NotFound from '@/renderer/components/NotFound';
 import { 
   Public, 
   Auth, 
@@ -10,69 +11,74 @@ import {
   ContractManagement,
   ContractDetails,
   AdvancedStatistics,
-  Profile 
-} from '@/renderer/pages';
+  useProfile 
+} from '@/renderer/pages/index';
 
-// Componente de ruta privada con verificación de autenticación
-const PrivateRoute = ({ component: Component, roles = [], ...rest }) => {
+interface PrivateRouteProps {
+  component: React.ComponentType<any>;
+  roles?: string[];
+  path: string;
+  [key: string]: any;
+}
+
+interface PublicRouteProps {
+  component: React.ComponentType<any>;
+  restricted?: boolean;
+  path: string;
+  exact?: boolean;
+  [key: string]: any;
+}
+
+const PrivateRoute: React.FC<PrivateRouteProps> = ({ component: Component, roles = [], ...rest }) => {
   const { user } = useStore();
 
   return (
-    <Route
-      {...rest}
-      render={props => {
-        // Verificar si el usuario está autenticado
+    <Route {...rest}>
+      {(params) => {
         if (!user) {
           return <Redirect to="/auth" />;
         }
 
-        // Verificar si el usuario tiene el rol requerido
         if (roles.length && !roles.includes(user.role)) {
           return <Redirect to="/dashboard" />;
         }
 
-        // Autorizado - renderizar componente
         return (
           <PrivateLayout>
-            <Component {...props} />
+            <Component {...params} />
           </PrivateLayout>
         );
       }}
-    />
+    </Route>
   );
 };
 
-// Componente de ruta pública
-const PublicRoute = ({ component: Component, restricted = false, ...rest }) => {
+const PublicRoute: React.FC<PublicRouteProps> = ({ component: Component, restricted = false, ...rest }) => {
   const { user } = useStore();
 
   return (
-    <Route
-      {...rest}
-      render={props => {
-        // Verificar si la ruta es restringida y el usuario está autenticado
+    <Route {...rest}>
+      {(params) => {
         if (restricted && user) {
           return <Redirect to="/dashboard" />;
         }
 
         return (
           <PublicLayout>
-            <Component {...props} />
+            <Component {...params} />
           </PublicLayout>
         );
       }}
-    />
+    </Route>
   );
 };
 
-const Routes = () => {
+const Routes: React.FC = () => {
   return (
     <Switch>
-      {/* Rutas Públicas */}
       <PublicRoute exact path="/" component={Public} />
       <PublicRoute path="/auth" component={Auth} restricted={true} />
 
-      {/* Rutas Privadas */}
       <PrivateRoute path="/dashboard" component={Dashboard} />
       <PrivateRoute 
         path="/contracts" 
@@ -89,17 +95,13 @@ const Routes = () => {
         component={AdvancedStatistics} 
         roles={['Admin', 'RA']} 
       />
-      <PrivateRoute path="/profile" component={Profile} />
+      <PrivateRoute path="/profile" component={useProfile} />
 
-      {/* Ruta 404 */}
       <Route>
-        <div role="alert" aria-label="Página no encontrada">
-          <h1>404 - Página no encontrada</h1>
-          <p>Lo sentimos, la página que buscas no existe.</p>
-        </div>
+        <NotFound />
       </Route>
     </Switch>
   );
 };
 
-export default Routes; 
+export default Routes;

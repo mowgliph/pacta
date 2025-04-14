@@ -11,27 +11,68 @@ import {
     FileText, 
     ListChecks,
     History,
-    FilePlus
+    FilePlus,
+    LucideIcon
 } from 'lucide-react';
 import { statisticsService } from '@/renderer/services';
 import { motion } from 'framer-motion';
 import { SkeletonCard, SkeletonList, SkeletonChart } from '@/renderer/components/ui/skeleton';
 import { HoverElevation, HoverScale, HoverGlow, HoverBounce } from '@/renderer/components/ui/micro-interactions';
 
-const mockExpiringContracts = [
+interface ExpiringContract {
+  id: string;
+  name: string;
+  endDate: Date;
+}
+
+interface Supplement {
+  id: string;
+  contractId: string;
+  contractName: string;
+  description: string;
+  date: Date;
+}
+
+interface StatsData {
+  totalContracts: number | string;
+  statusCounts: {
+    Active: number | string;
+    Pending?: number;
+    Expired?: number;
+  };
+  expiringSoonCount?: number;
+  expiringContracts?: ExpiringContract[];
+  recentSupplements?: Supplement[];
+}
+
+interface StatCardProps {
+  title: string;
+  value: number | string;
+  description?: string;
+  icon?: LucideIcon;
+  colorClass?: string;
+}
+
+interface ActionButtonProps {
+  text: string;
+  icon: LucideIcon;
+  onClick: () => void;
+}
+
+const mockExpiringContracts: ExpiringContract[] = [
   { id: '1', name: 'Contrato Alpha', endDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) },
   { id: '2', name: 'Acuerdo Beta Services', endDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000) },
   { id: '3', name: 'Proyecto Gamma', endDate: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000) },
 ];
 
-const mockRecentSupplements = [
+const mockRecentSupplements: Supplement[] = [
   { id: 's1', contractId: '1', contractName: 'Contrato Alpha', description: 'Cláusula de confidencialidad añadida', date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000) },
   { id: 's2', contractId: '5', contractName: 'Contrato Epsilon', description: 'Actualización de tarifas', date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
   { id: 's3', contractId: '2', contractName: 'Acuerdo Beta Services', description: 'Anexo de personal', date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
 ];
 
-const getFormattedDate = (date) => {
-   if (!date || !(date instanceof Date) || isNaN(date)) {
+const getFormattedDate = (date: Date): string => {
+   if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
        return 'Fecha inválida';
    }
    try {
@@ -43,11 +84,11 @@ const getFormattedDate = (date) => {
    }
 };
 
-const Dashboard = () => {
+const Dashboard: React.FC = () => {
   const [, navigate] = useLocation();
   const user = useStore((state) => state.user);
-  const [statsData, setStatsData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [statsData, setStatsData] = useState<StatsData | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const loadStats = async () => {
@@ -80,7 +121,7 @@ const Dashboard = () => {
   const recentSupplements = statsData?.recentSupplements || mockRecentSupplements;
   const finalExpiringSoonCount = statsData?.expiringSoonCount ?? expiringContracts.length;
 
-  const StatCard = ({ title, value, description, icon: Icon, colorClass = 'purple' }) => (
+  const StatCard: React.FC<StatCardProps> = ({ title, value, description, icon: Icon, colorClass = 'purple' }) => (
     <HoverElevation>
       <HoverGlow>
         <Card className={`bg-${colorClass}-50 border-${colorClass}-200 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700`}>
@@ -97,7 +138,7 @@ const Dashboard = () => {
     </HoverElevation>
   );
 
-  const ActionButton = ({ text, icon: Icon, onClick }) => (
+  const ActionButton: React.FC<ActionButtonProps> = ({ text, icon: Icon, onClick }) => (
     <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
         <Button 
           variant="outline" 

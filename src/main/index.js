@@ -145,83 +145,160 @@ ipcMain.handle('auth:logout', async () => {
 });
 
 // Manejadores de contratos
-ipcMain.handle('contracts:getAll', async () => {
-  const response = await fetch(`${API_URL}/api/contracts`, { headers: getAuthHeaders() });
-  if (!response.ok) throw new Error(`Error ${response.status} al obtener contratos`);
-  return response.json();
-});
-
-ipcMain.handle('contracts:uploadDocument', async (_, { contractId, filePath }) => {
-  // FormData necesita manejo especial de headers
-  const formData = new FormData();
+ipcMain.handle('contracts:getAll', async (event, filters) => {
   try {
-      // Asegurarse que el archivo existe antes de crear el stream
-      if (!fs.existsSync(filePath)) {
-          throw new Error(`El archivo no existe: ${filePath}`);
-      }
-      formData.append('document', fs.createReadStream(filePath)); // 'document' debe coincidir con upload.single()
-  } catch (err) {
-      console.error("Error creando read stream:", err);
-      throw new Error('Error al leer el archivo para subir.');
+    const queryParams = new URLSearchParams(filters).toString();
+    const response = await fetch(`${API_URL}/api/contracts${queryParams ? `?${queryParams}` : ''}`, {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error ${response.status} al obtener contratos`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('Error en contracts:getAll:', error);
+    throw error;
   }
-  
-  const response = await fetch(`${API_URL}/api/contracts/${contractId}/upload`, {
-    method: 'POST',
-    body: formData,
-    headers: getAuthHeadersForFormData() // Usar headers para FormData
-  });
-  if (!response.ok) throw new Error(`Error ${response.status} al subir documento`);
-  return response.json();
 });
 
 ipcMain.handle('contracts:getDetails', async (event, contractId) => {
-  const response = await fetch(`${API_URL}/api/contracts/${contractId}`, { headers: getAuthHeaders() });
-  if (!response.ok) {
-    throw new Error(`Error ${response.status} al obtener detalles del contrato`);
+  try {
+    const response = await fetch(`${API_URL}/api/contracts/${contractId}`, {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error ${response.status} al obtener detalles del contrato`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('Error en contracts:getDetails:', error);
+    throw error;
   }
-  return response.json();
 });
 
 ipcMain.handle('contracts:create', async (event, contractData) => {
-  // Nota: Si la creación incluye subida directa (como está ahora contract.route.js POST /),
-  // esta llamada simple no funcionará, necesitaría enviar FormData.
-  // Asumiremos que el frontend envía solo JSON aquí y usa /upload después.
-  const response = await fetch(`${API_URL}/api/contracts`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(contractData)
-  });
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({})); // Intenta obtener detalles del error
-    throw new Error(errorData.message || `Error ${response.status} al crear contrato`);
+  try {
+    const formData = new FormData();
+    
+    // Agregar datos del contrato
+    Object.keys(contractData).forEach(key => {
+      if (key !== 'documentFile') {
+        formData.append(key, contractData[key]);
+      }
+    });
+
+    const response = await fetch(`${API_URL}/api/contracts`, {
+      method: 'POST',
+      headers: getAuthHeadersForFormData(),
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `Error ${response.status} al crear contrato`);
+    }
+
+    const result = await response.json();
+    
+    // Enviar notificación de creación
+    enviarNotificacionContrato({
+      ...result,
+      name: result.name || `Contrato ${result.id}`
+    }, 'creacion');
+
+    return result;
+  } catch (error) {
+    console.error('Error en contracts:create:', error);
+    throw error;
   }
-  return response.json();
 });
 
-ipcMain.handle('contracts:update', async (event, { contractId, contractData }) => {
-  const response = await fetch(`${API_URL}/api/contracts/${contractId}`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(contractData)
-  });
-  if (!response.ok) {
-     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `Error ${response.status} al actualizar contrato`);
+ipcMain.handle('contracts:update', async (event, { contractId, data }) => {
+  try {
+    const formData = new FormData();
+    
+    // Agregar datos actualizados
+    Object.keys(data).forEach(key => {
+      if (key !== 'documentFile') {
+        formData.append(key, data[key]);
+      }
+    });
+
+    const response = await fetch(`${API_URL}/api/contracts/${contractId}`, {
+      method: 'PUT',
+      headers: getAuthHeadersForFormData(),
+      body: formData
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || `Error ${response.status} al actualizar contrato`);
+    }
+
+    const result = await response.json();
+    
+    // Enviar notificación de actualización
+    enviarNotificacionContrato({
+      ...result,
+      name: result.name || `Contrato ${contractId}`
+    }, 'modificacion');
+
+    return result;
+  } catch (error) {
+    console.error('Error en contracts:update:', error);
+    throw error;
   }
-  return response.json();
 });
 
 ipcMain.handle('contracts:delete', async (event, contractId) => {
-  const response = await fetch(`${API_URL}/api/contracts/${contractId}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders()
-  });
-  if (!response.ok) {
-     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `Error ${response.status} al eliminar contrato`);
+  try {
+    const response = await fetch(`${API_URL}/api/contracts/${contractId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error ${response.status} al eliminar contrato`);
+    }
+
+    // Enviar notificación de eliminación
+    enviarNotificacionContrato({
+      id: contractId,
+      name: `Contrato ${contractId}`
+    }, 'eliminacion');
+
+    return true;
+  } catch (error) {
+    console.error('Error en contracts:delete:', error);
+    throw error;
   }
-  // DELETE exitoso no devuelve cuerpo, status 204
-  return { success: true }; 
+});
+
+ipcMain.handle('contracts:uploadDocument', async (event, { filePath, fileName }) => {
+  try {
+    const formData = new FormData();
+    formData.append('document', createReadStream(filePath));
+    formData.append('fileName', fileName);
+
+    const response = await fetch(`${API_URL}/api/contracts/upload`, {
+      method: 'POST',
+      headers: getAuthHeadersForFormData(),
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error ${response.status} al subir documento`);
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Error en contracts:uploadDocument:', error);
+    throw error;
+  }
 });
 
 // Manejador para selección de archivos
@@ -409,6 +486,9 @@ function enviarNotificacionContrato(contrato, tipo) {
       break;
     case 'modificacion':
       mensaje = `Se ha modificado el contrato ${contrato.name}`;
+      break;
+    case 'eliminacion':
+      mensaje = `Se ha eliminado el contrato ${contrato.name}`;
       break;
     default:
       mensaje = `Actualización en el contrato ${contrato.name}`;

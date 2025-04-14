@@ -5,26 +5,84 @@ import {
   statisticsService 
 } from '@/renderer/services';
 
+interface Contract {
+  id: string;
+  title: string;
+  startDate: Date;
+  endDate: Date;
+  status: 'active' | 'inactive';
+  createdAt: Date;
+  supplements?: Supplement[];
+}
+
+interface Supplement {
+  id: string;
+  title: string;
+  description: string;
+  amount: number;
+  date: Date;
+  fileUrl?: string;
+  contractId: string;
+}
+
+interface Statistics {
+  contracts: {
+    total: number;
+    active: number;
+    inactive: number;
+    expiring: number;
+  };
+  supplements: {
+    totalSupplements: number;
+    totalAmount: number;
+    averageAmount: number;
+  };
+  trends: Array<{
+    month: string;
+    count: number;
+  }>;
+}
+
+interface ContractFilters {
+  status?: 'active' | 'inactive';
+  startDate?: Date;
+  endDate?: Date;
+}
+
+interface UpdateContractVariables {
+  id: string;
+  data: FormData;
+}
+
+interface SupplementVariables {
+  contractId: string;
+  data: Omit<Supplement, 'id' | 'contractId'>;
+}
+
+interface EditSupplementVariables extends SupplementVariables {
+  supplementId: string;
+}
+
 // Hooks para contratos
-export const useContracts = (filters = {}) => {
-  return useQuery({
+export const useContracts = (filters: ContractFilters = {}) => {
+  return useQuery<Contract[], Error>({
     queryKey: ['contracts', filters],
     queryFn: () => contractService.getAllContracts(filters),
     staleTime: 1000 * 60 * 5, // 5 minutos
   });
 };
 
-export const useContractDetails = (contractId) => {
-  return useQuery({
+export const useContractDetails = (contractId: string | undefined) => {
+  return useQuery<Contract, Error>({
     queryKey: ['contract', contractId],
-    queryFn: () => contractService.getContractDetails(contractId),
+    queryFn: () => contractService.getContractDetails(contractId as string),
     enabled: !!contractId,
   });
 };
 
 export const useCreateContract = () => {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useMutation<Contract, Error, FormData>({
     mutationFn: contractService.createContract,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
@@ -34,18 +92,17 @@ export const useCreateContract = () => {
 
 export const useUpdateContract = () => {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useMutation<void, Error, UpdateContractVariables>({
     mutationFn: ({ id, data }) => contractService.updateContract(id, data),
-    onSuccess: (_, { id }) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
-      queryClient.invalidateQueries({ queryKey: ['contract', id] });
     },
   });
 };
 
 export const useDeleteContract = () => {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useMutation<void, Error, string>({
     mutationFn: contractService.deleteContract,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
@@ -56,7 +113,7 @@ export const useDeleteContract = () => {
 // Hooks para suplementos
 export const useAddSupplement = () => {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useMutation<Supplement, Error, SupplementVariables>({
     mutationFn: ({ contractId, data }) => supplementService.addSupplement(contractId, data),
     onSuccess: (_, { contractId }) => {
       queryClient.invalidateQueries({ queryKey: ['contract', contractId] });
@@ -66,7 +123,7 @@ export const useAddSupplement = () => {
 
 export const useEditSupplement = () => {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useMutation<Supplement, Error, EditSupplementVariables>({
     mutationFn: ({ contractId, supplementId, data }) => 
       supplementService.editSupplement(contractId, supplementId, data),
     onSuccess: (_, { contractId }) => {
@@ -77,7 +134,7 @@ export const useEditSupplement = () => {
 
 // Hooks para estadísticas
 export const useStatistics = () => {
-  return useQuery({
+  return useQuery<Statistics, Error>({
     queryKey: ['statistics'],
     queryFn: () => statisticsService.getGeneralStatistics(),
     staleTime: 1000 * 60 * 15, // 15 minutos

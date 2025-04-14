@@ -12,7 +12,7 @@ export const AuthSchema = z.object({
 });
 
 // Esquema de Relaciones de Contratos
-const EsquemaRelacionesContrato = z.object({
+export const EsquemaRelacionesContrato = z.object({
   contratoPadre: z.object({
     id: z.string({
       required_error: "El ID del contrato padre es requerido",
@@ -20,7 +20,10 @@ const EsquemaRelacionesContrato = z.object({
     }),
     tipo: z.enum(['maestro', 'marco'], {
       invalid_type_error: "Tipo de contrato padre no válido"
-    })
+    }),
+    empresaId: z.number().optional(),
+    departamentoId: z.number().optional(),
+    responsableId: z.number().optional(),
   }).optional(),
   
   contratosRelacionados: z.array(z.object({
