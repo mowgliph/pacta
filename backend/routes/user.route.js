@@ -1,8 +1,7 @@
 const router = require('express').Router();
-const bcrypt = require('bcrypt');
+const argon2 = require('argon2');
 const { PrismaClient } = require('@prisma/client');
 const { authenticateJWT, authorizeRole } = require('../middleware/auth.middleware');
-// Importar schemas Zod
 const { createUserSchema, updateUserProfileSchema } = require('../utils/schemas.zod'); 
 
 const prisma = new PrismaClient();
@@ -23,7 +22,7 @@ router.post('/', authenticateJWT, authorizeRole('RA'), async (req, res) => {
     // Validar con Zod
     const { username, email, password, role, notifications } = createUserSchema.parse(req.body);
     
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await argon2.hash(password);
 
     // Verificar si el usuario o email ya existen (Prisma lo haría con try-catch, pero es bueno verificar antes)
     const existingUser = await prisma.user.findFirst({
@@ -98,7 +97,7 @@ router.put('/profile', authenticateJWT, async (req, res) => {
 
     // Manejo opcional de cambio de contraseña
     if (dataToUpdate.password) {
-      dataToUpdate.password = await bcrypt.hash(dataToUpdate.password, 10);
+      dataToUpdate.password = await argon2.hash(dataToUpdate.password);
     }
 
     if (Object.keys(dataToUpdate).length === 0) {

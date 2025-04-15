@@ -16,5 +16,12 @@ export default defineConfig({
       '@': path.join(__dirname, 'src')
     },
     extensions: ['.js', '.jsx', '.ts', '.tsx']
+  },
+  css: {
+    preprocessorOptions: {
+      css: {
+        additionalData: `@import './src/renderer/index.css';`,
+      }
+    }
   }
 });

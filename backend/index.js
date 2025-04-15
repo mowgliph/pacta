@@ -5,6 +5,10 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const Joi = require('joi');
+const argon2 = require('argon2');
+const upload = require('./middleware/upload.middleware');
 const { PrismaClient } = require('@prisma/client');
 
 // Import routes
@@ -51,20 +55,11 @@ const authorizeRole = (role) => {
   };
 };
 
-// Configuración de Multer para subir archivos
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'public/uploads/');
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + path.extname(file.originalname));
-  },
-});
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-});
+// Asegurarse de que el directorio de uploads existe
+const uploadDir = path.join(__dirname, '../data/uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 // Validación de entradas con Joi
 const userSchema = Joi.object({
@@ -138,7 +133,7 @@ app.post('/login', async (req, res) => {
     return res.status(401).json({ message: 'Invalid credentials' });
   }
 
-  const isPasswordValid = await bcrypt.compare(password, user.password);
+  const isPasswordValid = await argon2.verify(user.password, password);
 
   if (!isPasswordValid) {
     return res.status(401).json({ message: 'Invalid credentials' });
@@ -165,7 +160,7 @@ app.post('/register', async (req, res) => {
   if (error) return res.status(400).json({ message: error.details[0].message });
 
   const { username, email, password, role, notifications } = value;
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await argon2.hash(password);
 
   try {
     const user = await prisma.user.create({
@@ -210,7 +205,7 @@ app.post('/users', authenticateJWT, authorizeRole('RA'), async (req, res) => {
   if (error) return res.status(400).json({ message: error.details[0].message });
 
   const { username, email, password, role, notifications } = value;
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await argon2.hash(password);
 
   try {
     const user = await prisma.user.create({
@@ -546,45 +541,79 @@ app.post('/backups', authenticateJWT, authorizeRole('Admin'), async (req, res) =
   }
 });
   
+// Configuración de copias de seguridad automáticas
+const backupDatabase = async () => {
+  const date = new Date();
+  const filename = `backup_${date.toISOString().replace(/:/g, '-')}.sqlite`;
+  const filepath = path.join(__dirname, '../data/backups', filename);
+
+  try {
+    // Asegurarse de que el directorio existe
+    const backupDir = path.join(__dirname, '../data/backups');
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+
+    // Crear el backup
+    await prisma.$executeRaw`VACUUM INTO ${filepath}`;
+
+    // Guardar registro en la base de datos
+    await prisma.backup.create({
+      data: {
+        filename,
+        filepath,
+        encrypted: false,
+      },
+    });
+
+    // Limpieza de backups antiguos (mantener solo los últimos 7 días)
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const oldBackups = await prisma.backup.findMany({
+      where: {
+        createdAt: {
+          lt: sevenDaysAgo
+        }
+      }
+    });
+
+    // Eliminar archivos y registros antiguos
+    for (const backup of oldBackups) {
+      try {
+        if (fs.existsSync(backup.filepath)) {
+          fs.unlinkSync(backup.filepath);
+        }
+        await prisma.backup.delete({
+          where: { id: backup.id }
+        });
+      } catch (deleteError) {
+        console.error(`Error eliminando backup antiguo ${backup.filename}:`, deleteError);
+      }
+    }
+
+    console.log(`Backup creado exitosamente: ${filename}`);
+  } catch (error) {
+    console.error('Error creando backup:', error);
+  }
+};
+
+// Crear el directorio de backups si no existe
+const backupDir = path.join(__dirname, '../data/backups');
+if (!fs.existsSync(backupDir)) {
+  fs.mkdirSync(backupDir, { recursive: true });
+}
+
+// Programar copias de seguridad automáticas cada 24 horas
+setInterval(backupDatabase, 24 * 60 * 60 * 1000);
+
+// También ejecutar un backup inicial al arrancar el servidor
+backupDatabase();
+
 // Middleware para manejar errores
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
-// Configuración de copias de seguridad automáticas
-const backupDatabase = async () => {
-  const date = new Date();
-  const filename = `backup_${date.toISOString().replace(/:/g, '-')}.sqlite`;
-  const filepath = path.join(__dirname, '..', 'backups', filename);
-
-  try {
-    await prisma.$executeRaw`VACUUM INTO ${filepath}`;
-
-    // Guardar en Backup
-    await prisma.backup.create({
-      data: {
-        filename,
-        filepath,
-        encrypted: false, // Aquí puedes implementar el cifrado si es necesario
-      },
-    });
-
-    console.log(`Backup created: ${filename}`);
-  } catch (error) {
-    console.error('Error creating backup:', error);
-  }
-};
-  
-// Crear el directorio de backups si no existe
-const backupDir = path.join(__dirname, '..', 'backups');
-if (!fs.existsSync(backupDir)) {
-  fs.mkdirSync(backupDir);
-}
-  
-// Programar copias de seguridad automáticas cada 24 horas
-setInterval(backupDatabase, 24 * 60 * 60 * 1000);
-  
 // Endpoint de salud
 app.get('/api/health', (req, res) => {
   res.json({
