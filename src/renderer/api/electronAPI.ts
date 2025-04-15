@@ -21,6 +21,16 @@ interface LoginResponse {
   message?: string;
 }
 
+interface SMTPConfig {
+  host: string;
+  port: number;
+  secure: boolean;
+  username: string;
+  password: string;
+  from: string;
+  enabled: boolean;
+}
+
 export class ElectronAPI {
   private static instance: ElectronAPI;
   
@@ -122,7 +132,23 @@ export class ElectronAPI {
       return this.invoke('files:open', filePath);
     }
   };
+
+  // SMTP methods
+  smtp = {
+    getConfig: async (): Promise<SMTPConfig> => {
+      return this.invoke('smtp:getConfig');
+    },
+    updateConfig: async (config: SMTPConfig): Promise<SMTPConfig> => {
+      return this.invoke('smtp:updateConfig', config);
+    }
+  };
 }
 
 // Exportar una instancia única
 export const electronAPI = ElectronAPI.getInstance();
+
+declare global {
+  interface Window {
+    electronAPI: ElectronAPI;
+  }
+}

@@ -134,4 +134,47 @@ router.put('/profile', authenticateJWT, async (req, res) => {
   }
 });
 
+// GET /smtp-config - Obtener configuración SMTP del usuario
+router.get('/smtp-config', authenticateJWT, async (req, res) => {
+  try {
+    const config = await prisma.sMTPConfig.findFirst();
+    res.json(config || {});
+  } catch (error) {
+    console.error("Error fetching SMTP config:", error);
+    res.status(500).json({ message: 'Error al obtener la configuración SMTP' });
+  }
+});
+
+// POST /smtp-config - Actualizar o crear configuración SMTP
+router.post('/smtp-config', authenticateJWT, async (req, res) => {
+  try {
+    const validatedData = smtpConfigSchema.parse(req.body);
+    
+    const config = await prisma.sMTPConfig.upsert({
+      where: { id: 1 }, // Siempre usamos ID 1 ya que solo necesitamos una configuración
+      update: validatedData,
+      create: validatedData
+    });
+
+    // Registrar la acción
+    await prisma.accessLog.create({
+      data: {
+        userId: req.user.id,
+        action: 'Update SMTP Config',
+        details: 'SMTP configuration updated',
+        ip: req.ip,
+        userAgent: req.headers['user-agent']
+      }
+    });
+
+    res.json(config);
+  } catch (error) {
+    if (error instanceof require('zod').ZodError) {
+      return res.status(400).json({ message: 'Datos de entrada inválidos', errors: error.errors });
+    }
+    console.error("Error updating SMTP config:", error);
+    res.status(500).json({ message: 'Error al actualizar la configuración SMTP' });
+  }
+});
+
 module.exports = router;

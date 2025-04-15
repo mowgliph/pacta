@@ -811,3 +811,28 @@ ipcMain.handle('statistics:exportReport', async (event, data) => {
     throw error;
   }
 });
+
+// SMTP Config Handlers
+ipcMain.handle('smtp:getConfig', async () => {
+  const response = await fetch(`${API_URL}/api/users/smtp-config`, {
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Error ${response.status} al obtener configuración SMTP`);
+  }
+  return response.json();
+});
+
+ipcMain.handle('smtp:updateConfig', async (event, config) => {
+  const response = await fetch(`${API_URL}/api/users/smtp-config`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(config)
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || `Error ${response.status} al actualizar configuración SMTP`);
+  }
+  return response.json();
+});
