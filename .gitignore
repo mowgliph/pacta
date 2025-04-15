@@ -3,3 +3,8 @@
 node_modules
 .cursor
 .vscode
+*.db
+*.db*
+*.sql
+backup*
+migrations

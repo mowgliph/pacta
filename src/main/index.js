@@ -1,15 +1,20 @@
 const { app, BrowserWindow, ipcMain, Menu, shell, dialog } = require('electron');
 const path = require('path');
-const fetch = require('node-fetch');
+const { spawn } = require('child_process');
 const fs = require('fs');
-const FormData = require('form-data');
-const db = require('../db');
 const { PrismaClient } = require('@prisma/client');
 require('dotenv').config();
 
 // Get the API URL from .env, with fallback
 const API_URL = process.env.API_URL || 'http://localhost:3001';
-const prisma = new PrismaClient();
+
+let prisma;
+try {
+  prisma = new PrismaClient();
+} catch (error) {
+  console.error('Error inicializando PrismaClient:', error);
+  prisma = null;
+}
 
 // Variable global para almacenar el token JWT
 let currentAuthToken = null;
@@ -26,26 +31,21 @@ function createWindow() {
     },
   });
 
-  const backendProcess = spawn('node', [path.join(__dirname, '../../backend/index.js')], {
-    stdio: 'inherit',
-    cwd: path.join(__dirname, '../../backend'),
-  });
-
   const isDev = process.env.NODE_ENV !== 'production';
-  const url = isDev 
-    ? `${API_URL}` 
-    : `file://${path.join(__dirname, '../dist/index.html')}`;
+  
+  if (isDev) {
+    // En desarrollo, carga desde el servidor de Vite
+    mainWindow.loadURL('http://localhost:3000');
+  } else {
+    // En producción, carga el archivo HTML construido
+    mainWindow.loadFile(path.join(__dirname, '../renderer/dist/index.html'));
+  }
 
-  mainWindow.loadURL(url).catch((err) => {
-    console.error('Error cargando frontend:', err);
-    mainWindow.loadFile(path.join(__dirname, '../../public/error.html'));
-  });
-
-  mainWindow.on('closed', () => backendProcess.kill());
-
-  if (process.env.NODE_ENV === 'development') {
+  if (isDev) {
     mainWindow.webContents.openDevTools();
   }
+
+  return mainWindow;
 }
 
 // Manejar peticiones al backend

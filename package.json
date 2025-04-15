@@ -11,6 +11,8 @@
     "electron_dev": "concurrently \"cross-env BROWSER=none pnpm dev\" \"pnpm run backend\" \"wait-on tcp:3001 && electron .\"",
     "electron_build": "pnpm build && electron-builder",
     "prisma_generate": "prisma generate",
+    "prisma_deploy": "prisma migrate deploy",
+    "prisma_migrate": "prisma migrate dev --name init",
     "prisma_studio": "prisma studio"
   },
   "dependencies": {

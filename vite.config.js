@@ -5,7 +5,13 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   root: path.join(__dirname, 'src', 'renderer'),
+  base: './',
   publicDir: 'public',
+  build: {
+    outDir: path.join(__dirname, 'dist'),
+    emptyOutDir: true,
+    target: 'esnext'
+  },
   server: {
     port: 3000,
     strictPort: true,
