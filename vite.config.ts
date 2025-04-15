@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import type { UserConfig } from 'vite';
 
 export default defineConfig({
   plugins: [react()],
@@ -24,10 +25,6 @@ export default defineConfig({
     extensions: ['.js', '.jsx', '.ts', '.tsx']
   },
   css: {
-    preprocessorOptions: {
-      css: {
-        additionalData: `@import './src/renderer/index.css';`,
-      }
-    }
+    postcss: path.resolve(__dirname, 'postcss.config.js')
   }
-});
+}) as UserConfig;
