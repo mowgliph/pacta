@@ -8,7 +8,7 @@ const { PrismaClient } = require('@prisma/client');
 require('dotenv').config();
 
 // Get the API URL from .env, with fallback
-const API_URL = process.env.API_URL || 'http://localhost:3000';
+const API_URL = process.env.API_URL || 'http://localhost:3001';
 const prisma = new PrismaClient();
 
 // Variable global para almacenar el token JWT
