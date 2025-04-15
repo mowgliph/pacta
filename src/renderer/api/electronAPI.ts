@@ -1,13 +1,24 @@
-import { Contract, ContractFilters } from '../types/contracts';
+import { Contract, ContractFilters, Supplement } from '../types/contracts';
 
-export interface IElectronAPI {
-  invoke<T = any>(channel: string, ...args: any[]): Promise<T>;
+interface User {
+  id: string;
+  name: string;
+  role: string;
 }
 
-declare global {
-  interface Window {
-    electronAPI: IElectronAPI;
-  }
+interface LoginCredentials {
+  username: string;
+  password: string;
+}
+
+interface LoginResponse {
+  token?: string;
+  user?: {
+    id: string;
+    name: string;
+    role: string;
+  };
+  message?: string;
 }
 
 export class ElectronAPI {
@@ -22,52 +33,95 @@ export class ElectronAPI {
     return ElectronAPI.instance;
   }
 
-  async invoke<T>(channel: string, ...args: any[]): Promise<T> {
+  private async invoke<T>(channel: string, ...args: any[]): Promise<T> {
+    if (!window.electronAPI?.invoke) {
+      throw new Error('API de Electron no disponible');
+    }
     return window.electronAPI.invoke(channel, ...args);
   }
 
-  // Métodos específicos para contratos
-  async getContracts(filters?: ContractFilters): Promise<Contract[]> {
-    return this.invoke('contracts:getAll', filters);
-  }
+  // Auth methods
+  auth = {
+    login: async (credentials: LoginCredentials): Promise<LoginResponse> => {
+      return this.invoke('auth:login', credentials);
+    },
+    register: async (userData: any): Promise<any> => {
+      return this.invoke('auth:register', userData);
+    },
+    updateProfile: async (userData: Partial<User>): Promise<void> => {
+      return this.invoke('profile:update', userData);
+    },
+    logout: async (): Promise<void> => {
+      return this.invoke('auth:logout');
+    },
+    verifyToken: async (): Promise<any> => {
+      return this.invoke('auth:verify');
+    }
+  };
 
-  async getContractDetails(id: string): Promise<Contract> {
-    return this.invoke('contracts:getDetails', id);
-  }
+  // Contract methods
+  contracts = {
+    getAll: async (filters?: ContractFilters): Promise<Contract[]> => {
+      return this.invoke('contracts:getAll', filters);
+    },
+    getById: async (id: string): Promise<Contract> => {
+      return this.invoke('contracts:getById', id);
+    },
+    create: async (contractData: Partial<Contract>): Promise<Contract> => {
+      return this.invoke('contracts:create', contractData);
+    },
+    update: async (id: string, data: Partial<Contract>): Promise<Contract> => {
+      return this.invoke('contracts:update', { id, data });
+    },
+    delete: async (id: string): Promise<boolean> => {
+      return this.invoke('contracts:delete', id);
+    },
+    uploadDocument: async (data: { filePath: string; contractId: string }): Promise<string> => {
+      return this.invoke('contracts:uploadDocument', data);
+    }
+  };
 
-  async createContract(data: Partial<Contract>): Promise<Contract> {
-    return this.invoke('contracts:create', data);
-  }
+  // Supplement methods
+  supplements = {
+    add: async (contractId: string, data: Partial<Supplement>): Promise<Supplement> => {
+      return this.invoke('supplements:add', { contractId, data });
+    },
+    update: async (contractId: string, supplementId: string, data: Partial<Supplement>): Promise<Supplement> => {
+      return this.invoke('supplements:update', { contractId, supplementId, data });
+    },
+    getDetails: async (contractId: string, supplementId: string): Promise<Supplement> => {
+      return this.invoke('supplements:getDetails', { contractId, supplementId });
+    },
+    delete: async (contractId: string, supplementId: string): Promise<boolean> => {
+      return this.invoke('supplements:delete', { contractId, supplementId });
+    },
+    uploadDocument: async (data: { filePath: string; supplementId: string }): Promise<string> => {
+      return this.invoke('supplements:uploadDocument', data);
+    }
+  };
 
-  async updateContract(id: string, data: Partial<Contract>): Promise<Contract> {
-    return this.invoke('contracts:update', { contractId: id, data });
-  }
+  // Statistics methods
+  statistics = {
+    getPublic: async (): Promise<any> => {
+      return this.invoke('statistics:getPublic');
+    },
+    getPrivate: async (): Promise<any> => {
+      return this.invoke('statistics:getPrivate');
+    },
+    exportReport: async (data: any): Promise<any> => {
+      return this.invoke('statistics:exportReport', data);
+    }
+  };
 
-  async deleteContract(id: string): Promise<boolean> {
-    return this.invoke('contracts:delete', id);
-  }
-
-  async uploadDocument(file: File): Promise<string> {
-    return this.invoke('contracts:uploadDocument', {
-      filePath: file.path,
-      fileName: file.name
-    });
-  }
-
-  async addSupplement(contractId: string, data: any): Promise<any> {
-    return this.invoke('contracts:addSupplement', {
-      contractId,
-      ...data
-    });
-  }
-
-  async editSupplement(contractId: string, supplementId: string, data: any): Promise<any> {
-    return this.invoke('contracts:editSupplement', {
-      contractId,
-      supplementId,
-      ...data
-    });
-  }
+  // File methods
+  files = {
+    select: async (options?: { filters?: Array<{ name: string; extensions: string[] }> }): Promise<string> => {
+      return this.invoke('files:select', options);
+    },
+    open: async (filePath: string): Promise<void> => {
+      return this.invoke('files:open', filePath);
+    }
+  };
 }
 
 // Exportar una instancia única

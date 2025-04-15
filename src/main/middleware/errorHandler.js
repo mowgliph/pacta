@@ -2,7 +2,7 @@ const { ZodError } = require('zod');
 
 const errorHandler = (error, channel) => {
   // Log the error for debugging
-  console.error(`Error in channel ${channel}:`, error);
+  console.error(`Error en el canal ${channel}:`, error);
 
   // Handle Zod validation errors
   if (error instanceof ZodError) {
@@ -21,7 +21,7 @@ const errorHandler = (error, channel) => {
     return {
       status: 'error',
       code: 'DATABASE_ERROR',
-      message: 'Error en la base de datos'
+      message: 'Ha ocurrido un error en la base de datos'
     };
   }
 
@@ -30,7 +30,7 @@ const errorHandler = (error, channel) => {
     return {
       status: 'error',
       code: 'FILE_SYSTEM_ERROR',
-      message: 'Error en el sistema de archivos'
+      message: 'Error al acceder a los archivos del sistema'
     };
   }
 
@@ -38,7 +38,7 @@ const errorHandler = (error, channel) => {
   return {
     status: 'error',
     code: 'INTERNAL_ERROR',
-    message: 'Error interno del servidor'
+    message: 'Ha ocurrido un error interno del servidor'
   };
 };
 

@@ -1,30 +1,56 @@
 Tech Stack Doc - PACTA
-.1 This doc will explain every single detail about the stack AI needs to use to build la aplicaci髇 de PACTA
-Contexto: PACTA es una aplicaci髇 de escritorio que automatiza la gesti髇 de contratos para empresas grandes, con un enfoque en seguridad, accesibilidad y funcionamiento offline. El stack debe ser moderno, popular y compatible con LLMs para facilitar el desarrollo asistido por IA.
+.1 This doc will explain every single detail about the stack AI needs to use to build la aplicaci贸n de PACTA
+Contexto: PACTA es una aplicaci贸n de escritorio que automatiza la gesti贸n de contratos para empresas grandes, con un enfoque en seguridad, accesibilidad y funcionamiento offline. El stack debe ser moderno, popular y compatible con LLMs para facilitar el desarrollo asistido por IA.
+
 Frontend Stack: 
-* Framework: React 18 con Electron (para empaquetar como .exe). 
-* Router: Wouter (ligero y compatible con React). 
-* Estado Global: Zustand (simple y eficiente). 
-* Estilos: TailwindCSS con Shadcn UI (componentes accesibles). 
-* Librer韆s Adicionales: Flicking, Recharts, DnDKit, Sonner, Virtua, React Aria Modal, Framer Motion, React Hook Form, Tanstack Query, Tanstack Table.
+* Framework: React 19 con TypeScript y Electron (para empaquetar como .exe). 
+* Router: React Router v6 (reemplazo de Wouter para mejor estabilidad). 
+* Estado Global: Zustand + Tanstack Query (para gesti贸n de estado y cache). 
+* Estilos: TailwindCSS con Shadcn UI y micro-interacciones personalizadas. 
+* Librer铆as Adicionales: 
+  - Recharts para visualizaci贸n de datos
+  - Framer Motion para animaciones
+  - React Hook Form + Zod para formularios y validaciones
+  - Sonner para notificaciones
+  - Virtua para virtualizaci贸n de listas
+  - @tanstack/table para tablas avanzadas
+  - Lucide Icons para iconograf铆a
+
 Backend Stack: 
-* Framework: Node.js 20 con Express (popular y bien documentado). 
-* Base de Datos: SQLite (ligera, ideal para apps locales). 
-* ORM: Prisma (para consultas seguras y tipadas). 
-* Autenticaci髇: Auth.js (integrado con Express). 
-* Seguridad: Helmet (cabeceras HTTP seguras), bcrypt (hash de contrase馻s), express-rate-limit (limitaci髇 de intentos de login). 
-* Logging: Winston (registro de actividades y errores).
-Distribuci髇: 
-* Electron: Empaquetar frontend y backend en un instalador .exe. 
-* Electron Builder: Para generar el instalador con auto-actualizaciones.
-Herramientas de Desarrollo: 
-* Gesti髇 de Dependencias: pnpm (r醦ido y eficiente). 
-* Linter: ESLint con configuraci髇 de Airbnb. 
-* Formateo: Prettier. 
-* Testing: Vitest (unit tests) y Playwright (e2e tests).
-.2 Asegurate de usar solo popular tech stacks, because LLMs like Claude, GPT or Gemini are trained on vastly adapted frameworks 
-* Justificaci髇: 
-o React, Node.js, Express y SQLite son ampliamente utilizados y tienen extensa documentaci髇, lo que facilita el soporte de LLMs. 
-o Prisma y TailwindCSS son est醤dares modernos con comunidades activas. 
-o Electron es la opci髇 m醩 popular para aplicaciones de escritorio con JavaScript.
+* Framework: Node.js 20 con Express y TypeScript. 
+* Base de Datos: SQLite con Prisma ORM (schema-first approach). 
+* Autenticaci贸n: JWT con express-jwt. 
+* Seguridad: 
+  - Helmet para cabeceras HTTP
+  - Bcrypt para hashing
+  - Express-rate-limit para protecci贸n DoS
+  - CORS configurado
+* Logging: Winston para logs estructurados
+* Validaci贸n: Zod para validaci贸n tipo-segura
+
+Arquitectura:
+* Frontend:
+  - Feature-First Architecture
+  - Componentes at贸micos con Shadcn/UI
+  - Custom hooks para l贸gica reutilizable
+  - Sistema de micro-interacciones personalizado
+* Backend:
+  - RESTful API con middlewares modulares
+  - Sistema de permisos basado en roles (RBAC)
+  - Backup autom谩tico de base de datos
+  - Sistema de notificaciones en tiempo real
+
+Testing y Calidad:
+* Unit Testing: Vitest
+* E2E Testing: Playwright
+* Linting: ESLint con configuraci贸n personalizada
+* Formatting: Prettier
+* Types: TypeScript strict mode
+
+Empaquetado y Distribuci贸n: 
+* Build Tool: Vite para desarrollo y producci贸n
+* Electron Builder para generar instaladores
+* Sistema de auto-actualizaciones integrado
+* Gesti贸n de dependencias con pnpm
+
 

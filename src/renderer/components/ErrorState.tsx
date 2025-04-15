@@ -8,7 +8,7 @@ interface ErrorStateProps {
 }
 
 const ErrorState: React.FC<ErrorStateProps> = ({ 
-  message = 'Ha ocurrido un error',
+  message = 'Ha ocurrido un error inesperado. Por favor, inténtelo de nuevo.',
   onRetry 
 }) => {
   return (

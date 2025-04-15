@@ -1,55 +1,36 @@
-import { electronAPI } from '../api/electronAPI';
+import { electronAPI } from '@/renderer/api/electronAPI';
+
+interface StatisticsData {
+  totalContracts?: number;
+  activeContracts?: number;
+  expiringContracts?: number;
+  [key: string]: any;
+}
 
 class StatisticsService {
-  async getStatistics() {
+  async getGeneralStatistics(): Promise<StatisticsData> {
     try {
-      return await electronAPI.invoke('statistics:fetch');
+      return await electronAPI.statistics.getPublic();
     } catch (error) {
-      console.error('Error fetching statistics:', error);
+      console.error('Error al obtener estadísticas generales:', error);
       throw error;
     }
   }
 
-  async getExpiringContracts(days: number = 30) {
+  async getPrivateStatistics(): Promise<StatisticsData> {
     try {
-      return await electronAPI.invoke('expiring-contracts:fetch', days);
+      return await electronAPI.statistics.getPrivate();
     } catch (error) {
-      console.error('Error fetching expiring contracts:', error);
+      console.error('Error al obtener estadísticas privadas:', error);
       throw error;
     }
   }
 
-  async getSupplementActivity(limit: number = 5) {
+  async exportReport(data: StatisticsData): Promise<any> {
     try {
-      return await electronAPI.invoke('supplement-activity:fetch', limit);
+      return await electronAPI.statistics.exportReport(data);
     } catch (error) {
-      console.error('Error fetching supplement activity:', error);
-      throw error;
-    }
-  }
-
-  async getPublicStatistics() {
-    try {
-      return await electronAPI.invoke('public:statistics');
-    } catch (error) {
-      console.error('Error fetching public statistics:', error);
-      throw error;
-    }
-  }
-
-  async getContractStats(filters?: any) {
-    try {
-      const stats = await this.getStatistics();
-      const expiringContracts = await this.getExpiringContracts();
-      const supplementActivity = await this.getSupplementActivity();
-
-      return {
-        ...(typeof stats === 'object' && stats !== null ? stats : {}),
-        expiringContracts,
-        supplementActivity
-      };
-    } catch (error) {
-      console.error('Error fetching contract stats:', error);
+      console.error('Error al exportar reporte:', error);
       throw error;
     }
   }

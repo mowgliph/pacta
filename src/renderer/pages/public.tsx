@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'wouter';
+import { useLocation } from 'wouter';
 import { motion } from 'framer-motion';
 import { ArrowRight, BarChart2, Shield, Clock, LucideIcon } from 'lucide-react';
 import { Button } from "@/renderer/components/ui/button";
@@ -32,7 +32,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
 );
 
 const Public: React.FC = () => {
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
 
   return (
     <div role="main" aria-label="Página principal">
@@ -57,7 +57,7 @@ const Public: React.FC = () => {
           </p>
           <HoverBounce>
             <Button
-              onClick={() => navigate('/auth')}
+              onClick={() => setLocation('/auth')}
               className="group"
               aria-label="Acceder al sistema de gestión de contratos"
             >

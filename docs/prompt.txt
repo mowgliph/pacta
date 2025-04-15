@@ -23,16 +23,3 @@ Pero antes verifica que no se te este quedando nada de nada.
 Responde con un analisis de el estado de implementacion de PACTA. Que nos falta 
 para seguir desarrollando.
 
-Por lo que estoy leyendo del resumen veo que he realizado cambios en la aplicacion en el codigo y aun no he actualizado el readme ni el changelog y quiero que me los actualices a las necesidades actuales.
-
-Ademas actualiza el prd y el appflow a las necesidades actuales.
-
-Las necesidades actuales para la aplicacion de pacta. Es que he visto aplicacines modeernas que te dan una probada de su funcionamiento gratuitamente ese viene siendo el dashboard publico que utilizaria datos tomados de la base de datos con sqlite. Que pasa que ese cliente en modo gratis o vista publica del dashboard / contratos / estadisticas que vienen siendo las paginas publicas el podra navegar a traves del dashboard con las rutas publicas sin problemas. Pero ya al momento de agregar nuevos contratos, agregar suplementos, ver las notificaciones de contratos cerca de vencer tiene que realizar el login. Para el login estan los 2 usuarios por defecto. En este caso tenemos el RA usuario para el proveedor de la aplicacion en este caso los desarrolladores y esta el usuario admin que es el usuario que usara el cliente de la aplicacion para acceder a la pagina con sus permisos administrativos. Este usuario RA como el admin tienen permisos sober todo el sistema de la plaiccion y son los encargados de agregar nuevos usuarios al sistema con sus roles caratceristicos.
-
-el dashboard seguira manteniendo la sesion de ultimas estadisticas de los contratos como el que esta a punto de vencer, la proxima sesin sera las de acciones rapidas. y por ultimo las ultimas operaciones realizadas.
-
-En el contrato se mostrara todos los contratos con los filtros avanzados de busqueda y su filtro con botones de provedor o cliente Los contratos mostraran el numero de conrtato, nombre de la empresa si son de tipo cliente o proveedor y al lado las acciones rapidas de ver, agregar suplementos.
-
-estadisticas es donde estaran todas las estadisticas de los contratos de la aplicacion utilizando la tecnologia de recharts.
-
-ademas se tiene el modulo de backups de la base de datos de los contratos, y el almacenamiento de los mismos en la base de datos como pdf, docs.

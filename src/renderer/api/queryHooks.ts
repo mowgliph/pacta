@@ -4,26 +4,10 @@ import {
   supplementService, 
   statisticsService 
 } from '@/renderer/services';
+import type { Contract as IContract, Supplement as ISupplement } from '@/renderer/types/contracts';
 
-interface Contract {
-  id: string;
-  title: string;
-  startDate: Date;
-  endDate: Date;
-  status: 'active' | 'inactive';
-  createdAt: Date;
-  supplements?: Supplement[];
-}
-
-interface Supplement {
-  id: string;
-  title: string;
-  description: string;
-  amount: number;
-  date: Date;
-  fileUrl?: string;
-  contractId: string;
-}
+type Contract = IContract;
+type Supplement = ISupplement;
 
 interface Statistics {
   contracts: {
@@ -44,14 +28,16 @@ interface Statistics {
 }
 
 interface ContractFilters {
-  status?: 'active' | 'inactive';
-  startDate?: Date;
-  endDate?: Date;
+  status?: string;
+  clientName?: string;
+  startDate?: string;
+  endDate?: string;
+  type?: string;
 }
 
 interface UpdateContractVariables {
   id: string;
-  data: FormData;
+  data: Partial<Contract>;
 }
 
 interface SupplementVariables {
@@ -82,8 +68,8 @@ export const useContractDetails = (contractId: string | undefined) => {
 
 export const useCreateContract = () => {
   const queryClient = useQueryClient();
-  return useMutation<Contract, Error, FormData>({
-    mutationFn: contractService.createContract,
+  return useMutation<Contract, Error, Partial<Contract>>({
+    mutationFn: (data) => contractService.createContract(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
     },
@@ -92,7 +78,7 @@ export const useCreateContract = () => {
 
 export const useUpdateContract = () => {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, UpdateContractVariables>({
+  return useMutation<Contract, Error, UpdateContractVariables>({
     mutationFn: ({ id, data }) => contractService.updateContract(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
@@ -103,7 +89,7 @@ export const useUpdateContract = () => {
 export const useDeleteContract = () => {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string>({
-    mutationFn: contractService.deleteContract,
+    mutationFn: (id) => contractService.deleteContract(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
     },

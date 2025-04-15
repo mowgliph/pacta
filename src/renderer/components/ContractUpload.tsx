@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
-import { selectFile, uploadContractFile } from '../api/electronAPI';
-import type { Contract } from '../types/contracts';
 
 interface ContractUploadProps {
   contractId: string;
@@ -21,7 +19,7 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ contractId, onUploadCom
   
   const handleFileSelect = async () => {
     try {
-      const filePath = await selectFile({
+      const filePath = await window.electronAPI.files.select({
         filters: [
           { name: 'Documentos', extensions: ['pdf', 'doc', 'docx'] }
         ]
@@ -40,8 +38,11 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ contractId, onUploadCom
 
     setIsUploading(true);
     try {
-      const result = await uploadContractFile(contractId, selectedFile);
-      onUploadComplete?.(true, result.fileUrl);
+      const result = await window.electronAPI.contracts.uploadDocument({
+        filePath: selectedFile,
+        contractId
+      });
+      onUploadComplete?.(true, result);
     } catch (error) {
       console.error('Error al subir archivo:', error);
       onUploadComplete?.(false);
@@ -55,9 +56,9 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ contractId, onUploadCom
       console.log('Nueva notificación:', notification);
     };
 
-    window.electron.ipcRenderer.on('notification:new', handleNotification);
+    window.electronAPI.on('notification:new', handleNotification);
     return () => {
-      window.electron.ipcRenderer.removeAllListeners('notification:new');
+      window.electronAPI.removeAllListeners('notification:new');
     };
   }, []);
 

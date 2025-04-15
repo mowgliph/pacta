@@ -50,7 +50,7 @@ router.get('/statistics', async (req, res) => {
     const contractStats = monthlyStats.map(stat => ({
       month: new Date(stat.createdAt).toLocaleString('es-ES', { month: 'short' }),
       activos: stat._count._all,
-      vencidos: 0 // Esto debería calcularse basado en la fecha de vencimiento
+      vencidos: 0
     }));
     
     res.json({
@@ -68,4 +68,4 @@ router.get('/statistics', async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;

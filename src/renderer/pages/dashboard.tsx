@@ -3,6 +3,7 @@ import { useLocation, Link } from 'wouter';
 import useStore from '@/renderer/store/useStore';
 import { Button } from "@/renderer/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/renderer/components/ui/card";
+import { Skeleton } from "@/renderer/components/ui/skeleton";
 import { 
     DollarSign, 
     TrendingUp, 
@@ -14,10 +15,17 @@ import {
     FilePlus,
     LucideIcon
 } from 'lucide-react';
-import { statisticsService } from '@/renderer/services';
+import statisticsService from '@/renderer/services/statisticsService';
 import { motion } from 'framer-motion';
 import { SkeletonCard, SkeletonList, SkeletonChart } from '@/renderer/components/ui/skeleton';
-import { HoverElevation, HoverScale, HoverGlow, HoverBounce } from '@/renderer/components/ui/micro-interactions';
+import { HoverElevation, HoverScale, HoverGlow, HoverBounce, HoverBackground } from '@/renderer/components/ui/micro-interactions';
+
+interface User {
+  id: string;
+  name: string;
+  role: string;
+  email: string;
+}
 
 interface ExpiringContract {
   id: string;
@@ -231,7 +239,7 @@ const Dashboard: React.FC = () => {
         <HoverScale>
           <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         </HoverScale>
-        <p className="text-sm text-muted-foreground">{user ? `Bienvenido de nuevo, ${user.username}!` : 'Resumen general del sistema'}</p>
+        <p className="text-sm text-muted-foreground">{user ? `Bienvenido de nuevo, ${user.name}!` : 'Resumen general del sistema'}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

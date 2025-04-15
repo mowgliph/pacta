@@ -108,4 +108,3 @@
 2. Prisma para gestión de datos
 3. Migraciones versionadas
 4. Backups periódicos
-

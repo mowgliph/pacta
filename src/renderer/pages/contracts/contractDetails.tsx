@@ -259,7 +259,7 @@ const ContractDetails: React.FC = () => {
 
   const handleOpenFile = async (filePath: string): Promise<void> => {
     try {
-      await window.electron.ipcRenderer.invoke('files:open', filePath);
+      await window.electronAPI.invoke('files:open', filePath);
     } catch (error: unknown) {
       console.error("Error al abrir archivo desde detalles:", error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
@@ -340,7 +340,7 @@ const ContractDetails: React.FC = () => {
             <CardTitle className="text-destructive">Error</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-destructive">{error}</p>
+            <p className="text-destructive">Ha ocurrido un error al cargar los detalles del contrato</p>
           </CardContent>
         </Card>
       </div>
@@ -348,7 +348,7 @@ const ContractDetails: React.FC = () => {
   }
 
   if (!contractData) {
-    return <div className="p-8 text-center text-gray-500">No hay datos del contrato disponibles.</div>;
+    return <div className="p-8 text-center text-gray-500">No se encontraron datos del contrato.</div>;
   }
 
   return (

@@ -11,7 +11,6 @@ import useStore from '@/renderer/store/useStore';
 
 interface ProfileData {
   name: string;
-  email: string;
   role: string;
 }
 
@@ -26,7 +25,6 @@ const UserProfile: React.FC = () => {
   const { user, updateUser } = useStore();
   const [profileData, setProfileData] = useState<ProfileData>({
     name: '',
-    email: '',
     role: ''
   });
   const [stats, setStats] = useState<StatsData>({
@@ -40,7 +38,6 @@ const UserProfile: React.FC = () => {
     if (user) {
       setProfileData({
         name: user.name,
-        email: user.email,
         role: user.role
       });
       loadStats();
@@ -101,17 +98,6 @@ const UserProfile: React.FC = () => {
                   id="name"
                   name="name"
                   value={profileData.name}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={profileData.email}
                   onChange={handleChange}
                   required
                 />

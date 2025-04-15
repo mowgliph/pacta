@@ -118,30 +118,78 @@ const getAuthHeadersForFormData = () => {
 
 // Manejadores de autenticación
 ipcMain.handle('auth:login', async (_, credentials) => {
-  // Llamar al endpoint /api/auth/login
-  const response = await fetch(`${API_URL}/api/auth/login`, { // Corregir endpoint a /api/auth/login
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(credentials)
-  });
-  const result = await response.json();
-  if (response.ok && result.token) {
-    // Guardar el token globalmente en éxito
-    currentAuthToken = result.token;
-    console.log('[Main Process] Token almacenado.');
-  } else {
-    currentAuthToken = null; // Limpiar si el login falla
+  try {
+    const response = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials)
+    });
+
+    const result = await response.json();
+
+    if (response.ok && result.token) {
+      currentAuthToken = result.token;
+      console.log('[Main Process] Token almacenado correctamente');
+      return {
+        token: result.token,
+        user: result.user,
+        message: result.message || 'Login exitoso'
+      };
+    } else {
+      currentAuthToken = null;
+      console.error('[Main Process] Error en login:', result.message);
+      return {
+        token: null,
+        user: null,
+        message: result.message || 'Error de autenticación'
+      };
+    }
+  } catch (error) {
+    console.error('[Main Process] Error en proceso de login:', error);
+    return {
+      token: null,
+      user: null,
+      message: 'Error de conexión con el servidor'
+    };
   }
-  // Devolver todo el resultado (que puede incluir mensaje de error o { token })
-  return result; 
 });
 
-// Nuevo manejador para logout
+ipcMain.handle('auth:verify', async () => {
+  try {
+    if (!currentAuthToken) {
+      return { valid: false, message: 'No hay token almacenado' };
+    }
+
+    const response = await fetch(`${API_URL}/api/auth/verify`, {
+      headers: getAuthHeaders()
+    });
+
+    const result = await response.json();
+    return {
+      valid: response.ok,
+      message: result.message,
+      user: result.user
+    };
+  } catch (error) {
+    console.error('[Main Process] Error verificando token:', error);
+    return { valid: false, message: 'Error de conexión' };
+  }
+});
+
 ipcMain.handle('auth:logout', async () => {
-    console.log('[Main Process] Limpiando token almacenado.');
+  try {
+    if (currentAuthToken) {
+      await fetch(`${API_URL}/api/auth/logout`, {
+        method: 'POST',
+        headers: getAuthHeaders()
+      });
+    }
+  } catch (error) {
+    console.error('[Main Process] Error en logout:', error);
+  } finally {
     currentAuthToken = null;
-    // Podrías añadir una llamada al backend aquí si necesitas invalidar el token en el servidor
     return { success: true };
+  }
 });
 
 // Manejadores de contratos
@@ -600,35 +648,6 @@ ipcMain.handle('supplement-activity:fetch', async (event, limit = 5) => {
   }
 });
 
-// Manejador para estadísticas públicas
-ipcMain.handle('public:statistics', async () => {
-  try {
-    const response = await fetch(`${API_URL}/api/public/statistics`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Error ${response.status} al obtener estadísticas públicas`);
-    }
-    
-    const data = await response.json();
-    
-    // Procesar y formatear los datos para el dashboard
-    const formattedData = {
-      totalContracts: data.totalContracts || 0,
-      activeContracts: data.activeContracts || 0,
-      expiringContracts: data.expiringContracts || 0,
-      contractStats: data.contractStats || []
-    };
-    
-    return formattedData;
-  } catch (error) {
-    console.error('Error en public:statistics:', error);
-    throw error;
-  }
-});
-
 // Manejadores IPC para contratos
 ipcMain.handle('get-contracts', async () => {
   try {
@@ -728,7 +747,7 @@ ipcMain.handle('edit-supplement', async (event, contractId, supplementId, supple
 });
 
 // Manejador IPC para estadísticas
-ipcMain.handle('get-statistics', async () => {
+ipcMain.handle('statistics:getPublic', async () => {
   try {
     const totalContracts = await prisma.contract.count();
     const activeContracts = await prisma.contract.count({
@@ -749,6 +768,46 @@ ipcMain.handle('get-statistics', async () => {
     };
   } catch (error) {
     console.error('Error al obtener estadísticas:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('statistics:getPrivate', async () => {
+  try {
+    // Implementación existente...
+    return await prisma.$queryRaw`SELECT * FROM private_statistics`;
+  } catch (error) {
+    console.error('Error al obtener estadísticas privadas:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('statistics:exportReport', async (event, data) => {
+  try {
+    const { dialog } = require('electron');
+    const fs = require('fs').promises;
+    const path = require('path');
+
+    // Solicitar ubicación para guardar el archivo
+    const { filePath } = await dialog.showSaveDialog({
+      title: 'Guardar Reporte de Estadísticas',
+      defaultPath: path.join(app.getPath('downloads'), 'reporte-estadisticas.json'),
+      filters: [
+        { name: 'JSON', extensions: ['json'] },
+        { name: 'Todos los archivos', extensions: ['*'] }
+      ]
+    });
+
+    if (!filePath) {
+      throw new Error('Operación cancelada por el usuario');
+    }
+
+    // Guardar los datos en el archivo
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+    
+    return { success: true, filePath };
+  } catch (error) {
+    console.error('Error al exportar reporte:', error);
     throw error;
   }
 });

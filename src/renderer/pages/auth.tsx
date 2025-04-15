@@ -5,27 +5,21 @@ import { AuthSchema } from '@/renderer/utils/validation/schemas';
 import { toast } from '@/renderer/hooks/use-toast';
 import { useLocation } from 'wouter';
 import useStore from '@/renderer/store/useStore';
-import { loginUser } from '@/renderer/api/electronAPI';
-import { Button } from '@/renderer/components/ui/button';
-import { Input } from '@/renderer/components/ui/input';
-import { Label } from '@/renderer/components/ui/label';
+import { electronAPI } from '@/renderer/api/electronAPI';
 import { Card, CardContent, CardHeader, CardTitle } from "@/renderer/components/ui/card";
 import { Skeleton } from '@/renderer/components/ui/skeleton';
-import { motion } from 'framer-motion';
-import { LoadingSpinner } from "@/renderer/components/ui/loading-spinner";
-import { HoverElevation, HoverScale, HoverGlow, HoverBounce } from '@/renderer/components/ui/micro-interactions';
+import { HoverScale, HoverBounce, HoverBackground } from '@/renderer/components/ui/micro-interactions';
 
 interface FormInputs {
   username: string;
   password: string;
-  email: string;
 }
 
 interface LoginResponse {
   token?: string;
   user?: {
+    id: string;
     name: string;
-    email: string;
     role: string;
   };
   message?: string;
@@ -46,10 +40,13 @@ const Auth: React.FC = () => {
   const onSubmit = async (data: FormInputs): Promise<void> => {
     setIsLoading(true);
     try {
-      const result: LoginResponse = await loginUser(data.username, data.password);
+      const result: LoginResponse = await electronAPI.auth.login({
+        username: data.username,
+        password: data.password
+      });
 
-      if (result && result.token) {
-        setUserAndToken(result.user || null, result.token);
+      if (result && result.token && result.user) {
+        setUserAndToken(result.user, result.token);
         toast({ title: 'Éxito', description: 'Inicio de sesión correcto.' });
         navigate('/dashboard', { replace: true });
       } else {
@@ -101,33 +98,33 @@ const Auth: React.FC = () => {
       <div className="w-full max-w-md p-8 space-y-8">
         <div className="text-center" role="banner" aria-label="Encabezado de autenticación">
           <HoverScale>
-            <h1 className="text-3xl font-bold" aria-level="1">PACTA</h1>
+            <h1 className="text-3xl font-bold" aria-level={1}>PACTA</h1>
           </HoverScale>
           <p className="mt-2 text-muted-foreground">Plataforma de Automatización y Control de Contratos Empresariales</p>
         </div>
 
-        <div className="mt-8 space-y-6" role="form" aria-label="Formulario de autenticación">
+        <form onSubmit={handleSubmit(onSubmit as any)} className="mt-8 space-y-6" role="form" aria-label="Formulario de autenticación">
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-foreground">
-                Correo Electrónico
+              <label htmlFor="username" className="block text-sm font-medium text-foreground">
+                Nombre de Usuario
               </label>
               <div className="mt-1">
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
+                  id="username"
+                  {...register("username")}
+                  type="text"
+                  autoComplete="username"
                   required
                   className="appearance-none block w-full px-3 py-2 border border-input rounded-md shadow-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="tu@email.com"
+                  placeholder="usuario123"
                   aria-required="true"
-                  aria-describedby="email-error"
+                  aria-describedby="username-error"
                 />
               </div>
-              {errors.email && (
-                <p className="mt-2 text-sm text-red-600" id="email-error" role="alert">
-                  {errors.email}
+              {errors.username && (
+                <p className="mt-2 text-sm text-red-600" id="username-error" role="alert">
+                  {errors.username.message}
                 </p>
               )}
             </div>
@@ -139,7 +136,7 @@ const Auth: React.FC = () => {
               <div className="mt-1">
                 <input
                   id="password"
-                  name="password"
+                  {...register("password")}
                   type="password"
                   autoComplete="current-password"
                   required
@@ -151,7 +148,7 @@ const Auth: React.FC = () => {
               </div>
               {errors.password && (
                 <p className="mt-2 text-sm text-red-600" id="password-error" role="alert">
-                  {errors.password}
+                  {errors.password.message}
                 </p>
               )}
             </div>
@@ -189,7 +186,7 @@ const Auth: React.FC = () => {
               Iniciar Sesión
             </button>
           </HoverBounce>
-        </div>
+        </form>
 
         <div className="mt-6 text-center" role="complementary" aria-label="Información adicional">
           <p className="text-sm text-muted-foreground">

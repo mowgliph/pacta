@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { fetchStatistics } from '@/renderer/api/electronAPI';
+import statisticsService from '@/renderer/services/statisticsService';
 import { useToast } from '@/renderer/hooks/use-toast';
 import { Button } from "@/renderer/components/ui/button";
-import { Loader2, AlertTriangle, BarChart2, FileText } from 'lucide-react';
+import { Skeleton } from "@/renderer/components/ui/skeleton";
+import { AlertTriangle, BarChart2, FileText } from 'lucide-react';
+import LoadingState from '@/renderer/components/LoadingState';
+import ErrorState from '@/renderer/components/ErrorState';
 import {
     ResponsiveContainer,
     BarChart,
@@ -56,26 +59,58 @@ const AdvancedStatistics: React.FC = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const data = await fetchStatistics({ /* filtros */ });
+        const data = await statisticsService.getGeneralStatistics();
         if (data) {
           setStatsData(data);
         } else {
-          setError('No se recibieron datos de estadísticas.');
-          toast({ title: 'Advertencia', description: 'No se pudieron obtener los datos de estadísticas.', variant: 'default' });
+          setError('No se encontraron datos estadísticos.');
+          toast({ 
+            title: 'Advertencia', 
+            description: 'No se pudieron obtener los datos estadísticos.', 
+            variant: 'default' 
+          });
         }
       } catch (err) {
-        console.error("Error fetching statistics:", err);
+        console.error("Error al cargar estadísticas:", err);
         setError('Error al cargar las estadísticas.');
-        toast({ title: 'Error', description: 'No se pudieron cargar las estadísticas.', variant: 'destructive' });
+        toast({ 
+          title: 'Error', 
+          description: 'No se pudieron cargar las estadísticas. Por favor, inténtelo de nuevo.', 
+          variant: 'destructive' 
+        });
       } finally {
         setIsLoading(false);
       }
     };
+    
     loadStats();
   }, [toast]);
 
-  const exportReport = (): void => {
-    toast({ title: 'Info', description: 'Funcionalidad de exportar reporte pendiente.' });
+  const exportReport = async (): Promise<void> => {
+    try {
+      if (!statsData) {
+        toast({ 
+          title: 'Error', 
+          description: 'No hay datos disponibles para exportar.', 
+          variant: 'destructive' 
+        });
+        return;
+      }
+
+      await statisticsService.exportReport(statsData);
+      toast({ 
+        title: 'Éxito', 
+        description: 'El reporte ha sido exportado correctamente.', 
+        variant: 'default' 
+      });
+    } catch (error) {
+      console.error('Error al exportar reporte:', error);
+      toast({ 
+        title: 'Error', 
+        description: 'No se pudo exportar el reporte. Por favor, inténtelo de nuevo.', 
+        variant: 'destructive' 
+      });
+    }
   };
 
   // Transform status counts to chart data
@@ -86,54 +121,20 @@ const AdvancedStatistics: React.FC = () => {
     }))
     : [];
 
-  let content;
   if (isLoading) {
-    return (
-      <div className="space-y-6 p-4 md:p-6 lg:p-8">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-10 w-32" />
-        </div>
+    return <LoadingState message="Cargando estadísticas..." />;
+  }
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <SkeletonCard />
-          <SkeletonCard />
-          <SkeletonCard />
-        </div>
+  if (error) {
+    return <ErrorState message={error} onRetry={() => window.location.reload()} />;
+  }
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Estadísticas por Mes</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SkeletonChart />
-            </CardContent>
-          </Card>
+  if (!statsData) {
+    return <div className="text-center p-4">No hay datos estadísticos disponibles.</div>;
+  }
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Distribución por Estado</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SkeletonChart />
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Detalles de Contratos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <SkeletonTable rows={5} columns={4} />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  } else if (error) {
-    content = <p className="text-red-600 text-center p-4">{error}</p>;
-  } else if (statsData) {
+  let content;
+  if (statsData) {
     
     // --- Preparar datos para el gráfico de barras --- 
     // Convertir { Active: 10, Pending: 5 } a [{ name: 'Active', count: 10 }, { name: 'Pending', count: 5 }]
@@ -146,7 +147,7 @@ const AdvancedStatistics: React.FC = () => {
       <div className="space-y-6 p-4 md:p-6 lg:p-8" role="main" aria-label="Estadísticas avanzadas">
         <div className="flex justify-between items-center">
           <HoverScale>
-            <h1 className="text-2xl font-bold" aria-level="1">Estadísticas Avanzadas</h1>
+            <h1 className="text-2xl font-bold" aria-level={1}>Estadísticas Avanzadas</h1>
           </HoverScale>
           <HoverBounce>
             <Button 

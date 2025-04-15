@@ -1,14 +1,11 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+// Exponer la API de Electron al proceso de renderizado
 contextBridge.exposeInMainWorld('electronAPI', {
-  // System Information
-  getVersions: () => ({
-    chrome: process.versions.chrome,
-    node: process.versions.node,
-    electron: process.versions.electron,
-  }),
+  // Método general de invocación
+  invoke: (channel, ...args) => ipcRenderer.invoke(channel, ...args),
 
-  // Authentication
+  // Auth methods
   auth: {
     login: (credentials) => ipcRenderer.invoke('auth:login', credentials),
     register: (userData) => ipcRenderer.invoke('auth:register', userData),
@@ -16,54 +13,52 @@ contextBridge.exposeInMainWorld('electronAPI', {
     verifyToken: () => ipcRenderer.invoke('auth:verify'),
   },
 
-  // Contract Management
+  // Contract methods
   contracts: {
-    getAll: () => ipcRenderer.invoke('contracts:getAll'),
+    getAll: (filters) => ipcRenderer.invoke('contracts:getAll', filters),
     getById: (id) => ipcRenderer.invoke('contracts:getById', id),
     create: (contractData) => ipcRenderer.invoke('contracts:create', contractData),
     update: (id, data) => ipcRenderer.invoke('contracts:update', { id, data }),
     delete: (id) => ipcRenderer.invoke('contracts:delete', id),
-    uploadDocument: (contractId, filePath) => 
-      ipcRenderer.invoke('contracts:uploadDocument', { contractId, filePath }),
+    uploadDocument: (data) => ipcRenderer.invoke('contracts:uploadDocument', data),
+    addSupplement: (contractId, data) => ipcRenderer.invoke('contracts:addSupplement', { contractId, data }),
+    editSupplement: (contractId, supplementId, data) => 
+      ipcRenderer.invoke('contracts:editSupplement', { contractId, supplementId, data }),
+    deleteSupplement: (contractId, supplementId) => 
+      ipcRenderer.invoke('contracts:deleteSupplement', { contractId, supplementId }),
   },
 
-  // File Operations
+  // Statistics methods
+  statistics: {
+    getPublic: () => ipcRenderer.invoke('statistics:getPublic'),
+    getPrivate: () => ipcRenderer.invoke('statistics:getPrivate'),
+    fetch: (filters) => ipcRenderer.invoke('statistics:fetch', filters),
+  },
+
+  // File methods
   files: {
     select: (options) => ipcRenderer.invoke('files:select', options),
-    save: (fileData) => ipcRenderer.invoke('files:save', fileData),
     open: (filePath) => ipcRenderer.invoke('files:open', filePath),
-    getPdfPreview: (filePath) => ipcRenderer.invoke('files:getPdfPreview', filePath),
   },
 
-  // Notifications
-  notifications: {
-    getAll: () => ipcRenderer.invoke('notifications:getAll'),
-    markAsRead: (id) => ipcRenderer.invoke('notifications:markAsRead', id),
-    subscribe: (callback) => 
-      ipcRenderer.on('notification:new', (_, data) => callback(data)),
-    unsubscribe: () => ipcRenderer.removeAllListeners('notification:new'),
+  // Profile methods
+  profile: {
+    fetch: () => ipcRenderer.invoke('profile:fetch'),
+    update: (data) => ipcRenderer.invoke('profile:update', data),
   },
 
-  // Contract Alerts
-  alerts: {
-    getExpiringContracts: () => ipcRenderer.invoke('alerts:expiringContracts'),
-    getPendingReviews: () => ipcRenderer.invoke('alerts:pendingReviews'),
-    subscribe: (callback) => 
-      ipcRenderer.on('alerts:update', (_, data) => callback(data)),
-    unsubscribe: () => ipcRenderer.removeAllListeners('alerts:update'),
+  // Event listeners
+  on: (channel, callback) => {
+    if (channel.startsWith('notification:')) {
+      ipcRenderer.on(channel, callback);
+    }
+  },
+  removeAllListeners: (channel) => {
+    if (channel.startsWith('notification:')) {
+      ipcRenderer.removeAllListeners(channel);
+    }
   },
 
-  // User Management
-  users: {
-    getProfile: () => ipcRenderer.invoke('users:getProfile'),
-    updateProfile: (data) => ipcRenderer.invoke('users:updateProfile', data),
-    changePassword: (data) => ipcRenderer.invoke('users:changePassword', data),
-  },
-
-  // System Events
-  system: {
-    onError: (callback) => ipcRenderer.on('system:error', (_, error) => callback(error)),
-    onUpdate: (callback) => ipcRenderer.on('system:update', (_, data) => callback(data)),
-    clearListeners: () => ipcRenderer.removeAllListeners(),
-  }
+  // System info
+  getVersions: () => process.versions,
 });

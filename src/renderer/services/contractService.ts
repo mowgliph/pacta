@@ -4,18 +4,18 @@ import { electronAPI } from '@/renderer/api/electronAPI';
 class ContractService {
   async getAllContracts(filters?: ContractFilters) {
     try {
-      return await electronAPI.getContracts(filters);
+      return await electronAPI.contracts.getAll(filters);
     } catch (error) {
-      console.error('Error fetching contracts:', error);
+      console.error('Error al obtener contratos:', error);
       throw error;
     }
   }
 
   async getContractDetails(id: string) {
     try {
-      return await electronAPI.getContractDetails(id);
+      return await electronAPI.contracts.getById(id);
     } catch (error) {
-      console.error('Error fetching contract details:', error);
+      console.error('Error al obtener detalles del contrato:', error);
       throw error;
     }
   }
@@ -23,13 +23,16 @@ class ContractService {
   async createContract(contractData: Partial<Contract>) {
     try {
       if (contractData.documentFile) {
-        const fileUrl = await electronAPI.uploadDocument(contractData.documentFile);
+        const fileUrl = await electronAPI.contracts.uploadDocument({
+          filePath: contractData.documentFile.path,
+          contractId: contractData.id as string
+        });
         contractData.documentUrl = fileUrl;
       }
       
-      return await electronAPI.createContract(contractData);
+      return await electronAPI.contracts.create(contractData);
     } catch (error) {
-      console.error('Error creating contract:', error);
+      console.error('Error al crear el contrato:', error);
       throw error;
     }
   }
@@ -37,22 +40,25 @@ class ContractService {
   async updateContract(id: string, contractData: Partial<Contract>) {
     try {
       if (contractData.documentFile) {
-        const fileUrl = await electronAPI.uploadDocument(contractData.documentFile);
+        const fileUrl = await electronAPI.contracts.uploadDocument({
+          filePath: contractData.documentFile.path,
+          contractId: id
+        });
         contractData.documentUrl = fileUrl;
       }
 
-      return await electronAPI.updateContract(id, contractData);
+      return await electronAPI.contracts.update(id, contractData);
     } catch (error) {
-      console.error('Error updating contract:', error);
+      console.error('Error al actualizar el contrato:', error);
       throw error;
     }
   }
 
   async deleteContract(id: string) {
     try {
-      return await electronAPI.deleteContract(id);
+      return await electronAPI.contracts.delete(id);
     } catch (error) {
-      console.error('Error deleting contract:', error);
+      console.error('Error al eliminar el contrato:', error);
       throw error;
     }
   }

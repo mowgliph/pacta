@@ -16,7 +16,7 @@ const NotFound: React.FC = () => {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
-            Lo sentimos, la página que buscas no existe o ha sido movida.
+            Lo sentimos, no pudimos encontrar la página que estás buscando. Por favor, verifica la URL o regresa al inicio.
           </p>
         </CardContent>
         <CardFooter className="flex justify-end gap-2">
