@@ -44,7 +44,7 @@ class StatisticsService {
       const supplementActivity = await this.getSupplementActivity();
 
       return {
-        ...stats,
+        ...(typeof stats === 'object' && stats !== null ? stats : {}),
         expiringContracts,
         supplementActivity
       };
@@ -55,4 +55,5 @@ class StatisticsService {
   }
 }
 
-export const statisticsService = new StatisticsService();
+const statisticsService = new StatisticsService();
+export default statisticsService;

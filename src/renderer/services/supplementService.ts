@@ -9,7 +9,7 @@ class SupplementService {
         const fileUrl = await electronAPI.invoke('files:upload', {
           file: supplementData.documentFile,
           contractId
-        });
+        }) as string;
         supplementData.fileUrl = fileUrl;
       }
 
@@ -34,7 +34,7 @@ class SupplementService {
         const fileUrl = await electronAPI.invoke('files:upload', {
           file: supplementData.documentFile,
           contractId
-        });
+        }) as string;
         supplementData.fileUrl = fileUrl;
       }
 
@@ -74,4 +74,5 @@ class SupplementService {
   }
 }
 
-export const supplementService = new SupplementService();
+const supplementService = new SupplementService();
+export default supplementService;

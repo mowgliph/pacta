@@ -19,11 +19,11 @@ interface Document {
 
 interface Supplement {
   id: string;
+  title?: string;
   description: string;
   amount: number;
   filePath: string;
   date: string;
-  title?: string;
 }
 
 interface ContractData {
@@ -42,6 +42,7 @@ interface ServerContract {
   id: number;
   name: string;
   companyName?: string;
+  client?: string;
   status: string;
   startDate: Date;
   endDate: Date;
@@ -132,22 +133,22 @@ const ContractDetails: React.FC = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const data = await contractService.getContractDetails(contractId);
+        const data = await contractService.getContractDetails(contractId) as unknown as ServerContract;
         if (data) {
           const mappedData: ContractData = {
             id: data.id.toString(),
             name: data.name || '',
-            client: data.companyName || '',
+            client: data.client || data.companyName || '',
             status: data.status || 'Active',
             startDate: data.startDate ? new Date(data.startDate).toISOString().split('T')[0] : '',
             endDate: data.endDate ? new Date(data.endDate).toISOString().split('T')[0] : '',
             amount: typeof data.amount === 'number' ? data.amount : 0,
-            documents: Array.isArray(data.documents) ? data.documents.map((doc: { id: number; name: string; filePath?: string; fileUrl?: string; }) => ({
+            documents: Array.isArray(data.documents) ? data.documents.map((doc) => ({
               id: doc.id.toString(),
               name: doc.name || 'Documento sin nombre',
               filePath: doc.filePath || doc.fileUrl || ''
             })) : [],
-            supplements: Array.isArray(data.supplements) ? data.supplements.map((sup: { id: number; title?: string; description: string; amount: number; date: Date; filePath?: string; fileUrl?: string; }) => ({
+            supplements: Array.isArray(data.supplements) ? data.supplements.map((sup) => ({
               id: sup.id.toString(),
               title: sup.title || '',
               description: sup.description || '',
@@ -194,7 +195,7 @@ const ContractDetails: React.FC = () => {
 
       let result;
       if (selectedSupplement) {
-        result = await supplementService.editSupplement(
+        result = await supplementService.updateSupplement(
           contractId,
           selectedSupplement.id,
           formattedData
@@ -212,12 +213,12 @@ const ContractDetails: React.FC = () => {
           description: 'La operación se completó exitosamente'
         });
 
-        const updatedData = await contractService.getContractDetails(contractId);
+        const updatedData = await contractService.getContractDetails(contractId) as unknown as ServerContract;
         if (updatedData) {
           const mappedData: ContractData = {
             id: updatedData.id.toString(),
             name: updatedData.name || '',
-            client: updatedData.companyName || '',
+            client: updatedData.client || updatedData.companyName || '',
             status: updatedData.status || 'Active',
             startDate: updatedData.startDate ? new Date(updatedData.startDate).toISOString().split('T')[0] : '',
             endDate: updatedData.endDate ? new Date(updatedData.endDate).toISOString().split('T')[0] : '',

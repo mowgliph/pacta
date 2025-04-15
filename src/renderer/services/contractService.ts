@@ -1,10 +1,10 @@
 import { Contract, ContractFilters } from '@/renderer/types/contracts';
-import { contractAPI } from '@/renderer/api/electronAPI';
+import { electronAPI } from '@/renderer/api/electronAPI';
 
 class ContractService {
   async getAllContracts(filters?: ContractFilters) {
     try {
-      return await contractAPI.getAll(filters);
+      return await electronAPI.getContracts(filters);
     } catch (error) {
       console.error('Error fetching contracts:', error);
       throw error;
@@ -13,7 +13,7 @@ class ContractService {
 
   async getContractDetails(id: string) {
     try {
-      return await contractAPI.getDetails(id);
+      return await electronAPI.getContractDetails(id);
     } catch (error) {
       console.error('Error fetching contract details:', error);
       throw error;
@@ -23,11 +23,11 @@ class ContractService {
   async createContract(contractData: Partial<Contract>) {
     try {
       if (contractData.documentFile) {
-        const fileUrl = await contractAPI.uploadDocument(contractData.documentFile);
+        const fileUrl = await electronAPI.uploadDocument(contractData.documentFile);
         contractData.documentUrl = fileUrl;
       }
       
-      return await contractAPI.create(contractData);
+      return await electronAPI.createContract(contractData);
     } catch (error) {
       console.error('Error creating contract:', error);
       throw error;
@@ -37,11 +37,11 @@ class ContractService {
   async updateContract(id: string, contractData: Partial<Contract>) {
     try {
       if (contractData.documentFile) {
-        const fileUrl = await contractAPI.uploadDocument(contractData.documentFile);
+        const fileUrl = await electronAPI.uploadDocument(contractData.documentFile);
         contractData.documentUrl = fileUrl;
       }
 
-      return await contractAPI.update(id, contractData);
+      return await electronAPI.updateContract(id, contractData);
     } catch (error) {
       console.error('Error updating contract:', error);
       throw error;
@@ -50,7 +50,7 @@ class ContractService {
 
   async deleteContract(id: string) {
     try {
-      return await contractAPI.delete(id);
+      return await electronAPI.deleteContract(id);
     } catch (error) {
       console.error('Error deleting contract:', error);
       throw error;
@@ -58,4 +58,5 @@ class ContractService {
   }
 }
 
-export const contractService = new ContractService();
+const contractService = new ContractService();
+export default contractService;
