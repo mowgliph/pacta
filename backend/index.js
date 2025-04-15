@@ -6,7 +6,6 @@ const path = require('path');
 const fs = require('fs');
 const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
-const config = require('./config');
 
 // Import routes
 const authRoutes = require('./routes/auth.route');

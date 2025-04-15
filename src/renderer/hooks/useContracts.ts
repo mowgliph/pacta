@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { toast } from './use-toast';
-import { contractService } from '@/renderer/services/contractService';
+import { contractService } from '@/renderer/services';
 import type { Contract, ContractFilters } from '@/renderer/types/contracts';
 
 export function useContracts() {
