@@ -60,4 +60,23 @@ export const updateSupplementSchema = supplementBaseSchema.partial();
 export const loginSchema = z.object({
     username: z.string(),
     password: z.string(),
-}); 
+});
+
+// --- SMTP Config Schema ---
+export const smtpConfigSchema = z.object({
+    host: z.string().min(1, 'El host es requerido.'),
+    port: z.number().int().positive('El puerto debe ser un número positivo.'),
+    secure: z.boolean().default(true),
+    username: z.string().min(1, 'El usuario es requerido.'),
+    password: z.string().min(1, 'La contraseña es requerida.'),
+    from: z.string().email('Correo remitente inválido.'),
+    enabled: z.boolean().default(false),
+});
+
+// --- Email Template Schema ---
+export const emailTemplateSchema = z.object({
+    name: z.string().min(1, 'El nombre de la plantilla es requerido.'),
+    subject: z.string().min(1, 'El asunto es requerido.'),
+    body: z.string().min(1, 'El cuerpo del correo es requerido.'),
+    description: z.string().optional(),
+});

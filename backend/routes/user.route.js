@@ -2,7 +2,7 @@ const router = require('express').Router();
 const argon2 = require('argon2');
 const { PrismaClient } = require('@prisma/client');
 const { authenticateJWT, authorizeRole } = require('../middleware/auth.middleware');
-const { createUserSchema, updateUserProfileSchema } = require('../utils/schemas.zod'); 
+const { createUserSchema, updateUserProfileSchema, smtpConfigSchema } = require('../utils/schemas.zod'); 
 
 const prisma = new PrismaClient();
 
