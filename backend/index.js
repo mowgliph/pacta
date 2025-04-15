@@ -540,8 +540,8 @@ app.post('/backups', authenticateJWT, authorizeRole('Admin'), async (req, res) =
     res.status(500).json({ message: 'Error creating backup', error });
   }
 });
-  
-// Configuración de copias de seguridad automáticas
+
+// Configuración de copias de seguridad manuales
 const backupDatabase = async () => {
   const date = new Date();
   const filename = `backup_${date.toISOString().replace(/:/g, '-')}.sqlite`;
@@ -566,47 +566,77 @@ const backupDatabase = async () => {
       },
     });
 
-    // Limpieza de backups antiguos (mantener solo los últimos 7 días)
-    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const oldBackups = await prisma.backup.findMany({
-      where: {
-        createdAt: {
-          lt: sevenDaysAgo
-        }
-      }
-    });
-
-    // Eliminar archivos y registros antiguos
-    for (const backup of oldBackups) {
-      try {
-        if (fs.existsSync(backup.filepath)) {
-          fs.unlinkSync(backup.filepath);
-        }
-        await prisma.backup.delete({
-          where: { id: backup.id }
-        });
-      } catch (deleteError) {
-        console.error(`Error eliminando backup antiguo ${backup.filename}:`, deleteError);
-      }
-    }
-
     console.log(`Backup creado exitosamente: ${filename}`);
+    return { success: true, filename };
   } catch (error) {
     console.error('Error creando backup:', error);
+    return { success: false, error };
   }
 };
+
+// Endpoint para crear backups manualmente
+app.post('/api/backups/create', authenticateJWT, authorizeRole('Admin'), async (req, res) => {
+  try {
+    const result = await backupDatabase();
+    if (result.success) {
+      // Guardar en AccessLog
+      await prisma.accessLog.create({
+        data: {
+          userId: req.user.id,
+          action: 'Manual Backup',
+          details: `Backup ${result.filename} creado manualmente`,
+          ip: req.ip,
+          userAgent: req.headers['user-agent'],
+        },
+      });
+      
+      res.status(201).json({ message: 'Backup creado exitosamente', filename: result.filename });
+    } else {
+      res.status(500).json({ message: 'Error al crear backup', error: result.error });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Error al crear backup', error });
+  }
+});
+
+// Endpoint para activar/desactivar backups automáticos
+app.post('/api/settings/backup-schedule', authenticateJWT, authorizeRole('Admin'), async (req, res) => {
+  const { enabled, intervalHours } = req.body;
+  
+  try {
+    // Guardar la configuración en la base de datos
+    const setting = await prisma.setting.upsert({
+      where: { key: 'backup_schedule' },
+      update: { value: JSON.stringify({ enabled, intervalHours }) },
+      create: {
+        key: 'backup_schedule',
+        value: JSON.stringify({ enabled, intervalHours }),
+        category: 'SYSTEM'
+      }
+    });
+    
+    // Guardar en AccessLog
+    await prisma.accessLog.create({
+      data: {
+        userId: req.user.id,
+        action: 'Update Backup Settings',
+        details: `Backup automático ${enabled ? 'activado' : 'desactivado'}`,
+        ip: req.ip,
+        userAgent: req.headers['user-agent'],
+      },
+    });
+    
+    res.status(200).json({ message: 'Configuración actualizada', setting });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al actualizar configuración', error });
+  }
+});
 
 // Crear el directorio de backups si no existe
 const backupDir = path.join(__dirname, '../data/backups');
 if (!fs.existsSync(backupDir)) {
   fs.mkdirSync(backupDir, { recursive: true });
 }
-
-// Programar copias de seguridad automáticas cada 24 horas
-setInterval(backupDatabase, 24 * 60 * 60 * 1000);
-
-// También ejecutar un backup inicial al arrancar el servidor
-backupDatabase();
 
 // Middleware para manejar errores
 app.use((err, req, res, next) => {
