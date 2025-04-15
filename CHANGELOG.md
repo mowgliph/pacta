@@ -2,6 +2,39 @@
 
 Todos los cambios notables en PACTA serán documentados en este archivo.
 
+## [0.6.0] - 2025-04-15
+### Añadido
+- Dashboard Público Mejorado
+  - Vista previa de funcionalidad sin autenticación
+  - Acceso limitado a estadísticas y contratos en modo público
+  - Integración con SQLite para datos de demostración
+  
+- Sistema de Autenticación Refinado
+  - Roles RA (desarrollador) y Admin con permisos completos
+  - Gestión mejorada de permisos y accesos
+  - Sistema de invitación de usuarios
+  
+- Optimización de Interfaz
+  - Nuevos componentes reutilizables
+  - Mejoras en la experiencia de usuario
+  - Sistema de temas claro/oscuro mejorado
+
+### Modificado
+- Arquitectura de Rutas
+  - Separación clara entre rutas públicas y privadas
+  - Protección mejorada de rutas sensibles
+  - Redirección inteligente basada en rol
+
+- Dashboard Principal
+  - Nueva sección de estadísticas recientes
+  - Panel de acciones rápidas optimizado
+  - Historial de operaciones en tiempo real
+
+### Corregido
+- Problemas de rendimiento en tablas grandes
+- Inconsistencias en permisos de usuarios
+- Errores en la carga de datos públicos
+
 ## [0.5.0] - 2025-04-12
 ### Añadido
 - Dashboard Público

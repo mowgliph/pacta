@@ -1,15 +1,15 @@
 # PACTA: Plataforma de Automatización y Control de Contratos Empresariales
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]() [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-0.6.0-blue.svg)]() [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)]()
 
-PACTA es una aplicación web diseñada para optimizar la gestión de contratos en empresas grandes. Su objetivo es proporcionar una solución integral para la administración eficiente de contratos, con énfasis en usabilidad, seguridad y visualización avanzada.
+PACTA es una aplicación moderna para la gestión integral de contratos empresariales, con un enfoque en la usabilidad y la experiencia del usuario. Ofrece una vista pública gratuita que permite a los usuarios explorar las funcionalidades básicas antes de acceder al sistema completo.
 
 ---
 
 ## Tabla de Contenidos
 
 - [Introducción](#introducción)
-- [Características](#características)
+- [Características Principales](#características-principales)
 - [Tecnologías](#tecnologías)
 - [Arquitectura](#arquitectura)
 - [Instalación y Configuración](#instalación-y-configuración)
@@ -31,57 +31,48 @@ PACTA es una plataforma diseñada para:
 
 ---
 
-## Características
+## Características Principales
 
-- **Dashboard Estadístico Moderno:**  
-  Resumen visual de contratos, indicadores de rendimiento, gráficos interactivos y acciones rápidas.
+- **Dashboard Público y Premium:**
+  - Vista previa gratuita con datos de demostración
+  - Dashboard completo con estadísticas en tiempo real para usuarios autenticados
+  - Visualización de contratos próximos a vencer
+  - Panel de acciones rápidas personalizable
 
-- **Gestión Integral de Contratos:**  
-  Listado completo de contratos con filtros avanzados por tipo, estado, fecha, búsqueda avanzada y visualización detallada.
+- **Gestión Avanzada de Contratos:**
+  - Sistema completo de CRUD para contratos
+  - Gestión de suplementos con historial de cambios
+  - Filtros avanzados por tipo, estado y fecha
+  - Sistema de archivos integrado para documentos
 
-- **Gestión de Suplementos:**  
-  Sistema completo para crear, visualizar y gestionar modificaciones a contratos preservando el historial completo de cambios.
+- **Sistema de Roles y Permisos:**
+  - Roles RA (desarrollador) y Admin con acceso completo
+  - Sistema de invitación y gestión de usuarios
+  - Control granular de permisos por módulo
+  - Auditoría de acciones y cambios
 
-- **Autenticación y Control de Acceso:**  
-  Sistema de roles (Administrador, Gestor, Usuario) con autenticación JWT, control robusto de permisos y cambio de contraseña seguro.
-
-- **Dashboard Público y Autenticado:**
-  Vistas diferenciadas según el tipo de usuario, con información adaptada a sus necesidades y permisos.
-
-- **Diseño y Usabilidad:**  
-  Interfaz minimalista y moderna basada en Tailwind CSS, shadcn/UI y React con Vite, con transiciones y animaciones fluidas.
-
-- **Optimización de Desempeño:**  
-  Code splitting, lazy loading, react-query para gestión de datos en caché y SWR para una experiencia de usuario ágil.
-
-- **Accesibilidad:**  
-  Cumplimiento de estándares WCAG AA/AAA, diseño mobile-first, y micro-interacciones para una experiencia inclusiva.
-
-- **Sistema de Actividades y Notificaciones:**
-  Registro de actividades y eventos del sistema, con notificaciones para vencimientos de contratos y cambios importantes.
+- **Interfaz Moderna:**
+  - Diseño responsive y accesible
+  - Tema claro/oscuro incorporado
+  - Micro-interacciones y animaciones fluidas
+  - Componentes reutilizables basados en shadcn/ui
 
 ---
 
 ## Tecnologías
 
 ### Frontend
-- **Framework:** React 19 con TypeScript
-- **Build Tool:** Vite
-- **Estilos:** Tailwind CSS, shadcn/UI y Lucide Icons
-- **Enrutamiento:** React Router v6
-- **Gestión de Estado:** Zustand para estado global
-- **Gestión de Datos:** React Query y SWR para fetching y caché
-- **Gráficos:** Recharts para visualizaciones
-- **Formularios:** React Hook Form con Zod para validación
-- **Componentes de Fecha:** date-fns para manipulación de fechas
+- React 19 + TypeScript
+- Vite + SWR para gestión de datos
+- Tailwind CSS + shadcn/ui
+- Zustand para estado global
+- Recharts para visualizaciones
 
 ### Backend
-- **Runtime:** Node.js con Express.js
-- **Base de Datos:** SQLite con Prisma ORM 
-- **Autenticación:** JWT con bcrypt para encriptación
-- **Validación:** Express Validator
-- **Subida de Archivos:** Multer
-- **Logging:** Sistema personalizado de registro de actividades
+- Node.js + Express
+- SQLite + Prisma ORM
+- JWT para autenticación
+- Sistema de backups automáticos
 
 ---
 

@@ -1,113 +1,107 @@
-# PACTA - Documento de Requisitos del Producto (PRD) - Actualizado
+# Documento de Requerimientos del Producto (PRD) - PACTA
 
-## 1. Visión General
-PACTA es una aplicación de escritorio desarrollada con Electron que optimiza la gestión de contratos para grandes empresas. 
-La aplicación ofrece capacidades offline y una interfaz intuitiva para el manejo de contratos y suplementos.
+## 1. Resumen Ejecutivo
+PACTA es una aplicación de gestión de contratos empresariales con modo público gratuito y funcionalidades premium bajo autenticación. Enfocada en usabilidad y eficiencia.
 
-## 2. Estado Actual del Proyecto
+## 2. Objetivos del Producto
+- Proporcionar una plataforma intuitiva para gestión contractual
+- Ofrecer vista previa gratuita de funcionalidades básicas
+- Garantizar seguridad y control de acceso granular
+- Facilitar seguimiento y control de vencimientos
+- Mantener historial completo de modificaciones
 
-### 2.1 Implementaciones Completadas
-- Estructura base de la aplicación con Electron y React
-- Sistema de gestión de contratos básico
-- Servicios separados para:
-  - Gestión de contratos (`contractService`)
-  - Gestión de suplementos (`supplementService`)
-  - Estadísticas (`statisticsService`)
-- Integración con TanStack Query para manejo de estado y caché
-- Base de datos SQLite con Prisma como ORM
+## 3. Funcionalidades Principales
 
-### 2.2 En Desarrollo
-- Sistema de notificaciones
-- Modo público/privado
-- Mejoras en la accesibilidad (ARIA attributes)
-- Optimización de la arquitectura de servicios
+### 3.1 Dashboard Público
+- Vista previa de estadísticas generales
+- Acceso a contratos de demostración
+- Gráficos interactivos limitados
+- Llamada a la acción para registro
 
-## 3. Prioridades Actuales
+### 3.2 Dashboard Premium
+- Estadísticas en tiempo real
+- Panel de acciones rápidas personalizable
+- Notificaciones de vencimientos
+- Historial de actividad reciente
 
-### 3.1 Prioridades Inmediatas
-1. **Mejoras de Accesibilidad**
-   - Implementación completa de atributos ARIA
-   - Pruebas de navegación por teclado
-   - Soporte para lectores de pantalla
+### 3.3 Gestión de Contratos
+- CRUD completo de contratos
+- Sistema de suplementos
+- Documentos adjuntos
+- Filtros avanzados
+- Búsqueda global
 
-2. **Optimización de Arquitectura**
-   - Completar la migración a arquitectura de servicios
-   - Implementar patrones de diseño consistentes
-   - Mejorar la gestión de estado con TanStack Query
+### 3.4 Sistema de Usuarios
+- Roles predefinidos (RA, Admin)
+- Permisos personalizables
+- Gestión de accesos
+- Auditoría de acciones
 
-3. **Sistema de Notificaciones**
-   - Alertas de vencimiento de contratos
-   - Notificaciones de cambios en suplementos
-   - Integración con sistema operativo
+## 4. Requerimientos Técnicos
 
-### 3.2 Prioridades Secundarias
-1. **Modo Público/Privado**
-   - Implementación de vistas públicas
-   - Sistema de permisos granular
-   - Gestión de roles de usuario
+### 4.1 Frontend
+- React 19 + TypeScript
+- Interfaz responsiva
+- Tema claro/oscuro
+- Componentes optimizados
+- Caché inteligente
 
-2. **Mejoras de UX/UI**
-   - Diseño responsivo mejorado
-   - Temas claros/oscuros
-   - Animaciones y transiciones
+### 4.2 Backend
+- Node.js + Express
+- SQLite + Prisma
+- JWT + Roles
+- Sistema de backups
+- API RESTful
 
-3. **Reportes y Estadísticas**
-   - Generación de informes personalizados
-   - Visualizaciones de datos mejoradas
-   - Exportación en múltiples formatos
+### 4.3 Almacenamiento
+- Base local SQLite
+- Sistema de archivos estructurado
+- Backups automáticos
+- Compresión de datos
 
-## 4. Especificaciones Técnicas
+## 5. Flujo de Usuario
 
-### 4.1 Stack Tecnológico
-- Frontend: React + Electron
-- Estado: TanStack Query
-- Base de datos: SQLite + Prisma
-- Servicios:
-  - `contractService`
-  - `supplementService`
-  - `statisticsService`
+### 5.1 Usuario No Autenticado
+1. Accede al dashboard público
+2. Explora funcionalidades básicas
+3. Visualiza datos de demostración
+4. Opción de registro/login
 
-### 4.2 Arquitectura
-- Patrón de Servicios para lógica de negocio
-- Hooks personalizados para gestión de estado
-- IPC para comunicación entre procesos
-- Sistema de caché optimizado
+### 5.2 Usuario Autenticado
+1. Login con credenciales
+2. Acceso a dashboard completo
+3. Gestión de contratos
+4. Configuración de perfil
 
-## 5. Requisitos No Funcionales
+## 6. Métricas de Éxito
+- Tiempo de carga < 2 segundos
+- Conversión de público a premium > 20%
+- Satisfacción de usuario > 4.5/5
+- Retención mensual > 90%
 
-### 5.1 Rendimiento
-- Tiempo de respuesta < 2 segundos
-- Optimización de consultas a base de datos
-- Gestión eficiente de memoria
+## 7. Próximas Mejoras
 
-### 5.2 Seguridad
-- Validación de datos con Zod
-- Manejo seguro de datos sensibles
-- Logs de auditoría
+### 7.1 Corto Plazo (1-2 meses)
+- Optimización de rendimiento
+- Mejoras en UX/UI
+- Expansión de filtros
+- Reportes avanzados
 
-### 5.3 Mantenibilidad
-- Código documentado
-- Pruebas unitarias
-- Guías de estilo consistentes
+### 7.2 Mediano Plazo (3-6 meses)
+- Integración con servicios externos
+- API pública
+- Sistema de plantillas
+- Módulo de análisis predictivo
 
-## 6. Próximos Pasos
+## 8. Consideraciones de Seguridad
+- Encriptación de datos sensibles
+- Validación de entradas
+- Control de acceso por rol
+- Registro de auditoría
+- Protección contra ataques comunes
 
-1. Completar la implementación de servicios
-2. Finalizar mejoras de accesibilidad
-3. Desarrollar sistema de notificaciones
-4. Implementar modo público/privado
-5. Optimizar rendimiento y UX
-
-## 7. Métricas de Éxito
-
-- Tiempo de respuesta en operaciones CRUD
-- Tasa de adopción por usuarios
-- Reducción en errores de usuario
-- Mejora en tiempos de gestión de contratos
-
-## 8. Consideraciones Futuras
-
-- Integración con sistemas externos
-- Soporte para múltiples idiomas
-- Sincronización en la nube
-- API REST para integraciones
+## 9. Mantenimiento
+- Backups diarios
+- Actualizaciones semanales
+- Monitoreo continuo
+- Soporte técnico 24/7

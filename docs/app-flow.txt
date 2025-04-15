@@ -1,56 +1,111 @@
-Flujo de la Aplicación (App Flow) - PACTA
-.1 This doc provides a complete end-to-end rundown de la aplicación de PACTA
-Contexto: PACTA es una solución de escritorio para empresas grandes que necesitan gestionar contratos de manera eficiente, con un enfoque en la automatización y el control de vencimientos. Este flujo detalla cómo los usuarios interactúan con la aplicación, desde el acceso inicial hasta la gestión avanzada de contratos.
-Flujo End-to-End: 
-* Inicio (Modo Público): 
-o Pantalla inicial con descripción de PACTA y botón de "Iniciar Sesión". 
-o Vista pública limitada (ej. estadísticas generales anónimas).
-* Autenticación (Modo Privado): 
-o Pantalla de inicio de sesión (email/contraseña). 
-o Usuarios predefinidos (RA, Admin) o creados desde el módulo de perfiles. 
-o Redirige al Dashboard Principal.
-* Dashboard Principal: 
-o Resumen de contratos (Activos, Vencidos, Pendientes de Renovación). 
-o Gráficos de distribución (Recharts). 
-o Acciones rápidas: "Crear Contrato", "Ver Estadísticas", "Añadir Suplemento". 
-o Alertas de vencimientos próximos (Sonner).
-* Gestión de Contratos: 
-o Tabla interactiva (Tanstack Table) con filtros (tipo, estado, empresa). 
-o Búsqueda avanzada por número de contrato o empresa. 
-o Vista detallada: Historial de suplementos, estado, documentos asociados.
-* Estadísticas Avanzadas: 
-o Gráficos comparativos (Recharts). 
-o Métricas: Contratos por estado, tendencias de renovación. 
-o Exportar reportes (PDF/CSV).
-* Perfil de Usuario: 
-o Editar datos personales y contraseña. 
-o Configurar preferencias de notificaciones. 
-o RA/Admin: Crear nuevos usuarios (sin registro público).
-* Cerrar Sesión: Regresa al modo público.
-.2 Este documento es de suma importancia as it creates a graph for AI to plan its execution for each page
-Diagrama de Flujo (Texto para IA): 
-* Nodo 1: Inicio (Público) 
-o Acción: Mostrar pantalla inicial. 
-o Decisiones: Iniciar Sesión ? Nodo 2 | Ver Info Pública ? Nodo 1.1. 
-o Nodo 1.1: Vista Pública (Estadísticas Anónimas).
-* Nodo 2: Autenticación 
-o Acción: Formulario de inicio de sesión (React Hook Form). 
-o Decisiones: Éxito ? Nodo 3 | Fallo ? Nodo 2.1 (Notificación de error con Sonner).
-* Nodo 3: Dashboard Principal 
-o Acción: Mostrar estadísticas (Recharts), alertas (Sonner), acciones rápidas. 
-o Decisiones: Crear Contrato ? Nodo 4 | Ver Contratos ? Nodo 5 | Estadísticas ? Nodo 6 | Perfil ? Nodo 7.
-* Nodo 4: Crear Contrato 
-o Acción: Formulario (React Hook Form) para añadir contrato. 
-o Decisiones: Guardar ? Nodo 3 | Cancelar ? Nodo 3.
-* Nodo 5: Gestión de Contratos 
-o Acción: Mostrar tabla (Tanstack Table), filtros, búsqueda. 
-o Decisiones: Ver Detalles ? Nodo 5.1 | Añadir Suplemento ? Nodo 5.2. 
-o Nodo 5.1: Vista Detallada (Historial, documentos). 
-o Nodo 5.2: Formulario de Suplemento (React Hook Form).
-* Nodo 6: Estadísticas Avanzadas 
-o Acción: Mostrar gráficos (Recharts), exportar reportes. 
-o Decisiones: Volver ? Nodo 3.
-* Nodo 7: Perfil de Usuario 
-o Acción: Editar perfil, gestionar usuarios (RA/Admin). 
-o Decisiones: Guardar ? Nodo 3 | Cerrar Sesión ? Nodo 1.
+# Flujo de la AplicaciÃ³n PACTA
+
+## 1. Flujo de Entrada
+
+### Modo PÃºblico (Sin autenticaciÃ³n)
+1. Landing page con informaciÃ³n general
+2. Dashboard pÃºblico con datos de demostraciÃ³n
+   - EstadÃ­sticas generales
+   - Lista limitada de contratos
+   - GrÃ¡ficos bÃ¡sicos
+3. Acceso restringido a funciones premium
+
+### Modo Autenticado
+1. Login con credenciales
+   - Usuario RA (desarrollador)
+   - Usuario Admin (cliente)
+   - Usuarios adicionales creados
+2. RedirecciÃ³n al dashboard completo
+
+## 2. Dashboard Principal
+
+### SecciÃ³n Superior
+- EstadÃ­sticas en tiempo real
+- Contratos prÃ³ximos a vencer
+- Indicadores de rendimiento
+
+### Panel de Acciones RÃ¡pidas
+- Crear nuevo contrato
+- Agregar suplemento
+- Ver estadÃ­sticas
+- Acceder a backups
+
+### Actividad Reciente
+- Ãšltimas modificaciones
+- Suplementos agregados
+- Contratos actualizados
+
+## 3. GestiÃ³n de Contratos
+
+### Listado Principal
+- Tabla virtualizada de contratos
+- Filtros avanzados
+  * Por tipo (Cliente/Proveedor)
+  * Por estado
+  * Por fecha
+- BÃºsqueda global
+
+### Detalles de Contrato
+- InformaciÃ³n general
+- Documentos adjuntos
+- Historial de suplementos
+- Acciones disponibles
+  * Editar contrato
+  * Agregar suplemento
+  * Ver documentos
+  * Gestionar permisos
+
+## 4. Sistema de Notificaciones
+
+### Tipos de Alertas
+- Contratos prÃ³ximos a vencer
+- Nuevos suplementos
+- Cambios en contratos
+- Alertas de sistema
+
+### Canales de NotificaciÃ³n
+- Notificaciones en app
+- Correos electrÃ³nicos
+- Notificaciones de sistema
+
+## 5. GestiÃ³n de Usuarios
+
+### Roles Principales
+- RA (Desarrollador)
+  * Acceso total al sistema
+  * GestiÃ³n de usuarios
+  * ConfiguraciÃ³n avanzada
+- Admin (Cliente)
+  * GestiÃ³n de contratos
+  * GestiÃ³n de suplementos
+  * Reportes y estadÃ­sticas
+- Usuarios Personalizados
+  * Permisos granulares
+  * Acceso restringido
+
+## 6. Sistema de Backups
+
+### Backups AutomÃ¡ticos
+- ProgramaciÃ³n configurable
+- CompresiÃ³n de datos
+- VerificaciÃ³n de integridad
+
+### GestiÃ³n de Archivos
+- Almacenamiento estructurado
+- Versionado de documentos
+- Purga automÃ¡tica
+
+## 7. Flujo de Datos
+
+### Frontend â†’ Backend
+1. Solicitudes autenticadas con JWT
+2. ValidaciÃ³n de permisos
+3. Procesamiento de datos
+4. Respuesta formateada
+
+### Base de Datos
+1. SQLite para almacenamiento local
+2. Prisma para gestiÃ³n de datos
+3. Migraciones versionadas
+4. Backups periÃ³dicos
 

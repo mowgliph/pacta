@@ -23,44 +23,16 @@ Pero antes verifica que no se te este quedando nada de nada.
 Responde con un analisis de el estado de implementacion de PACTA. Que nos falta 
 para seguir desarrollando.
 
-Áreas de mejora identificadas
-Inconsistencias en la estructura de archivos: 
-Hay algunas duplicaciones en la organización de carpetas.
-Duplicación parcial de hooks de autenticación: 
-Existen useAuth en múltiples ubicaciones.
-Mezcla de patrones de gestión de estado: 
-Uso de React Router state, Zustand y context API.
-Posibles optimizaciones en React Query: 
-Configuración más específica para mejorar el rendimiento.
-Débil validación de formularios en algunas áreas: 
-No se aprovecha completamente Zod.
+Por lo que estoy leyendo del resumen veo que he realizado cambios en la aplicacion en el codigo y aun no he actualizado el readme ni el changelog y quiero que me los actualices a las necesidades actuales.
 
-Próximos pasos recomendados
-Auditoría para identificar código redundante:
+Ademas actualiza el prd y el appflow a las necesidades actuales.
 
-Revisar y unificar duplicaciones en hooks y utilidades
-Implementar herramientas como knip para detectar código no utilizado
-Implementación de pruebas automatizadas:
+Las necesidades actuales para la aplicacion de pacta. Es que he visto aplicacines modeernas que te dan una probada de su funcionamiento gratuitamente ese viene siendo el dashboard publico que utilizaria datos tomados de la base de datos con sqlite. Que pasa que ese cliente en modo gratis o vista publica del dashboard / contratos / estadisticas que vienen siendo las paginas publicas el podra navegar a traves del dashboard con las rutas publicas sin problemas. Pero ya al momento de agregar nuevos contratos, agregar suplementos, ver las notificaciones de contratos cerca de vencer tiene que realizar el login. Para el login estan los 2 usuarios por defecto. En este caso tenemos el RA usuario para el proveedor de la aplicacion en este caso los desarrolladores y esta el usuario admin que es el usuario que usara el cliente de la aplicacion para acceder a la pagina con sus permisos administrativos. Este usuario RA como el admin tienen permisos sober todo el sistema de la plaiccion y son los encargados de agregar nuevos usuarios al sistema con sus roles caratceristicos.
 
-Configurar Vitest y React Testing Library
-Establecer un objetivo de cobertura de pruebas por módulo
-Mejoras de seguridad:
+el dashboard seguira manteniendo la sesion de ultimas estadisticas de los contratos como el que esta a punto de vencer, la proxima sesin sera las de acciones rapidas. y por ultimo las ultimas operaciones realizadas.
 
-Implementar autenticación en dos factores
-Reforzar protección contra ataques CSRF y XSS
-Implementar validación exhaustiva en todas las entradas de usuario
-Implementar funcionalidades avanzadas:
+En el contrato se mostrara todos los contratos con los filtros avanzados de busqueda y su filtro con botones de provedor o cliente Los contratos mostraran el numero de conrtato, nombre de la empresa si son de tipo cliente o proveedor y al lado las acciones rapidas de ver, agregar suplementos.
 
-Exportación a formatos múltiples (PDF, Excel)
-Sistema de reportes personalizados
-Capacidades avanzadas de búsqueda y filtrado
-Optimizar build para producción:
+estadisticas es donde estaran todas las estadisticas de los contratos de la aplicacion utilizando la tecnologia de recharts.
 
-Configurar Vite para optimización avanzada
-Implementar code splitting más granular
-Optimizar carga de recursos estáticos
-Evaluación y optimización de rendimiento:
-
-Análisis de Core Web Vitals
-Testing de rendimiento bajo carga
-Optimización de imágenes y recursos
+ademas se tiene el modulo de backups de la base de datos de los contratos, y el almacenamiento de los mismos en la base de datos como pdf, docs.
