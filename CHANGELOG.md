@@ -2,6 +2,39 @@
 
 Todos los cambios notables en PACTA serán documentados en este archivo.
 
+## [0.5.0] - 2025-04-12
+### Añadido
+- Dashboard Público
+  - Implementación completa del modo público/gratuito
+  - Acceso limitado a estadísticas generales sin autenticación
+  - Vista previa de funcionalidades premium
+
+- Sistema de Roles Mejorado
+  - Roles RA (proveedor) y Admin (cliente) con permisos completos
+  - Capacidad para crear nuevos usuarios con roles personalizados
+  - Gestión avanzada de permisos por módulo
+
+- Notificaciones Avanzadas
+  - Sistema de notificaciones para contratos próximos a vencer
+  - Alertas personalizables por usuario
+  - Integración con el sistema operativo
+
+### Modificado
+- Dashboard Principal
+  - Sección de últimas estadísticas de contratos
+  - Panel de acciones rápidas optimizado
+  - Historial de últimas operaciones realizadas
+
+- Navegación y Rutas
+  - Implementación de rutas públicas y privadas
+  - Redirección inteligente basada en autenticación
+  - Protección mejorada de rutas sensibles
+
+### Corregido
+- Problemas de rendimiento en tablas con muchos registros
+- Inconsistencias en la sincronización de datos entre módulos
+- Errores en la validación de formularios complejos
+
 ## [0.4.0] - 2024-04-04
 ### Añadido
 - Módulo de Suplementos
