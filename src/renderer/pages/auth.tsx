@@ -6,7 +6,7 @@ import { toast } from '@/renderer/hooks/use-toast';
 import { useLocation } from 'wouter';
 import useStore from '@/renderer/store/useStore';
 import { electronAPI } from '@/renderer/api/electronAPI';
-import { Card, CardContent, CardHeader, CardTitle } from "@/renderer/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/renderer/components/ui/card";
 import { Skeleton } from '@/renderer/components/ui/skeleton';
 import { HoverScale, HoverBounce, HoverBackground } from '@/renderer/components/ui/micro-interactions';
 
@@ -94,110 +94,99 @@ const Auth: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background" role="main" aria-label="Página de autenticación">
-      <div className="w-full max-w-md p-8 space-y-8">
-        <div className="text-center" role="banner" aria-label="Encabezado de autenticación">
-          <HoverScale>
-            <h1 className="text-3xl font-bold" aria-level={1}>PACTA</h1>
-          </HoverScale>
-          <p className="mt-2 text-muted-foreground">Plataforma de Automatización y Control de Contratos Empresariales</p>
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="w-full max-w-md p-8">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold">PACTA</h1>
+          <p className="text-muted-foreground">Gestión de Contratos</p>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit as any)} className="mt-8 space-y-6" role="form" aria-label="Formulario de autenticación">
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium text-foreground">
-                Nombre de Usuario
-              </label>
-              <div className="mt-1">
-                <input
-                  id="username"
-                  {...register("username")}
-                  type="text"
-                  autoComplete="username"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-input rounded-md shadow-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="usuario123"
-                  aria-required="true"
-                  aria-describedby="username-error"
-                />
+        <Card>
+          <CardHeader>
+            <CardTitle>Iniciar sesión</CardTitle>
+            <CardDescription>
+              Ingresa tus credenciales para acceder al sistema
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="username" className="block text-sm font-medium text-foreground">
+                    Nombre de Usuario
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="username"
+                      {...register("username")}
+                      type="text"
+                      autoComplete="username"
+                      required
+                      className="appearance-none block w-full px-3 py-2 border border-input rounded-md shadow-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="usuario123"
+                      aria-required="true"
+                      aria-describedby="username-error"
+                    />
+                  </div>
+                  {errors.username && (
+                    <p className="mt-2 text-sm text-red-600" id="username-error" role="alert">
+                      {errors.username.message}
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-foreground">
+                    Contraseña
+                  </label>
+                  <div className="mt-1">
+                    <input
+                      id="password"
+                      {...register("password")}
+                      type="password"
+                      autoComplete="current-password"
+                      required
+                      className="appearance-none block w-full px-3 py-2 border border-input rounded-md shadow-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="••••••••"
+                      aria-required="true"
+                      aria-describedby="password-error"
+                    />
+                  </div>
+                  {errors.password && (
+                    <p className="mt-2 text-sm text-red-600" id="password-error" role="alert">
+                      {errors.password.message}
+                    </p>
+                  )}
+                </div>
               </div>
-              {errors.username && (
-                <p className="mt-2 text-sm text-red-600" id="username-error" role="alert">
-                  {errors.username.message}
-                </p>
-              )}
-            </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-foreground">
-                Contraseña
-              </label>
-              <div className="mt-1">
+              <div className="flex items-center mt-4">
                 <input
-                  id="password"
-                  {...register("password")}
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-input rounded-md shadow-sm placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="••••••••"
-                  aria-required="true"
-                  aria-describedby="password-error"
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-primary focus:ring-primary border-input rounded"
+                  aria-label="Recordar mi sesión"
                 />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-foreground">
+                  Recordar mi sesión
+                </label>
               </div>
-              {errors.password && (
-                <p className="mt-2 text-sm text-red-600" id="password-error" role="alert">
-                  {errors.password.message}
-                </p>
-              )}
-            </div>
-          </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-primary focus:ring-primary border-input rounded"
-                aria-label="Recordar mi sesión"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-foreground">
-                Recordar mi sesión
-              </label>
-            </div>
-
-            <div className="text-sm">
-              <HoverBackground>
-                <a href="#" className="font-medium text-primary hover:text-primary/80" aria-label="¿Olvidaste tu contraseña?">
-                  ¿Olvidaste tu contraseña?
-                </a>
-              </HoverBackground>
-            </div>
-          </div>
-
-          <HoverBounce>
-            <button
-              type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-              aria-label="Iniciar sesión"
-            >
-              Iniciar Sesión
-            </button>
-          </HoverBounce>
-        </form>
-
-        <div className="mt-6 text-center" role="complementary" aria-label="Información adicional">
-          <p className="text-sm text-muted-foreground">
-            ¿No tienes una cuenta?{' '}
-            <HoverBackground>
-              <a href="#" className="font-medium text-primary hover:text-primary/80" aria-label="Registrarse">
-                Regístrate
-              </a>
-            </HoverBackground>
-          </p>
-        </div>
+              <div className="mt-6">
+                <HoverBounce>
+                  <button
+                    type="submit"
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                    aria-label="Iniciar sesión"
+                  >
+                    Iniciar Sesión
+                  </button>
+                </HoverBounce>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

@@ -6,9 +6,42 @@ export const AuthSchema = z.object({
     .min(3, 'El nombre de usuario debe tener al menos 3 caracteres')
     .max(20, 'El nombre de usuario no puede exceder 20 caracteres'),
   password: z.string()
-    .min(8, 'La contraseña debe tener al menos 8 caracteres')
-    .regex(/[A-Z]/, 'Debe contener al menos una mayúscula')
-    .regex(/[0-9]/, 'Debe contener al menos un número')
+    .refine((password, ctx) => {
+      // Si el usuario es admin o ra, permitir la contraseña "pacta" sin validaciones adicionales
+      if (ctx.data.username === 'admin' || ctx.data.username === 'ra') {
+        return true;
+      }
+      
+      // Para otros usuarios, aplicar validaciones estándar
+      if (password.length < 8) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.too_small,
+          minimum: 8,
+          type: "string",
+          inclusive: true,
+          message: "La contraseña debe tener al menos 8 caracteres"
+        });
+        return false;
+      }
+      
+      if (!/[A-Z]/.test(password)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Debe contener al menos una mayúscula"
+        });
+        return false;
+      }
+      
+      if (!/[0-9]/.test(password)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Debe contener al menos un número"
+        });
+        return false;
+      }
+      
+      return true;
+    })
 });
 
 // Esquema de Relaciones de Contratos
