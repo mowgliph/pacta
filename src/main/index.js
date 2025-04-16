@@ -836,3 +836,113 @@ ipcMain.handle('smtp:updateConfig', async (event, config) => {
   }
   return response.json();
 });
+
+// Manejador para probar la conexión SMTP
+ipcMain.handle('smtp:testConnection', async (event, config) => {
+  try {
+    const response = await fetch(`${API_URL}/api/users/smtp-test`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(config)
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return { 
+        success: false, 
+        message: errorData.message || `Error ${response.status} al probar la conexión SMTP` 
+      };
+    }
+    
+    const result = await response.json();
+    return { 
+      success: true, 
+      message: result.message || 'Conexión SMTP exitosa' 
+    };
+  } catch (error) {
+    console.error('Error al probar la conexión SMTP:', error);
+    return { 
+      success: false, 
+      message: error.message || 'Error desconocido al probar la conexión SMTP' 
+    };
+  }
+});
+
+// --- Settings Handlers ---
+
+ipcMain.handle('settings:getPublicDashboardStatus', async () => {
+  try {
+    const response = await fetch(`${API_URL}/api/settings/public-dashboard`, {
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Error ${response.status} al obtener estado del dashboard público`);
+    }
+    return response.json(); // Devuelve { enabled: true/false }
+  } catch (error) {
+    console.error('Error en IPC settings:getPublicDashboardStatus:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('settings:setPublicDashboardStatus', async (event, { enabled }) => {
+  try {
+    const response = await fetch(`${API_URL}/api/settings/public-dashboard`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ enabled })
+    });
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Error ${response.status} al actualizar estado del dashboard público`);
+    }
+    return response.json(); // Devuelve { enabled: true/false }
+  } catch (error) {
+    console.error('Error en IPC settings:setPublicDashboardStatus:', error);
+    throw error;
+  }
+});
+
+// --- Public Dashboard Handlers ---
+ipcMain.handle('public:getDashboardData', async () => {
+  try {
+    const response = await fetch(`${API_URL}/api/public/dashboard-data`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Error ${response.status} al obtener datos públicos del dashboard`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error('Error en IPC public:getDashboardData:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('public:getStatistics', async () => {
+  try {
+    const response = await fetch(`${API_URL}/api/public/statistics`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Error ${response.status} al obtener estadísticas públicas`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error('Error en IPC public:getStatistics:', error);
+    throw error;
+  }
+});
+
+ipcMain.handle('public:getContracts', async () => {
+  try {
+    const response = await fetch(`${API_URL}/api/public/contracts`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Error ${response.status} al obtener contratos públicos`);
+    }
+    return response.json();
+  } catch (error) {
+    console.error('Error en IPC public:getContracts:', error);
+    throw error;
+  }
+});

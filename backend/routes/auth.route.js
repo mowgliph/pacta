@@ -11,7 +11,16 @@ router.post('/login', async (req, res) => {
   try {
     const { username, password } = loginSchema.parse(req.body);
 
-    const user = await prisma.user.findUnique({ where: { username } });
+    const user = await prisma.user.findUnique({
+      where: { username },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        role: true,
+        password: true
+      }
+    });
 
     if (!user || !(await argon2.verify(user.password, password))) {
       return res.status(401).json({ message: 'Credenciales inválidas' });
@@ -33,7 +42,13 @@ router.post('/login', async (req, res) => {
       }
     });
 
-    res.json({ message: 'Login exitoso', token });
+    const { password: _, ...userWithoutPassword } = user;
+    
+    res.json({
+      message: 'Login exitoso',
+      token,
+      user: userWithoutPassword
+    });
 
   } catch (error) {
     if (error instanceof require('zod').ZodError) {

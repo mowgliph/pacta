@@ -1,7 +1,7 @@
-import type { Config } from 'tailwindcss/types';
-import plugin from 'tailwindcss/plugin';
+const plugin = require('tailwindcss/plugin');
 
-const config: Config = {
+/** @type {import('tailwindcss').Config} */
+const config = {
   darkMode: ["class"],
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
@@ -26,72 +26,46 @@ const config: Config = {
     },
     extend: {
       colors: {
-        'dark-bg': '#1E293B',
-        'darker-bg': '#2D3748',
-        'glass-bg': 'rgba(255, 255, 255, 0.2)',
-        'primary-blue': '#1E3A8A',
-        'success-green': '#34D399',
-        'error-red': '#F87171',
-        'secondary-gray': '#D1D5DB',
-        background_hsl: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        card_hsl: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))'
-        },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))'
-        },
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))'
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))",
         },
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))'
-        },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))'
-        },
-        accent_hsl: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))'
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))'
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
         },
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        chart: {
-          '1': 'hsl(var(--chart-1))',
-          '2': 'hsl(var(--chart-2))',
-          '3': 'hsl(var(--chart-3))',
-          '4': 'hsl(var(--chart-4))',
-          '5': 'hsl(var(--chart-5))'
-        },
-        brand: {
-          DEFAULT: '#A0D9B4',
-          dark: '#2A9D8F',
-          light: '#E8F5E9',
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
         },
         accent: {
-          purple: '#D8B4FE',
-          blue: '#A5B4FC',
-          green: '#A0D9B4',
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
         },
-        text: {
-          DEFAULT: '#1F2937',
-          secondary: '#6B7280',
-          light: '#9CA3AF',
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
         },
-        background: {
-          DEFAULT: '#F9FAFB',
-          card: '#FFFFFF',
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
         },
+        chart: {
+          '1': "hsl(var(--chart-1))",
+          '2': "hsl(var(--chart-2))",
+          '3': "hsl(var(--chart-3))",
+          '4': "hsl(var(--chart-4))",
+          '5': "hsl(var(--chart-5))"
+        }
       },
       fontFamily: {
         inter: [
@@ -176,7 +150,6 @@ const config: Config = {
   },
   plugins: [
     require("tailwindcss-animate"),
-    // Add responsive plugin
     plugin(function({ addUtilities }) {
       addUtilities({
         '.text-balance': {
@@ -192,6 +165,6 @@ const config: Config = {
       });
     }),
   ],
-} satisfies Config;
+};
 
-export default config;
+module.exports = config;

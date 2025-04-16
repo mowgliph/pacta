@@ -1,70 +1,128 @@
-const express = require('express');
-const router = express.Router();
+const router = require('express').Router();
 const { PrismaClient } = require('@prisma/client');
+
 const prisma = new PrismaClient();
 
-/**
- * @route GET /api/public/statistics
- * @desc Obtiene estadísticas públicas para el dashboard
- * @access Public
- */
+// GET /api/public/statistics - Obtener estadísticas públicas
 router.get('/statistics', async (req, res) => {
   try {
-    // Obtener estadísticas de contratos
+    // Obtener estadísticas básicas para el dashboard público
     const totalContracts = await prisma.contract.count();
     const activeContracts = await prisma.contract.count({
       where: { status: 'Active' }
     });
-    
-    // Obtener contratos que vencen en los próximos 30 días
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    
     const expiringContracts = await prisma.contract.count({
       where: {
+        status: 'Active',
         endDate: {
-          lte: thirtyDaysFromNow,
-          gt: new Date()
-        },
-        status: 'Active'
-      }
-    });
-    
-    // Obtener estadísticas mensuales de contratos
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-    
-    const monthlyStats = await prisma.contract.groupBy({
-      by: ['createdAt'],
-      where: {
-        createdAt: {
-          gte: sixMonthsAgo
+          lt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Próximos 30 días
         }
-      },
-      _count: {
-        _all: true
       }
     });
-    
-    // Formatear estadísticas mensuales
-    const contractStats = monthlyStats.map(stat => ({
-      month: new Date(stat.createdAt).toLocaleString('es-ES', { month: 'short' }),
-      activos: stat._count._all,
-      vencidos: 0
-    }));
-    
-    res.json({
+
+    // Datos de ejemplo/demostración
+    const demoStats = {
       totalContracts,
       activeContracts,
       expiringContracts,
-      contractStats
-    });
+      chartData: {
+        monthly: [
+          { month: 'Ene', contratos: 5 },
+          { month: 'Feb', contratos: 8 },
+          { month: 'Mar', contratos: 12 },
+          { month: 'Abr', contratos: 7 }
+        ],
+        byType: [
+          { type: 'Cliente', count: Math.floor(totalContracts * 0.6) },
+          { type: 'Proveedor', count: Math.floor(totalContracts * 0.4) }
+        ]
+      }
+    };
+
+    res.json(demoStats);
   } catch (error) {
-    console.error('Error en /api/public/statistics:', error);
-    res.status(500).json({ 
-      message: 'Error al obtener estadísticas públicas',
-      error: error.message 
+    console.error('Error obteniendo estadísticas públicas:', error);
+    res.status(500).json({ message: 'Error al obtener estadísticas' });
+  }
+});
+
+// GET /api/public/contracts - Obtener lista de contratos públicos (demo)
+router.get('/contracts', async (req, res) => {
+  try {
+    // Obtener una muestra limitada de contratos para demostración
+    const demoContracts = await prisma.contract.findMany({
+      take: 5,
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        startDate: true,
+        endDate: true,
+        status: true,
+        // Excluir campos sensibles
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
     });
+
+    res.json(demoContracts);
+  } catch (error) {
+    console.error('Error obteniendo contratos públicos:', error);
+    res.status(500).json({ message: 'Error al obtener contratos' });
+  }
+});
+
+// GET /api/public/dashboard-data - Obtener datos combinados para el dashboard público
+router.get('/dashboard-data', async (req, res) => {
+  try {
+    const [statistics, recentContracts] = await Promise.all([
+      prisma.contract.aggregate({
+        _count: {
+          id: true,
+        },
+        where: {
+          status: 'Active',
+        },
+      }),
+      prisma.contract.findMany({
+        take: 5,
+        select: {
+          id: true,
+          name: true,
+          type: true,
+          startDate: true,
+          endDate: true,
+          status: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+    ]);
+
+    // Combinar datos para el dashboard
+    const dashboardData = {
+      statistics: {
+        total: statistics._count.id,
+        activePercentage: 75, // Dato de ejemplo
+        efficiency: 89, // Dato de ejemplo
+      },
+      recentActivity: recentContracts,
+      charts: {
+        monthly: [
+          { month: 'Ene', contratos: 5 },
+          { month: 'Feb', contratos: 8 },
+          { month: 'Mar', contratos: 12 },
+          { month: 'Abr', contratos: 7 }
+        ]
+      }
+    };
+
+    res.json(dashboardData);
+  } catch (error) {
+    console.error('Error obteniendo datos del dashboard público:', error);
+    res.status(500).json({ message: 'Error al obtener datos del dashboard' });
   }
 });
 

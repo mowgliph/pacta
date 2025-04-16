@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from "@/renderer/components/ui/card";
 import { Skeleton } from "@/renderer/components/ui/skeleton";
 import statisticsService from '@/renderer/services/statisticsService';
+import { AlertTriangle } from 'lucide-react'; // Importar icono de alerta
 
 interface StatsData {
   totalContracts: number;
@@ -17,15 +18,18 @@ interface StatsData {
 const PublicStats: React.FC = () => {
   const [statsData, setStatsData] = useState<StatsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null); // Estado para el error
 
   useEffect(() => {
     const loadStats = async (): Promise<void> => {
       setIsLoading(true);
+      setError(null); // Resetear error al iniciar carga
       try {
-        const data = await statisticsService.getPublicStatistics();
-        setStatsData(data);
-      } catch (error) {
-        console.error("Error cargando estadísticas públicas:", error);
+        const data = await statisticsService.getGeneralStatistics();
+        setStatsData(data as StatsData);
+      } catch (err) {
+        console.error("Error cargando estadísticas públicas:", err);
+        setError("No se pudieron cargar las estadísticas públicas. Inténtalo de nuevo más tarde."); // Guardar mensaje de error
       }
       setIsLoading(false);
     };
@@ -42,6 +46,19 @@ const PublicStats: React.FC = () => {
           </Card>
         ))}
       </div>
+    );
+  }
+
+  // Mostrar mensaje de error si existe
+  if (error) {
+    return (
+      <Card className="p-6 border-destructive bg-destructive/10 text-destructive">
+        <div className="flex items-center space-x-2">
+          <AlertTriangle className="h-5 w-5" />
+          <h3 className="text-lg font-semibold">Error</h3>
+        </div>
+        <p className="mt-2 text-sm">{error}</p>
+      </Card>
     );
   }
 

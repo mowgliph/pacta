@@ -87,6 +87,17 @@ const App: React.FC = () => {
               </PublicLayout>
             )}
           </Route>
+
+          {/* Ruta de Autenticación */}
+          <Route path="/auth">
+            {user ? (
+              <Redirect to="/dashboard" />
+            ) : (
+              <PublicLayout>
+                <Auth />
+              </PublicLayout>
+            )}
+          </Route>
           
           {/* Rutas Privadas (envueltas con Layout) */}
           <PrivateRoute 

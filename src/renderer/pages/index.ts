@@ -5,3 +5,4 @@ export { default as ContractManagement } from './contracts/contractManagement';
 export { default as ContractDetails } from './contracts/contractDetails';
 export { default as AdvancedStatistics } from './advancedStatistics';
 export { default as useProfile } from './userProfile';
+export { default as Settings } from './settings';

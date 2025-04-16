@@ -21,7 +21,7 @@ interface LoginResponse {
   message?: string;
 }
 
-interface SMTPConfig {
+export interface SMTPConfig {
   host: string;
   port: number;
   secure: boolean;
@@ -140,6 +140,9 @@ export class ElectronAPI {
     },
     updateConfig: async (config: SMTPConfig): Promise<SMTPConfig> => {
       return this.invoke('smtp:updateConfig', config);
+    },
+    testConnection: async (config: SMTPConfig): Promise<{success: boolean; message: string}> => {
+      return this.invoke('smtp:testConnection', config);
     }
   };
 }

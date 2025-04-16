@@ -82,7 +82,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-text-DEFAULT;
+    @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -136,9 +136,10 @@
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
-    &::-webkit-scrollbar {
-      display: none;
-    }
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 
   .safe-paddings {

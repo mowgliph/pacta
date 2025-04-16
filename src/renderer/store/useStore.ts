@@ -4,7 +4,6 @@ import { electronAPI } from '@/renderer/api/electronAPI';
 interface User {
   id: string;
   name: string;
-  email: string;
   role: string;
 }
 

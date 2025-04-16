@@ -177,4 +177,36 @@ router.post('/smtp-config', authenticateJWT, async (req, res) => {
   }
 });
 
+// POST /smtp-test - Probar la conexión SMTP
+router.post('/smtp-test', authenticateJWT, async (req, res) => {
+  try {
+    const validatedData = smtpConfigSchema.parse(req.body);
+    
+    // Importamos nodemailer solo cuando lo necesitamos
+    const nodemailer = require('nodemailer');
+    
+    // Crear un transporte temporal de nodemailer con los datos proporcionados
+    const transporter = nodemailer.createTransport({
+      host: validatedData.host,
+      port: validatedData.port,
+      secure: validatedData.secure,
+      auth: {
+        user: validatedData.username,
+        pass: validatedData.password
+      }
+    });
+    
+    // Verificar la conexión
+    await transporter.verify();
+    
+    res.json({ success: true, message: 'Conexión SMTP exitosa' });
+  } catch (error) {
+    console.error("Error testing SMTP connection:", error);
+    res.status(400).json({
+      success: false,
+      message: `Error al probar la conexión SMTP: ${error.message}`
+    });
+  }
+});
+
 module.exports = router;

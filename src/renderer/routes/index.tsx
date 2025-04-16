@@ -11,7 +11,8 @@ import {
   ContractManagement,
   ContractDetails,
   AdvancedStatistics,
-  useProfile 
+  useProfile,
+  Settings
 } from '@/renderer/pages/index';
 
 interface PrivateRouteProps {
@@ -96,6 +97,7 @@ const Routes: React.FC = () => {
         roles={['Admin', 'RA']} 
       />
       <PrivateRoute path="/profile" component={useProfile} />
+      <PrivateRoute path="/settings" component={Settings} />
 
       <Route>
         <NotFound />

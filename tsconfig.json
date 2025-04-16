@@ -31,6 +31,6 @@
         "backend/**/*.ts",
         "backend/**/*.js",
         "*.ts"
-    ],
+, "tailwind.config.js", "vite.config.js", "vitest.config.js"    ],
     "exclude": ["node_modules", "public", "dist"]
 }
