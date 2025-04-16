@@ -16,7 +16,7 @@
         "rootDir": ".",
         "baseUrl": ".",
         "paths": {
-        "@/*": ["src/*"]
+            "@/*": ["src/*"]
         },
         "typeRoots": [
             "./node_modules/@types",
@@ -29,7 +29,8 @@
         "src/**/*.js",
         "src/**/*.jsx",
         "backend/**/*.ts",
-        "backend/**/*.js"
+        "backend/**/*.js",
+        "*.ts"
     ],
     "exclude": ["node_modules", "public", "dist"]
 }

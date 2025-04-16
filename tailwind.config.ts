@@ -1,4 +1,4 @@
-import type { Config } from 'tailwindcss';
+import type { Config } from 'tailwindcss/types';
 import plugin from 'tailwindcss/plugin';
 
 const config: Config = {
@@ -130,36 +130,36 @@ const config: Config = {
       },
       keyframes: {
         "accordion-down": {
-          from: { height: 0 },
+          from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: 0 },
+          to: { height: "0" },
         },
         "fade-in": {
-          from: { opacity: 0 },
-          to: { opacity: 1 },
+          from: { opacity: "0" },
+          to: { opacity: "1" },
         },
         "fade-out": {
-          from: { opacity: 1 },
-          to: { opacity: 0 },
+          from: { opacity: "1" },
+          to: { opacity: "0" },
         },
         "slide-in": {
-          from: { transform: "translateY(-10px)", opacity: 0 },
-          to: { transform: "translateY(0)", opacity: 1 },
+          from: { transform: "translateY(-10px)", opacity: "0" },
+          to: { transform: "translateY(0)", opacity: "1" },
         },
         "slide-out": {
-          from: { transform: "translateY(0)", opacity: 1 },
-          to: { transform: "translateY(-10px)", opacity: 0 },
+          from: { transform: "translateY(0)", opacity: "1" },
+          to: { transform: "translateY(-10px)", opacity: "0" },
         },
         "scale-in": {
-          from: { transform: "scale(0.95)", opacity: 0 },
-          to: { transform: "scale(1)", opacity: 1 },
+          from: { transform: "scale(0.95)", opacity: "0" },
+          to: { transform: "scale(1)", opacity: "1" },
         },
         "scale-out": {
-          from: { transform: "scale(1)", opacity: 1 },
-          to: { transform: "scale(0.95)", opacity: 0 },
+          from: { transform: "scale(1)", opacity: "1" },
+          to: { transform: "scale(0.95)", opacity: "0" },
         },
       },
       animation: {
@@ -192,6 +192,6 @@ const config: Config = {
       });
     }),
   ],
-};
+} satisfies Config;
 
 export default config;
