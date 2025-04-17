@@ -17,7 +17,6 @@ function Calendar({
   return (
     <DayPicker
       locale={es}
-      role="application"
       aria-label="Calendario"
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}

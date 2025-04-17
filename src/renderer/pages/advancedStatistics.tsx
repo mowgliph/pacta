@@ -3,7 +3,6 @@ import { useLocation } from 'wouter';
 import statisticsService from '@/renderer/services/statisticsService';
 import { useToast } from '@/renderer/hooks/use-toast';
 import { Button } from "@/renderer/components/ui/button";
-import { Skeleton } from "@/renderer/components/ui/skeleton";
 import { AlertTriangle, BarChart2, FileText } from 'lucide-react';
 import LoadingState from '@/renderer/components/LoadingState';
 import ErrorState from '@/renderer/components/ErrorState';
@@ -27,9 +26,9 @@ import { SkeletonCard, SkeletonChart, SkeletonTable } from '@/renderer/component
 import { HoverElevation, HoverScale, HoverGlow, HoverBounce } from '@/renderer/components/ui/micro-interactions';
 
 interface StatsData {
-  totalContracts: number;
-  activeContracts: number;
-  expiringContracts: number;
+  totalContracts?: number;
+  activeContracts?: number;
+  expiringContracts?: number;
   statusCounts?: Record<string, number>;
   monthlyStats?: Array<{
     month: string;

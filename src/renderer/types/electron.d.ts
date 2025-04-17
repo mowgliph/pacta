@@ -23,19 +23,13 @@ export interface ElectronAPI {
     select: (options?: { filters?: Array<{ name: string; extensions: string[] }> }) => Promise<string>;
     open: (filePath: string) => Promise<void>;
   };
-  invoke: (channel: string, ...args: any[]) => Promise<any>;
-  on: (channel: string, listener: (...args: any[]) => void) => void;
+  invoke: (channel: string, data?: any) => Promise<any>;
+  on: (channel: string, callback: (event: any, ...args: any[]) => void) => void;
   removeAllListeners: (channel: string) => void;
-  getVersions: () => {
-    chrome: string;
-    node: string;
-    electron: string;
-  };
 }
 
 declare global {
   interface Window {
-    electron: never;
     electronAPI: ElectronAPI;
   }
 }

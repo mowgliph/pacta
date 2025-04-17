@@ -36,6 +36,16 @@ export interface AppConfig {
   enablePublicDashboard: boolean;
 }
 
+declare global {
+  interface Window {
+    electronAPI: {
+      invoke: (channel: string, data?: any) => Promise<any>;
+      on: (channel: string, callback: (event: any, data: any) => void) => void;
+      removeAllListeners: (channel: string) => void;
+    }
+  }
+}
+
 export class ElectronAPI {
   private static instance: ElectronAPI;
   
@@ -48,11 +58,11 @@ export class ElectronAPI {
     return ElectronAPI.instance;
   }
 
-  private async invoke<T>(channel: string, ...args: any[]): Promise<T> {
+  private async invoke<T>(channel: string, data?: any): Promise<T> {
     if (!window.electronAPI?.invoke) {
       throw new Error('API de Electron no disponible');
     }
-    return window.electronAPI.invoke(channel, ...args);
+    return window.electronAPI.invoke(channel, data);
   }
 
   // Auth methods
@@ -160,13 +170,31 @@ export class ElectronAPI {
       return this.invoke('settings:updateAppConfig', config);
     }
   };
+
+  // Notifications methods
+  notification = {
+    send: async (channel: string, data: any): Promise<void> => {
+      return this.invoke('notification:send', { channel, data });
+    },
+    subscribe: async (channel: string): Promise<void> => {
+      return this.invoke('notification:subscribe', channel);
+    },
+    unsubscribe: async (channel: string): Promise<void> => {
+      return this.invoke('notification:unsubscribe', channel);
+    }
+  };
+
+  // Events methods
+  events = {
+    on: (channel: string, callback: (event: any, data: any) => void): void => {
+      window.electronAPI.on(channel, callback);
+    },
+    removeAllListeners: (channel: string): void => {
+      window.electronAPI.removeAllListeners(channel);
+    }
+  };
 }
 
 // Exportar una instancia única
 export const electronAPI = ElectronAPI.getInstance();
 
-declare global {
-  interface Window {
-    electronAPI: ElectronAPI;
-  }
-}

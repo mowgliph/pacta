@@ -3,7 +3,7 @@ import { Link, useLocation } from 'wouter';
 import useStore from '@/renderer/store/useStore';
 import { Button } from '@/renderer/components/ui/button';
 import { HoverScale, HoverGlow } from '@/renderer/components/ui/micro-interactions';
-import { Notifications } from '@/renderer/components/Notifications';
+import NotificationPanel from '@/renderer/components/NotificationPanel';
 
 interface NavigationItem {
   name: string;
@@ -64,14 +64,14 @@ const PrivateLayout: React.FC<PrivateLayoutProps> = ({ children }) => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <Notifications />
+              <NotificationPanel />
               <HoverScale>
                 <Link href="/profile">
                   <a
                     className="text-sm font-medium text-foreground hover:text-accent-foreground"
                     aria-label="Ver perfil"
                   >
-                    {user?.email}
+                    {user?.name}
                   </a>
                 </Link>
               </HoverScale>

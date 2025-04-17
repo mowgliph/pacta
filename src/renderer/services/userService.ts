@@ -1,4 +1,5 @@
 import { SMTPConfig } from '@/renderer/api/electronAPI';
+import { electronAPI } from "@/renderer/api/electronAPI";
 
 // Funciones existentes del servicio de usuario
 // ...existing code...
@@ -6,7 +7,7 @@ import { SMTPConfig } from '@/renderer/api/electronAPI';
 // Funciones para la gestión de la configuración SMTP
 export const getSMTPConfig = async (): Promise<SMTPConfig> => {
   try {
-    const response = await window.electronAPI.smtp.getConfig();
+    const response = await electronAPI.smtp.getConfig();
     return response;
   } catch (error) {
     console.error('Error al obtener la configuración SMTP:', error);
@@ -16,7 +17,7 @@ export const getSMTPConfig = async (): Promise<SMTPConfig> => {
 
 export const updateSMTPConfig = async (config: SMTPConfig): Promise<SMTPConfig> => {
   try {
-    const response = await window.electronAPI.smtp.updateConfig(config);
+    const response = await electronAPI.smtp.updateConfig(config);
     return response;
   } catch (error) {
     console.error('Error al actualizar la configuración SMTP:', error);
@@ -27,7 +28,7 @@ export const updateSMTPConfig = async (config: SMTPConfig): Promise<SMTPConfig> 
 // Función para probar la conexión SMTP
 export const testSMTPConnection = async (config: SMTPConfig): Promise<{ success: boolean; message: string }> => {
   try {
-    const response = await window.electronAPI.smtp.testConnection(config);
+    const response = await electronAPI.smtp.testConnection(config);
     return response;
   } catch (error) {
     console.error('Error al probar la conexión SMTP:', error);

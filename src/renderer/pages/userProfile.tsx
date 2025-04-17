@@ -15,9 +15,9 @@ interface ProfileData {
 }
 
 interface StatsData {
-  totalContracts: number;
-  activeContracts: number;
-  expiringContracts: number;
+  totalContracts?: number;
+  activeContracts?: number;
+  expiringContracts?: number;
 }
 
 const UserProfile: React.FC = () => {

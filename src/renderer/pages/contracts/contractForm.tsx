@@ -20,29 +20,17 @@ import {
 import { HoverGlow } from '@/renderer/components/ui/micro-interactions';
 import { toast } from '@/renderer/hooks/use-toast';
 import { Skeleton } from '@/renderer/components/ui/skeleton';
+import { Contract } from '@/renderer/types/contracts';
 
-interface UpdateContractVariables {
-  id: string;
-  data: FormData;
-}
-
-interface Contract {
-  id: string;
-  clientName: string;
-  startDate: string;
-  endDate: string;
-  amount: number;
-  description: string;
-  status: string;
-}
+// Definir el tipo correcto para el estado del contrato
+type ContractStatus = 'Active' | 'Expired' | 'Pending' | 'Terminated';
 
 interface ContractFormData {
   clientName: string;
   startDate: string;
   endDate: string;
-  amount: number;
   description: string;
-  status: string;
+  status: ContractStatus;
 }
 
 interface ContractFormProps {
@@ -60,9 +48,8 @@ const ContractForm: React.FC<ContractFormProps> = ({
     clientName: '',
     startDate: '',
     endDate: '',
-    amount: 0,
     description: '',
-    status: 'pending',
+    status: 'Pending',
   });
 
   const { mutate: createContract, isLoading: isCreating } = useCreateContract();
@@ -74,33 +61,42 @@ const ContractForm: React.FC<ContractFormProps> = ({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'amount' ? Number(value) : value,
+      [name]: value,
+    }));
+  };
+
+  const handleStatusChange = (value: string) => {
+    setFormData((prev) => ({ 
+      ...prev, 
+      status: value as ContractStatus 
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     try {
-      const formDataToSend = new FormData();
-      Object.entries(formData).forEach(([key, value]) => {
-        formDataToSend.append(key, value.toString());
-      });
+      const contractData: Partial<Contract> = {
+        name: formData.clientName,
+        startDate: formData.startDate ? new Date(formData.startDate) : undefined,
+        endDate: formData.endDate ? new Date(formData.endDate) : undefined,
+        description: formData.description,
+        status: formData.status,
+      };
 
-      if (contract) {
+      if (contract?.id) {
         updateContract({
           id: contract.id,
-          data: formDataToSend
+          data: contractData,
         });
-        toast({ title: 'Éxito', description: 'Contrato actualizado exitosamente' });
       } else {
-        createContract(formDataToSend);
-        toast({ title: 'Éxito', description: 'Contrato creado exitosamente' });
+        createContract(contractData);
       }
       onSubmit();
-    } catch (error: any) {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al procesar el contrato';
       toast({
         title: 'Error',
-        description: error.message || 'Error al procesar el contrato',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -111,11 +107,10 @@ const ContractForm: React.FC<ContractFormProps> = ({
   useEffect(() => {
     if (contract) {
       setFormData({
-        clientName: contract.clientName,
-        startDate: contract.startDate,
-        endDate: contract.endDate,
-        amount: contract.amount,
-        description: contract.description,
+        clientName: contract.name ?? '',
+        startDate: contract.startDate?.toISOString().split('T')[0] ?? '',
+        endDate: contract.endDate?.toISOString().split('T')[0] ?? '',
+        description: contract.description ?? '',
         status: contract.status,
       });
     }
@@ -168,18 +163,6 @@ const ContractForm: React.FC<ContractFormProps> = ({
                 disabled={isLoading}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="amount">Monto</Label>
-              <Input
-                id="amount"
-                name="amount"
-                type="number"
-                value={formData.amount}
-                onChange={handleChange}
-                required
-                disabled={isLoading}
-              />
-            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -225,18 +208,17 @@ const ContractForm: React.FC<ContractFormProps> = ({
             <Label htmlFor="status">Estado</Label>
             <Select
               value={formData.status}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, status: value }))
-              }
+              onValueChange={handleStatusChange}
               disabled={isLoading}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Seleccionar estado" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="pending">Pendiente</SelectItem>
-                <SelectItem value="active">Activo</SelectItem>
-                <SelectItem value="inactive">Inactivo</SelectItem>
+                <SelectItem value="Pending">Pendiente</SelectItem>
+                <SelectItem value="Active">Activo</SelectItem>
+                <SelectItem value="Terminated">Terminado</SelectItem>
+                <SelectItem value="Expired">Expirado</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -13,7 +13,7 @@ import { Skeleton } from "@/renderer/components/ui/skeleton";
 
 interface Contract {
   id: string;
-  clientName: string;
+  name: string; // Cambiado de clientName a name para coincidir con el tipo real
   startDate: string;
   endDate: string;
   status: string;
@@ -104,7 +104,7 @@ const ContractList: React.FC<ContractListProps> = ({ filters, onContractSelect }
             {contracts.map((contract) => (
               <TableRow key={contract.id}>
                 <TableCell>{contract.id}</TableCell>
-                <TableCell>{contract.clientName}</TableCell>
+                <TableCell>{contract.name}</TableCell>
                 <TableCell>
                   {format(new Date(contract.startDate), 'PPP', { locale: es })}
                 </TableCell>

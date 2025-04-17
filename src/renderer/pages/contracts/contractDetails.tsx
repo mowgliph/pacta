@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/ren
 import { SkeletonCard, SkeletonList, Skeleton } from '@/renderer/components/ui/skeleton';
 import { HoverElevation, HoverScale, HoverGlow, HoverBounce, HoverBackground } from '@/renderer/components/ui/micro-interactions';
 import { Calendar } from 'lucide-react';
+import { electronAPI } from '@/renderer/api/electronAPI';
 
 interface Document {
   id: string;
@@ -259,7 +260,7 @@ const ContractDetails: React.FC = () => {
 
   const handleOpenFile = async (filePath: string): Promise<void> => {
     try {
-      await window.electronAPI.invoke('files:open', filePath);
+      await electronAPI.files.open(filePath);
     } catch (error: unknown) {
       console.error("Error al abrir archivo desde detalles:", error);
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido';

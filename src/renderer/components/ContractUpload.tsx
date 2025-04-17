@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
-
+import { electronAPI } from '@/renderer/api/electronAPI';
 interface ContractUploadProps {
   contractId: string;
   onUploadComplete?: (success: boolean, fileUrl?: string) => void;
@@ -19,7 +19,7 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ contractId, onUploadCom
   
   const handleFileSelect = async () => {
     try {
-      const filePath = await window.electronAPI.files.select({
+      const filePath = await electronAPI.files.select({
         filters: [
           { name: 'Documentos', extensions: ['pdf', 'doc', 'docx'] }
         ]
@@ -38,7 +38,7 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ contractId, onUploadCom
 
     setIsUploading(true);
     try {
-      const result = await window.electronAPI.contracts.uploadDocument({
+      const result = await electronAPI.contracts.uploadDocument({
         filePath: selectedFile,
         contractId
       });
@@ -52,13 +52,16 @@ const ContractUpload: React.FC<ContractUploadProps> = ({ contractId, onUploadCom
   };
 
   useEffect(() => {
-    const handleNotification = (notification: Notification) => {
-      console.log('Nueva notificación:', notification);
+    const handleNotification = (event: any, data: Notification) => {
+      console.log('Nueva notificación:', data);
     };
 
-    window.electronAPI.on('notification:new', handleNotification);
+    // Usar el método events.on
+    electronAPI.events.on('notification:new', handleNotification);
+    
     return () => {
-      window.electronAPI.removeAllListeners('notification:new');
+      // Usar el método events.removeAllListeners
+      electronAPI.events.removeAllListeners('notification:new');
     };
   }, []);
 

@@ -88,8 +88,8 @@ export const useUpdateContract = () => {
 
 export const useDeleteContract = () => {
   const queryClient = useQueryClient();
-  return useMutation<void, Error, string>({
-    mutationFn: (id) => contractService.deleteContract(id),
+  return useMutation({
+    mutationFn: (id: string) => contractService.deleteContract(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contracts'] });
     },
@@ -120,9 +120,7 @@ export const useEditSupplement = () => {
 
 // Hooks para estadísticas
 export const useStatistics = () => {
-  return useQuery<Statistics, Error>({
-    queryKey: ['statistics'],
-    queryFn: () => statisticsService.getGeneralStatistics(),
+  return useQuery(['statistics'], () => statisticsService.getGeneralStatistics(), {
     staleTime: 1000 * 60 * 15, // 15 minutos
   });
 };
