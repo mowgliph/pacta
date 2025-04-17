@@ -10,13 +10,18 @@ const Joi = require('joi');
 const argon2 = require('argon2');
 const upload = require('./middleware/upload.middleware');
 const { PrismaClient } = require('@prisma/client');
+const cronJobs = require('./utils/cronJobs');
+const os = require('os');
+const nodemailer = require('nodemailer');
 
-// Import routes
+// Importar rutas
 const authRoutes = require('./routes/auth.route');
 const userRoutes = require('./routes/user.route');
 const contractRoutes = require('./routes/contract.route');
 const statisticsRoutes = require('./routes/statistics.route');
 const publicRoutes = require('./routes/public.route');
+const settingsRoutes = require('./routes/settings.route');
+const notificationRoutes = require('./routes/notification.route');
 
 const prisma = new PrismaClient();
 const app = express();
@@ -104,7 +109,7 @@ const activitySchema = Joi.object({
 const accessLogSchema = Joi.object({
   userId: Joi.number().required(),
   action: Joi.string().required(),
-  details: Joi.string().required(),
+  details: Joi.required(),
   ip: Joi.string().required(),
   userAgent: Joi.string().required(),
 });
@@ -645,14 +650,65 @@ app.use((err, req, res, next) => {
 });
 
 // Endpoint de salud
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    services: {
-      database: prisma ? 'Connected' : 'Disconnected',
-      fileSystem: fs.existsSync(uploadDir) ? 'Ready' : 'Not Ready'
+app.get('/api/health', async (req, res) => {
+  // Estado de la base de datos
+  let dbStatus = 'OK';
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+  } catch (e) {
+    dbStatus = 'ERROR';
+  }
+
+  // Estado de backups
+  let lastBackup = null;
+  let backupCount = 0;
+  try {
+    const backupDir = path.join(__dirname, '../data/backups');
+    const files = fs.readdirSync(backupDir).filter(f => f.endsWith('.sqlite'));
+    backupCount = files.length;
+    if (files.length > 0) {
+      lastBackup = fs.statSync(path.join(backupDir, files[files.length - 1])).mtime;
     }
+  } catch (e) {
+    // Si no hay backups o error, dejar valores por defecto
+  }
+
+  // Estado de espacio en disco
+  let disk = { free: null, total: null };
+  try {
+    const diskInfo = os.freemem();
+    disk.free = diskInfo;
+    disk.total = os.totalmem();
+  } catch (e) {}
+
+  // Estado SMTP (opcional, solo si hay config guardada)
+  let smtpStatus = 'UNKNOWN';
+  try {
+    const smtpConfig = await prisma.sMTPConfig.findFirst();
+    if (smtpConfig && smtpConfig.host) {
+      const transporter = nodemailer.createTransport({
+        host: smtpConfig.host,
+        port: smtpConfig.port,
+        secure: smtpConfig.secure,
+        auth: {
+          user: smtpConfig.username,
+          pass: smtpConfig.password
+        }
+      });
+      await transporter.verify();
+      smtpStatus = 'OK';
+    } else {
+      smtpStatus = 'NOT_CONFIGURED';
+    }
+  } catch (e) {
+    smtpStatus = 'ERROR';
+  }
+
+  res.json({
+    database: dbStatus,
+    smtp: smtpStatus,
+    backups: { lastBackup, count: backupCount },
+    disk
   });
 });
 
@@ -683,10 +739,14 @@ app.use('/api/users', userRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/statistics', statisticsRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // --- Inicialización del Servidor ---
 const server = app.listen(port, () => {
   console.log(`Backend server escuchando en http://localhost:${port}`);
+  // Iniciar tareas programadas
+  cronJobs.startAllJobs();
 });
 
 // --- Manejo de Cierre Limpio (opcional pero recomendado) ---
@@ -701,6 +761,8 @@ const gracefulShutdown = async () => {
     } catch (e) {
         console.error('Error desconectando Prisma:', e);
     }
+    // Detener tareas programadas
+    cronJobs.stopAllJobs();
     process.exit(0);
   });
 

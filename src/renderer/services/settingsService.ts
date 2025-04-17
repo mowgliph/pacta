@@ -10,6 +10,11 @@ export interface SMTPConfig {
   enabled: boolean;
 }
 
+export interface AppConfig {
+  enableLandingPage: boolean;
+  enablePublicDashboard: boolean;
+}
+
 const settingsService = {
   getSMTPConfig: async (): Promise<SMTPConfig> => {
     return electronAPI.smtp.getConfig();
@@ -19,6 +24,15 @@ const settingsService = {
   },
   testSMTPConnection: async (config: SMTPConfig): Promise<{ success: boolean; message: string }> => {
     return electronAPI.smtp.testConnection(config);
+  },
+  getAppConfig: async (): Promise<AppConfig> => {
+    return electronAPI.settings.getAppConfig() || { 
+      enableLandingPage: false, 
+      enablePublicDashboard: false 
+    };
+  },
+  updateAppConfig: async (config: AppConfig): Promise<AppConfig> => {
+    return electronAPI.settings.updateAppConfig(config);
   }
 };
 

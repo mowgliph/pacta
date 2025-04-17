@@ -131,13 +131,37 @@ model Supplement {
 }
 
 model Notification {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  message   String
-  isRead    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  title       String
+  message     String
+  type        String   // 'contract', 'supplement', 'system'
+  subtype     String   // 'expiration', 'creation', 'modification', etc.
+  isRead      Boolean  @default(false)
+  data        Json?    // Datos adicionales en formato JSON
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model NotificationPreference {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  type            String   // Tipo de notificación
+  email           Boolean  @default(true)
+  inApp           Boolean  @default(true)
+  system          Boolean  @default(true)
+  user            User     @relation(fields: [userId], references: [id])
+}
+
+model NotificationQueue {
+  id          Int      @id @default(autoincrement())
+  type        String   // 'email', 'inApp', 'system'
+  payload     Json     // Contenido de la notificación
+  status      String   // 'pending', 'sent', 'failed'
+  attempts    Int      @default(0)
+  createdAt   DateTime @default(now())
+  processedAt DateTime?
+  error       String?
 }
 
 model Activity {

@@ -17,27 +17,28 @@
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    /* Updated primary to lime-green color from reference */
-    --primary: 90 70% 50%;
+    /* Updated primary to dark blue color from reference (#001B48) */
+    --primary: 210 100% 14%;
     --primary-foreground: 0 0% 100%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 10% 3.9%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    /* Updated accent to match the reference design */
-    --accent: 90 70% 45%;
-    --accent-foreground: 240 10% 3.9%;
+    /* Updated accent to medium blue color from reference (#018ABE) */
+    --accent: 196 99% 37%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     /* Updated ring to match primary */
-    --ring: 90 70% 50%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --ring: 210 100% 14%;
+    /* Chart colors updated to match blue palette (#001B48, #02457A, #018ABE, #97CADB, #D6E8EE) */
+    --chart-1: 210 100% 14%; /* #001B48 - Dark blue */
+    --chart-2: 204 97% 24%;  /* #02457A - Medium-dark blue */
+    --chart-3: 196 99% 37%;  /* #018ABE - Medium blue */
+    --chart-4: 196 50% 73%;  /* #97CADB - Light blue */
+    --chart-5: 195 50% 89%;  /* #D6E8EE - Very light blue */
     --radius: 0.5rem;
     /* Responsive variables */
     --header-height: 4rem;
@@ -52,27 +53,28 @@
     --card-foreground: 0 0% 98%;
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    /* Updated primary for dark mode */
-    --primary: 90 70% 50%;
-    --primary-foreground: 240 10% 3.9%;
+    /* Updated primary for dark mode (#02457A) */
+    --primary: 204 97% 24%;
+    --primary-foreground: 0 0% 100%;
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 10% 3.9%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    /* Updated accent for dark mode */
-    --accent: 90 70% 45%;
+    /* Updated accent for dark mode (#97CADB) */
+    --accent: 196 50% 73%;
     --accent-foreground: 240 10% 3.9%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     /* Updated ring to match primary */
-    --ring: 90 70% 50%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%
+    --ring: 204 97% 24%;
+    /* Chart colors updated to match blue palette for dark mode */
+    --chart-1: 210 100% 20%; /* Darker version of #001B48 */
+    --chart-2: 204 97% 30%;  /* Darker version of #02457A */
+    --chart-3: 196 99% 45%;  /* Brighter version of #018ABE */
+    --chart-4: 196 60% 80%;  /* Brighter version of #97CADB */
+    --chart-5: 195 40% 95%   /* Brighter version of #D6E8EE */
   }
 }
 
@@ -155,23 +157,23 @@
     padding-right: env(safe-area-inset-right);
   }
   
-  /* Add gradient utilities for the lime-green theme */
-  .bg-lime-gradient {
-    background: linear-gradient(to right, rgba(158, 240, 25, 0.2), rgba(158, 240, 25, 0.4));
+  /* Add gradient utilities for the blue theme */
+  .bg-blue-gradient {
+    background: linear-gradient(to right, rgba(1, 27, 72, 0.2), rgba(1, 138, 190, 0.4));
   }
   
   .text-gradient {
     background-clip: text;
     -webkit-background-clip: text;
     color: transparent;
-    background-image: linear-gradient(to right, hsl(90, 70%, 50%), hsl(90, 70%, 40%));
+    background-image: linear-gradient(to right, hsl(210, 100%, 14%), hsl(196, 99%, 37%));
   }
   
-  .glow-lime {
-    box-shadow: 0 0 15px 2px rgba(158, 240, 25, 0.3);
+  .glow-blue {
+    box-shadow: 0 0 15px 2px rgba(1, 138, 190, 0.3);
   }
   
-  .border-lime-gradient {
-    border-image: linear-gradient(to right, rgba(158, 240, 25, 0.4), rgba(158, 240, 25, 0.8)) 1;
+  .border-blue-gradient {
+    border-image: linear-gradient(to right, rgba(1, 27, 72, 0.4), rgba(1, 138, 190, 0.8)) 1;
   }
 }

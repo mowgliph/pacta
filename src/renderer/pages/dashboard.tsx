@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, Link } from 'wouter';
 import useStore from '@/renderer/store/useStore';
 import { Button } from "@/renderer/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/renderer/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/renderer/components/ui/card";
 import { Skeleton } from "@/renderer/components/ui/skeleton";
 import { 
-    DollarSign, 
     TrendingUp, 
     AlertTriangle, 
     PlusCircle, 
@@ -13,19 +12,21 @@ import {
     ListChecks,
     History,
     FilePlus,
+    BarChart3,
+    FileUp,
+    Download,
+    Settings,
+    Shield,
+    Calendar,
     LucideIcon
 } from 'lucide-react';
 import statisticsService from '@/renderer/services/statisticsService';
 import { motion } from 'framer-motion';
 import { SkeletonCard, SkeletonList, SkeletonChart } from '@/renderer/components/ui/skeleton';
-import { HoverElevation, HoverScale, HoverGlow, HoverBounce, HoverBackground } from '@/renderer/components/ui/micro-interactions';
-
-interface User {
-  id: string;
-  name: string;
-  role: string;
-  email: string;
-}
+import { HoverElevation, HoverGlow, HoverBounce, HoverBackground } from '@/renderer/components/ui/micro-interactions';
+import NotificationPanel from '../components/NotificationPanel';
+import NotificationPreferences from '../components/NotificationPreferences';
+import SystemHealthPanel from '../components/SystemHealthPanel';
 
 interface ExpiringContract {
   id: string;
@@ -65,6 +66,7 @@ interface ActionButtonProps {
   text: string;
   icon: LucideIcon;
   onClick: () => void;
+  variant?: 'default' | 'outline' | 'ghost';
 }
 
 const mockExpiringContracts: ExpiringContract[] = [
@@ -103,7 +105,17 @@ const Dashboard: React.FC = () => {
       setIsLoading(true);
       try {
         const stats = await statisticsService.getGeneralStatistics();
-        setStatsData(stats);
+        setStatsData({
+          totalContracts: stats.totalContracts || 0,
+          statusCounts: { 
+            Active: stats.activeContracts || 0,
+            Pending: stats.pendingContracts || 0,
+            Expired: stats.expiredContracts || 0 
+          },
+          expiringSoonCount: stats.expiringContracts || 0,
+          expiringContracts: stats.expiringContractsList || [],
+          recentSupplements: stats.recentSupplements || []
+        });
       } catch (err) { 
         console.error("Error fetching stats, using mock data:", err);
         setStatsData({
@@ -129,74 +141,69 @@ const Dashboard: React.FC = () => {
   const recentSupplements = statsData?.recentSupplements || mockRecentSupplements;
   const finalExpiringSoonCount = statsData?.expiringSoonCount ?? expiringContracts.length;
 
-  const StatCard: React.FC<StatCardProps> = ({ title, value, description, icon: Icon, colorClass = 'purple' }) => (
+  const StatCard: React.FC<StatCardProps> = ({ title, value, description, icon: Icon, colorClass = 'blue' }) => (
     <HoverElevation>
-      <HoverGlow>
-        <Card className={`bg-${colorClass}-50 border-${colorClass}-200 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800 dark:border-gray-700`}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className={`text-sm font-medium text-${colorClass}-700 dark:text-${colorClass}-300`}>{title}</CardTitle>
-            {Icon && <Icon className={`h-4 w-4 text-${colorClass}-500 dark:text-${colorClass}-400`} />}
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold text-${colorClass}-800 dark:text-${colorClass}-200`}>{value}</div>
-            {description && <p className={`text-xs text-${colorClass}-600 dark:text-${colorClass}-400`}>{description}</p>}
-          </CardContent>
-        </Card>
-      </HoverGlow>
+      <Card className={`border-l-4 border-l-primary shadow-sm hover:shadow-md transition-all duration-300 bg-card/95 backdrop-blur-sm`}>
+        <CardContent className="p-6">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground mb-1">{title}</p>
+              <h3 className="text-2xl font-bold text-foreground">{value}</h3>
+              {description && <p className="text-xs text-muted-foreground mt-1">{description}</p>}
+            </div>
+            {Icon && <div className="p-2 rounded-full bg-primary/10"><Icon className="h-6 w-6 text-primary" /></div>}
+          </div>
+        </CardContent>
+      </Card>
     </HoverElevation>
   );
 
-  const ActionButton: React.FC<ActionButtonProps> = ({ text, icon: Icon, onClick }) => (
+  const ActionButton: React.FC<ActionButtonProps> = ({ text, icon: Icon, onClick, variant = 'default' }) => (
     <motion.div whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} transition={{ type: 'spring', stiffness: 400, damping: 17 }}>
-        <Button 
-          variant="outline" 
-          className="w-full h-full p-4 flex flex-col items-center justify-center space-y-1 text-center bg-card border hover:bg-accent hover:border-brand/50 group shadow-sm hover:shadow-md dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700"
-          onClick={onClick}
-        >
-            <Icon className="h-7 w-7 mb-1 text-brand group-hover:scale-110 transition-transform duration-150 dark:text-brand-light" />
-            <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors dark:group-hover:text-white">{text}</span>
-        </Button>
+      <Button 
+        variant={variant}
+        className="w-full h-full p-4 flex flex-col items-center justify-center space-y-2 text-center shadow-sm hover:shadow-md transition-all duration-300 bg-card/95 backdrop-blur-sm"
+        onClick={onClick}
+      >
+        <div className="p-2 rounded-full bg-primary/10 mb-1">
+          <Icon className="h-4 w-4 text-primary transition-transform duration-150" />
+        </div>
+        <span className="text-xs font-medium">{text}</span>
+      </Button>
     </motion.div>
   );
 
   if (isLoading) {
     return (
-      <motion.div 
-        className="space-y-8 p-4 md:p-6 lg:p-8 bg-background text-foreground"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4 }}
-      >
+      <div className="p-6 space-y-8 bg-background">
         <div className="mb-6">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-4 w-64 mt-2" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <SkeletonCard />
-            <SkeletonCard />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-40" />
+              </CardHeader>
+              <CardContent>
+                <SkeletonChart />
+              </CardContent>
+            </Card>
           </div>
           
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <AlertTriangle className="h-5 w-5 mr-2" />
-                  Contratos Próximos a Vencer
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <SkeletonList count={3} />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <History className="h-5 w-5 mr-2" />
-                  Actividad Reciente
-                </CardTitle>
+                <Skeleton className="h-6 w-40" />
               </CardHeader>
               <CardContent>
                 <SkeletonList count={3} />
@@ -204,111 +211,172 @@ const Dashboard: React.FC = () => {
             </Card>
           </div>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Estadísticas de Contratos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SkeletonChart />
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Distribución por Estado</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SkeletonChart />
-            </CardContent>
-          </Card>
-        </div>
-      </motion.div>
+      </div>
     );
   }
 
   return (
-    <motion.div 
-        className="space-y-8 p-4 md:p-6 lg:p-8 bg-background text-foreground"
-        initial={{ opacity: 0, y: 10 }}
+    <div className="p-6 bg-background relative overflow-hidden">
+      {/* Fondo con gradiente sutil */}
+      <div className="absolute -z-10 top-0 left-0 w-full h-full bg-gradient-to-br from-primary/5 to-background"></div>
+      
+      {/* Encabezado con saludo */}
+      <motion.div 
+        className="mb-8"
+        initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-    >
-      <div className="mb-6">
-        <HoverScale>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        </HoverScale>
-        <p className="text-sm text-muted-foreground">{user ? `Bienvenido de nuevo, ${user.name}!` : 'Resumen general del sistema'}</p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <StatCard 
-            title="Contratos Totales" 
-            value={totalContracts} 
-            description="Registrados en el sistema"
-            icon={FileText}
-            colorClass="blue"
-          />
-          <StatCard 
-            title="Contratos Activos" 
-            value={statusCounts.Active} 
-            description="Actualmente vigentes"
-            icon={TrendingUp}
-            colorClass="green"
-          />
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
+        <div className="relative">
+          <div className="absolute -z-10 top-0 left-1/4 w-1/2 h-24 bg-primary/5 blur-3xl rounded-full"></div>
+          <h1 className="text-3xl font-bold text-foreground flex items-center">
+            {user ? `¡Hola, ${user.name}!` : 'Dashboard'}
+            <div className="ml-2 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <Shield className="h-4 w-4 text-primary" />
+            </div>
+          </h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            Resumen general del sistema de gestión de contratos
+          </p>
         </div>
-        
-        <div className="space-y-6">
-          <HoverBounce>
-            <Card className="shadow-sm bg-card dark:bg-gray-800 border dark:border-gray-700">
-              <CardHeader className="border-b pb-3 dark:border-gray-600">
-                <CardTitle className="flex items-center text-base font-semibold text-foreground">
-                  <AlertTriangle className="h-5 w-5 mr-2 text-orange-500"/> 
-                  Vencen Pronto ({finalExpiringSoonCount})
+      </motion.div>
+
+      {/* Tarjetas de estadísticas */}
+      <motion.div 
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
+      >
+        <StatCard 
+          title="Contratos Totales" 
+          value={totalContracts} 
+          icon={FileText}
+          colorClass="primary"
+        />
+        <StatCard 
+          title="Contratos Activos" 
+          value={statusCounts.Active} 
+          icon={TrendingUp}
+          colorClass="primary"
+        />
+        <StatCard 
+          title="Próximos a Vencer" 
+          value={finalExpiringSoonCount} 
+          icon={Calendar}
+          colorClass="primary"
+        />
+      </motion.div>
+
+      {/* Panel de acciones rápidas */}
+      <motion.div
+        className="mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+      >
+        <h2 className="text-lg font-semibold mb-4 flex items-center">
+          <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center mr-2">
+            <PlusCircle className="h-3 w-3 text-primary" />
+          </div>
+          Acciones Rápidas
+        </h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <HoverGlow>
+            <ActionButton text="Nuevo Contrato" icon={PlusCircle} onClick={() => navigate('/contracts/new')} />
+          </HoverGlow>
+          <HoverGlow>
+            <ActionButton text="Ver Contratos" icon={ListChecks} onClick={() => navigate('/contracts')} />
+          </HoverGlow>
+          <HoverGlow>
+            <ActionButton text="Estadísticas" icon={BarChart3} onClick={() => navigate('/advanced-statistics')} />
+          </HoverGlow>
+          <HoverGlow>
+            <ActionButton text="Añadir Suplemento" icon={FilePlus} onClick={() => navigate('/contracts')} />
+          </HoverGlow>
+          <HoverGlow>
+            <ActionButton text="Backup" icon={Download} onClick={() => navigate('/settings')} />
+          </HoverGlow>
+        </div>
+      </motion.div>
+
+      {/* Contenido principal */}
+      <motion.div 
+        className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+      >
+        {/* Gráfico y estadísticas */}
+        <div className="lg:col-span-2 space-y-6">
+          <HoverGlow>
+            <Card className="shadow-sm bg-card/95 backdrop-blur-sm border border-primary/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-semibold flex items-center">
+                  <div className="p-2 rounded-full bg-primary/10 mr-2">
+                    <BarChart3 className="h-4 w-4 text-primary" />
+                  </div>
+                  Distribución de Contratos
                 </CardTitle>
+                <CardDescription>Resumen por estado y tipo</CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto max-h-60 px-4 py-2 text-sm space-y-2 mt-2 custom-scrollbar">
-                {expiringContracts.length > 0 ? expiringContracts.map(c => (
-                  <HoverBackground key={c.id}>
-                    <Link href={`/contracts/${c.id}`}>
-                      <a className="flex justify-between items-center border-b pb-1.5 last:border-b-0 hover:bg-accent dark:hover:bg-gray-700 p-1 rounded transition-colors cursor-pointer dark:border-gray-700">
-                        <span className="font-medium">{c.name}</span>
-                        <span className="text-muted-foreground">{getFormattedDate(c.endDate)}</span>
-                      </a>
-                    </Link>
-                  </HoverBackground>
-                )) : (
-                  <p className="text-center text-muted-foreground py-4">No hay contratos próximos a vencer.</p>
-                )}
+              <CardContent>
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  {/* Aquí iría el componente de gráfico real */}
+                  <div className="text-center w-full">
+                    <div className="flex justify-center space-x-4 mb-4">
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-primary mr-2"></div>
+                        <span className="text-xs">Activos (65%)</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-blue-400 mr-2"></div>
+                        <span className="text-xs">Pendientes (20%)</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 rounded-full bg-blue-300 mr-2"></div>
+                        <span className="text-xs">Vencidos (15%)</span>
+                      </div>
+                    </div>
+                    <div className="w-full h-32 bg-muted/20 rounded-lg flex items-end px-4">
+                      <div className="w-1/4 h-[65%] bg-primary rounded-t-md mx-1"></div>
+                      <div className="w-1/4 h-[20%] bg-blue-400 rounded-t-md mx-1"></div>
+                      <div className="w-1/4 h-[15%] bg-blue-300 rounded-t-md mx-1"></div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          </HoverBounce>
+          </HoverGlow>
 
-          <HoverBounce>
-            <Card className="shadow-sm bg-card dark:bg-gray-800 border dark:border-gray-700">
-              <CardHeader className="border-b pb-3 dark:border-gray-600">
-                <CardTitle className="flex items-center text-base font-semibold text-foreground">
-                  <History className="h-5 w-5 mr-2 text-muted-foreground"/> 
-                  Actividad Reciente (Suplementos)
+          <HoverGlow>
+            <Card className="shadow-sm bg-card/95 backdrop-blur-sm border border-primary/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-semibold flex items-center">
+                  <div className="p-2 rounded-full bg-primary/10 mr-2">
+                    <History className="h-4 w-4 text-primary" />
+                  </div>
+                  Actividad Reciente
                 </CardTitle>
+                <CardDescription>Últimos suplementos añadidos</CardDescription>
               </CardHeader>
-              <CardContent className="pt-4">
+              <CardContent>
                 {recentSupplements.length > 0 ? (
                   <ul className="space-y-3">
-                    {recentSupplements.slice(0, 5).map(s => (
+                    {recentSupplements.slice(0, 4).map(s => (
                       <HoverBackground key={s.id}>
-                        <li className="flex items-start space-x-3 border-b pb-2 last:border-b-0 dark:border-gray-700">
-                          <FilePlus className="h-4 w-4 mt-0.5 text-brand dark:text-brand-light flex-shrink-0"/>
+                        <li className="flex items-start space-x-3 border-b pb-2 last:border-b-0 rounded-md p-2">
+                          <div className="p-1.5 rounded-full bg-primary/10 flex-shrink-0">
+                            <FilePlus className="h-3 w-3 text-primary" />
+                          </div>
                           <div className="flex-1">
-                            <p className="text-sm text-muted-foreground leading-snug">
-                              <span className="font-medium text-foreground">{s.description || 'Descripción no disponible'}</span> para el contrato 
+                            <p className="text-sm leading-snug">
+                              <span className="font-medium">{s.description || 'Descripción no disponible'}</span> para el contrato 
                               <Link href={`/contracts/${s.contractId}`}>
-                                <a className="text-blue-600 hover:underline ml-1 font-medium dark:text-blue-400">{s.contractName || `ID ${s.contractId}`}</a>
+                                <a className="text-primary hover:underline ml-1 font-medium">{s.contractName || `ID ${s.contractId}`}</a>
                               </Link>
                             </p>
-                            <p className="text-xs text-muted-foreground/80 mt-0.5">{getFormattedDate(s.date)}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{getFormattedDate(s.date)}</p>
                           </div>
                         </li>
                       </HoverBackground>
@@ -319,19 +387,89 @@ const Dashboard: React.FC = () => {
                 )}
               </CardContent>
             </Card>
+          </HoverGlow>
+        </div>
+
+        {/* Panel lateral */}
+        <div className="space-y-6">
+          <HoverGlow>
+            <SystemHealthPanel />
+          </HoverGlow>
+
+          <HoverBounce>
+            <Card className="shadow-sm border-l-4 border-l-primary bg-card/95 backdrop-blur-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-semibold flex items-center">
+                  <div className="p-2 rounded-full bg-primary/10 mr-2">
+                    <AlertTriangle className="h-4 w-4 text-primary"/> 
+                  </div>
+                  Contratos por Vencer
+                </CardTitle>
+                <CardDescription>Próximos 30 días</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
+                  {expiringContracts.length > 0 ? expiringContracts.map(c => (
+                    <HoverBackground key={c.id}>
+                      <Link href={`/contracts/${c.id}`}>
+                        <a className="flex justify-between items-center border-b py-2 px-2 last:border-b-0 hover:bg-accent/50 rounded-md transition-colors cursor-pointer">
+                          <div className="flex items-center">
+                            <div className="p-1.5 rounded-full bg-primary/10 mr-2">
+                              <Calendar className="h-3 w-3 text-primary" />
+                            </div>
+                            <span className="font-medium text-sm">{c.name}</span>
+                          </div>
+                          <span className="text-xs text-primary px-2 py-1 bg-primary/5 rounded-full">{getFormattedDate(c.endDate)}</span>
+                        </a>
+                      </Link>
+                    </HoverBackground>
+                  )) : (
+                    <p className="text-center text-muted-foreground py-4 text-sm">No hay contratos próximos a vencer.</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </HoverBounce>
-        </div>
-      </div>
 
-      <div>
-        <h2 className="text-xl font-semibold mb-4 text-foreground">Acciones Rápidas</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          <ActionButton text="Nuevo Contrato" icon={PlusCircle} onClick={() => navigate('/contracts/new')} />
-          <ActionButton text="Ver Contratos" icon={ListChecks} onClick={() => navigate('/contracts')} />
-        </div>
-      </div>
+          <HoverGlow>
+            <Card className="shadow-sm bg-card/95 backdrop-blur-sm border border-primary/10">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-semibold flex items-center">
+                  <div className="p-2 rounded-full bg-primary/10 mr-2">
+                    <Settings className="h-4 w-4 text-primary"/> 
+                  </div>
+                  Configuración Rápida
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Button variant="outline" className="w-full justify-start text-sm bg-card hover:bg-primary/5" onClick={() => navigate('/settings')}>
+                    <div className="p-1.5 rounded-full bg-primary/10 mr-2">
+                      <Settings className="h-3 w-3 text-primary" />
+                    </div>
+                    Configuración del Sistema
+                  </Button>
+                  <Button variant="outline" className="w-full justify-start text-sm bg-card hover:bg-primary/5" onClick={() => navigate('/user-profile')}>
+                    <div className="p-1.5 rounded-full bg-primary/10 mr-2">
+                      <FileUp className="h-3 w-3 text-primary" />
+                    </div>
+                    Gestionar Perfil
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </HoverGlow>
 
-    </motion.div>
+          <HoverGlow>
+            <NotificationPanel />
+          </HoverGlow>
+
+          <HoverGlow>
+            <NotificationPreferences />
+          </HoverGlow>
+        </div>
+      </motion.div>
+    </div>
   );
 };
 

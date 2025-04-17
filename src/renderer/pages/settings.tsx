@@ -5,6 +5,7 @@ import { Input } from '@/renderer/components/ui/input';
 import { Label } from '@/renderer/components/ui/label';
 import { Button } from '@/renderer/components/ui/button';
 import { toast } from '@/renderer/hooks/use-toast';
+import SystemSettingsPanel from '../components/SystemSettingsPanel';
 
 const defaultConfig: SMTPConfig = {
   host: '',
@@ -115,6 +116,9 @@ const Settings: React.FC = () => {
           </form>
         </CardContent>
       </Card>
+      <div className="mt-8">
+        <SystemSettingsPanel />
+      </div>
     </div>
   );
 };

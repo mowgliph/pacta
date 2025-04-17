@@ -2,20 +2,20 @@
 
 ## 1. Flujo de Entrada
 
-### Modo Público (Sin autenticación)
-1. Landing page con información general
-2. Dashboard público con datos de demostración
-   - Estadísticas generales
-   - Lista limitada de contratos
-   - Gráficos básicos
-3. Acceso restringido a funciones premium
-
-### Modo Autenticado
-1. Login con credenciales
+### Entrada Principal
+1. Login con credenciales (punto de entrada principal)
    - Usuario RA (desarrollador)
    - Usuario Admin (cliente)
    - Usuarios adicionales creados
 2. Redirección al dashboard completo
+
+### Modo Público (Configurable)
+1. Landing page con información general (opcional, configurable desde ajustes)
+2. Dashboard público con datos de demostración (opcional, configurable desde ajustes)
+   - Estadísticas generales
+   - Lista limitada de contratos
+   - Gráficos básicos
+3. Acceso restringido a funciones premium
 
 ## 2. Dashboard Principal
 

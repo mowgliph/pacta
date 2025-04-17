@@ -31,6 +31,11 @@ export interface SMTPConfig {
   enabled: boolean;
 }
 
+export interface AppConfig {
+  enableLandingPage: boolean;
+  enablePublicDashboard: boolean;
+}
+
 export class ElectronAPI {
   private static instance: ElectronAPI;
   
@@ -143,6 +148,16 @@ export class ElectronAPI {
     },
     testConnection: async (config: SMTPConfig): Promise<{success: boolean; message: string}> => {
       return this.invoke('smtp:testConnection', config);
+    }
+  };
+
+  // Application settings methods
+  settings = {
+    getAppConfig: async (): Promise<AppConfig> => {
+      return this.invoke('settings:getAppConfig');
+    },
+    updateAppConfig: async (config: AppConfig): Promise<AppConfig> => {
+      return this.invoke('settings:updateAppConfig', config);
     }
   };
 }
