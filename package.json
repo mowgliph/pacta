@@ -83,6 +83,7 @@
     "zustand": "^4.3.8"
   },
   "devDependencies": {
+    "@tailwindcss/nesting": "0.0.0-insiders.565cd3e",
     "@tanstack/react-query-devtools": "^5.74.3",
     "@types/jest": "^29.2.1",
     "@types/node": "^18.16.18",
@@ -103,6 +104,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-vitest": "^0.1.5",
     "postcss": "^8.5.3",
+    "postcss-import": "^16.1.0",
     "postcss-nesting": "^13.0.1",
     "prettier": "^2.8.4",
     "prisma": "^6.6.0",
