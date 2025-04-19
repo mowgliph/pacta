@@ -9,19 +9,20 @@ datasource db {
 }
 
 model User {
-  id            Int            @id @default(autoincrement())
-  username      String         @unique
-  email         String         @unique
-  password      String
-  role          String         @default("User")
-  notifyEnabled Boolean        @default(true) // Changed from notifications to notifyEnabled
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  contracts     Contract[]
-  accessLogs    AccessLog[]
-  permissions   Permission[]
-  activities    Activity[]
-  notifications Notification[] // Keep this relation
+  id                     Int                      @id @default(autoincrement())
+  username               String                   @unique
+  email                  String                   @unique
+  password               String
+  role                   String                   @default("User")
+  notifyEnabled          Boolean                  @default(true) // Changed from notifications to notifyEnabled
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  contracts              Contract[]
+  accessLogs             AccessLog[]
+  permissions            Permission[]
+  activities             Activity[]
+  notifications          Notification[] // Keep this relation
+  NotificationPreference NotificationPreference[]
 }
 
 model Company {
@@ -131,35 +132,35 @@ model Supplement {
 }
 
 model Notification {
-  id          Int      @id @default(autoincrement())
-  userId      Int
-  title       String
-  message     String
-  type        String   // 'contract', 'supplement', 'system'
-  subtype     String   // 'expiration', 'creation', 'modification', etc.
-  isRead      Boolean  @default(false)
-  data        Json?    // Datos adicionales en formato JSON
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id])
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String
+  message   String
+  type      String // 'contract', 'supplement', 'system'
+  subtype   String // 'expiration', 'creation', 'modification', etc.
+  isRead    Boolean  @default(false)
+  data      Json? // Datos adicionales en formato JSON
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model NotificationPreference {
-  id              Int      @id @default(autoincrement())
-  userId          Int
-  type            String   // Tipo de notificación
-  email           Boolean  @default(true)
-  inApp           Boolean  @default(true)
-  system          Boolean  @default(true)
-  user            User     @relation(fields: [userId], references: [id])
+  id     Int     @id @default(autoincrement())
+  userId Int
+  type   String // Tipo de notificación
+  email  Boolean @default(true)
+  inApp  Boolean @default(true)
+  system Boolean @default(true)
+  user   User    @relation(fields: [userId], references: [id])
 }
 
 model NotificationQueue {
-  id          Int      @id @default(autoincrement())
-  type        String   // 'email', 'inApp', 'system'
-  payload     Json     // Contenido de la notificación
-  status      String   // 'pending', 'sent', 'failed'
-  attempts    Int      @default(0)
-  createdAt   DateTime @default(now())
+  id          Int       @id @default(autoincrement())
+  type        String // 'email', 'inApp', 'system'
+  payload     Json // Contenido de la notificación
+  status      String // 'pending', 'sent', 'failed'
+  attempts    Int       @default(0)
+  createdAt   DateTime  @default(now())
   processedAt DateTime?
   error       String?
 }
@@ -211,9 +212,9 @@ model Backup {
 }
 
 model Setting {
-  key      String   @id
-  value    String
-  category String
+  key       String   @id
+  value     String
+  category  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -242,11 +243,11 @@ model EmailTemplate {
 }
 
 model EmailLog {
-  id           Int       @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   to           String
   subject      String
   body         String
-  status       String    // "sent", "failed"
+  status       String // "sent", "failed"
   errorMessage String?
-  createdAt    DateTime  @default(now())
+  createdAt    DateTime @default(now())
 }
