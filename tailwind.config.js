@@ -4,8 +4,14 @@ const plugin = require('tailwindcss/plugin');
 const config = {
   darkMode: ["class"],
   content: [
+    "./src/renderer/index.html",
+    "./src/renderer/**/*.{js,ts,jsx,tsx}",
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
+  experimental: {
+    optimizeUniversalDefaults: true,
+    arbitraryValues: true,
+  },
   theme: {
     container: {
       center: true,
@@ -39,7 +45,6 @@ const config = {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
         },
-        // Adding the new lime-green accent color from the reference
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
@@ -97,6 +102,25 @@ const config = {
           {
             fontWeight: 'normal'
           }
+        ],
+        "md-responsive": [
+        '16px',
+        {
+          fontWeight: 'normal',
+          lineHeight: '24px',
+          '@screen sm': {
+            fontSize: '18px',
+            lineHeight: '28px'
+          },
+          '@screen md': {
+            fontSize: '20px',
+            lineHeight: '32px'
+          },
+          '@screen lg': {
+            fontSize: '22px',
+            lineHeight: '36px'
+          }
+        }
         ]
       },
       backdropBlur: {
@@ -154,21 +178,7 @@ const config = {
     }
   },
   plugins: [
-    require("tailwindcss-animate"),
-    plugin(function({ addUtilities }) {
-      addUtilities({
-        '.text-balance': {
-          'text-wrap': 'balance',
-        },
-        '.no-scrollbar': {
-          '-ms-overflow-style': 'none',
-          'scrollbar-width': 'none',
-          '&::-webkit-scrollbar': {
-            display: 'none',
-          },
-        },
-      });
-    }),
+    require("tailwindcss-animate")
   ],
 };
 
