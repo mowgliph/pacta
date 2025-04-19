@@ -7,7 +7,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "backend": "node backend/index.js && ts-node prisma/init.ts",
-    "electron_dev": "concurrently \"cross-env BROWSER=none pnpm run start\" \"pnpm run prisma_generate && pnpm run prisma_deploy && pnpm run prisma_migrate && pnpm run backend\" \"wait-on tcp:3001 && electron .\"",
+    "electron_dev": "concurrently \"cross-env BROWSER=none pnpm run start\" \"pnpm run backend\" \"wait-on tcp:3001 && electron .\"",
     "electron_build": "pnpm build && electron-builder",
     "prisma_generate": "prisma generate",
     "prisma_deploy": "prisma migrate deploy",
