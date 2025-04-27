@@ -1,6 +1,4 @@
-import { ipcMain, app } from 'electron';
-import { IpcChannels, CreateBackupRequest, RestoreBackupRequest, DeleteBackupRequest } from '../../shared/types';
-import { prisma } from '../../lib/prisma';
+import { app } from 'electron';
 import { withErrorHandling } from '../setup';
 import { logger } from '../../utils/logger';
 import * as fs from 'fs';
@@ -8,6 +6,12 @@ import * as path from 'path';
 import { z } from 'zod';
 import { BackupManager } from '../../lib/backup-manager';
 import { ErrorHandler } from '../error-handler';
+import { BackupChannels } from '../channels/backup.channels';
+import { 
+  CreateBackupRequest, 
+  RestoreBackupRequest, 
+  DeleteBackupRequest 
+} from '../../shared/types';
 
 // Asegurar que el directorio de backups existe
 const BACKUP_DIR = path.join(app.getPath('userData'), 'backups');
@@ -36,7 +40,7 @@ export function setupBackupHandlers(): void {
   backupManager.setupScheduledBackup();
 
   // Obtener lista de backups
-  withErrorHandling(IpcChannels.BACKUPS_GET_ALL, async () => {
+  withErrorHandling(BackupChannels.GET_ALL, async () => {
     try {
       const backups = await backupManager.getBackups();
       return { backups };
@@ -47,7 +51,7 @@ export function setupBackupHandlers(): void {
   });
 
   // Crear backup
-  withErrorHandling(IpcChannels.BACKUPS_CREATE, async (_, data: CreateBackupRequest) => {
+  withErrorHandling(BackupChannels.CREATE, async (_, data: CreateBackupRequest) => {
     try {
       // Validar datos
       const { userId, note } = createBackupSchema.parse(data);
@@ -85,7 +89,7 @@ export function setupBackupHandlers(): void {
   });
 
   // Restaurar backup
-  withErrorHandling(IpcChannels.BACKUPS_RESTORE, async (_, data: RestoreBackupRequest) => {
+  withErrorHandling(BackupChannels.RESTORE, async (_, data: RestoreBackupRequest) => {
     try {
       // Validar datos
       const { backupId, userId } = restoreBackupSchema.parse(data);
@@ -105,7 +109,7 @@ export function setupBackupHandlers(): void {
   });
 
   // Eliminar backup
-  withErrorHandling(IpcChannels.BACKUPS_DELETE, async (_, data: DeleteBackupRequest) => {
+  withErrorHandling(BackupChannels.DELETE, async (_, data: DeleteBackupRequest) => {
     try {
       // Validar datos
       const { backupId } = deleteBackupSchema.parse(data);
@@ -125,7 +129,7 @@ export function setupBackupHandlers(): void {
   });
 
   // Limpiar backups antiguos manualmente
-  withErrorHandling(IpcChannels.BACKUPS_CLEAN_OLD, async () => {
+  withErrorHandling(BackupChannels.CLEAN_OLD, async () => {
     await backupManager.cleanOldBackups();
     return { success: true, message: 'Limpieza de backups antiguos completada' };
   });

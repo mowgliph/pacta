@@ -1,5 +1,3 @@
-import { ipcMain } from 'electron';
-import { IPC_CHANNELS } from '../../utils/constants';
 import { prisma } from '../../lib/prisma';
 import { withErrorHandling } from '../setup';
 import { logger } from '../../utils/logger';
@@ -8,7 +6,8 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { getAuthToken, setAuthToken, clearAuth } from '../../store/store-manager';
 import { z } from 'zod';
-import { IpcErrorHandler } from '../error-handler';
+import { ErrorHandler } from '../error-handler';
+import { AuthChannels } from '../channels/auth.channels';
 
 // Definir esquemas de validación con zod
 const loginSchema = z.object({
@@ -37,7 +36,7 @@ const isDefaultUser = (email: string): boolean => {
 
 export function setupAuthHandlers(): void {
   // Iniciar sesión
-  withErrorHandling(IPC_CHANNELS.USERS_LOGIN, async (_, loginData) => {
+  withErrorHandling(AuthChannels.LOGIN, async (_, loginData) => {
     try {
       // Validar datos de entrada con zod
       const { email, password, rememberMe, isSpecialUser, deviceId } = loginSchema.parse(loginData);
@@ -117,20 +116,20 @@ export function setupAuthHandlers(): void {
 
       if (!user) {
         logger.warn(`Intento de inicio de sesión con email no encontrado: ${email}`);
-        throw IpcErrorHandler.createError('AuthenticationError', 'Credenciales inválidas');
+        throw ErrorHandler.createError('AuthenticationError', 'Credenciales inválidas');
       }
 
       // Verificar si el usuario está activo
       if (!user.isActive) {
         logger.warn(`Intento de inicio de sesión con usuario desactivado: ${email}`);
-        throw IpcErrorHandler.createError('AuthenticationError', 'Usuario desactivado');
+        throw ErrorHandler.createError('AuthenticationError', 'Usuario desactivado');
       }
 
       // Comparar contraseña
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
         logger.warn(`Contraseña incorrecta para usuario: ${email}`);
-        throw IpcErrorHandler.createError('AuthenticationError', 'Credenciales inválidas');
+        throw ErrorHandler.createError('AuthenticationError', 'Credenciales inválidas');
       }
 
       // Configurar tiempo de expiración según la opción "recordarme"
@@ -184,7 +183,7 @@ export function setupAuthHandlers(): void {
           message: err.message
         }));
         logger.warn('Error de validación en login:', validationErrors);
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'ValidationError', 
           `Error de validación: ${validationErrors[0].message}`
         );
@@ -194,14 +193,14 @@ export function setupAuthHandlers(): void {
   });
 
   // Cerrar sesión
-  withErrorHandling(IPC_CHANNELS.USERS_LOGOUT, async () => {
+  withErrorHandling(AuthChannels.LOGOUT, async () => {
     clearAuth();
     logger.info('Usuario cerró sesión');
     return { success: true };
   });
 
   // Verificar token
-  withErrorHandling('auth:verify', async () => {
+  withErrorHandling(AuthChannels.VERIFY_TOKEN, async () => {
     const token = getAuthToken();
     
     if (!token) {

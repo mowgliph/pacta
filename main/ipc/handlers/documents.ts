@@ -1,12 +1,13 @@
 import { withErrorHandling } from '../setup';
-import { IpcErrorHandler } from '../error-handler';
+import { ErrorHandler } from '../error-handler';
 import { logger } from '../../utils/logger';
-import fs from 'fs';
-import path from 'path';
-import { app } from 'electron';
-import { v4 as uuidv4 } from 'uuid';
-import { DocumentService } from '../../services/document.service';
 import { z } from 'zod';
+import { DocumentsChannels } from '../channels/documents.channels';
+import path from 'path';
+import fs from 'fs/promises';
+import { app } from 'electron';
+import crypto from 'crypto';
+import { prisma } from '../../lib/prisma';
 
 // Esquemas de validación para documentos
 const documentMetadataSchema = z.object({
@@ -21,6 +22,184 @@ const documentMetadataSchema = z.object({
   tags: z.array(z.string()).optional(),
 });
 
+// Clase de servicio para documentos
+class DocumentService {
+  static async saveDocument(fileData, metadata, userId) {
+    try {
+      // Validar que al menos uno de contractId o supplementId esté presente
+      if (!metadata.contractId && !metadata.supplementId) {
+        throw new Error('Se requiere al menos contractId o supplementId');
+      }
+
+      // Crear directorio para documentos si no existe
+      const userDataPath = app.getPath('userData');
+      const documentsDir = path.join(userDataPath, 'documents');
+      await fs.mkdir(documentsDir, { recursive: true });
+
+      // Crear nombre de archivo seguro usando hash y extensión original
+      const fileExt = path.extname(metadata.originalName);
+      const hash = crypto
+        .createHash('md5')
+        .update(`${metadata.originalName}-${Date.now()}`)
+        .digest('hex');
+      const safeFileName = `${hash}${fileExt}`;
+      const filePath = path.join(documentsDir, safeFileName);
+
+      // Guardar archivo
+      await fs.writeFile(filePath, fileData.buffer);
+
+      // Crear registro en base de datos
+      const document = await prisma.document.create({
+        data: {
+          filename: safeFileName,
+          originalName: metadata.originalName,
+          mimeType: metadata.mimeType,
+          size: metadata.size,
+          path: filePath,
+          description: metadata.description,
+          tags: metadata.tags ? metadata.tags.join(',') : null,
+          isPublic: metadata.isPublic,
+          uploadedById: userId,
+          contractId: metadata.contractId,
+          supplementId: metadata.supplementId,
+        },
+        include: {
+          uploadedBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true
+            }
+          }
+        }
+      });
+
+      return document;
+    } catch (error) {
+      logger.error('Error al guardar documento:', error);
+      throw error;
+    }
+  }
+
+  static async getDocumentById(id) {
+    return await prisma.document.findUnique({
+      where: { id },
+      include: {
+        uploadedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+  }
+
+  static async getDocumentsByContract(contractId) {
+    return await prisma.document.findMany({
+      where: { contractId },
+      include: {
+        uploadedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: { uploadedAt: 'desc' }
+    });
+  }
+
+  static async getDocumentsBySupplement(supplementId) {
+    return await prisma.document.findMany({
+      where: { supplementId },
+      include: {
+        uploadedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: { uploadedAt: 'desc' }
+    });
+  }
+
+  static async deleteDocument(id, userId) {
+    const document = await prisma.document.findUnique({
+      where: { id }
+    });
+
+    if (!document) {
+      return false;
+    }
+
+    // Eliminar archivo físico
+    try {
+      await fs.unlink(document.path);
+    } catch (error) {
+      logger.warn(`No se pudo eliminar el archivo físico: ${document.path}`, error);
+    }
+
+    // Eliminar registro
+    await prisma.document.delete({
+      where: { id }
+    });
+
+    return true;
+  }
+
+  static async updateDocumentMetadata(id, metadata, userId) {
+    return await prisma.document.update({
+      where: { id },
+      data: {
+        description: metadata.description,
+        tags: metadata.tags ? metadata.tags.join(',') : undefined,
+        isPublic: metadata.isPublic
+      },
+      include: {
+        uploadedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      }
+    });
+  }
+
+  static async getDocumentFile(id, userId) {
+    const document = await prisma.document.findUnique({
+      where: { id }
+    });
+
+    if (!document) {
+      return null;
+    }
+
+    // Incrementar contador de descargas
+    await prisma.document.update({
+      where: { id },
+      data: {
+        downloads: { increment: 1 }
+      }
+    });
+
+    // Leer el archivo
+    const fileBuffer = await fs.readFile(document.path);
+    
+    return {
+      buffer: fileBuffer,
+      filename: document.originalName,
+      mimeType: document.mimeType
+    };
+  }
+}
+
 /**
  * Configurar manejadores IPC para documentos
  */
@@ -28,14 +207,14 @@ export function setupDocumentHandlers(): void {
   logger.info('Configurando manejadores IPC para documentos');
 
   // Subir documento
-  withErrorHandling('documents:upload', async (_, fileData, metadata, userId) => {
+  withErrorHandling(DocumentsChannels.SAVE, async (_, fileData, metadata, userId) => {
     try {
       // Validar metadata con Zod
       const validatedMetadata = documentMetadataSchema.parse(metadata);
       
       // Validar que al menos uno de contractId o supplementId esté presente
       if (!validatedMetadata.contractId && !validatedMetadata.supplementId) {
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'ValidationError', 
           'Se requiere al menos contractId o supplementId'
         );
@@ -43,7 +222,7 @@ export function setupDocumentHandlers(): void {
       
       // Validar que userId está presente
       if (!userId) {
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'ValidationError', 
           'Se requiere el ID del usuario'
         );
@@ -51,7 +230,7 @@ export function setupDocumentHandlers(): void {
       
       // Validar que fileData está presente
       if (!fileData || !fileData.buffer) {
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'ValidationError', 
           'Los datos del archivo son requeridos'
         );
@@ -75,7 +254,7 @@ export function setupDocumentHandlers(): void {
         }));
         
         logger.warn('Error de validación al subir documento:', validationErrors);
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'ValidationError',
           `Error de validación: ${validationErrors[0].message}`,
           validationErrors
@@ -88,16 +267,16 @@ export function setupDocumentHandlers(): void {
   });
 
   // Obtener documento por ID
-  withErrorHandling('documents:getById', async (_, documentId) => {
+  withErrorHandling(DocumentsChannels.GET_BY_ID, async (_, documentId) => {
     try {
       if (!documentId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del documento es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del documento es requerido');
       }
       
       const document = await DocumentService.getDocumentById(documentId);
       
       if (!document) {
-        throw IpcErrorHandler.createError('NotFoundError', 'Documento no encontrado');
+        throw ErrorHandler.createError('NotFoundError', 'Documento no encontrado');
       }
       
       return document;
@@ -111,7 +290,7 @@ export function setupDocumentHandlers(): void {
   withErrorHandling('documents:getByContract', async (_, contractId) => {
     try {
       if (!contractId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del contrato es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del contrato es requerido');
       }
       
       return await DocumentService.getDocumentsByContract(contractId);
@@ -125,7 +304,7 @@ export function setupDocumentHandlers(): void {
   withErrorHandling('documents:getBySupplement', async (_, supplementId) => {
     try {
       if (!supplementId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del suplemento es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del suplemento es requerido');
       }
       
       return await DocumentService.getDocumentsBySupplement(supplementId);
@@ -136,20 +315,20 @@ export function setupDocumentHandlers(): void {
   });
 
   // Eliminar documento
-  withErrorHandling('documents:delete', async (_, documentId, userId) => {
+  withErrorHandling(DocumentsChannels.DELETE, async (_, documentId, userId) => {
     try {
       if (!documentId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del documento es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del documento es requerido');
       }
       
       if (!userId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
       }
       
       const success = await DocumentService.deleteDocument(documentId, userId);
       
       if (!success) {
-        throw IpcErrorHandler.createError('NotFoundError', 'Documento no encontrado o sin permisos');
+        throw ErrorHandler.createError('NotFoundError', 'Documento no encontrado o sin permisos');
       }
       
       logger.info(`Documento eliminado: ${documentId} por usuario ${userId}`);
@@ -161,20 +340,20 @@ export function setupDocumentHandlers(): void {
   });
 
   // Actualizar metadata de documento
-  withErrorHandling('documents:updateMetadata', async (_, documentId, metadata, userId) => {
+  withErrorHandling(DocumentsChannels.UPDATE, async (_, documentId, metadata, userId) => {
     try {
       if (!documentId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del documento es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del documento es requerido');
       }
       
       if (!userId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
       }
       
       const updatedDocument = await DocumentService.updateDocumentMetadata(documentId, metadata, userId);
       
       if (!updatedDocument) {
-        throw IpcErrorHandler.createError('NotFoundError', 'Documento no encontrado o sin permisos');
+        throw ErrorHandler.createError('NotFoundError', 'Documento no encontrado o sin permisos');
       }
       
       logger.info(`Metadata de documento actualizada: ${documentId}`);
@@ -186,20 +365,20 @@ export function setupDocumentHandlers(): void {
   });
   
   // Descargar documento
-  withErrorHandling('documents:download', async (_, documentId, userId) => {
+  withErrorHandling(DocumentsChannels.DOWNLOAD, async (_, documentId, userId) => {
     try {
       if (!documentId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del documento es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del documento es requerido');
       }
       
       if (!userId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
       }
       
       const fileData = await DocumentService.getDocumentFile(documentId, userId);
       
       if (!fileData) {
-        throw IpcErrorHandler.createError('NotFoundError', 'Documento no encontrado o sin permisos');
+        throw ErrorHandler.createError('NotFoundError', 'Documento no encontrado o sin permisos');
       }
       
       logger.info(`Documento descargado: ${documentId} por usuario ${userId}`);

@@ -1,9 +1,10 @@
 import { withErrorHandling } from '../setup';
-import { IpcErrorHandler } from '../error-handler';
+import { ErrorHandler } from '../error-handler';
 import { logger } from '../../utils/logger';
 import { z } from 'zod';
 import { UserService } from '../../services/user.service';
 import { RoleService } from '../../services/role.service';
+import { UsersChannels, RolesChannels } from '../channels/users.channels';
 
 // Esquemas de validación
 const userCreateSchema = z.object({
@@ -35,7 +36,7 @@ export function setupUserHandlers(): void {
   logger.info('Configurando manejadores IPC para usuarios');
 
   // Obtener todos los usuarios
-  withErrorHandling('users:getAll', async () => {
+  withErrorHandling(UsersChannels.GET_ALL, async () => {
     try {
       return await UserService.getUsers();
     } catch (error) {
@@ -45,16 +46,16 @@ export function setupUserHandlers(): void {
   });
 
   // Obtener un usuario por ID
-  withErrorHandling('users:getById', async (_, userId: string) => {
+  withErrorHandling(UsersChannels.GET_BY_ID, async (_, userId: string) => {
     try {
       if (!userId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
       }
 
       const user = await UserService.getUserById(userId);
 
       if (!user) {
-        throw IpcErrorHandler.createError('NotFoundError', 'Usuario no encontrado');
+        throw ErrorHandler.createError('NotFoundError', 'Usuario no encontrado');
       }
 
       return user;
@@ -65,7 +66,7 @@ export function setupUserHandlers(): void {
   });
 
   // Crear un nuevo usuario
-  withErrorHandling('users:create', async (_, userData, creatorId: string) => {
+  withErrorHandling(UsersChannels.CREATE, async (_, userData, creatorId: string) => {
     try {
       // Validar datos con Zod
       const validatedData = userCreateSchema.parse(userData);
@@ -73,7 +74,7 @@ export function setupUserHandlers(): void {
       // Verificar si el email ya existe
       const existingUser = await UserService.getUserByEmail(validatedData.email);
       if (existingUser) {
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'ValidationError',
           'Ya existe un usuario con este email'
         );
@@ -99,7 +100,7 @@ export function setupUserHandlers(): void {
         }));
 
         logger.warn('Error de validación al crear usuario:', validationErrors);
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'ValidationError',
           `Error de validación: ${validationErrors[0].message}`,
           validationErrors
@@ -112,7 +113,7 @@ export function setupUserHandlers(): void {
   });
 
   // Actualizar un usuario
-  withErrorHandling('users:update', async (_, userData, updaterId: string) => {
+  withErrorHandling(UsersChannels.UPDATE, async (_, userData, updaterId: string) => {
     try {
       // Validar datos con Zod
       const validatedData = userUpdateSchema.parse(userData);
@@ -121,7 +122,7 @@ export function setupUserHandlers(): void {
       if (validatedData.email) {
         const existingUser = await UserService.getUserByEmail(validatedData.email);
         if (existingUser && existingUser.id !== validatedData.id) {
-          throw IpcErrorHandler.createError(
+          throw ErrorHandler.createError(
             'ValidationError',
             'Ya existe un usuario con este email'
           );
@@ -132,7 +133,7 @@ export function setupUserHandlers(): void {
       const updatedUser = await UserService.updateUser(validatedData.id, validatedData, updaterId);
 
       if (!updatedUser) {
-        throw IpcErrorHandler.createError('NotFoundError', 'Usuario no encontrado');
+        throw ErrorHandler.createError('NotFoundError', 'Usuario no encontrado');
       }
 
       logger.info(`Usuario actualizado: ${updatedUser.id}`);
@@ -152,7 +153,7 @@ export function setupUserHandlers(): void {
         }));
 
         logger.warn('Error de validación al actualizar usuario:', validationErrors);
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'ValidationError',
           `Error de validación: ${validationErrors[0].message}`,
           validationErrors
@@ -165,20 +166,20 @@ export function setupUserHandlers(): void {
   });
 
   // Eliminar un usuario (desactivar)
-  withErrorHandling('users:toggleActive', async (_, userId: string, adminId: string) => {
+  withErrorHandling(UsersChannels.TOGGLE_ACTIVE, async (_, userId: string, adminId: string) => {
     try {
       if (!userId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
       }
 
       if (!adminId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del administrador es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del administrador es requerido');
       }
 
       const result = await UserService.toggleUserActive(userId, adminId);
 
       if (!result) {
-        throw IpcErrorHandler.createError('NotFoundError', 'Usuario no encontrado');
+        throw ErrorHandler.createError('NotFoundError', 'Usuario no encontrado');
       }
 
       logger.info(`Estado de usuario cambiado: ${userId}, activo: ${result.isActive}`);
@@ -190,7 +191,7 @@ export function setupUserHandlers(): void {
   });
 
   // Cambiar contraseña
-  withErrorHandling('users:changePassword', async (_, passwordData) => {
+  withErrorHandling(UsersChannels.CHANGE_PASSWORD, async (_, passwordData) => {
     try {
       // Validar datos con Zod
       const validatedData = passwordChangeSchema.parse(passwordData);
@@ -202,7 +203,7 @@ export function setupUserHandlers(): void {
       );
 
       if (!success) {
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'ValidationError',
           'La contraseña actual es incorrecta'
         );
@@ -218,7 +219,7 @@ export function setupUserHandlers(): void {
         }));
 
         logger.warn('Error de validación al cambiar contraseña:', validationErrors);
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'ValidationError',
           `Error de validación: ${validationErrors[0].message}`,
           validationErrors
@@ -231,7 +232,7 @@ export function setupUserHandlers(): void {
   });
 
   // Obtener todos los roles
-  withErrorHandling('roles:getAll', async () => {
+  withErrorHandling(RolesChannels.GET_ALL, async () => {
     try {
       return await RoleService.getRoles();
     } catch (error) {
@@ -244,7 +245,7 @@ export function setupUserHandlers(): void {
   withErrorHandling('users:getPermissions', async (_, userId: string) => {
     try {
       if (!userId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
       }
 
       const permissions = await UserService.getUserPermissions(userId);

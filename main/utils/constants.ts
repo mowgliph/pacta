@@ -37,35 +37,3 @@ export const CSP_POLICY = {
   'base-uri': ["'self'"],
   'form-action': ["'self'"]
 };
-
-// IPC Channels
-export const IPC_CHANNELS = {
-  // App management
-  APP_QUIT: 'app:quit',
-  APP_MINIMIZE: 'app:minimize',
-  APP_MAXIMIZE: 'app:maximize',
-  
-  // Contracts
-  CONTRACTS_GET_ALL: 'contracts:getAll',
-  CONTRACTS_GET_BY_ID: 'contracts:getById',
-  CONTRACTS_CREATE: 'contracts:create',
-  CONTRACTS_UPDATE: 'contracts:update',
-  CONTRACTS_DELETE: 'contracts:delete',
-  
-  // Supplements
-  SUPPLEMENTS_GET_ALL: 'supplements:getAll',
-  SUPPLEMENTS_GET_BY_CONTRACT: 'supplements:getByContract',
-  SUPPLEMENTS_GET_BY_ID: 'supplements:getById',
-  SUPPLEMENTS_CREATE: 'supplements:create',
-  SUPPLEMENTS_UPDATE: 'supplements:update',
-  SUPPLEMENTS_APPROVE: 'supplements:approve',
-  SUPPLEMENTS_DELETE: 'supplements:delete',
-  
-  // Users
-  USERS_LOGIN: 'users:login',
-  USERS_LOGOUT: 'users:logout',
-  
-  // Settings
-  SETTINGS_GET: 'settings:get',
-  SETTINGS_SET: 'settings:set'
-}; 

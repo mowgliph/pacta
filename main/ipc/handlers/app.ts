@@ -1,10 +1,10 @@
 import { app, BrowserWindow, dialog, shell } from 'electron';
-import { IPC_CHANNELS } from '../../utils/constants';
 import { withErrorHandling } from '../setup';
 import { logger } from '../../utils/logger';
 import { z } from 'zod';
 import path from 'path';
 import { ErrorHandler } from '../error-handler';
+import { AppChannels } from '../channels/app.channels';
 
 // Esquemas de validación
 const openFileSchema = z.object({
@@ -29,7 +29,7 @@ const ALLOWED_EXTENSIONS = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'txt', '
 
 export function setupAppHandlers(mainWindow: BrowserWindow): void {
   // Minimizar ventana
-  withErrorHandling(IPC_CHANNELS.APP_MINIMIZE, async () => {
+  withErrorHandling(AppChannels.MINIMIZE, async () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.minimize();
     }
@@ -37,7 +37,7 @@ export function setupAppHandlers(mainWindow: BrowserWindow): void {
   });
 
   // Maximizar/restaurar ventana
-  withErrorHandling(IPC_CHANNELS.APP_MAXIMIZE, async () => {
+  withErrorHandling(AppChannels.MAXIMIZE, async () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       if (mainWindow.isMaximized()) {
         mainWindow.restore();
@@ -49,7 +49,7 @@ export function setupAppHandlers(mainWindow: BrowserWindow): void {
   });
 
   // Cerrar aplicación
-  withErrorHandling(IPC_CHANNELS.APP_QUIT, async () => {
+  withErrorHandling(AppChannels.QUIT, async () => {
     try {
       app.quit();
       return { success: true };
@@ -97,8 +97,8 @@ export function setupAppHandlers(mainWindow: BrowserWindow): void {
       
       const result = await dialog.showOpenDialog(mainWindow, {
         defaultPath: safeDefaultPath,
-        filters,
-        properties: safeProperties
+        filters: filters as Electron.FileFilter[],
+        properties: safeProperties as any
       });
       
       return {
@@ -190,7 +190,7 @@ export function setupAppHandlers(mainWindow: BrowserWindow): void {
   });
 
   // Obtener información del sistema
-  withErrorHandling('app:getInfo', async () => {
+  withErrorHandling(AppChannels.VERSION, async () => {
     return {
       version: app.getVersion(),
       arch: process.arch,

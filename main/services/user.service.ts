@@ -1,256 +1,326 @@
-const bcrypt = require("bcryptjs")
+import { prisma } from "../lib/prisma";
+import { logger } from "../lib/logger";
+import bcrypt from "bcrypt";
+import { ErrorHandler } from "../ipc/error-handler";
 
-class UserService {
-  constructor(prisma) {
-    this.prisma = prisma
-  }
-
+/**
+ * Servicio para la gestión de usuarios
+ */
+export class UserService {
   /**
-   * Obtener todos los usuarios
-   * @returns {Promise<Array>} Lista de usuarios
+   * Obtiene todos los usuarios
    */
-  async getUsers() {
-    return this.prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        isActive: true,
-        lastLogin: true,
-        role: {
-          select: {
-            id: true,
-            name: true,
+  static async getUsers() {
+    try {
+      const users = await prisma.user.findMany({
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          roleId: true,
+          isActive: true,
+          lastLogin: true,
+          createdAt: true,
+          updatedAt: true,
+          role: {
+            select: {
+              id: true,
+              name: true,
+              description: true
+            }
           }
         },
-        createdAt: true,
-        updatedAt: true,
-      },
-      orderBy: {
-        name: 'asc'
-      }
-    })
+        orderBy: {
+          name: 'asc'
+        }
+      });
+
+      return { users, total: users.length };
+    } catch (error) {
+      logger.error('Error al obtener usuarios:', error);
+      throw error;
+    }
   }
 
   /**
-   * Obtener un usuario por su ID
-   * @param {string} id - ID del usuario
-   * @returns {Promise<object>} Datos del usuario
+   * Obtiene un usuario por su ID
+   * @param id - ID del usuario
    */
-  async getUserById(id) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        roleId: true,
-        role: {
-          select: {
-            id: true,
-            name: true,
+  static async getUserById(id: string) {
+    try {
+      return await prisma.user.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          roleId: true,
+          isActive: true,
+          lastLogin: true,
+          createdAt: true,
+          updatedAt: true,
+          role: {
+            select: {
+              id: true,
+              name: true,
+              description: true
+            }
           }
-        },
-        isActive: true,
-        customPermissions: true,
-        lastLogin: true,
-        createdAt: true,
-        updatedAt: true,
-      }
-    })
-
-    if (!user) {
-      throw new Error("Usuario no encontrado")
+        }
+      });
+    } catch (error) {
+      logger.error(`Error al obtener usuario ${id}:`, error);
+      throw error;
     }
-
-    return user
   }
 
   /**
-   * Crear un nuevo usuario
-   * @param {object} userData - Datos del usuario a crear
-   * @returns {Promise<object>} Usuario creado
+   * Obtiene un usuario por su email
+   * @param email - Email del usuario
    */
-  async createUser({ name, email, password, roleId, isActive = true }) {
-    // Verificar si ya existe un usuario con ese email
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email }
-    })
-
-    if (existingUser) {
-      throw new Error("Ya existe un usuario con ese correo electrónico")
+  static async getUserByEmail(email: string) {
+    try {
+      return await prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          roleId: true,
+          isActive: true
+        }
+      });
+    } catch (error) {
+      logger.error(`Error al obtener usuario por email ${email}:`, error);
+      throw error;
     }
-
-    // Verificar si el rol existe
-    const role = await this.prisma.role.findUnique({
-      where: { id: roleId }
-    })
-
-    if (!role) {
-      throw new Error("Rol no encontrado")
-    }
-
-    // Hash de la contraseña
-    const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(password, salt)
-
-    // Crear nuevo usuario
-    return this.prisma.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        roleId,
-        isActive,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        isActive: true,
-        role: {
-          select: {
-            id: true,
-            name: true,
-          }
-        },
-        createdAt: true,
-      }
-    })
   }
 
   /**
-   * Actualizar un usuario existente
-   * @param {string} id - ID del usuario a actualizar
-   * @param {object} updateData - Datos a actualizar
-   * @returns {Promise<object>} Usuario actualizado
+   * Crea un nuevo usuario
+   * @param userData - Datos del usuario
+   * @param creatorId - ID del usuario que crea
    */
-  async updateUser(id, { name, email, roleId, isActive, customPermissions }) {
-    // Verificar si el usuario existe
-    const user = await this.prisma.user.findUnique({
-      where: { id }
-    })
+  static async createUser(userData: any, creatorId: string) {
+    try {
+      // Encriptar contraseña
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
 
-    if (!user) {
-      throw new Error("Usuario no encontrado")
+      // Crear usuario
+      const user = await prisma.user.create({
+        data: {
+          name: userData.name,
+          email: userData.email,
+          password: hashedPassword,
+          roleId: userData.roleId,
+          isActive: true
+        }
+      });
+
+      // Registrar en historial
+      await prisma.historyRecord.create({
+        data: {
+          action: 'CREATE',
+          entityType: 'User',
+          entityId: user.id,
+          userId: creatorId,
+          description: `Usuario ${user.name} (${user.email}) creado`
+        }
+      });
+
+      return user;
+    } catch (error) {
+      logger.error('Error al crear usuario:', error);
+      throw error;
     }
-
-    // Si se va a actualizar el email, verificar que no esté en uso
-    if (email && email !== user.email) {
-      const existingUserWithEmail = await this.prisma.user.findUnique({
-        where: { email }
-      })
-
-      if (existingUserWithEmail) {
-        throw new Error("El correo electrónico ya está en uso")
-      }
-    }
-
-    // Si se actualiza el rol, verificar que exista
-    if (roleId) {
-      const role = await this.prisma.role.findUnique({
-        where: { id: roleId }
-      })
-
-      if (!role) {
-        throw new Error("Rol no encontrado")
-      }
-    }
-
-    // Construir objeto con datos a actualizar
-    const updateData = {}
-    
-    if (name) updateData.name = name
-    if (email) updateData.email = email
-    if (roleId) updateData.roleId = roleId
-    if (isActive !== undefined) updateData.isActive = isActive
-    if (customPermissions) updateData.customPermissions = customPermissions
-
-    // Actualizar usuario
-    return this.prisma.user.update({
-      where: { id },
-      data: updateData,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        isActive: true,
-        role: {
-          select: {
-            id: true,
-            name: true,
-          }
-        },
-        customPermissions: true,
-        updatedAt: true,
-      }
-    })
   }
 
   /**
-   * Cambiar la contraseña de un usuario (por un administrador)
-   * @param {string} id - ID del usuario
-   * @param {string} newPassword - Nueva contraseña
-   * @returns {Promise<boolean>}
+   * Actualiza un usuario existente
+   * @param id - ID del usuario
+   * @param userData - Datos a actualizar
+   * @param updaterId - ID del usuario que actualiza
    */
-  async resetPassword(id, newPassword) {
-    // Verificar si el usuario existe
-    const user = await this.prisma.user.findUnique({
-      where: { id }
-    })
-
-    if (!user) {
-      throw new Error("Usuario no encontrado")
-    }
-
-    // Hash de la nueva contraseña
-    const salt = await bcrypt.genSalt(10)
-    const hashedPassword = await bcrypt.hash(newPassword, salt)
-
-    // Actualizar contraseña
-    await this.prisma.user.update({
-      where: { id },
-      data: {
-        password: hashedPassword,
+  static async updateUser(id: string, userData: any, updaterId: string) {
+    try {
+      // Preparar datos para actualizar
+      const updateData: any = {};
+      
+      if (userData.name) updateData.name = userData.name;
+      if (userData.email) updateData.email = userData.email;
+      if (userData.roleId) updateData.roleId = userData.roleId;
+      if (userData.isActive !== undefined) updateData.isActive = userData.isActive;
+      
+      // Si hay contraseña, encriptarla
+      if (userData.password) {
+        updateData.password = await bcrypt.hash(userData.password, 10);
       }
-    })
 
-    return true
+      // Actualizar usuario
+      const user = await prisma.user.update({
+        where: { id },
+        data: updateData
+      });
+
+      // Registrar en historial
+      await prisma.historyRecord.create({
+        data: {
+          action: 'UPDATE',
+          entityType: 'User',
+          entityId: id,
+          userId: updaterId,
+          description: `Usuario ${user.name} (${user.email}) actualizado`
+        }
+      });
+
+      return user;
+    } catch (error) {
+      logger.error(`Error al actualizar usuario ${id}:`, error);
+      throw error;
+    }
   }
 
   /**
-   * Eliminar o desactivar un usuario
-   * @param {string} id - ID del usuario
-   * @param {boolean} hardDelete - Indica si se debe eliminar permanentemente
-   * @returns {Promise<boolean>}
+   * Cambia el estado activo/inactivo de un usuario
+   * @param id - ID del usuario
+   * @param adminId - ID del administrador
    */
-  async deleteUser(id, hardDelete = false) {
-    // Verificar si el usuario existe
-    const user = await this.prisma.user.findUnique({
-      where: { id }
-    })
-
-    if (!user) {
-      throw new Error("Usuario no encontrado")
-    }
-
-    if (hardDelete) {
-      // Eliminar permanentemente (solo en entornos de desarrollo)
-      await this.prisma.user.delete({
+  static async toggleUserActive(id: string, adminId: string) {
+    try {
+      // Obtener usuario actual
+      const user = await prisma.user.findUnique({
         where: { id }
-      })
-    } else {
-      // Desactivar usuario (forma recomendada)
-      await this.prisma.user.update({
+      });
+
+      if (!user) {
+        return null;
+      }
+
+      // Cambiar estado
+      const updatedUser = await prisma.user.update({
         where: { id },
         data: {
-          isActive: false
+          isActive: !user.isActive
         }
-      })
+      });
+
+      // Registrar en historial
+      await prisma.historyRecord.create({
+        data: {
+          action: 'UPDATE',
+          entityType: 'User',
+          entityId: id,
+          userId: adminId,
+          description: `Usuario ${user.name} ${updatedUser.isActive ? 'activado' : 'desactivado'}`
+        }
+      });
+
+      return updatedUser;
+    } catch (error) {
+      logger.error(`Error al cambiar estado de usuario ${id}:`, error);
+      throw error;
     }
-
-    return true
   }
-}
 
-module.exports = UserService 
+  /**
+   * Cambia la contraseña de un usuario
+   * @param userId - ID del usuario
+   * @param currentPassword - Contraseña actual
+   * @param newPassword - Nueva contraseña
+   */
+  static async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    try {
+      // Obtener usuario
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          password: true
+        }
+      });
+
+      if (!user) {
+        return false;
+      }
+
+      // Verificar contraseña actual
+      const isValid = await bcrypt.compare(currentPassword, user.password);
+      if (!isValid) {
+        return false;
+      }
+
+      // Actualizar contraseña
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          password: hashedPassword
+        }
+      });
+
+      // Registrar en historial
+      await prisma.historyRecord.create({
+        data: {
+          action: 'UPDATE',
+          entityType: 'User',
+          entityId: userId,
+          userId,
+          description: 'Contraseña actualizada'
+        }
+      });
+
+      return true;
+    } catch (error) {
+      logger.error(`Error al cambiar contraseña de usuario ${userId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene los permisos de un usuario
+   * @param userId - ID del usuario
+   */
+  static async getUserPermissions(userId: string) {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          role: true
+        }
+      });
+
+      if (!user) {
+        throw ErrorHandler.createError('NotFoundError', 'Usuario no encontrado');
+      }
+
+      // Convertir permisos de string a objeto si es necesario
+      let permissions = {};
+      
+      if (user.role && typeof user.role.permissions === 'string') {
+        try {
+          permissions = JSON.parse(user.role.permissions);
+        } catch (e) {
+          logger.warn(`Error al parsear permisos para usuario ${userId}:`, e);
+        }
+      } else if (user.role && typeof user.role.permissions === 'object') {
+        permissions = user.role.permissions;
+      }
+
+      return {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email
+        },
+        role: {
+          id: user.role?.id,
+          name: user.role?.name
+        },
+        permissions
+      };
+    } catch (error) {
+      logger.error(`Error al obtener permisos de usuario ${userId}:`, error);
+      throw error;
+    }
+  }
+} 

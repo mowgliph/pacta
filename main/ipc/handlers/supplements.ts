@@ -1,7 +1,7 @@
 import { IPC_CHANNELS } from '../../utils/constants';
 import { withErrorHandling } from '../setup';
 import { SupplementService } from '../../services/supplement.service';
-import { IpcErrorHandler } from '../error-handler';
+import { ErrorHandler } from '../error-handler';
 import { z } from 'zod';
 import { logger } from '../../utils/logger';
 
@@ -32,7 +32,7 @@ export function setupSupplementHandlers(): void {
   withErrorHandling(IPC_CHANNELS.SUPPLEMENTS_GET_BY_CONTRACT, async (_, contractId: string) => {
     try {
       if (!contractId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del contrato es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del contrato es requerido');
       }
       
       return await SupplementService.getContractSupplements(contractId);
@@ -46,13 +46,13 @@ export function setupSupplementHandlers(): void {
   withErrorHandling(IPC_CHANNELS.SUPPLEMENTS_GET_BY_ID, async (_, supplementId: string) => {
     try {
       if (!supplementId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del suplemento es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del suplemento es requerido');
       }
       
       const supplement = await SupplementService.getSupplementById(supplementId);
       
       if (!supplement) {
-        throw IpcErrorHandler.createError('NotFoundError', 'Suplemento no encontrado');
+        throw ErrorHandler.createError('NotFoundError', 'Suplemento no encontrado');
       }
       
       return supplement;
@@ -81,7 +81,7 @@ export function setupSupplementHandlers(): void {
         }));
         
         logger.warn('Error de validación al crear suplemento:', validationErrors);
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'ValidationError',
           `Error de validación: ${validationErrors[0].message}`,
           validationErrors
@@ -106,7 +106,7 @@ export function setupSupplementHandlers(): void {
       );
       
       if (!updatedSupplement) {
-        throw IpcErrorHandler.createError('NotFoundError', 'Suplemento no encontrado');
+        throw ErrorHandler.createError('NotFoundError', 'Suplemento no encontrado');
       }
       
       logger.info(`Suplemento actualizado: ${updatedSupplement.id}`);
@@ -119,7 +119,7 @@ export function setupSupplementHandlers(): void {
         }));
         
         logger.warn('Error de validación al actualizar suplemento:', validationErrors);
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'ValidationError',
           `Error de validación: ${validationErrors[0].message}`,
           validationErrors
@@ -135,11 +135,11 @@ export function setupSupplementHandlers(): void {
   withErrorHandling(IPC_CHANNELS.SUPPLEMENTS_APPROVE, async (_, supplementId: string, userId: string) => {
     try {
       if (!supplementId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del suplemento es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del suplemento es requerido');
       }
       
       if (!userId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
       }
       
       const approvedSupplement = await SupplementService.approveSupplement(supplementId, userId);
@@ -156,11 +156,11 @@ export function setupSupplementHandlers(): void {
   withErrorHandling(IPC_CHANNELS.SUPPLEMENTS_DELETE, async (_, supplementId: string, userId: string) => {
     try {
       if (!supplementId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del suplemento es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del suplemento es requerido');
       }
       
       if (!userId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
       }
       
       // Verificar permisos del usuario (esto ya se hace en el servicio)

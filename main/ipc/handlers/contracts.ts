@@ -1,13 +1,12 @@
-import { ipcMain } from 'electron';
-import { IPC_CHANNELS } from '../../utils/constants';
 import { prisma } from '../../lib/prisma';
 import { withErrorHandling } from '../setup';
 import { logger } from '../../utils/logger';
 import { ContractService } from '../../services/contract.service';
+import { ContractsChannels } from '../channels/contracts.channels';
 
 export function setupContractHandlers(): void {
   // Obtener todos los contratos
-  withErrorHandling(IPC_CHANNELS.CONTRACTS_GET_ALL, async (_, filters) => {
+  withErrorHandling(ContractsChannels.GET_ALL, async (_, filters) => {
     const { type, status, search, page = 1, limit = 10 } = filters;
     
     const where = {
@@ -57,7 +56,7 @@ export function setupContractHandlers(): void {
   });
 
   // Obtener un contrato por ID
-  withErrorHandling(IPC_CHANNELS.CONTRACTS_GET_BY_ID, async (_, id) => {
+  withErrorHandling(ContractsChannels.GET_BY_ID, async (_, id) => {
     const contract = await prisma.contract.findUnique({
       where: { id },
       include: {
@@ -91,7 +90,7 @@ export function setupContractHandlers(): void {
   });
 
   // Crear un nuevo contrato
-  withErrorHandling(IPC_CHANNELS.CONTRACTS_CREATE, async (_, data) => {
+  withErrorHandling(ContractsChannels.CREATE, async (_, data) => {
     const contract = await prisma.contract.create({
       data: {
         ...data,
@@ -110,7 +109,7 @@ export function setupContractHandlers(): void {
   });
 
   // Actualizar un contrato
-  withErrorHandling(IPC_CHANNELS.CONTRACTS_UPDATE, async (_, { id, data }) => {
+  withErrorHandling(ContractsChannels.UPDATE, async (_, { id, data }) => {
     const contract = await prisma.contract.update({
       where: { id },
       data: {
@@ -131,7 +130,7 @@ export function setupContractHandlers(): void {
   });
 
   // Eliminar un contrato
-  withErrorHandling(IPC_CHANNELS.CONTRACTS_DELETE, async (_, { id, userId }) => {
+  withErrorHandling(ContractsChannels.DELETE, async (_, { id, userId }) => {
     await prisma.contract.delete({
       where: { id }
     });
@@ -150,7 +149,7 @@ export function setupContractHandlers(): void {
   });
 
   // Actualizar control de acceso de un contrato
-  withErrorHandling('contracts:updateAccessControl', async (_, { id, accessControl, userId, userRole }) => {
+  withErrorHandling(ContractsChannels.UPDATE_ACCESS, async (_, { id, accessControl, userId, userRole }) => {
     try {
       const result = await ContractService.updateContractAccessControl(
         id, 
@@ -167,7 +166,7 @@ export function setupContractHandlers(): void {
   });
 
   // Asignar usuarios a un contrato
-  withErrorHandling('contracts:assignUsers', async (_, { id, userAssignments, userId, userRole }) => {
+  withErrorHandling(ContractsChannels.ASSIGN_USERS, async (_, { id, userAssignments, userId, userRole }) => {
     try {
       const result = await ContractService.assignUsersToContract(
         id, 
