@@ -80,8 +80,8 @@ model Contract {
   // Relaciones
   supplements    Supplement[]
   history        HistoryRecord[]
-  accessRoles    ContractAccessRole[]
-  accessUsers    ContractAccess[]
+  accessRoles    ContractAccessRole[]     @relation("ContractAccessRole")
+  accessUsers    ContractAccess[]         @relation("ContractAccess")
   documents      Document[]
   notifications  UserNotification[]
 }
@@ -114,8 +114,14 @@ model ContractAccess {
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   contractId  String
-  contract    Contract @relation(fields: [contractId], references: [id])
-  permissions String // {read, update, delete, approve, assign}
+  contract    Contract @relation("ContractAccess", fields: [contractId], references: [id])
+  permissions String   // Almacenado como JSON
+  // Campos explícitos para simplificar consultas
+  canRead     Boolean  @default(false)
+  canUpdate   Boolean  @default(false)
+  canDelete   Boolean  @default(false)
+  canApprove  Boolean  @default(false)
+  canAssign   Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -127,20 +133,22 @@ model ContractAccessRole {
   roleId     String
   role       Role     @relation(fields: [roleId], references: [id])
   contractId String
-  contract   Contract @relation(fields: [contractId], references: [id])
+  contract   Contract @relation("ContractAccessRole", fields: [contractId], references: [id])
 
   @@unique([roleId, contractId])
 }
 
 model HistoryRecord {
-  id         String   @id @default(uuid())
-  entityType String // "Contract" o "Supplement"
-  entityId   String // ID del contrato o suplemento
-  userId     String
-  user       User     @relation(fields: [userId], references: [id])
-  action     String // Tipo de acción realizada
-  changes    String? // Cambios realizados
-  timestamp  DateTime @default(now())
+  id          String    @id @default(uuid())
+  entityType  String    // "Contract" o "Supplement"
+  entityId    String    // ID del contrato o suplemento
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  action      String    // Tipo de acción realizada
+  changes     String?   // Cambios realizados
+  description String?   // Descripción de la acción
+  timestamp   DateTime  @default(now())
+  createdAt   DateTime  @default(now())
 
   // Relaciones polimórficas
   contract     Contract?   @relation(fields: [contractId], references: [id])
@@ -151,24 +159,44 @@ model HistoryRecord {
 
 model Document {
   id           String      @id @default(uuid())
-  filename     String
-  originalName String
-  mimeType     String
-  size         Int
-  path         String
+  // Campos originales
+  filename     String      // Nombre del archivo en el sistema
+  originalName String      // Nombre original del archivo
+  mimeType     String      // Tipo MIME
+  size         Int         // Tamaño en bytes
+  path         String      // Ruta relativa en el sistema
+
+  // Campos adicionales para compatibilidad con el servicio
+  name         String      // Nombre para mostrar
+  fileName     String      // Nombre original (alias de originalName)
+  fileType     String      // Tipo MIME (alias de mimeType)
+  fileSize     Int         // Tamaño (alias de size)
+  filePath     String      // Ruta (alias de path)
+
   contractId   String?
   contract     Contract?   @relation(fields: [contractId], references: [id])
   supplementId String?
   supplement   Supplement? @relation(fields: [supplementId], references: [id])
   uploadedById String
   uploadedBy   User        @relation("UploadedDocuments", fields: [uploadedById], references: [id])
+  createdById  String?     // Alias de uploadedById para compatibilidad
   description  String?
   tags         String?     // JSON array
   isPublic     Boolean     @default(false)
   uploadedAt   DateTime    @default(now())
+  createdAt    DateTime    @default(now()) // Alias de uploadedAt
   updatedAt    DateTime    @updatedAt
   downloads    Int         @default(0)
   views        Int         @default(0)
+}
+
+model DocumentActivity {
+  id          String   @id @default(uuid())
+  documentId  String
+  userId      String
+  action      String   // VIEW, DOWNLOAD, EDIT
+  ipAddress   String?
+  timestamp   DateTime @default(now())
 }
 
 model Backup {
