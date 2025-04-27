@@ -1,0 +1,6 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+[prd.txt](mdc:docs/prd.txt) [app-flow.txt](mdc:docs/app-flow.txt) [pacta.md](mdc:docs/pacta.md) [doc-branding.txt](mdc:docs/doc-branding.txt) [frontend.txt](mdc:docs/frontend.txt)
