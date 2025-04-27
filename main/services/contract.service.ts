@@ -1,11 +1,10 @@
 import { prisma } from "../lib/prisma";
 import { logger } from "../lib/logger";
-import { Contract, ContractFilters } from "../shared/types";
-import { AppError } from "../middleware/error.middleware";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { AppError } from "../middleware/error.middleware";
 
 /**
- * Servicio para manejar operaciones relacionadas con los contratos
+ * Servicio para manejar operaciones CRUD de contratos
  */
 export class ContractService {
   /**
@@ -15,7 +14,7 @@ export class ContractService {
    * @param userRole - Rol del usuario
    */
   static async getContracts(
-    filters?: ContractFilters,
+    filters?: any,
     userId?: string,
     userRole?: string
   ) {
@@ -29,48 +28,26 @@ export class ContractService {
 
       if (filters?.startDate) {
         where.startDate = {
-          gte: filters.startDate,
+          gte: new Date(filters.startDate),
         };
       }
 
       if (filters?.endDate) {
         where.endDate = {
-          lte: filters.endDate,
+          lte: new Date(filters.endDate),
         };
       }
 
       if (filters?.search) {
         where.OR = [
-          { title: { contains: filters.search, mode: "insensitive" } },
-          { description: { contains: filters.search, mode: "insensitive" } },
+          { title: { contains: filters.search } },
+          { description: { contains: filters.search } },
         ];
       }
 
-      // Si no es administrador, mostrar solo contratos a los que tiene acceso
+      // Si no es administrador, mostrar solo contratos que ha creado
       if (userRole !== "Admin") {
-        where.OR = [
-          { createdById: userId },
-          {
-            accessUsers: {
-              some: {
-                userId,
-              },
-            },
-          },
-          {
-            accessRoles: {
-              some: {
-                role: {
-                  users: {
-                    some: {
-                      id: userId,
-                    },
-                  },
-                },
-              },
-            },
-          },
-        ];
+        where.createdById = userId;
       }
 
       // Obtener los contratos con sus relaciones
@@ -84,17 +61,15 @@ export class ContractService {
               email: true,
             },
           },
-          accessUsers: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                },
-              },
+          owner: {
+            select: {
+              id: true, 
+              name: true,
+              email: true,
             },
           },
+          documents: true,
+          supplements: true,
         },
         orderBy: {
           updatedAt: "desc",
@@ -127,24 +102,15 @@ export class ContractService {
               email: true,
             },
           },
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
           documents: true,
           supplements: true,
-          accessUsers: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                },
-              },
-            },
-          },
-          accessRoles: {
-            include: {
-              role: true,
-            },
-          },
           history: {
             include: {
               user: {
@@ -167,14 +133,11 @@ export class ContractService {
       }
 
       // Verificar permisos si no es admin
-      if (userRole !== "Admin") {
-        const hasAccess = this.checkContractAccess(contract, userId);
-        if (!hasAccess) {
-          throw AppError.forbidden(
-            "No tiene permiso para acceder a este contrato",
-            "CONTRACT_ACCESS_DENIED"
-          );
-        }
+      if (userRole !== "Admin" && contract.createdById !== userId) {
+        throw AppError.forbidden(
+          "No tiene permiso para acceder a este contrato",
+          "CONTRACT_ACCESS_DENIED"
+        );
       }
 
       return this.mapContractToDTO(contract, true);
@@ -197,30 +160,37 @@ export class ContractService {
       // Validación de datos
       this.validateContractData(contractData);
 
+      // Generar número de contrato único
+      const contractNumber = `CTR-${Date.now().toString().slice(-6)}`;
+
       // Crear el contrato
       const contract = await prisma.contract.create({
         data: {
+          contractNumber,
           title: contractData.title,
-          description: contractData.description,
-          status: contractData.status || "draft",
-          startDate: contractData.startDate
-            ? new Date(contractData.startDate)
-            : null,
+          description: contractData.description || "",
+          parties: contractData.parties || "",
+          companyName: contractData.companyName || "",
+          companyAddress: contractData.companyAddress,
+          startDate: new Date(contractData.startDate),
           endDate: contractData.endDate ? new Date(contractData.endDate) : null,
-          createdBy: {
-            connect: { id: userId },
-          },
-          // Otros campos específicos del contrato
-          // ...
-
+          status: contractData.status || "draft",
+          type: contractData.type || "general",
+          signDate: contractData.signDate ? new Date(contractData.signDate) : new Date(),
+          signPlace: contractData.signPlace,
+          paymentMethod: contractData.paymentMethod,
+          paymentTerm: contractData.paymentTerm,
+          amount: contractData.amount,
+          value: contractData.value,
+          isRestricted: false,
+          createdById: userId,
+          ownerId: userId,
           // Registrar en historial
           history: {
             create: {
               action: "CREATE",
-              description: "Contrato creado",
-              user: {
-                connect: { id: userId },
-              },
+              entityType: "Contract",
+              userId: userId,
             },
           },
         },
@@ -229,6 +199,13 @@ export class ContractService {
             select: {
               id: true,
               name: true,
+              email: true,
+            },
+          },
+          owner: {
+            select: {
+              id: true,
+              name: true, 
               email: true,
             },
           },
@@ -245,7 +222,7 @@ export class ContractService {
       logger.error("Error al crear contrato:", error);
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
-          throw AppError.validation("Ya existe un contrato con estos datos");
+          throw AppError.validation("Ya existe un contrato con estos datos", "DUPLICATE_CONTRACT");
         }
       }
       throw error;
@@ -269,14 +246,6 @@ export class ContractService {
       // Buscar el contrato
       const existingContract = await prisma.contract.findUnique({
         where: { id },
-        include: {
-          accessUsers: true,
-          accessRoles: {
-            include: {
-              role: true,
-            },
-          },
-        },
       });
 
       if (!existingContract) {
@@ -284,21 +253,18 @@ export class ContractService {
       }
 
       // Verificar permisos si no es admin
-      if (userRole !== "Admin") {
-        const hasUpdateAccess = this.checkContractUpdateAccess(
-          existingContract,
-          userId
+      if (userRole !== "Admin" && existingContract.createdById !== userId) {
+        throw AppError.forbidden(
+          "No tiene permiso para actualizar este contrato",
+          "CONTRACT_UPDATE_DENIED"
         );
-        if (!hasUpdateAccess) {
-          throw AppError.forbidden(
-            "No tiene permiso para actualizar este contrato",
-            "CONTRACT_UPDATE_DENIED"
-          );
-        }
       }
 
       // Validar datos
       this.validateContractData(contractData, true);
+
+      // Obtener campos cambiados para el historial
+      const changedFields = this.getChangedFields(existingContract, contractData);
 
       // Actualizar el contrato
       const contract = await prisma.contract.update({
@@ -306,31 +272,39 @@ export class ContractService {
         data: {
           title: contractData.title,
           description: contractData.description,
-          status: contractData.status,
-          startDate: contractData.startDate
-            ? new Date(contractData.startDate)
-            : undefined,
+          parties: contractData.parties,
+          companyName: contractData.companyName,
+          companyAddress: contractData.companyAddress,
+          startDate: contractData.startDate ? new Date(contractData.startDate) : undefined,
           endDate: contractData.endDate ? new Date(contractData.endDate) : null,
+          status: contractData.status,
+          type: contractData.type,
+          signPlace: contractData.signPlace,
+          paymentMethod: contractData.paymentMethod,
+          paymentTerm: contractData.paymentTerm,
+          amount: contractData.amount,
+          value: contractData.value,
           updatedAt: new Date(),
-          // Otros campos específicos
-          // ...
-
+          
           // Registrar en historial
           history: {
             create: {
               action: "UPDATE",
-              description: "Contrato actualizado",
-              details: JSON.stringify(
-                this.getChangedFields(existingContract, contractData)
-              ),
-              user: {
-                connect: { id: userId },
-              },
+              entityType: "Contract",
+              changes: Object.keys(changedFields).length > 0 ? JSON.stringify(changedFields) : null,
+              userId: userId,
             },
           },
         },
         include: {
           createdBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          owner: {
             select: {
               id: true,
               name: true,
@@ -353,124 +327,6 @@ export class ContractService {
   }
 
   /**
-   * Actualiza el estado de un contrato
-   * @param id - ID del contrato
-   * @param status - Nuevo estado
-   * @param userId - ID del usuario
-   * @param userRole - Rol del usuario
-   */
-  static async updateContractStatus(
-    id: string,
-    status: string,
-    userId: string,
-    userRole?: string
-  ) {
-    try {
-      // Validar estado
-      const validStatuses = [
-        "draft",
-        "pending_approval",
-        "active",
-        "expired",
-        "cancelled",
-      ];
-      if (!validStatuses.includes(status)) {
-        throw AppError.validation(`Estado inválido: ${status}`);
-      }
-
-      // Buscar el contrato
-      const existingContract = await prisma.contract.findUnique({
-        where: { id },
-        include: {
-          accessUsers: true,
-          accessRoles: {
-            include: {
-              role: true,
-            },
-          },
-        },
-      });
-
-      if (!existingContract) {
-        throw AppError.notFound(`Contrato con ID ${id} no encontrado`, "CONTRACT_NOT_FOUND");
-      }
-
-      // Verificar permisos si no es admin
-      if (userRole !== "Admin") {
-        // Para cambios de estado, verificar permiso especial de aprobación
-        if (
-          status === "active" &&
-          existingContract.status === "pending_approval"
-        ) {
-          const hasApproveAccess = this.checkContractApproveAccess(
-            existingContract,
-            userId
-          );
-          if (!hasApproveAccess) {
-            throw AppError.forbidden(
-              "No tiene permiso para aprobar este contrato",
-              "CONTRACT_APPROVE_DENIED"
-            );
-          }
-        } else {
-          // Para otros cambios de estado, verificar permiso de actualización
-          const hasUpdateAccess = this.checkContractUpdateAccess(
-            existingContract,
-            userId
-          );
-          if (!hasUpdateAccess) {
-            throw AppError.forbidden(
-              "No tiene permiso para actualizar este contrato",
-              "CONTRACT_UPDATE_DENIED"
-            );
-          }
-        }
-      }
-
-      // Actualizar estado
-      const contract = await prisma.contract.update({
-        where: { id },
-        data: {
-          status,
-          updatedAt: new Date(),
-
-          // Registrar en historial
-          history: {
-            create: {
-              action: "STATUS_CHANGE",
-              description: `Estado cambiado de ${existingContract.status} a ${status}`,
-              user: {
-                connect: { id: userId },
-              },
-            },
-          },
-        },
-        include: {
-          createdBy: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
-      });
-
-      logger.info(
-        `Estado de contrato ${id} actualizado a ${status} por usuario ${userId}`
-      );
-      return this.mapContractToDTO(contract);
-    } catch (error) {
-      if (error instanceof AppError) {
-        throw error;
-      }
-
-      logger.error(`Error al actualizar estado de contrato ${id}:`, error);
-      throw error;
-    }
-  }
-
-  /**
    * Elimina un contrato
    * @param id - ID del contrato
    * @param userId - ID del usuario
@@ -481,14 +337,6 @@ export class ContractService {
       // Buscar el contrato
       const existingContract = await prisma.contract.findUnique({
         where: { id },
-        include: {
-          accessUsers: true,
-          accessRoles: {
-            include: {
-              role: true,
-            },
-          },
-        },
       });
 
       if (!existingContract) {
@@ -496,26 +344,20 @@ export class ContractService {
       }
 
       // Verificar permisos si no es admin
-      if (userRole !== "Admin") {
-        const hasDeleteAccess = this.checkContractDeleteAccess(
-          existingContract,
-          userId
+      if (userRole !== "Admin" && existingContract.createdById !== userId) {
+        throw AppError.forbidden(
+          "No tiene permiso para eliminar este contrato",
+          "CONTRACT_DELETE_DENIED"
         );
-        if (!hasDeleteAccess) {
-          throw AppError.forbidden(
-            "No tiene permiso para eliminar este contrato",
-            "CONTRACT_DELETE_DENIED"
-          );
-        }
       }
 
-      // Eliminar contrato (podría ser una eliminación lógica)
+      // Eliminar contrato
       await prisma.contract.delete({
         where: { id },
       });
 
       logger.info(`Contrato ${id} eliminado por usuario ${userId}`);
-      return { success: true };
+      return { success: true, message: "Contrato eliminado correctamente" };
     } catch (error) {
       if (error instanceof AppError) {
         throw error;
@@ -527,222 +369,12 @@ export class ContractService {
   }
 
   /**
-   * Actualiza los permisos de acceso de un contrato
-   * @param id - ID del contrato
-   * @param accessControl - Configuración de acceso
-   * @param userId - ID del usuario
-   * @param userRole - Rol del usuario
-   */
-  static async updateContractAccessControl(
-    id: string,
-    accessControl: any,
-    userId: string,
-    userRole?: string
-  ) {
-    try {
-      // Buscar el contrato
-      const existingContract = await prisma.contract.findUnique({
-        where: { id },
-      });
-
-      if (!existingContract) {
-        throw AppError.notFound(`Contrato con ID ${id} no encontrado`, "CONTRACT_NOT_FOUND");
-      }
-
-      // Verificar permisos - solo admin o el creador pueden cambiar permisos
-      if (userRole !== "Admin" && existingContract.createdById !== userId) {
-        throw AppError.forbidden(
-          "No tiene permiso para actualizar permisos de acceso",
-          "CONTRACT_ACCESS_UPDATE_DENIED"
-        );
-      }
-
-      // Actualizar configuración de acceso
-      const contract = await prisma.$transaction(async (prisma) => {
-        // Si se cambia a acceso restringido, eliminamos los roles existentes
-        if (accessControl.restricted) {
-          await prisma.accessRoles.deleteMany({
-            where: { contractId: id },
-          });
-        }
-        // Si se proporcionan roles permitidos, actualizamos
-        else if (
-          accessControl.allowedRoles &&
-          Array.isArray(accessControl.allowedRoles)
-        ) {
-          // Eliminar roles actuales
-          await prisma.accessRoles.deleteMany({
-            where: { contractId: id },
-          });
-
-          // Crear nuevas asignaciones de roles
-          for (const roleId of accessControl.allowedRoles) {
-            await prisma.accessRoles.create({
-              data: {
-                contractId: id,
-                roleId,
-              },
-            });
-          }
-        }
-
-        // Actualizar flag de acceso restringido en el contrato
-        const updatedContract = await prisma.contract.update({
-          where: { id },
-          data: {
-            isRestricted: accessControl.restricted || false,
-            updatedAt: new Date(),
-            history: {
-              create: {
-                action: "ACCESS_CHANGE",
-                description: `Configuración de acceso actualizada`,
-                user: {
-                  connect: { id: userId },
-                },
-              },
-            },
-          },
-          include: {
-            accessRoles: {
-              include: {
-                role: true,
-              },
-            },
-          },
-        });
-
-        return updatedContract;
-      });
-
-      logger.info(
-        `Permisos de acceso actualizados para contrato ${id} por usuario ${userId}`
-      );
-      return this.mapContractToDTO(contract);
-    } catch (error) {
-      if (error instanceof AppError) {
-        throw error;
-      }
-
-      logger.error(
-        `Error al actualizar permisos de acceso de contrato ${id}:`,
-        error
-      );
-      throw error;
-    }
-  }
-
-  /**
-   * Asigna usuarios a un contrato con permisos específicos
-   * @param id - ID del contrato
-   * @param userAssignments - Asignaciones de usuarios
-   * @param userId - ID del usuario que hace la asignación
-   * @param userRole - Rol del usuario
-   */
-  static async assignUsersToContract(
-    id: string,
-    userAssignments: Array<{
-      userId: string;
-      permissions: { [key: string]: boolean };
-    }>,
-    userId: string,
-    userRole?: string
-  ) {
-    try {
-      // Buscar el contrato
-      const existingContract = await prisma.contract.findUnique({
-        where: { id },
-      });
-
-      if (!existingContract) {
-        throw AppError.notFound(`Contrato con ID ${id} no encontrado`, "CONTRACT_NOT_FOUND");
-      }
-
-      // Verificar permisos
-      if (userRole !== "Admin" && existingContract.createdById !== userId) {
-        throw AppError.forbidden(
-          "No tiene permiso para asignar usuarios a este contrato",
-          "CONTRACT_USER_ASSIGN_DENIED"
-        );
-      }
-
-      // Procesar asignaciones de usuarios
-      await prisma.$transaction(async (prisma) => {
-        // Eliminar asignaciones actuales
-        await prisma.accessUsers.deleteMany({
-          where: { contractId: id },
-        });
-
-        // Crear nuevas asignaciones
-        for (const assignment of userAssignments) {
-          await prisma.accessUsers.create({
-            data: {
-              contractId: id,
-              userId: assignment.userId,
-              canRead: assignment.permissions.read || false,
-              canUpdate: assignment.permissions.update || false,
-              canDelete: assignment.permissions.delete || false,
-              canApprove: assignment.permissions.approve || false,
-              canAssign: assignment.permissions.assign || false,
-            },
-          });
-        }
-
-        // Registrar en historial
-        await prisma.historyRecord.create({
-          data: {
-            contractId: id,
-            action: "USER_ASSIGNMENT",
-            description: `Usuarios asignados al contrato`,
-            userId,
-          },
-        });
-      });
-
-      logger.info(`Usuarios asignados al contrato ${id} por usuario ${userId}`);
-
-      // Obtener contrato actualizado con las nuevas asignaciones
-      const updatedContract = await prisma.contract.findUnique({
-        where: { id },
-        include: {
-          createdBy: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          accessUsers: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                },
-              },
-            },
-          },
-        },
-      });
-
-      return this.mapContractToDTO(updatedContract);
-    } catch (error) {
-      if (error instanceof AppError) {
-        throw error;
-      }
-
-      logger.error(`Error al asignar usuarios al contrato ${id}:`, error);
-      throw error;
-    }
-  }
-
-  /**
    * Valida los datos del contrato
    * @param data - Datos a validar
    * @param isUpdate - Indica si es una actualización
    */
   private static validateContractData(data: any, isUpdate: boolean = false) {
-    const errors: Record<string, string> = {};
+    const errors: { [key: string]: string } = {};
 
     if (!isUpdate || data.title !== undefined) {
       if (!data.title) {
@@ -776,7 +408,9 @@ export class ContractService {
       }
     }
 
-    if (data.startDate !== undefined && data.startDate) {
+    if (!isUpdate && !data.startDate) {
+      errors.startDate = "La fecha de inicio es obligatoria";
+    } else if (data.startDate !== undefined && data.startDate) {
       const startDate = new Date(data.startDate);
       if (isNaN(startDate.getTime())) {
         errors.startDate = "Fecha de inicio no válida";
@@ -798,108 +432,13 @@ export class ContractService {
       }
     }
 
+    if (!isUpdate && !data.companyName) {
+      errors.companyName = "El nombre de la empresa es obligatorio";
+    }
+
     if (Object.keys(errors).length > 0) {
-      throw AppError.validation("Error de validación", errors);
+      throw AppError.validation("Error de validación", JSON.stringify(errors));
     }
-  }
-
-  /**
-   * Verifica si un usuario tiene acceso de lectura a un contrato
-   */
-  private static checkContractAccess(contract: any, userId?: string): boolean {
-    if (!userId) return false;
-
-    // Si es el creador, tiene acceso
-    if (contract.createdById === userId) return true;
-
-    // Si tiene acceso explícito
-    if (
-      contract.accessUsers?.some(
-        (access) => access.userId === userId && access.canRead
-      )
-    ) {
-      return true;
-    }
-
-    // Si pertenece a un rol con acceso
-    if (
-      contract.accessRoles?.some((roleAccess) => {
-        return roleAccess.role.users?.some((user) => user.id === userId);
-      })
-    ) {
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * Verifica si un usuario tiene acceso de actualización a un contrato
-   */
-  private static checkContractUpdateAccess(
-    contract: any,
-    userId?: string
-  ): boolean {
-    if (!userId) return false;
-
-    // Si es el creador, puede actualizar
-    if (contract.createdById === userId) return true;
-
-    // Si tiene acceso explícito de actualización
-    if (
-      contract.accessUsers?.some(
-        (access) => access.userId === userId && access.canUpdate
-      )
-    ) {
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * Verifica si un usuario tiene acceso de eliminación a un contrato
-   */
-  private static checkContractDeleteAccess(
-    contract: any,
-    userId?: string
-  ): boolean {
-    if (!userId) return false;
-
-    // Si es el creador, puede eliminar
-    if (contract.createdById === userId) return true;
-
-    // Si tiene acceso explícito de eliminación
-    if (
-      contract.accessUsers?.some(
-        (access) => access.userId === userId && access.canDelete
-      )
-    ) {
-      return true;
-    }
-
-    return false;
-  }
-
-  /**
-   * Verifica si un usuario tiene acceso de aprobación a un contrato
-   */
-  private static checkContractApproveAccess(
-    contract: any,
-    userId?: string
-  ): boolean {
-    if (!userId) return false;
-
-    // Si tiene acceso explícito de aprobación
-    if (
-      contract.accessUsers?.some(
-        (access) => access.userId === userId && access.canApprove
-      )
-    ) {
-      return true;
-    }
-
-    return false;
   }
 
   /**
@@ -911,21 +450,42 @@ export class ContractService {
   ): Record<string, { old: any; new: any }> {
     const changes: Record<string, { old: any; new: any }> = {};
 
-    // Comparar campos básicos
+    // Campos a verificar
     const fieldsToCheck = [
       "title",
       "description",
       "status",
       "startDate",
       "endDate",
+      "companyName",
+      "companyAddress",
+      "parties",
+      "type",
+      "paymentMethod",
+      "paymentTerm",
+      "amount",
+      "value"
     ];
 
     fieldsToCheck.forEach((field) => {
       if (newData[field] !== undefined && oldData[field] !== newData[field]) {
-        changes[field] = {
-          old: oldData[field],
-          new: newData[field],
-        };
+        if (field === "startDate" || field === "endDate") {
+          // Formatear fechas para comparación
+          const oldDate = oldData[field] ? new Date(oldData[field]).toISOString().split('T')[0] : null;
+          const newDate = newData[field] ? new Date(newData[field]).toISOString().split('T')[0] : null;
+          
+          if (oldDate !== newDate) {
+            changes[field] = {
+              old: oldDate,
+              new: newDate,
+            };
+          }
+        } else {
+          changes[field] = {
+            old: oldData[field],
+            new: newData[field],
+          };
+        }
       }
     });
 
@@ -934,6 +494,70 @@ export class ContractService {
 
   /**
    * Convierte un objeto de contrato de la base de datos al formato DTO
-   * Falta Implementacion
    */
+  private static mapContractToDTO(contract: any, includeDetails: boolean = false): any {
+    if (!contract) return null;
+    
+    // Datos básicos del contrato
+    const contractDTO = {
+      id: contract.id,
+      contractNumber: contract.contractNumber,
+      title: contract.title,
+      description: contract.description,
+      parties: contract.parties,
+      companyName: contract.companyName,
+      companyAddress: contract.companyAddress,
+      status: contract.status,
+      type: contract.type,
+      startDate: contract.startDate,
+      endDate: contract.endDate,
+      signDate: contract.signDate,
+      signPlace: contract.signPlace,
+      paymentMethod: contract.paymentMethod,
+      paymentTerm: contract.paymentTerm,
+      amount: contract.amount,
+      value: contract.value,
+      createdAt: contract.createdAt,
+      updatedAt: contract.updatedAt,
+      createdBy: contract.createdBy ? {
+        id: contract.createdBy.id,
+        name: contract.createdBy.name,
+        email: contract.createdBy.email
+      } : null,
+      owner: contract.owner ? {
+        id: contract.owner.id,
+        name: contract.owner.name,
+        email: contract.owner.email
+      } : null
+    };
+    
+    // Si se solicitan detalles, agregar información adicional
+    if (includeDetails) {
+      return {
+        ...contractDTO,
+        documents: contract.documents || [],
+        supplements: (contract.supplements || []).map((supplement: any) => ({
+          id: supplement.id,
+          title: supplement.title,
+          description: supplement.description,
+          effectiveDate: supplement.effectiveDate,
+          isApproved: supplement.isApproved,
+          createdAt: supplement.createdAt
+        })),
+        history: (contract.history || []).map((record: any) => ({
+          id: record.id,
+          action: record.action,
+          changes: record.changes,
+          timestamp: record.timestamp,
+          user: record.user ? {
+            id: record.user.id,
+            name: record.user.name,
+            email: record.user.email
+          } : null
+        }))
+      };
+    }
+    
+    return contractDTO;
+  }
 }
