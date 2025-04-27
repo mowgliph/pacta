@@ -3,7 +3,7 @@ description:
 globs: 
 alwaysApply: true
 ---
-[prd.txt](mdc:docs/prd.txt) [app-flow.txt](mdc:docs/app-flow.txt) [pacta.md](mdc:docs/pacta.md) [doc-branding.txt](mdc:docs/doc-branding.txt) [frontend.txt](mdc:docs/frontend.txt)
+[prd.txt](mdc:docs/prd.txt) [app-flow.txt](mdc:docs/app-flow.txt) [pacta.md](mdc:docs/pacta.md) [doc-branding.txt](mdc:docs/doc-branding.txt) [frontend.txt](mdc:docs/frontend.txt) [ipc-pacta.md](mdc:docs/ipc-pacta.md) 
 
 code completetions (all files)
 next edit suggestions
