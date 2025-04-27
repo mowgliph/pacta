@@ -184,15 +184,7 @@ export class ContractService {
           value: contractData.value,
           isRestricted: false,
           createdById: userId,
-          ownerId: userId,
-          // Registrar en historial
-          history: {
-            create: {
-              action: "CREATE",
-              entityType: "Contract",
-              userId: userId,
-            },
-          },
+          ownerId: userId
         },
         include: {
           createdBy: {
@@ -210,6 +202,17 @@ export class ContractService {
             },
           },
         },
+      });
+
+      // Registrar en historial de forma separada después de crear el contrato
+      await prisma.historyRecord.create({
+        data: {
+          action: "CREATE",
+          entityType: "Contract", 
+          entityId: contract.id,
+          contractId: contract.id,
+          userId: userId
+        }
       });
 
       logger.info(`Contrato creado: ${contract.id} por usuario ${userId}`);
@@ -284,17 +287,7 @@ export class ContractService {
           paymentTerm: contractData.paymentTerm,
           amount: contractData.amount,
           value: contractData.value,
-          updatedAt: new Date(),
-          
-          // Registrar en historial
-          history: {
-            create: {
-              action: "UPDATE",
-              entityType: "Contract",
-              changes: Object.keys(changedFields).length > 0 ? JSON.stringify(changedFields) : null,
-              userId: userId,
-            },
-          },
+          updatedAt: new Date()
         },
         include: {
           createdBy: {
@@ -312,6 +305,19 @@ export class ContractService {
             },
           },
         },
+      });
+
+      // Registrar en historial de forma separada
+      const changes = Object.keys(changedFields).length > 0 ? JSON.stringify(changedFields) : null;
+      await prisma.historyRecord.create({
+        data: {
+          action: "UPDATE",
+          entityType: "Contract",
+          entityId: contract.id,
+          contractId: contract.id,
+          userId: userId,
+          changes: changes
+        }
       });
 
       logger.info(`Contrato actualizado: ${id} por usuario ${userId}`);
@@ -350,6 +356,17 @@ export class ContractService {
           "CONTRACT_DELETE_DENIED"
         );
       }
+
+      // Antes de eliminar, registrar la acción en el historial
+      await prisma.historyRecord.create({
+        data: {
+          action: "DELETE",
+          entityType: "Contract",
+          entityId: id,
+          contractId: id,
+          userId: userId
+        }
+      });
 
       // Eliminar contrato
       await prisma.contract.delete({

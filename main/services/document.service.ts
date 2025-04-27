@@ -50,7 +50,9 @@ export class DocumentService {
               accessUsers: {
                 some: {
                   userId,
-                  canRead: true,
+                  permissions: {
+                    contains: "read"
+                  }
                 },
               },
             },
@@ -179,7 +181,7 @@ export class DocumentService {
       const contract = await prisma.contract.findUnique({
         where: { id: contractId },
         include: {
-          accessUsers: true,
+          accessUsers: true
         },
       });
 
@@ -192,7 +194,14 @@ export class DocumentService {
         const hasUpdateAccess =
           contract.createdById === userId ||
           contract.accessUsers?.some(
-            (access) => access.userId === userId && access.canUpdate
+            (access) => {
+              try {
+                const permissions = JSON.parse(access.permissions);
+                return access.userId === userId && permissions.update === true;
+              } catch (e) {
+                return false;
+              }
+            }
           );
 
         if (!hasUpdateAccess) {
@@ -230,22 +239,17 @@ export class DocumentService {
       const document = await prisma.document.create({
         data: {
           filename: safeFileName,
-          originalName: fileData.originalname,
+          originalName: documentData.name || fileData.originalname,
           mimeType: fileData.mimetype,
           size: fileStats.size,
           path: safeFileName,
-          name: documentData.name || fileData.originalname,
-          fileName: fileData.originalname,
-          fileType: fileData.mimetype,
-          fileSize: fileStats.size,
-          filePath: safeFileName,
+          description: documentData.description,
           contract: {
             connect: { id: contractId },
           },
           uploadedBy: {
             connect: { id: userId },
-          },
-          description: documentData.description,
+          }
         },
         include: {
           contract: {
@@ -271,10 +275,7 @@ export class DocumentService {
           action: "DOCUMENT_ADDED",
           entityType: "Contract",
           entityId: contractId,
-          userId,
-          description: `Documento añadido: ${
-            documentData.name || fileData.originalname
-          }`,
+          userId
         },
       });
 
@@ -305,12 +306,7 @@ export class DocumentService {
         include: {
           contract: {
             include: {
-              accessUsers: true,
-              accessRoles: {
-                include: {
-                  role: true,
-                },
-              },
+              accessUsers: true
             },
           },
         },
@@ -325,7 +321,14 @@ export class DocumentService {
         const hasAccess =
           document.contract.createdById === userId ||
           document.contract.accessUsers?.some(
-            (access) => access.userId === userId && access.canRead
+            (access) => {
+              try {
+                const permissions = JSON.parse(access.permissions);
+                return access.userId === userId && permissions.read === true;
+              } catch (e) {
+                return false;
+              }
+            }
           );
 
         if (!hasAccess) {
@@ -338,7 +341,7 @@ export class DocumentService {
 
       // Construir ruta completa al archivo
       const userDataPath = app.getPath("userData");
-      const filePath = path.join(userDataPath, "documents", document.filePath);
+      const filePath = path.join(userDataPath, "documents", document.path);
 
       // Verificar que el archivo existe
       try {
@@ -358,8 +361,8 @@ export class DocumentService {
 
       return {
         buffer: fileBuffer,
-        name: document.fileName,
-        type: document.fileType,
+        name: document.originalName,
+        type: document.mimeType,
       };
     } catch (error) {
       if (error instanceof AppError) {
@@ -384,7 +387,7 @@ export class DocumentService {
         include: {
           contract: {
             include: {
-              accessUsers: true,
+              accessUsers: true
             },
           },
         },
@@ -399,7 +402,14 @@ export class DocumentService {
         const hasDeleteAccess =
           document.contract.createdById === userId ||
           document.contract.accessUsers?.some(
-            (access) => access.userId === userId && access.canDelete
+            (access) => {
+              try {
+                const permissions = JSON.parse(access.permissions);
+                return access.userId === userId && permissions.delete === true;
+              } catch (e) {
+                return false;
+              }
+            }
           );
 
         if (!hasDeleteAccess) {
@@ -412,7 +422,7 @@ export class DocumentService {
 
       // Construir ruta al archivo
       const userDataPath = app.getPath("userData");
-      const filePath = path.join(userDataPath, "documents", document.filePath);
+      const filePath = path.join(userDataPath, "documents", document.path);
 
       // Eliminar archivo físico
       try {
@@ -426,7 +436,6 @@ export class DocumentService {
 
       // Guardar referencia al contrato para historial
       const contractId = document.contract?.id;
-      const documentName = document.name;
 
       // Eliminar registro de la base de datos
       await prisma.document.delete({
@@ -441,8 +450,7 @@ export class DocumentService {
             action: "DOCUMENT_DELETED",
             entityType: "Contract",
             entityId: contractId,
-            userId,
-            description: `Documento eliminado: ${documentName}`,
+            userId
           },
         });
       }
@@ -529,14 +537,9 @@ export class DocumentService {
     action: "VIEW" | "DOWNLOAD" | "EDIT" = "VIEW"
   ) {
     try {
-      await prisma.documentActivity.create({
-        data: {
-          documentId,
-          userId: userId || "anonymous",
-          action,
-          ipAddress: "0.0.0.0", // En una implementación real, pasaríamos la IP como parámetro
-        },
-      });
+      // Omitimos esta funcionalidad ya que DocumentActivity no está definido en el schema
+      // Podríamos implementarlo cuando exista el modelo en Prisma
+      logger.info(`Actividad de documento: ${action} - ${documentId} - Usuario: ${userId || 'anónimo'}`);
     } catch (error) {
       logger.error(
         `Error registrando actividad de documento: ${error.message}`
@@ -553,9 +556,9 @@ export class DocumentService {
       id: document.id,
       name: document.name,
       description: document.description,
-      fileType: document.fileType,
-      fileName: document.fileName,
-      fileSize: document.fileSize,
+      fileType: document.mimeType,
+      fileName: document.originalName,
+      fileSize: document.size,
       contractId: document.contractId,
       createdAt: document.createdAt || document.uploadedAt,
       updatedAt: document.updatedAt,
@@ -587,12 +590,7 @@ export class DocumentService {
       where: { id: contractId },
       select: {
         createdById: true,
-        accessUsers: {
-          where: {
-            userId,
-            canRead: true
-          }
-        }
+        accessUsers: true
       }
     });
     
@@ -600,6 +598,13 @@ export class DocumentService {
     
     // Es el creador o tiene acceso explícito
     return contract.createdById === userId || 
-           (contract.accessUsers && contract.accessUsers.length > 0);
+           contract.accessUsers.some(access => {
+             try {
+               const permissions = JSON.parse(access.permissions);
+               return access.userId === userId && permissions.read === true;
+             } catch (e) {
+               return false;
+             }
+           });
   }
 }
