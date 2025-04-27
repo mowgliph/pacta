@@ -51,14 +51,14 @@ export class ContractService {
         where.OR = [
           { createdById: userId },
           {
-            ContractAccess: {
+            accessUsers: {
               some: {
                 userId,
               },
             },
           },
           {
-            ContractAccessRole: {
+            accessRoles: {
               some: {
                 role: {
                   users: {
@@ -84,7 +84,7 @@ export class ContractService {
               email: true,
             },
           },
-          ContractAccess: {
+          accessUsers: {
             include: {
               user: {
                 select: {
@@ -129,7 +129,7 @@ export class ContractService {
           },
           documents: true,
           supplements: true,
-          ContractAccess: {
+          accessUsers: {
             include: {
               user: {
                 select: {
@@ -140,7 +140,7 @@ export class ContractService {
               },
             },
           },
-          ContractAccessRole: {
+          accessRoles: {
             include: {
               role: true,
             },
@@ -156,7 +156,7 @@ export class ContractService {
               },
             },
             orderBy: {
-              createdAt: "desc",
+              timestamp: "desc",
             },
           },
         },
@@ -270,8 +270,8 @@ export class ContractService {
       const existingContract = await prisma.contract.findUnique({
         where: { id },
         include: {
-          ContractAccess: true,
-          ContractAccessRole: {
+          accessUsers: true,
+          accessRoles: {
             include: {
               role: true,
             },
@@ -382,8 +382,8 @@ export class ContractService {
       const existingContract = await prisma.contract.findUnique({
         where: { id },
         include: {
-          ContractAccess: true,
-          ContractAccessRole: {
+          accessUsers: true,
+          accessRoles: {
             include: {
               role: true,
             },
@@ -482,8 +482,8 @@ export class ContractService {
       const existingContract = await prisma.contract.findUnique({
         where: { id },
         include: {
-          ContractAccess: true,
-          ContractAccessRole: {
+          accessUsers: true,
+          accessRoles: {
             include: {
               role: true,
             },
@@ -561,7 +561,7 @@ export class ContractService {
       const contract = await prisma.$transaction(async (prisma) => {
         // Si se cambia a acceso restringido, eliminamos los roles existentes
         if (accessControl.restricted) {
-          await prisma.contractAccessRole.deleteMany({
+          await prisma.accessRoles.deleteMany({
             where: { contractId: id },
           });
         }
@@ -571,13 +571,13 @@ export class ContractService {
           Array.isArray(accessControl.allowedRoles)
         ) {
           // Eliminar roles actuales
-          await prisma.contractAccessRole.deleteMany({
+          await prisma.accessRoles.deleteMany({
             where: { contractId: id },
           });
 
           // Crear nuevas asignaciones de roles
           for (const roleId of accessControl.allowedRoles) {
-            await prisma.contractAccessRole.create({
+            await prisma.accessRoles.create({
               data: {
                 contractId: id,
                 roleId,
@@ -590,7 +590,7 @@ export class ContractService {
         const updatedContract = await prisma.contract.update({
           where: { id },
           data: {
-            accessRestricted: accessControl.restricted || false,
+            isRestricted: accessControl.restricted || false,
             updatedAt: new Date(),
             history: {
               create: {
@@ -603,7 +603,7 @@ export class ContractService {
             },
           },
           include: {
-            ContractAccessRole: {
+            accessRoles: {
               include: {
                 role: true,
               },
@@ -668,13 +668,13 @@ export class ContractService {
       // Procesar asignaciones de usuarios
       await prisma.$transaction(async (prisma) => {
         // Eliminar asignaciones actuales
-        await prisma.contractAccess.deleteMany({
+        await prisma.accessUsers.deleteMany({
           where: { contractId: id },
         });
 
         // Crear nuevas asignaciones
         for (const assignment of userAssignments) {
-          await prisma.contractAccess.create({
+          await prisma.accessUsers.create({
             data: {
               contractId: id,
               userId: assignment.userId,
@@ -711,7 +711,7 @@ export class ContractService {
               email: true,
             },
           },
-          ContractAccess: {
+          accessUsers: {
             include: {
               user: {
                 select: {
@@ -814,7 +814,7 @@ export class ContractService {
 
     // Si tiene acceso explícito
     if (
-      contract.ContractAccess?.some(
+      contract.accessUsers?.some(
         (access) => access.userId === userId && access.canRead
       )
     ) {
@@ -823,7 +823,7 @@ export class ContractService {
 
     // Si pertenece a un rol con acceso
     if (
-      contract.ContractAccessRole?.some((roleAccess) => {
+      contract.accessRoles?.some((roleAccess) => {
         return roleAccess.role.users?.some((user) => user.id === userId);
       })
     ) {
@@ -847,7 +847,7 @@ export class ContractService {
 
     // Si tiene acceso explícito de actualización
     if (
-      contract.ContractAccess?.some(
+      contract.accessUsers?.some(
         (access) => access.userId === userId && access.canUpdate
       )
     ) {
@@ -871,7 +871,7 @@ export class ContractService {
 
     // Si tiene acceso explícito de eliminación
     if (
-      contract.ContractAccess?.some(
+      contract.accessUsers?.some(
         (access) => access.userId === userId && access.canDelete
       )
     ) {
@@ -892,7 +892,7 @@ export class ContractService {
 
     // Si tiene acceso explícito de aprobación
     if (
-      contract.ContractAccess?.some(
+      contract.accessUsers?.some(
         (access) => access.userId === userId && access.canApprove
       )
     ) {
@@ -934,95 +934,6 @@ export class ContractService {
 
   /**
    * Convierte un objeto de contrato de la base de datos al formato DTO
+   * Falta Implementacion
    */
-  private static mapContractToDTO(
-    contract: any,
-    includeDetails: boolean = false
-  ): Contract {
-    // Implementación dependerá de la estructura exacta de tu modelo
-    // Este es un ejemplo simplificado
-    const dto: any = {
-      id: contract.id,
-      title: contract.title,
-      description: contract.description,
-      status: contract.status,
-      startDate: contract.startDate,
-      endDate: contract.endDate,
-      createdAt: contract.createdAt,
-      updatedAt: contract.updatedAt,
-      createdById: contract.createdById,
-    };
-
-    if (contract.createdBy) {
-      dto.createdBy = {
-        id: contract.createdBy.id,
-        name: contract.createdBy.name,
-        email: contract.createdBy.email,
-      };
-    }
-
-    if (includeDetails) {
-      // Incluir detalles adicionales para vista detallada
-      if (contract.documents) {
-        dto.documents = contract.documents;
-      }
-
-      if (contract.supplements) {
-        dto.supplements = contract.supplements;
-      }
-
-      if (contract.history) {
-        dto.history = contract.history.map((h) => ({
-          id: h.id,
-          action: h.action,
-          description: h.description,
-          details: h.details ? JSON.parse(h.details) : undefined,
-          date: h.createdAt,
-          user: h.user
-            ? {
-                id: h.user.id,
-                name: h.user.name,
-              }
-            : undefined,
-        }));
-      }
-
-      // Acceso y roles
-      dto.accessControl = {
-        restricted: contract.accessRestricted || false,
-        allowedRoles: contract.ContractAccessRole
-          ? contract.ContractAccessRole.map((ar) => ({
-              id: ar.role.id,
-              name: ar.role.name,
-            }))
-          : [],
-      };
-
-      if (contract.ContractAccess) {
-        dto.users = contract.ContractAccess.map((access) => ({
-          id: access.user.id,
-          name: access.user.name,
-          email: access.user.email,
-          permissions: {
-            read: access.canRead,
-            update: access.canUpdate,
-            delete: access.canDelete,
-            approve: access.canApprove,
-            assign: access.canAssign,
-          },
-        }));
-      }
-    } else {
-      // Para vista de lista, incluir solo usuarios básicos
-      if (contract.ContractAccess) {
-        dto.users = contract.ContractAccess.map((access) => ({
-          id: access.user.id,
-          name: access.user.name,
-          email: access.user.email,
-        }));
-      }
-    }
-
-    return dto;
-  }
 }
