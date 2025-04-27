@@ -4,3 +4,14 @@ globs:
 alwaysApply: true
 ---
 [prd.txt](mdc:docs/prd.txt) [app-flow.txt](mdc:docs/app-flow.txt) [pacta.md](mdc:docs/pacta.md) [doc-branding.txt](mdc:docs/doc-branding.txt) [frontend.txt](mdc:docs/frontend.txt)
+
+code completetions (all files)
+next edit suggestions
+
+busca primero el archivo en el workspace 
+lee , analisa el codigo del archivo encontrado
+implementa modificaciones modulares 
+programa orientado a objeto
+emplea las practicas de programacion modernas
+
+emplea pnpm en vez de npm

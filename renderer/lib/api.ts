@@ -39,6 +39,46 @@ interface PaginatedResponse<T> {
   };
 }
 
+// Módulo de logging seguro
+const safeLogger = {
+  error(message: string, errorData?: any): void {
+    // Mensaje estático que evita strings de formato dinámicas
+    const safeMessage = typeof message === 'string' 
+      ? message.replace(/\${.*?}/g, '[FILTERED]') 
+      : 'Error logging';
+    
+    if (errorData) {
+      console.error(safeMessage, errorData);
+    } else {
+      console.error(safeMessage);
+    }
+  },
+  
+  warn(message: string, data?: any): void {
+    const safeMessage = typeof message === 'string' 
+      ? message.replace(/\${.*?}/g, '[FILTERED]') 
+      : 'Warning';
+    
+    if (data) {
+      console.warn(safeMessage, data);
+    } else {
+      console.warn(safeMessage);
+    }
+  },
+  
+  info(message: string, data?: any): void {
+    const safeMessage = typeof message === 'string' 
+      ? message.replace(/\${.*?}/g, '[FILTERED]') 
+      : 'Info';
+    
+    if (data) {
+      console.info(safeMessage, data);
+    } else {
+      console.info(safeMessage);
+    }
+  }
+};
+
 // Funciones API para Contratos
 export async function getContracts(params?: {
   type?: string;
@@ -59,7 +99,7 @@ export async function getContractById(id: string): Promise<Contract> {
   try {
     return await ipcRenderer.invoke("contracts:getById", id);
   } catch (error) {
-    console.error(`Error fetching contract ${id} via IPC:`, error);
+    safeLogger.error("Error fetching contract via IPC", { id, error });
     throw error;
   }
 }
@@ -70,7 +110,7 @@ export async function createContract(
   try {
     return await ipcRenderer.invoke("contracts:create", contractData);
   } catch (error) {
-    console.error("Error creating contract via IPC:", error);
+    safeLogger.error("Error creating contract via IPC", error);
     throw error;
   }
 }
@@ -79,7 +119,7 @@ export async function deleteContract(id: string): Promise<void> {
   try {
     await ipcRenderer.invoke("contracts:delete", id);
   } catch (error) {
-    console.error(`Error deleting contract ${id} via IPC:`, error);
+    safeLogger.error("Error deleting contract via IPC", { id, error });
     throw error;
   }
 }
@@ -91,7 +131,7 @@ export async function updateContractStatus(
   try {
     return await ipcRenderer.invoke("contracts:updateStatus", { id, status });
   } catch (error) {
-    console.error(`Error updating contract ${id} status via IPC:`, error);
+    safeLogger.error("Error updating contract status via IPC", { id, status, error });
     throw error;
   }
 }
@@ -101,7 +141,7 @@ export async function getContractsStats() {
   try {
     return await ipcRenderer.invoke("contracts:getStats");
   } catch (error) {
-    console.error("Error fetching contracts stats via IPC:", error);
+    safeLogger.error("Error fetching contracts stats via IPC", error);
     throw error;
   }
 }
@@ -111,7 +151,7 @@ export async function getRecentContracts(limit: number = 5) {
   try {
     return await ipcRenderer.invoke("contracts:getRecent", limit);
   } catch (error) {
-    console.error("Error fetching recent contracts via IPC:", error);
+    safeLogger.error("Error fetching recent contracts via IPC", { limit, error });
     throw error;
   }
 }
@@ -124,7 +164,7 @@ export async function getExpiringContracts(
   try {
     return await ipcRenderer.invoke("contracts:getExpiring", { days, limit });
   } catch (error) {
-    console.error("Error fetching expiring contracts via IPC:", error);
+    safeLogger.error("Error fetching expiring contracts via IPC", { days, limit, error });
     throw error;
   }
 }

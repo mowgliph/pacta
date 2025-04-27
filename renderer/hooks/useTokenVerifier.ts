@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { jwtVerify, JWTVerifyResult } from "jose";
 import { useAuth } from "./useAuth";
+import { getEnvVariable } from '../lib/utils';
 
 // Caché global para resultados de verificación (evita múltiples verificaciones del mismo token)
 const tokenVerificationCache = new Map<string, {
@@ -62,7 +63,13 @@ export function useTokenVerifier({
   const getSecretKey = useMemo(() => {
     // Solo creamos la función una vez
     return async (): Promise<Uint8Array> => {
-      const jwtSecret = process.env.JWT_SECRET || 'default_secret_key';
+      // Obtener el JWT_SECRET desde una variable de entorno o servicio seguro
+      // Nunca usar valores por defecto para secretos de producción
+      const jwtSecret = await getEnvVariable('JWT_SECRET');
+      if (!jwtSecret) {
+        throw new Error('JWT_SECRET no encontrado en el entorno');
+      }
+      
       const encoder = new TextEncoder();
       return encoder.encode(jwtSecret);
     };

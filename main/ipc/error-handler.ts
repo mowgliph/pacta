@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger';
+import { BrowserWindow, dialog } from 'electron';
 
 // Tipos de error personalizados para la aplicación
 export type AppErrorType = 
@@ -20,7 +21,38 @@ export interface IpcError {
   data?: any;
 }
 
-export class IpcErrorHandler {
+export class ErrorHandler {
+  private mainWindow: BrowserWindow | null = null;
+  
+  constructor(mainWindow?: BrowserWindow) {
+    this.mainWindow = mainWindow || null;
+  }
+  
+  /**
+   * Configura el manejo de errores para la aplicación
+   */
+  public setupErrorHandling(): void {
+    process.on('uncaughtException', (error) => {
+      logger.error('Error no capturado:', error);
+      this.showErrorDialog('Error inesperado', 'Ha ocurrido un error inesperado en la aplicación.');
+    });
+    
+    process.on('unhandledRejection', (reason) => {
+      logger.error('Promesa rechazada no manejada:', reason);
+    });
+    
+    logger.info('Sistema de manejo de errores configurado');
+  }
+  
+  /**
+   * Muestra un diálogo de error al usuario
+   */
+  private showErrorDialog(title: string, message: string): void {
+    if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+      dialog.showErrorBox(title, message);
+    }
+  }
+
   /**
    * Registra un error ocurrido durante una comunicación IPC
    */

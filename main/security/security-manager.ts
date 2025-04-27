@@ -13,13 +13,34 @@ import { v4 as uuidv4 } from 'uuid';
  * Clase para gestionar aspectos de seguridad en la aplicación
  */
 export class SecurityManager {
+  private static instance: SecurityManager;
   private csrfTokens: Map<string, { token: string, expiresAt: number }> = new Map();
   private knownDevices: Map<string, { userId: string, lastActive: number }> = new Map();
   private sessionInvalidationCallbacks: Map<string, Function[]> = new Map();
   
-  constructor() {
+  private constructor() {
     this.setupListeners();
     this.startCleanupTasks();
+  }
+
+  /**
+   * Obtiene la instancia única del SecurityManager (Singleton)
+   */
+  public static getInstance(): SecurityManager {
+    if (!SecurityManager.instance) {
+      SecurityManager.instance = new SecurityManager();
+    }
+    return SecurityManager.instance;
+  }
+
+  /**
+   * Configura las opciones de seguridad para la aplicación
+   */
+  public setupSecurity(): void {
+    logger.info('Configurando opciones de seguridad...');
+    
+    // Configurar Content-Security-Policy y otras opciones de seguridad
+    // Implementar según necesidades específicas
   }
 
   /**
@@ -307,7 +328,7 @@ export class SecurityManager {
 }
 
 // Instancia global del SecurityManager
-export const securityManager = new SecurityManager();
+export const securityManager = SecurityManager.getInstance();
 
 // Convertir scrypt a versión con promesas
 const scryptAsync = promisify(scrypt);

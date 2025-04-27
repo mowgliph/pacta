@@ -1,10 +1,15 @@
 import { app } from 'electron';
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as cron from 'node-cron';
+import { randomBytes } from 'crypto';
 import { prisma } from './prisma';
 import { logger } from './logger';
-import cron from 'node-cron';
 
+/**
+ * Clase para gestionar copias de seguridad de la base de datos
+ * Sigue el patrón Singleton para asegurar una única instancia en la aplicación
+ */
 export class BackupManager {
   private static instance: BackupManager;
   private backupDir: string;
@@ -35,6 +40,10 @@ export class BackupManager {
     }
   }
 
+  /**
+   * Configura un backup automático según la expresión cron proporcionada
+   * @param cronExpression Expresión cron para programar la tarea (por defecto diariamente a medianoche)
+   */
   public setupScheduledBackup(cronExpression = '0 0 * * *'): void {
     // Cancela cualquier tarea programada anterior
     if (this.scheduledTask) {
@@ -55,6 +64,9 @@ export class BackupManager {
     logger.info(`Backup programado configurado: ${cronExpression}`);
   }
 
+  /**
+   * Obtiene o crea un usuario de sistema para los backups automáticos
+   */
   private async getSystemUserId(): Promise<string> {
     // Buscar o crear un usuario de sistema para los backups automáticos
     let systemUser = await prisma.user.findFirst({
@@ -79,7 +91,7 @@ export class BackupManager {
         data: {
           name: 'Sistema',
           email: 'system@pacta.local',
-          password: 'no-login-' + Math.random().toString(36).substring(2),
+          password: 'no-login-' + randomBytes(16).toString('hex'),
           roleId: adminRole.id,
           isActive: true
         }
@@ -91,6 +103,12 @@ export class BackupManager {
     return systemUser.id;
   }
 
+  /**
+   * Crea una nueva copia de seguridad de la base de datos
+   * @param userId ID del usuario que crea el backup
+   * @param note Nota opcional sobre el backup
+   * @returns El objeto backup creado
+   */
   public async createBackup(userId: string, note?: string): Promise<any> {
     // Generar nombre de archivo con timestamp
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -130,6 +148,12 @@ export class BackupManager {
     return backup;
   }
 
+  /**
+   * Restaura una copia de seguridad
+   * @param backupId ID del backup a restaurar
+   * @param userId ID del usuario que realiza la restauración
+   * @returns true si la restauración fue exitosa
+   */
   public async restoreBackup(backupId: string, userId: string): Promise<boolean> {
     // Buscar el backup en la base de datos
     const backup = await prisma.backup.findUnique({
@@ -180,6 +204,11 @@ export class BackupManager {
     return true;
   }
 
+  /**
+   * Elimina una copia de seguridad
+   * @param backupId ID del backup a eliminar
+   * @returns true si la eliminación fue exitosa
+   */
   public async deleteBackup(backupId: string): Promise<boolean> {
     // Buscar el backup en la base de datos
     const backup = await prisma.backup.findUnique({
@@ -216,6 +245,10 @@ export class BackupManager {
     return true;
   }
 
+  /**
+   * Obtiene la lista de todos los backups
+   * @returns Lista de backups ordenados por fecha de creación
+   */
   public async getBackups(): Promise<any[]> {
     return await prisma.backup.findMany({
       orderBy: { createdAt: 'desc' },
@@ -231,6 +264,11 @@ export class BackupManager {
     });
   }
 
+  /**
+   * Limpia backups antiguos según las políticas definidas
+   * - Backups manuales: más de 30 días
+   * - Backups automáticos: más de 7 días
+   */
   public async cleanOldBackups(): Promise<void> {
     try {
       // Eliminar backups manuales más antiguos que 30 días

@@ -4,7 +4,7 @@ import { withErrorHandling } from '../setup';
 import { logger } from '../../utils/logger';
 import { z } from 'zod';
 import path from 'path';
-import { IpcErrorHandler } from '../error-handler';
+import { ErrorHandler } from '../error-handler';
 
 // Esquemas de validación
 const openFileSchema = z.object({
@@ -71,7 +71,7 @@ export function setupAppHandlers(mainWindow: BrowserWindow): void {
         const hasInvalidExtension = allExtensions.some(ext => !ALLOWED_EXTENSIONS.includes(ext));
         
         if (hasInvalidExtension) {
-          throw IpcErrorHandler.createError('ValidationError', 'Extensión de archivo no permitida');
+          throw ErrorHandler.createError('ValidationError', 'Extensión de archivo no permitida');
         }
       }
       
@@ -82,7 +82,7 @@ export function setupAppHandlers(mainWindow: BrowserWindow): void {
         
         if (safeDefaultPath !== defaultPath) {
           logger.warn('Posible intento de path traversal en defaultPath:', defaultPath);
-          throw IpcErrorHandler.createError('ValidationError', 'Ruta no permitida');
+          throw ErrorHandler.createError('ValidationError', 'Ruta no permitida');
         }
       }
       
@@ -92,7 +92,7 @@ export function setupAppHandlers(mainWindow: BrowserWindow): void {
       
       const hasInvalidProperty = safeProperties.some(prop => !allowedProperties.includes(prop));
       if (hasInvalidProperty) {
-        throw IpcErrorHandler.createError('ValidationError', 'Propiedad no permitida');
+        throw ErrorHandler.createError('ValidationError', 'Propiedad no permitida');
       }
       
       const result = await dialog.showOpenDialog(mainWindow, {
@@ -108,7 +108,7 @@ export function setupAppHandlers(mainWindow: BrowserWindow): void {
     } catch (error) {
       if (error instanceof z.ZodError) {
         logger.warn('Validation error in dialog:openFile:', error.errors);
-        throw IpcErrorHandler.createError('ValidationError', 'Opciones de diálogo inválidas');
+        throw ErrorHandler.createError('ValidationError', 'Opciones de diálogo inválidas');
       }
       throw error;
     }
@@ -139,7 +139,7 @@ export function setupAppHandlers(mainWindow: BrowserWindow): void {
     } catch (error) {
       if (error instanceof z.ZodError) {
         logger.warn('Validation error in dialog:confirm:', error.errors);
-        throw IpcErrorHandler.createError('ValidationError', 'Opciones de diálogo inválidas');
+        throw ErrorHandler.createError('ValidationError', 'Opciones de diálogo inválidas');
       }
       throw error;
     }
@@ -149,7 +149,7 @@ export function setupAppHandlers(mainWindow: BrowserWindow): void {
   withErrorHandling('shell:openExternal', async (_, url) => {
     try {
       if (typeof url !== 'string') {
-        throw IpcErrorHandler.createError('ValidationError', 'URL debe ser una cadena de texto');
+        throw ErrorHandler.createError('ValidationError', 'URL debe ser una cadena de texto');
       }
       
       // Lista de dominios permitidos
@@ -170,20 +170,20 @@ export function setupAppHandlers(mainWindow: BrowserWindow): void {
       
       if (!isDomainAllowed) {
         logger.warn(`Intento de abrir URL no permitida: ${url}`);
-        throw IpcErrorHandler.createError('ValidationError', 'URL no permitida');
+        throw ErrorHandler.createError('ValidationError', 'URL no permitida');
       }
       
       // Solo permitir http/https
       if (!['http:', 'https:'].includes(urlObj.protocol)) {
         logger.warn(`Intento de abrir URL con protocolo no permitido: ${url}`);
-        throw IpcErrorHandler.createError('ValidationError', 'Protocolo no permitido');
+        throw ErrorHandler.createError('ValidationError', 'Protocolo no permitido');
       }
       
       await shell.openExternal(url);
       return { success: true };
     } catch (error) {
       if (error instanceof TypeError && error.message.includes('Invalid URL')) {
-        throw IpcErrorHandler.createError('ValidationError', 'URL inválida');
+        throw ErrorHandler.createError('ValidationError', 'URL inválida');
       }
       throw error;
     }
@@ -200,9 +200,23 @@ export function setupAppHandlers(mainWindow: BrowserWindow): void {
   });
 }
 
-// Función para sanitizar texto
+// Función para sanitizar texto de forma completa
 function sanitizeText(text: string): string {
+  if (typeof text !== 'string') {
+    return '';
+  }
+  
   return text
-    .replace(/<[^>]*>/g, '') // Eliminar etiquetas HTML
-    .substring(0, 1000);     // Limitar longitud
+    // Eliminar etiquetas HTML
+    .replace(/<[^>]*>/g, '')
+    // Escapar caracteres especiales para prevenir XSS
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+    // Eliminar caracteres de control y no imprimibles
+    .replace(/[\x00-\x1F\x7F-\x9F]/g, '')
+    // Limitar longitud
+    .substring(0, 1000);
 } 

@@ -2,9 +2,8 @@ import { app, BrowserWindow, dialog } from 'electron';
 import { WindowManager } from './window/window-manager';
 import { SecurityManager } from './security/security-manager';
 import { logger } from './utils/logger';
-import { ErrorHandler } from './config/error-handler';
+import { ErrorHandler } from './ipc/error-handler';
 import { BackupManager } from './lib/backup-manager';
-import { IPC_CHANNELS } from './utils/constants';
 import { setupIpcHandlers } from './ipc/setup';
 
 /**

@@ -9,7 +9,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { z } from 'zod';
 import { BackupManager } from '../../lib/backup-manager';
-import { IpcErrorHandler } from '../error-handler';
+import { ErrorHandler } from '../error-handler';
 
 const execAsync = promisify(exec);
 const BACKUP_DIR = path.join(app.getPath('userData'), 'backups');
@@ -68,7 +68,7 @@ export function setupBackupHandlers(): void {
       );
       
       if (manualBackupsToday.length >= 5) {
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'LimitExceeded', 
           'Has alcanzado el límite de 5 backups manuales por día'
         );
@@ -82,7 +82,7 @@ export function setupBackupHandlers(): void {
     } catch (error) {
       if (error instanceof z.ZodError) {
         logger.warn('Error de validación en backup:create:', error.errors);
-        throw IpcErrorHandler.createError('ValidationError', 'Datos de entrada inválidos');
+        throw ErrorHandler.createError('ValidationError', 'Datos de entrada inválidos');
       }
       throw error;
     }
@@ -102,7 +102,7 @@ export function setupBackupHandlers(): void {
     } catch (error) {
       if (error instanceof z.ZodError) {
         logger.warn('Error de validación en backup:restore:', error.errors);
-        throw IpcErrorHandler.createError('ValidationError', 'Datos de entrada inválidos');
+        throw ErrorHandler.createError('ValidationError', 'Datos de entrada inválidos');
       }
       throw error;
     }
@@ -122,7 +122,7 @@ export function setupBackupHandlers(): void {
     } catch (error) {
       if (error instanceof z.ZodError) {
         logger.warn('Error de validación en backup:delete:', error.errors);
-        throw IpcErrorHandler.createError('ValidationError', 'Datos de entrada inválidos');
+        throw ErrorHandler.createError('ValidationError', 'Datos de entrada inválidos');
       }
       throw error;
     }
