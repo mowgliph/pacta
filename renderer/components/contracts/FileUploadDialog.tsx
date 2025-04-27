@@ -5,9 +5,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "../ui/button"
 import { Label } from "../ui/label"
 import { Textarea } from "../ui/textarea"
-import { LoadingSpinner } from "../ui/loading-spinner"
+import { Spinner } from "../ui/spinner"
 import { FileUpload } from "../ui/file-upload"
-import { useToast } from "../ui/use-toast"
+import { useToast } from "../../hooks/use-toast"
+import { useDocuments } from "../../hooks/useDocuments"
 
 interface FileUploadDialogProps {
   isOpen: boolean
@@ -20,7 +21,7 @@ interface FileUploadDialogProps {
 export function FileUploadDialog({ isOpen, onClose, contractId, supplementId, onSuccess }: FileUploadDialogProps) {
   const [file, setFile] = useState<File | null>(null)
   const [description, setDescription] = useState("")
-  const [isUploading, setIsUploading] = useState(false)
+  const { uploadDocument, isLoading } = useDocuments()
   const { toast } = useToast()
 
   const handleUpload = async () => {
@@ -33,44 +34,17 @@ export function FileUploadDialog({ isOpen, onClose, contractId, supplementId, on
       return
     }
 
-    setIsUploading(true)
+    const result = await uploadDocument(file, {
+      description,
+      contractId,
+      supplementId,
+      isPublic: false,
+      tags: []
+    })
 
-    try {
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("description", description)
-      formData.append("contractId", contractId)
-
-      if (supplementId) {
-        formData.append("supplementId", supplementId)
-      }
-
-      const response = await fetch("/api/documents", {
-        method: "POST",
-        body: formData,
-      })
-
-      if (response.ok) {
-        toast({
-          title: "Éxito",
-          description: "Documento subido correctamente",
-        })
-        onSuccess?.()
-      } else {
-        toast({
-          title: "Error",
-          description: "No se pudo subir el documento",
-          variant: "destructive",
-        })
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Ocurrió un error al subir el documento",
-        variant: "destructive",
-      })
-    } finally {
-      setIsUploading(false)
+    if (result) {
+      onSuccess?.()
+      onClose()
     }
   }
 
@@ -114,10 +88,10 @@ export function FileUploadDialog({ isOpen, onClose, contractId, supplementId, on
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={handleUpload} disabled={isUploading || !file}>
-            {isUploading ? (
+          <Button onClick={handleUpload} disabled={isLoading || !file}>
+            {isLoading ? (
               <>
-                <LoadingSpinner className="mr-2" />
+                <Spinner className="mr-2" size="sm" />
                 Subiendo...
               </>
             ) : (

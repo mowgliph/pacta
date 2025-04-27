@@ -30,8 +30,8 @@ export class DocumentService {
         where.contractId = filters.contractId;
       }
 
-      if (filters?.fileType) {
-        where.fileType = filters.fileType;
+      if (filters?.mimeType) {
+        where.mimeType = filters.mimeType;
       }
 
       if (filters?.search) {
@@ -47,7 +47,7 @@ export class DocumentService {
           OR: [
             { createdById: userId },
             {
-              ContractAccess: {
+              accessUsers: {
                 some: {
                   userId,
                   canRead: true,
@@ -55,7 +55,7 @@ export class DocumentService {
               },
             },
             {
-              ContractAccessRole: {
+              accessRoles: {
                 some: {
                   role: {
                     users: {
@@ -81,7 +81,7 @@ export class DocumentService {
               title: true,
             },
           },
-          createdBy: {
+          uploadedBy: {
             select: {
               id: true,
               name: true,
@@ -179,7 +179,7 @@ export class DocumentService {
       const contract = await prisma.contract.findUnique({
         where: { id: contractId },
         include: {
-          ContractAccess: true,
+          accessUsers: true,
         },
       });
 
@@ -191,7 +191,7 @@ export class DocumentService {
       if (userRole !== "Admin") {
         const hasUpdateAccess =
           contract.createdById === userId ||
-          contract.ContractAccess?.some(
+          contract.accessUsers?.some(
             (access) => access.userId === userId && access.canUpdate
           );
 
@@ -229,18 +229,23 @@ export class DocumentService {
       // Crear registro en base de datos
       const document = await prisma.document.create({
         data: {
+          filename: safeFileName,
+          originalName: fileData.originalname,
+          mimeType: fileData.mimetype,
+          size: fileStats.size,
+          path: safeFileName,
           name: documentData.name || fileData.originalname,
-          description: documentData.description,
-          fileType: fileData.mimetype,
           fileName: fileData.originalname,
-          filePath: safeFileName, // Solo guardamos el nombre, no la ruta completa
+          fileType: fileData.mimetype,
           fileSize: fileStats.size,
+          filePath: safeFileName,
           contract: {
             connect: { id: contractId },
           },
-          createdBy: {
+          uploadedBy: {
             connect: { id: userId },
           },
+          description: documentData.description,
         },
         include: {
           contract: {
@@ -249,7 +254,7 @@ export class DocumentService {
               title: true,
             },
           },
-          createdBy: {
+          uploadedBy: {
             select: {
               id: true,
               name: true,
@@ -264,10 +269,12 @@ export class DocumentService {
         data: {
           contractId,
           action: "DOCUMENT_ADDED",
+          entityType: "Contract",
+          entityId: contractId,
+          userId,
           description: `Documento añadido: ${
             documentData.name || fileData.originalname
           }`,
-          userId,
         },
       });
 
@@ -298,8 +305,8 @@ export class DocumentService {
         include: {
           contract: {
             include: {
-              ContractAccess: true,
-              ContractAccessRole: {
+              accessUsers: true,
+              accessRoles: {
                 include: {
                   role: true,
                 },
@@ -314,10 +321,10 @@ export class DocumentService {
       }
 
       // Verificar permisos si no es admin
-      if (userRole !== "Admin") {
+      if (userRole !== "Admin" && document.contract) {
         const hasAccess =
           document.contract.createdById === userId ||
-          document.contract.ContractAccess?.some(
+          document.contract.accessUsers?.some(
             (access) => access.userId === userId && access.canRead
           );
 
@@ -377,7 +384,7 @@ export class DocumentService {
         include: {
           contract: {
             include: {
-              ContractAccess: true,
+              accessUsers: true,
             },
           },
         },
@@ -388,10 +395,10 @@ export class DocumentService {
       }
 
       // Verificar permisos si no es admin
-      if (userRole !== "Admin") {
+      if (userRole !== "Admin" && document.contract) {
         const hasDeleteAccess =
           document.contract.createdById === userId ||
-          document.contract.ContractAccess?.some(
+          document.contract.accessUsers?.some(
             (access) => access.userId === userId && access.canDelete
           );
 
@@ -418,7 +425,7 @@ export class DocumentService {
       }
 
       // Guardar referencia al contrato para historial
-      const contractId = document.contract.id;
+      const contractId = document.contract?.id;
       const documentName = document.name;
 
       // Eliminar registro de la base de datos
@@ -426,15 +433,19 @@ export class DocumentService {
         where: { id },
       });
 
-      // Registrar en historial del contrato
-      await prisma.historyRecord.create({
-        data: {
-          contractId,
-          action: "DOCUMENT_DELETED",
-          description: `Documento eliminado: ${documentName}`,
-          userId,
-        },
-      });
+      // Registrar en historial del contrato si existe contractId
+      if (contractId) {
+        await prisma.historyRecord.create({
+          data: {
+            contractId,
+            action: "DOCUMENT_DELETED",
+            entityType: "Contract",
+            entityId: contractId,
+            userId,
+            description: `Documento eliminado: ${documentName}`,
+          },
+        });
+      }
 
       logger.info(`Documento ${id} eliminado por usuario ${userId}`);
       return { success: true };
@@ -546,7 +557,7 @@ export class DocumentService {
       fileName: document.fileName,
       fileSize: document.fileSize,
       contractId: document.contractId,
-      createdAt: document.createdAt,
+      createdAt: document.createdAt || document.uploadedAt,
       updatedAt: document.updatedAt,
       contract: document.contract
         ? {
@@ -554,11 +565,11 @@ export class DocumentService {
             title: document.contract.title,
           }
         : undefined,
-      createdBy: document.createdBy
+      createdBy: document.uploadedBy
         ? {
-            id: document.createdBy.id,
-            name: document.createdBy.name,
-            email: document.createdBy.email,
+            id: document.uploadedBy.id,
+            name: document.uploadedBy.name,
+            email: document.uploadedBy.email,
           }
         : undefined,
       downloadUrl: `/api/documents/${document.id}/download`,
@@ -576,7 +587,7 @@ export class DocumentService {
       where: { id: contractId },
       select: {
         createdById: true,
-        ContractAccess: {
+        accessUsers: {
           where: {
             userId,
             canRead: true
@@ -589,6 +600,6 @@ export class DocumentService {
     
     // Es el creador o tiene acceso explícito
     return contract.createdById === userId || 
-           (contract.ContractAccess && contract.ContractAccess.length > 0);
+           (contract.accessUsers && contract.accessUsers.length > 0);
   }
 }

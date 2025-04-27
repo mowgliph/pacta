@@ -1,109 +1,220 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { useToast } from "../components/ui/use-toast"
+import { useState } from "react"
+import { DocumentsChannels } from "../../main/ipc/channels/documents.channels"
+import { useToast } from "./use-toast"
 
-export function useDocuments(contractId: string, supplementId?: string) {
-  const [documents, setDocuments] = useState<any[]>([])
+interface DocumentMetadata {
+  fileName: string
+  originalName: string
+  mimeType: string
+  size: number
+  description?: string
+  contractId?: string
+  supplementId?: string
+  isPublic?: boolean
+  tags?: string[]
+}
+
+/**
+ * Hook para gestionar operaciones con documentos a través de IPC
+ */
+export function useDocuments() {
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
 
-  const fetchDocuments = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const url = supplementId ? `/api/supplements/${supplementId}/documents` : `/api/contracts/${contractId}/documents`
-
-      const response = await fetch(url)
-      if (!response.ok) {
-        throw new Error("Error fetching documents")
-      }
-      const data = await response.json()
-      setDocuments(data.documents)
-    } catch (error) {
-      console.error("Error fetching documents:", error)
+  /**
+   * Sube un documento al servidor a través de IPC
+   * @param file - Archivo a subir
+   * @param metadata - Metadatos del documento
+   * @returns Promise con el resultado de la operación
+   */
+  const uploadDocument = async (file: File, metadata: Omit<DocumentMetadata, "fileName" | "originalName" | "mimeType" | "size">) => {
+    if (!file) {
       toast({
         title: "Error",
-        description: "No se pudieron cargar los documentos",
+        description: "Debe seleccionar un archivo",
         variant: "destructive",
       })
+      return null
+    }
+
+    setIsLoading(true)
+
+    try {
+      // Convertir el archivo a un ArrayBuffer para enviarlo por IPC
+      const arrayBuffer = await file.arrayBuffer()
+      
+      // Preparar metadata completa del documento
+      const completeMetadata: DocumentMetadata = {
+        fileName: file.name,
+        originalName: file.name,
+        mimeType: file.type,
+        size: file.size,
+        ...metadata
+      }
+      
+      // Enviar al proceso principal via IPC
+      // @ts-ignore - Electron está expuesto por el preload script
+      const result = await window.Electron.ipcRenderer.invoke(
+        DocumentsChannels.SAVE, 
+        { buffer: Buffer.from(arrayBuffer) }, 
+        completeMetadata,
+        // El ID del usuario se debe pasar desde el contexto de autenticación
+        undefined
+      )
+
+      if (result) {
+        toast({
+          title: "Éxito",
+          description: "Documento subido correctamente",
+        })
+      }
+      
+      return result
+    } catch (error) {
+      console.error("Error al subir documento:", error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Ocurrió un error al subir el documento",
+        variant: "destructive",
+      })
+      return null
     } finally {
       setIsLoading(false)
     }
-  }, [contractId, supplementId, toast])
+  }
 
-  const uploadDocument = useCallback(
-    async (file: File, description?: string) => {
-      try {
-        const formData = new FormData()
-        formData.append("file", file)
+  /**
+   * Obtiene los documentos de un contrato
+   * @param contractId - ID del contrato
+   */
+  const getContractDocuments = async (contractId: string) => {
+    if (!contractId) return []
+    
+    setIsLoading(true)
+    try {
+      // @ts-ignore - Electron está expuesto por el preload script
+      return await window.Electron.ipcRenderer.invoke("documents:getByContract", contractId)
+    } catch (error) {
+      console.error(`Error al obtener documentos del contrato ${contractId}:`, error)
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los documentos del contrato",
+        variant: "destructive",
+      })
+      return []
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-        if (description) {
-          formData.append("description", description)
-        }
+  /**
+   * Obtiene los documentos de un suplemento
+   * @param supplementId - ID del suplemento
+   */
+  const getSupplementDocuments = async (supplementId: string) => {
+    if (!supplementId) return []
+    
+    setIsLoading(true)
+    try {
+      // @ts-ignore - Electron está expuesto por el preload script
+      return await window.Electron.ipcRenderer.invoke("documents:getBySupplement", supplementId)
+    } catch (error) {
+      console.error(`Error al obtener documentos del suplemento ${supplementId}:`, error)
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los documentos del suplemento",
+        variant: "destructive",
+      })
+      return []
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-        if (supplementId) {
-          formData.append("supplementId", supplementId)
-        } else {
-          formData.append("contractId", contractId)
-        }
+  /**
+   * Elimina un documento
+   * @param documentId - ID del documento a eliminar
+   */
+  const deleteDocument = async (documentId: string) => {
+    if (!documentId) return false
 
-        const response = await fetch("/api/documents", {
-          method: "POST",
-          body: formData,
-        })
-
-        if (!response.ok) {
-          throw new Error("Error uploading document")
-        }
-
-        const result = await response.json()
-        return result.document
-      } catch (error) {
-        console.error("Error uploading document:", error)
+    setIsLoading(true)
+    try {
+      // @ts-ignore - Electron está expuesto por el preload script
+      const result = await window.Electron.ipcRenderer.invoke(DocumentsChannels.DELETE, documentId)
+      
+      if (result && result.success) {
         toast({
-          title: "Error",
-          description: "No se pudo subir el documento",
-          variant: "destructive",
+          title: "Éxito",
+          description: "Documento eliminado correctamente",
         })
-        return null
-      }
-    },
-    [contractId, supplementId, toast],
-  )
-
-  const deleteDocument = useCallback(
-    async (documentId: string) => {
-      try {
-        const response = await fetch(`/api/documents/${documentId}`, {
-          method: "DELETE",
-        })
-
-        if (!response.ok) {
-          throw new Error("Error deleting document")
-        }
-
-        // Actualizar la lista de documentos
-        setDocuments((prevDocuments) => prevDocuments.filter((doc) => doc.id !== documentId))
-
         return true
-      } catch (error) {
-        console.error("Error deleting document:", error)
+      } else {
         toast({
           title: "Error",
-          description: "No se pudo eliminar el documento",
+          description: result?.message || "No se pudo eliminar el documento",
           variant: "destructive",
         })
         return false
       }
-    },
-    [toast],
-  )
+    } catch (error) {
+      console.error(`Error al eliminar documento ${documentId}:`, error)
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al eliminar el documento",
+        variant: "destructive",
+      })
+      return false
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  /**
+   * Descarga un documento
+   * @param documentId - ID del documento a descargar
+   */
+  const downloadDocument = async (documentId: string) => {
+    if (!documentId) return null
+
+    setIsLoading(true)
+    try {
+      // @ts-ignore - Electron está expuesto por el preload script
+      const fileData = await window.Electron.ipcRenderer.invoke(DocumentsChannels.DOWNLOAD, documentId)
+      
+      if (fileData) {
+        // El manejo del archivo descargado depende de la implementación
+        // Podría ser automáticamente descargado por Electron o devuelto para su procesamiento
+        return fileData
+      } else {
+        toast({
+          title: "Error",
+          description: "No se pudo descargar el documento",
+          variant: "destructive",
+        })
+        return null
+      }
+    } catch (error) {
+      console.error(`Error al descargar documento ${documentId}:`, error)
+      toast({
+        title: "Error",
+        description: "Ocurrió un error al descargar el documento",
+        variant: "destructive",
+      })
+      return null
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return {
-    documents,
     isLoading,
-    fetchDocuments,
     uploadDocument,
+    getContractDocuments,
+    getSupplementDocuments,
     deleteDocument,
+    downloadDocument,
   }
 }

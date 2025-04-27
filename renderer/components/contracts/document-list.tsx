@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
 import { Button } from "../ui/button"
-import { LoadingSpinner } from "../ui/loading-spinner"
+import { Spinner } from "../ui/spinner"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { FileText, Download, Upload, Trash2 } from "lucide-react"
 import { useDocuments } from "../../hooks/useDocuments"
 import { FileUploadDialog } from "./FileUploadDialog"
-import { useToast } from "../ui/use-toast"
+import { useToast } from "../../hooks/use-toast"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../ui/dialog"
 
 interface DocumentListProps {
@@ -17,16 +17,22 @@ interface DocumentListProps {
 }
 
 export function DocumentList({ contractId }: DocumentListProps) {
-  const { documents, isLoading, fetchDocuments, deleteDocument } = useDocuments(contractId)
+  const [documents, setDocuments] = useState<any[]>([])
+  const { isLoading, getContractDocuments, deleteDocument } = useDocuments()
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
   const [selectedDocument, setSelectedDocument] = useState<any>(null)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const { toast } = useToast()
 
+  const fetchDocuments = async () => {
+    const docs = await getContractDocuments(contractId)
+    setDocuments(docs || [])
+  }
+
   useEffect(() => {
     fetchDocuments()
-  }, [fetchDocuments])
+  }, [contractId])
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), "d 'de' MMMM 'de' yyyy", { locale: es })
@@ -55,21 +61,21 @@ export function DocumentList({ contractId }: DocumentListProps) {
 
     setIsDeleting(true)
     try {
-      await deleteDocument(selectedDocument.id)
-      toast({
-        title: "Éxito",
-        description: "Documento eliminado correctamente",
-      })
-      setIsDeleteDialogOpen(false)
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el documento",
-        variant: "destructive",
-      })
+      const success = await deleteDocument(selectedDocument.id)
+      if (success) {
+        // Actualizar lista de documentos
+        setDocuments(docs => docs.filter(doc => doc.id !== selectedDocument.id))
+        setIsDeleteDialogOpen(false)
+      }
     } finally {
       setIsDeleting(false)
     }
+  }
+
+  const handleDownload = async (documentId: string) => {
+    // En Electron, abrimos directamente el archivo usando IPC
+    // @ts-ignore - Electron está expuesto por el preload script
+    window.Electron.ipcRenderer.invoke("documents:open", documentId)
   }
 
   return (
@@ -85,7 +91,7 @@ export function DocumentList({ contractId }: DocumentListProps) {
         <CardContent>
           {isLoading ? (
             <div className="flex justify-center items-center h-64">
-              <LoadingSpinner size="lg" />
+              <Spinner size="lg" />
             </div>
           ) : documents.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
@@ -93,7 +99,7 @@ export function DocumentList({ contractId }: DocumentListProps) {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {documents.map((document) => (
+              {documents.map(document => (
                 <div key={document.id} className="border rounded-md p-4 flex items-start">
                   <div className="mr-4 flex-shrink-0">{getFileIcon(document.mimeType)}</div>
                   <div className="flex-grow min-w-0">
@@ -101,13 +107,14 @@ export function DocumentList({ contractId }: DocumentListProps) {
                       {document.originalName}
                     </h4>
                     <p className="text-sm text-gray-500">{formatFileSize(document.size)}</p>
-                    <p className="text-xs text-gray-500">Subido el {formatDate(document.uploadedAt)}</p>
+                    <p className="text-xs text-gray-500">Subido el {formatDate(document.uploadedAt || document.createdAt)}</p>
                     <div className="flex mt-2 space-x-2">
-                      <Button variant="outline" size="sm" asChild>
-                        <a href={`/api/documents/${document.id}/download`} target="_blank" rel="noopener noreferrer">
-                          <Download className="h-3 w-3 mr-1" />
-                          Descargar
-                        </a>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleDownload(document.id)}>
+                        <Download className="h-3 w-3 mr-1" />
+                        Abrir/Descargar
                       </Button>
                       <Button
                         variant="outline"
@@ -134,7 +141,6 @@ export function DocumentList({ contractId }: DocumentListProps) {
         onClose={() => setIsUploadDialogOpen(false)}
         contractId={contractId}
         onSuccess={() => {
-          setIsUploadDialogOpen(false)
           fetchDocuments()
         }}
       />
@@ -155,7 +161,7 @@ export function DocumentList({ contractId }: DocumentListProps) {
             <Button variant="destructive" onClick={handleDeleteDocument} disabled={isDeleting}>
               {isDeleting ? (
                 <>
-                  <LoadingSpinner className="mr-2" />
+                  <Spinner className="mr-2" size="sm" />
                   Eliminando...
                 </>
               ) : (
