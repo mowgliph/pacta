@@ -3,7 +3,7 @@ import { IPC_CHANNELS } from '../../utils/constants';
 import { prisma } from '../../lib/prisma';
 import { withErrorHandling } from '../setup';
 import { logger } from '../../utils/logger';
-import { ContractService } from '../../services/contractService';
+import { ContractService } from '../../services/contract.service';
 
 export function setupContractHandlers(): void {
   // Obtener todos los contratos

@@ -1,21 +1,32 @@
 import { PrismaClient } from "@prisma/client"
+import { prisma } from "../lib/prisma"
+import { logger } from "../utils/logger"
 
 export class NotificationService {
+  private static instance: NotificationService
   private prisma: PrismaClient
-  private logger: any
 
-  constructor(prisma: PrismaClient, logger: any) {
+  private constructor() {
     this.prisma = prisma
-    this.logger = logger
     
     // Iniciar las verificaciones programadas
     this.scheduleChecks()
   }
 
   /**
+   * Obtiene la instancia única del servicio
+   */
+  public static getInstance(): NotificationService {
+    if (!NotificationService.instance) {
+      NotificationService.instance = new NotificationService()
+    }
+    return NotificationService.instance
+  }
+
+  /**
    * Crea una nueva notificación para un usuario
    */
-  async createNotification(data: {
+  public async createNotification(data: {
     userId: string
     title: string
     message: string
@@ -23,31 +34,77 @@ export class NotificationService {
     contractId?: string
   }) {
     try {
-      return await this.prisma.notification.create({
-        data,
+      return await this.prisma.userNotification.create({
+        data: {
+          userId: data.userId,
+          title: data.title,
+          message: data.message,
+          type: data.type,
+          contractId: data.contractId,
+        },
       })
     } catch (error) {
-      this.logger.error("Error creando notificación:", error)
+      logger.error("Error creando notificación:", error)
       throw error
     }
   }
 
   /**
-   * Obtiene las notificaciones de un usuario
+   * Obtiene las notificaciones de un usuario con filtros
    */
-  async getUserNotifications(userId: string, includeRead = false) {
+  public async getUserNotifications(filters: {
+    userId: string
+    isRead?: boolean
+    type?: string
+    page?: number
+    limit?: number
+  }) {
     try {
-      return await this.prisma.notification.findMany({
-        where: {
-          userId,
-          ...(includeRead ? {} : { isRead: false }),
-        },
+      const { userId, isRead, type, page = 1, limit = 10 } = filters
+      
+      // Construir condiciones de filtrado
+      const where: any = {
+        userId,
+      }
+      
+      if (isRead !== undefined) {
+        where.isRead = isRead
+      }
+      
+      if (type) {
+        where.type = type
+      }
+      
+      // Obtener conteo total
+      const total = await this.prisma.userNotification.count({ where })
+      
+      // Obtener notificaciones paginadas
+      const notifications = await this.prisma.userNotification.findMany({
+        where,
         orderBy: {
           createdAt: "desc",
         },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: {
+          contract: {
+            select: {
+              id: true,
+              title: true,
+              contractNumber: true,
+            }
+          }
+        }
       })
+      
+      return {
+        notifications,
+        total,
+        page,
+        limit
+      }
     } catch (error) {
-      this.logger.error(`Error obteniendo notificaciones para usuario ${userId}:`, error)
+      logger.error(`Error obteniendo notificaciones para usuario:`, error)
       throw error
     }
   }
@@ -55,17 +112,31 @@ export class NotificationService {
   /**
    * Marca una notificación como leída
    */
-  async markAsRead(notificationId: string) {
+  public async markAsRead(notificationId: string, userId: string) {
     try {
-      return await this.prisma.notification.update({
+      // Verificar que la notificación pertenece al usuario
+      const notification = await this.prisma.userNotification.findFirst({
+        where: { 
+          id: notificationId,
+          userId 
+        }
+      })
+      
+      if (!notification) {
+        return false
+      }
+      
+      await this.prisma.userNotification.update({
         where: { id: notificationId },
         data: {
           isRead: true,
           readAt: new Date(),
         },
       })
+      
+      return true
     } catch (error) {
-      this.logger.error(`Error marcando notificación ${notificationId} como leída:`, error)
+      logger.error(`Error marcando notificación como leída:`, error)
       throw error
     }
   }
@@ -73,9 +144,9 @@ export class NotificationService {
   /**
    * Marca todas las notificaciones de un usuario como leídas
    */
-  async markAllAsRead(userId: string) {
+  public async markAllAsRead(userId: string) {
     try {
-      return await this.prisma.notification.updateMany({
+      const result = await this.prisma.userNotification.updateMany({
         where: {
           userId,
           isRead: false,
@@ -85,8 +156,55 @@ export class NotificationService {
           readAt: new Date(),
         },
       })
+      
+      return result.count
     } catch (error) {
-      this.logger.error(`Error marcando todas las notificaciones como leídas para usuario ${userId}:`, error)
+      logger.error(`Error marcando todas las notificaciones como leídas:`, error)
+      throw error
+    }
+  }
+  
+  /**
+   * Obtiene el conteo de notificaciones no leídas
+   */
+  public async getUnreadCount(userId: string) {
+    try {
+      return await this.prisma.userNotification.count({
+        where: {
+          userId,
+          isRead: false
+        }
+      })
+    } catch (error) {
+      logger.error(`Error obteniendo conteo de notificaciones no leídas:`, error)
+      throw error
+    }
+  }
+  
+  /**
+   * Elimina una notificación
+   */
+  public async deleteNotification(notificationId: string, userId: string) {
+    try {
+      // Verificar que la notificación pertenece al usuario
+      const notification = await this.prisma.userNotification.findFirst({
+        where: { 
+          id: notificationId,
+          userId 
+        }
+      })
+      
+      if (!notification) {
+        return false
+      }
+      
+      await this.prisma.userNotification.delete({
+        where: { id: notificationId }
+      })
+      
+      return true
+    } catch (error) {
+      logger.error(`Error eliminando notificación:`, error)
       throw error
     }
   }
@@ -94,7 +212,7 @@ export class NotificationService {
   /**
    * Verifica contratos próximos a vencer y crea notificaciones
    */
-  async checkContractsExpirations() {
+  public async checkContractsExpirations() {
     try {
       // Obtener preferencias de notificación de cada usuario
       const userPreferences = await this.prisma.userPreference.findMany({
@@ -128,7 +246,7 @@ export class NotificationService {
         // Crear notificaciones para cada contrato
         for (const contract of expiringContracts) {
           // Verificar si ya existe una notificación para este contrato
-          const existingNotification = await this.prisma.notification.findFirst({
+          const existingNotification = await this.prisma.userNotification.findFirst({
             where: {
               userId: pref.userId,
               contractId: contract.id,
@@ -155,7 +273,7 @@ export class NotificationService {
 
       return true
     } catch (error) {
-      this.logger.error("Error verificando contratos próximos a vencer:", error)
+      logger.error("Error verificando contratos próximos a vencer:", error)
       return false
     }
   }
@@ -163,7 +281,7 @@ export class NotificationService {
   /**
    * Actualiza automáticamente el estado de los contratos
    */
-  async updateContractsStatus() {
+  public async updateContractsStatus() {
     try {
       const today = new Date()
 
@@ -197,7 +315,7 @@ export class NotificationService {
         },
       })
 
-      this.logger.info(
+      logger.info(
         `Estados de contratos actualizados: ${expiredContracts.count} vencidos, ${nearExpirationContracts.count} próximos a vencer`,
       )
 
@@ -206,7 +324,7 @@ export class NotificationService {
         nearExpiration: nearExpirationContracts.count,
       }
     } catch (error) {
-      this.logger.error("Error actualizando estado de contratos:", error)
+      logger.error("Error actualizando estado de contratos:", error)
       throw error
     }
   }
@@ -214,26 +332,26 @@ export class NotificationService {
   /**
    * Programa tareas de verificación
    */
-  scheduleChecks() {
+  private scheduleChecks() {
     // Importación condicional para node-schedule
     try {
       const schedule = require("node-schedule")
 
       // Actualizar estados a las 1 AM
       schedule.scheduleJob("0 1 * * *", async () => {
-        this.logger.info("Ejecutando actualización automática de estados de contratos")
+        logger.info("Ejecutando actualización automática de estados de contratos")
         await this.updateContractsStatus()
       })
 
       // Verificar vencimientos y crear notificaciones a las 2 AM
       schedule.scheduleJob("0 2 * * *", async () => {
-        this.logger.info("Ejecutando verificación automática de contratos próximos a vencer")
+        logger.info("Ejecutando verificación automática de contratos próximos a vencer")
         await this.checkContractsExpirations()
       })
 
-      this.logger.info("Verificaciones automáticas programadas")
+      logger.info("Verificaciones automáticas programadas")
     } catch (error) {
-      this.logger.error("Error al programar verificaciones automáticas:", error)
+      logger.error("Error al programar verificaciones automáticas:", error)
     }
   }
 }

@@ -1,20 +1,16 @@
 import { ipcMain, app } from 'electron';
-import { IPC_CHANNELS } from '../../utils/constants';
+import { IpcChannels, CreateBackupRequest, RestoreBackupRequest, DeleteBackupRequest } from '../../shared/types';
 import { prisma } from '../../lib/prisma';
 import { withErrorHandling } from '../setup';
 import { logger } from '../../utils/logger';
-import fs from 'fs';
-import path from 'path';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import * as fs from 'fs';
+import * as path from 'path';
 import { z } from 'zod';
 import { BackupManager } from '../../lib/backup-manager';
 import { ErrorHandler } from '../error-handler';
 
-const execAsync = promisify(exec);
-const BACKUP_DIR = path.join(app.getPath('userData'), 'backups');
-
 // Asegurar que el directorio de backups existe
+const BACKUP_DIR = path.join(app.getPath('userData'), 'backups');
 if (!fs.existsSync(BACKUP_DIR)) {
   fs.mkdirSync(BACKUP_DIR, { recursive: true });
 }
@@ -40,7 +36,7 @@ export function setupBackupHandlers(): void {
   backupManager.setupScheduledBackup();
 
   // Obtener lista de backups
-  withErrorHandling('backup:getAll', async () => {
+  withErrorHandling(IpcChannels.BACKUPS_GET_ALL, async () => {
     try {
       const backups = await backupManager.getBackups();
       return { backups };
@@ -51,7 +47,7 @@ export function setupBackupHandlers(): void {
   });
 
   // Crear backup
-  withErrorHandling('backup:create', async (_, data) => {
+  withErrorHandling(IpcChannels.BACKUPS_CREATE, async (_, data: CreateBackupRequest) => {
     try {
       // Validar datos
       const { userId, note } = createBackupSchema.parse(data);
@@ -89,7 +85,7 @@ export function setupBackupHandlers(): void {
   });
 
   // Restaurar backup
-  withErrorHandling('backup:restore', async (_, data) => {
+  withErrorHandling(IpcChannels.BACKUPS_RESTORE, async (_, data: RestoreBackupRequest) => {
     try {
       // Validar datos
       const { backupId, userId } = restoreBackupSchema.parse(data);
@@ -98,7 +94,7 @@ export function setupBackupHandlers(): void {
       await backupManager.restoreBackup(backupId, userId);
       logger.info(`Backup ${backupId} restaurado por usuario ${userId}`);
       
-      return { success: true };
+      return { success: true, message: 'Backup restaurado con éxito' };
     } catch (error) {
       if (error instanceof z.ZodError) {
         logger.warn('Error de validación en backup:restore:', error.errors);
@@ -109,7 +105,7 @@ export function setupBackupHandlers(): void {
   });
 
   // Eliminar backup
-  withErrorHandling('backup:delete', async (_, data) => {
+  withErrorHandling(IpcChannels.BACKUPS_DELETE, async (_, data: DeleteBackupRequest) => {
     try {
       // Validar datos
       const { backupId } = deleteBackupSchema.parse(data);
@@ -118,7 +114,7 @@ export function setupBackupHandlers(): void {
       await backupManager.deleteBackup(backupId);
       logger.info(`Backup ${backupId} eliminado`);
       
-      return { success: true };
+      return { success: true, message: 'Backup eliminado con éxito' };
     } catch (error) {
       if (error instanceof z.ZodError) {
         logger.warn('Error de validación en backup:delete:', error.errors);
@@ -129,7 +125,7 @@ export function setupBackupHandlers(): void {
   });
 
   // Limpiar backups antiguos manualmente
-  withErrorHandling('backup:cleanOld', async () => {
+  withErrorHandling(IpcChannels.BACKUPS_CLEAN_OLD, async () => {
     await backupManager.cleanOldBackups();
     return { success: true, message: 'Limpieza de backups antiguos completada' };
   });

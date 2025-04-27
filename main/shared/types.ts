@@ -51,7 +51,7 @@ export interface UserRole {
 // ====================================================================
 
 export interface UserBasic {
-  id: number;
+  id: string;
   name: string;
   email: string;
 }
@@ -59,8 +59,50 @@ export interface UserBasic {
 // Filtros para usuarios
 export interface UserFilters {
   search?: string;
-  roleId?: number;
+  roleId?: string;
   active?: boolean;
+  page?: number;
+  limit?: number;
+}
+
+// Solicitud para crear usuario
+export interface CreateUserRequest {
+  name: string;
+  email: string;
+  password: string;
+  roleId: string;
+  isActive?: boolean;
+  customPermissions?: string;
+}
+
+// Solicitud para actualizar usuario
+export interface UpdateUserRequest {
+  id: string;
+  name?: string;
+  email?: string;
+  roleId?: string;
+  isActive?: boolean;
+  customPermissions?: string;
+}
+
+// Solicitud para cambiar contraseña
+export interface ChangePasswordRequest {
+  id: string;
+  currentPassword: string;
+  newPassword: string;
+}
+
+// Solicitud para restablecer contraseña
+export interface ResetPasswordRequest {
+  email: string;
+}
+
+// Respuesta de lista de usuarios
+export interface UsersListResponse {
+  users: UserSession[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 // ====================================================================
@@ -69,25 +111,147 @@ export interface UserFilters {
 
 // Información básica de un contrato
 export interface Contract {
-  id: number;
+  id: string;
+  contractNumber: string;
   title: string;
   description?: string;
-  startDate?: Date;
+  parties: string;
+  startDate: Date;
   endDate?: Date;
+  value?: string;
+  amount?: number;
   status: string;
+  documentUrl?: string;
+  type: string;
+  companyName: string;
+  companyAddress?: string;
+  signDate: Date;
+  signPlace?: string;
+  paymentMethod?: string;
+  paymentTerm?: string;
+  isRestricted: boolean;
+  createdById: string;
+  ownerId: string;
   createdAt: Date;
   updatedAt: Date;
-  createdById: number;
   createdBy?: UserBasic;
-  users?: UserBasic[];
+  owner?: UserBasic;
 }
 
 // Filtros para contratos
 export interface ContractFilters {
   status?: string;
+  type?: string;
   startDate?: Date;
   endDate?: Date;
   search?: string;
+  ownerId?: string;
+  page?: number;
+  limit?: number;
+}
+
+// Solicitud para crear contrato
+export interface CreateContractRequest {
+  contractNumber: string;
+  title: string;
+  description?: string;
+  parties: string;
+  startDate: Date;
+  endDate?: Date;
+  value?: string;
+  amount?: number;
+  status: string;
+  documentUrl?: string;
+  type: string;
+  companyName: string;
+  companyAddress?: string;
+  signDate: Date;
+  signPlace?: string;
+  paymentMethod?: string;
+  paymentTerm?: string;
+  isRestricted?: boolean;
+  ownerId: string;
+}
+
+// Solicitud para actualizar contrato
+export interface UpdateContractRequest {
+  id: string;
+  contractNumber?: string;
+  title?: string;
+  description?: string;
+  parties?: string;
+  startDate?: Date;
+  endDate?: Date;
+  value?: string;
+  amount?: number;
+  status?: string;
+  documentUrl?: string;
+  type?: string;
+  companyName?: string;
+  companyAddress?: string;
+  signDate?: Date;
+  signPlace?: string;
+  paymentMethod?: string;
+  paymentTerm?: string;
+  isRestricted?: boolean;
+  ownerId?: string;
+}
+
+// Respuesta de lista de contratos
+export interface ContractsListResponse {
+  contracts: Contract[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+// ====================================================================
+// Suplementos
+// ====================================================================
+
+// Información de un suplemento
+export interface Supplement {
+  id: string;
+  contractId: string;
+  title: string;
+  description?: string;
+  documentUrl?: string;
+  changes: string;
+  effectiveDate: Date;
+  isApproved: boolean;
+  approvedById?: string;
+  approvedAt?: Date;
+  createdById: string;
+  createdAt: Date;
+  updatedAt: Date;
+  approvedBy?: UserBasic;
+  createdBy?: UserBasic;
+}
+
+// Solicitud para crear suplemento
+export interface CreateSupplementRequest {
+  contractId: string;
+  title: string;
+  description?: string;
+  documentUrl?: string;
+  changes: string;
+  effectiveDate: Date;
+}
+
+// Solicitud para actualizar suplemento
+export interface UpdateSupplementRequest {
+  id: string;
+  title?: string;
+  description?: string;
+  documentUrl?: string;
+  changes?: string;
+  effectiveDate?: Date;
+}
+
+// Solicitud para aprobar suplemento
+export interface ApproveSupplementRequest {
+  id: string;
+  approve: boolean;
 }
 
 // ====================================================================
@@ -96,24 +260,156 @@ export interface ContractFilters {
 
 // Información de un documento
 export interface Document {
-  id: number;
-  name: string;
+  id: string;
+  filename: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  path: string;
+  contractId?: string;
+  supplementId?: string;
+  uploadedById: string;
   description?: string;
-  fileType: string;
-  filePath: string;
-  fileSize: number;
-  contractId: number;
-  createdAt: Date;
+  tags?: string;
+  isPublic: boolean;
+  uploadedAt: Date;
   updatedAt: Date;
-  createdById: number;
-  createdBy?: UserBasic;
+  downloads: number;
+  views: number;
+  uploadedBy?: UserBasic;
 }
 
 // Filtros para documentos
 export interface DocumentFilters {
-  contractId?: number;
-  fileType?: string;
+  contractId?: string;
+  supplementId?: string;
+  mimeType?: string;
   search?: string;
+  page?: number;
+  limit?: number;
+}
+
+// Solicitud para actualizar metadatos de documento
+export interface UpdateDocumentMetadataRequest {
+  id: string;
+  description?: string;
+  tags?: string[];
+  isPublic?: boolean;
+}
+
+// Respuesta de lista de documentos
+export interface DocumentsListResponse {
+  documents: Document[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+// ====================================================================
+// Notificaciones
+// ====================================================================
+
+// Información de una notificación
+export interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  contractId?: string;
+  createdAt: Date;
+  readAt?: Date;
+}
+
+// Filtros para notificaciones
+export interface NotificationFilters {
+  isRead?: boolean;
+  type?: string;
+  page?: number;
+  limit?: number;
+}
+
+// Solicitud para marcar notificación como leída
+export interface MarkNotificationReadRequest {
+  id: string;
+  userId: string;
+}
+
+// Solicitud para crear notificación
+export interface CreateNotificationRequest {
+  userId: string;
+  title: string;
+  message: string;
+  type: string;
+  contractId?: string;
+}
+
+// Respuesta de lista de notificaciones
+export interface NotificationsListResponse {
+  notifications: Notification[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+// ====================================================================
+// Configuración
+// ====================================================================
+
+// Preferencias de usuario
+export interface UserPreference {
+  id: string;
+  userId: string;
+  theme: string;
+  notificationsEnabled: boolean;
+  notificationDays: number;
+}
+
+// Configuración de correo electrónico
+export interface EmailConfig {
+  id: string;
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  secure: boolean;
+  from: string;
+  enabled: boolean;
+}
+
+// Configuración del sistema
+export interface SystemSetting {
+  id: string;
+  key: string;
+  value: string;
+  category: string;
+}
+
+// Solicitud para actualizar preferencias de usuario
+export interface UpdateUserPreferenceRequest {
+  userId: string;
+  theme?: string;
+  notificationsEnabled?: boolean;
+  notificationDays?: number;
+}
+
+// Solicitud para actualizar configuración de correo
+export interface UpdateEmailConfigRequest {
+  host?: string;
+  port?: number;
+  username?: string;
+  password?: string;
+  secure?: boolean;
+  from?: string;
+  enabled?: boolean;
+}
+
+// Solicitud para actualizar configuración del sistema
+export interface UpdateSystemSettingRequest {
+  key: string;
+  value: string;
+  category?: string;
 }
 
 // ====================================================================
@@ -164,70 +460,4 @@ export interface BackupResponse {
 // Respuesta con lista de backups
 export interface BackupsListResponse {
   backups: Backup[];
-}
-
-// ====================================================================
-
-// Tipos claros para los mensajes IPC
-export interface IpcRequest<T = any> {
-  id: string;
-  channel: string;
-  data: T;
-}
-
-export interface IpcResponse<T = any> {
-  id: string;
-  success: boolean;
-  data?: T;
-  error?: string;
-}
-
-export enum IpcChannels {
-  // Canales de aplicación
-  APP_RELAUNCH = "app:relaunch",
-  APP_EXIT = "app:exit",
-  APP_VERSION = "app:getVersion",
-  APP_PATH = "app:getPath",
-  APP_MINIMIZE = "app:minimize",
-  APP_MAXIMIZE = "app:maximize",
-  APP_QUIT = "app:quit",
-
-  // Canales de documentos
-  DOCUMENTS_OPEN = "documents:open",
-  DOCUMENTS_SAVE = "documents:save",
-
-  // Canales de backups
-  BACKUPS_GET_ALL = "backup:getAll",
-  BACKUPS_CREATE = "backup:create",
-  BACKUPS_RESTORE = "backup:restore",
-  BACKUPS_DELETE = "backup:delete",
-  BACKUPS_CLEAN_OLD = "backup:cleanOld",
-
-  // Canales de notificaciones
-  NOTIFICATIONS_SHOW = "notifications:show",
-}
-
-// Definición de interfaces tipadas para todas las operaciones IPC
-export interface IpcChannelMap {
-  // Canales de backups
-  [IpcChannels.BACKUPS_GET_ALL]: {
-    request: void;
-    response: BackupsListResponse;
-  };
-  [IpcChannels.BACKUPS_CREATE]: {
-    request: CreateBackupRequest;
-    response: BackupResponse;
-  };
-  [IpcChannels.BACKUPS_RESTORE]: {
-    request: RestoreBackupRequest;
-    response: { success: boolean; message?: string };
-  };
-  [IpcChannels.BACKUPS_DELETE]: {
-    request: DeleteBackupRequest;
-    response: { success: boolean; message?: string };
-  };
-  [IpcChannels.BACKUPS_CLEAN_OLD]: {
-    request: void;
-    response: { success: boolean; message: string };
-  };
 }

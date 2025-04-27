@@ -1,5 +1,5 @@
 import { withErrorHandling } from '../setup';
-import { IpcErrorHandler } from '../error-handler';
+import { ErrorHandler } from '../error-handler';
 import { logger } from '../../utils/logger';
 import { NotificationService } from '../../services/notification.service';
 import { z } from 'zod';
@@ -41,7 +41,7 @@ export function setupNotificationHandlers(): void {
         }));
 
         logger.warn('Error de validación al obtener notificaciones:', validationErrors);
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'ValidationError',
           `Error de validación: ${validationErrors[0].message}`,
           validationErrors
@@ -65,7 +65,7 @@ export function setupNotificationHandlers(): void {
       const success = await NotificationService.markAsRead(validatedData.id, validatedData.userId);
 
       if (!success) {
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'NotFoundError',
           'Notificación no encontrada o sin permisos'
         );
@@ -81,7 +81,7 @@ export function setupNotificationHandlers(): void {
         }));
 
         logger.warn('Error de validación al marcar notificación:', validationErrors);
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'ValidationError',
           `Error de validación: ${validationErrors[0].message}`,
           validationErrors
@@ -97,7 +97,7 @@ export function setupNotificationHandlers(): void {
   withErrorHandling('notifications:markAllAsRead', async (_, userId: string) => {
     try {
       if (!userId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
       }
 
       const count = await NotificationService.markAllAsRead(userId);
@@ -114,7 +114,7 @@ export function setupNotificationHandlers(): void {
   withErrorHandling('notifications:getUnreadCount', async (_, userId: string) => {
     try {
       if (!userId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
       }
 
       const count = await NotificationService.getUnreadCount(userId);
@@ -130,17 +130,17 @@ export function setupNotificationHandlers(): void {
   withErrorHandling('notifications:delete', async (_, notificationId: string, userId: string) => {
     try {
       if (!notificationId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID de la notificación es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID de la notificación es requerido');
       }
 
       if (!userId) {
-        throw IpcErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
+        throw ErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
       }
 
       const success = await NotificationService.deleteNotification(notificationId, userId);
 
       if (!success) {
-        throw IpcErrorHandler.createError(
+        throw ErrorHandler.createError(
           'NotFoundError',
           'Notificación no encontrada o sin permisos'
         );
