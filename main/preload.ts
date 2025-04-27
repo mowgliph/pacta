@@ -40,9 +40,15 @@ const validInvokeChannels = [
   "roles:getAll",
   
   // Canales para gestión de documentos
-  "documentos:abrir",
-  "documentos:guardar",
-  "documentos:listar",
+  "documents:save",
+  "documents:getAll",
+  "documents:getById",
+  "documents:update",
+  "documents:delete",
+  "documents:download",
+  "documents:getByContract",
+  "documents:getBySupplement",
+  "documents:open",
   
   // Canales para backups
   "backups:crear",
@@ -84,6 +90,8 @@ const validReceiveChannels = [
   "backup:completado",
   "actualizacion:disponible",
   "user:updated",
+  "documents:updated",
+  "documents:deleted",
 ];
 
 /**
@@ -155,9 +163,9 @@ contextBridge.exposeInMainWorld("Electron", {
   
   // API para documentos
   documentos: {
-    abrir: (path: string) => ipcRenderer.invoke("documentos:abrir", path),
-    guardar: (path: string, content: any) => ipcRenderer.invoke("documentos:guardar", path, content),
-    listar: (contratoId: string) => ipcRenderer.invoke("documentos:listar", contratoId),
+    abrir: (path: string) => ipcRenderer.invoke("documents:open", path),
+    guardar: (path: string, content: any) => ipcRenderer.invoke("documents:save", path, content),
+    listar: (contratoId: string) => ipcRenderer.invoke("documents:getByContract", contratoId),
   },
 
   // API para backups

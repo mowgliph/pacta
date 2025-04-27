@@ -1,8 +1,18 @@
 "use client"
 
 import { useState } from "react"
-import { DocumentsChannels } from "../../main/ipc/channels/documents.channels"
 import { useToast } from "./use-toast"
+
+// Definir los canales en el renderer en lugar de importarlos directamente desde main
+export enum DocumentsChannels {
+  OPEN = "documents:open",
+  SAVE = "documents:save",
+  GET_ALL = "documents:getAll",
+  GET_BY_ID = "documents:getById",
+  UPDATE = "documents:update",
+  DELETE = "documents:delete",
+  DOWNLOAD = "documents:download",
+}
 
 interface DocumentMetadata {
   fileName: string
