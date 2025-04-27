@@ -32,18 +32,20 @@ export interface AuthResult {
 
 // Información del usuario autenticado
 export interface UserSession {
-  id: number;
+  id: string;
   email: string;
   name: string;
   role?: UserRole;
+  token?: string;
+  expiresAt?: string;
 }
 
 // Datos de un rol de usuario
 export interface UserRole {
-  id: number;
+  id: string;
   name: string;
   description?: string;
-  permissions: string[];
+  permissions: string[] | Record<string, any>;
 }
 
 // ====================================================================

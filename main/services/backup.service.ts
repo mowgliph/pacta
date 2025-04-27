@@ -63,15 +63,20 @@ export async function createBackup(description?: string): Promise<any> {
 
     await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
 
+    // Calcular tamaño del respaldo
+    const backupSize = await calculateDirectorySize(backupPath);
+    
     // Registrar el respaldo en la base de datos
     const backup = await prisma.backup.create({
       data: {
         id: backupId,
-        description:
-          description || `Respaldo automático - ${timestamp.toLocaleString()}`,
-        path: backupPath,
-        size: await calculateDirectorySize(backupPath),
-        createdAt: timestamp,
+        fileName: `Backup-${timestamp.toISOString().slice(0, 10)}`,
+        filePath: backupPath,
+        fileSize: backupSize,
+        note: description || `Respaldo automático - ${timestamp.toLocaleString()}`,
+        isAutomatic: description ? false : true,
+        createdById: 'system', // Modificar según los requisitos
+        emailNotification: false
       },
     });
 
@@ -98,7 +103,7 @@ export async function restoreBackup(backupId: string): Promise<boolean> {
       throw new Error(`Respaldo no encontrado: ${backupId}`);
     }
 
-    const backupPath = backup.path;
+    const backupPath = backup.filePath;
     if (!FileSystem.existsSync(backupPath)) {
       throw new Error(`Directorio de respaldo no encontrado: ${backupPath}`);
     }
@@ -194,7 +199,7 @@ export async function deleteBackup(backupId: string): Promise<boolean> {
 
     // Eliminar archivos del respaldo
     try {
-      await fs.rm(backup.path, { recursive: true, force: true });
+      await fs.rm(backup.filePath, { recursive: true, force: true });
     } catch (error) {
       logger.warn(
         `No se pudieron eliminar los archivos del respaldo ${backupId}:`,

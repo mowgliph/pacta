@@ -58,6 +58,9 @@ export class AuthService {
       role: {
         id: user.role.id,
         name: user.role.name,
+        permissions: typeof user.role.permissions === 'string' 
+          ? JSON.parse(user.role.permissions) 
+          : user.role.permissions
       },
       token,
       expiresAt: rememberMe
@@ -91,7 +94,7 @@ export class AuthService {
     // Verificar contraseña actual
     const isPasswordValid = await compare(oldPassword, user.password);
     if (!isPasswordValid) {
-      throw AppError.badRequest(
+      throw AppError.validation(
         "Contraseña actual incorrecta",
         "INVALID_CURRENT_PASSWORD"
       );
@@ -99,7 +102,7 @@ export class AuthService {
 
     // Validar nueva contraseña
     if (newPassword.length < 8) {
-      throw AppError.badRequest(
+      throw AppError.validation(
         "La nueva contraseña debe tener al menos 8 caracteres",
         "PASSWORD_TOO_SHORT"
       );

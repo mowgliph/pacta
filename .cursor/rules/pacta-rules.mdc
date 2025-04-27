@@ -15,3 +15,5 @@ programa orientado a objeto
 emplea las practicas de programacion modernas
 
 emplea pnpm en vez de npm
+Revisar y analisar el esquema de Prisma [schema.prisma](mdc:prisma/schema.prisma) para corregir las diferencias entre estructuras de la base de datos
+asegurar que todos los modulos y componentes utilicen los tipos actualizados

@@ -73,13 +73,10 @@ export class RoleService {
    */
   static async createRole(roleData: any, creatorId: string) {
     try {
-      // Verificar si ya existe un rol con el mismo nombre
+      // Verificar si ya existe un rol con el mismo nombre (comparación directa)
       const existingRole = await prisma.role.findFirst({
         where: {
-          name: {
-            equals: roleData.name,
-            mode: 'insensitive'
-          }
+          name: roleData.name
         }
       });
 
@@ -135,10 +132,7 @@ export class RoleService {
       if (roleData.name && roleData.name !== role.name) {
         const existingRole = await prisma.role.findFirst({
           where: {
-            name: {
-              equals: roleData.name,
-              mode: 'insensitive'
-            },
+            name: roleData.name,
             id: {
               not: id
             }

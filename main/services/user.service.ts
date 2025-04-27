@@ -124,7 +124,7 @@ export class UserService {
           entityType: 'User',
           entityId: user.id,
           userId: creatorId,
-          description: `Usuario ${user.name} (${user.email}) creado`
+          changes: `Usuario ${user.name} (${user.email}) creado`
         }
       });
 
@@ -169,7 +169,7 @@ export class UserService {
           entityType: 'User',
           entityId: id,
           userId: updaterId,
-          description: `Usuario ${user.name} (${user.email}) actualizado`
+          changes: `Usuario ${user.name} (${user.email}) actualizado`
         }
       });
 
@@ -211,7 +211,7 @@ export class UserService {
           entityType: 'User',
           entityId: id,
           userId: adminId,
-          description: `Usuario ${user.name} ${updatedUser.isActive ? 'activado' : 'desactivado'}`
+          changes: `Usuario ${user.name} ${updatedUser.isActive ? 'activado' : 'desactivado'}`
         }
       });
 
@@ -265,7 +265,7 @@ export class UserService {
           entityType: 'User',
           entityId: userId,
           userId,
-          description: 'Contraseña actualizada'
+          changes: 'Contraseña actualizada'
         }
       });
 

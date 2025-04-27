@@ -38,6 +38,13 @@ export class AppError extends Error {
   }
 
   /**
+   * Error de solicitud inválida (400)
+   */
+  static badRequest(message: string, code?: string, data?: any): AppError {
+    return new AppError(message, 'BadRequestError', 400, code, data);
+  }
+
+  /**
    * Error de autenticación (401)
    */
   static unauthorized(message: string, code?: string, data?: any): AppError {

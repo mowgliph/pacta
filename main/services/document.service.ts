@@ -4,13 +4,8 @@ import fs from "fs/promises";
 import path from "path";
 import { app } from "electron";
 import crypto from "crypto";
-import mime from "mime-types";
 import { DocumentFilters } from "../shared/types";
-import {
-  ValidationError,
-  NotFoundError,
-  AuthorizationError,
-} from "../middleware/error.middleware";
+import { AppError } from "../middleware/error.middleware";
 
 /**
  * Servicio para la gestión de documentos
@@ -117,17 +112,8 @@ export class DocumentService {
       const document = await prisma.document.findUnique({
         where: { id },
         include: {
-          contract: {
-            include: {
-              ContractAccess: true,
-              ContractAccessRole: {
-                include: {
-                  role: true,
-                },
-              },
-            },
-          },
-          createdBy: {
+          contract: true,
+          uploadedBy: {
             select: {
               id: true,
               name: true,
@@ -138,30 +124,27 @@ export class DocumentService {
       });
 
       if (!document) {
-        throw new NotFoundError(`Documento con ID ${id} no encontrado`);
+        throw AppError.notFound(`Documento con ID ${id} no encontrado`, "DOCUMENT_NOT_FOUND");
       }
 
       // Verificar permisos si no es admin
       if (userRole !== "Admin") {
         const hasAccess =
-          document.contract.createdById === userId ||
-          document.contract.ContractAccess?.some(
-            (access) => access.userId === userId && access.canRead
-          );
+          document.uploadedById === userId ||
+          (document.contractId && 
+            await this.checkDocumentContractAccess(document.contractId, userId));
 
         if (!hasAccess) {
-          throw new AuthorizationError(
-            "No tiene permiso para acceder a este documento"
+          throw AppError.forbidden(
+            "No tiene permiso para acceder a este documento",
+            "DOCUMENT_ACCESS_DENIED"
           );
         }
       }
 
       return this.mapDocumentToDTO(document);
     } catch (error) {
-      if (
-        error instanceof NotFoundError ||
-        error instanceof AuthorizationError
-      ) {
+      if (error instanceof AppError) {
         throw error;
       }
       logger.error(`Error al obtener documento ${id}:`, error);
@@ -201,7 +184,7 @@ export class DocumentService {
       });
 
       if (!contract) {
-        throw new NotFoundError(`Contrato con ID ${contractId} no encontrado`);
+        throw AppError.notFound(`Contrato con ID ${contractId} no encontrado`, "CONTRACT_NOT_FOUND");
       }
 
       // Verificar permisos si no es admin
@@ -213,8 +196,9 @@ export class DocumentService {
           );
 
         if (!hasUpdateAccess) {
-          throw new AuthorizationError(
-            "No tiene permiso para añadir documentos a este contrato"
+          throw AppError.forbidden(
+            "No tiene permiso para añadir documentos a este contrato",
+            "CONTRACT_UPDATE_DENIED"
           );
         }
       }
@@ -292,11 +276,7 @@ export class DocumentService {
       );
       return this.mapDocumentToDTO(document);
     } catch (error) {
-      if (
-        error instanceof ValidationError ||
-        error instanceof NotFoundError ||
-        error instanceof AuthorizationError
-      ) {
+      if (error instanceof AppError) {
         throw error;
       }
 
@@ -330,7 +310,7 @@ export class DocumentService {
       });
 
       if (!document) {
-        throw new NotFoundError(`Documento con ID ${id} no encontrado`);
+        throw AppError.notFound(`Documento con ID ${id} no encontrado`, "DOCUMENT_NOT_FOUND");
       }
 
       // Verificar permisos si no es admin
@@ -342,8 +322,9 @@ export class DocumentService {
           );
 
         if (!hasAccess) {
-          throw new AuthorizationError(
-            "No tiene permiso para acceder a este documento"
+          throw AppError.forbidden(
+            "No tiene permiso para acceder a este documento",
+            "DOCUMENT_ACCESS_DENIED"
           );
         }
       }
@@ -356,8 +337,9 @@ export class DocumentService {
       try {
         await fs.access(filePath);
       } catch {
-        throw new NotFoundError(
-          `Archivo del documento no encontrado en el sistema`
+        throw AppError.notFound(
+          `Archivo del documento no encontrado en el sistema`,
+          "FILE_NOT_FOUND"
         );
       }
 
@@ -373,10 +355,7 @@ export class DocumentService {
         type: document.fileType,
       };
     } catch (error) {
-      if (
-        error instanceof NotFoundError ||
-        error instanceof AuthorizationError
-      ) {
+      if (error instanceof AppError) {
         throw error;
       }
 
@@ -405,7 +384,7 @@ export class DocumentService {
       });
 
       if (!document) {
-        throw new NotFoundError(`Documento con ID ${id} no encontrado`);
+        throw AppError.notFound(`Documento con ID ${id} no encontrado`, "DOCUMENT_NOT_FOUND");
       }
 
       // Verificar permisos si no es admin
@@ -417,8 +396,9 @@ export class DocumentService {
           );
 
         if (!hasDeleteAccess) {
-          throw new AuthorizationError(
-            "No tiene permiso para eliminar este documento"
+          throw AppError.forbidden(
+            "No tiene permiso para eliminar este documento",
+            "DOCUMENT_DELETE_DENIED"
           );
         }
       }
@@ -459,10 +439,7 @@ export class DocumentService {
       logger.info(`Documento ${id} eliminado por usuario ${userId}`);
       return { success: true };
     } catch (error) {
-      if (
-        error instanceof NotFoundError ||
-        error instanceof AuthorizationError
-      ) {
+      if (error instanceof AppError) {
         throw error;
       }
 
@@ -525,7 +502,7 @@ export class DocumentService {
     }
 
     if (Object.keys(errors).length > 0) {
-      throw new ValidationError("Error de validación", errors);
+      throw AppError.validation("Error de validación", "VALIDATION_ERROR", errors);
     }
   }
 
@@ -586,5 +563,32 @@ export class DocumentService {
         : undefined,
       downloadUrl: `/api/documents/${document.id}/download`,
     };
+  }
+
+  // Implementar un método para verificar acceso a los contratos
+  private static async checkDocumentContractAccess(
+    contractId: string,
+    userId?: string
+  ): Promise<boolean> {
+    if (!userId) return false;
+    
+    const contract = await prisma.contract.findUnique({
+      where: { id: contractId },
+      select: {
+        createdById: true,
+        ContractAccess: {
+          where: {
+            userId,
+            canRead: true
+          }
+        }
+      }
+    });
+    
+    if (!contract) return false;
+    
+    // Es el creador o tiene acceso explícito
+    return contract.createdById === userId || 
+           (contract.ContractAccess && contract.ContractAccess.length > 0);
   }
 }

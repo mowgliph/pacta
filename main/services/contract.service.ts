@@ -1,11 +1,7 @@
 import { prisma } from "../lib/prisma";
 import { logger } from "../lib/logger";
 import { Contract, ContractFilters } from "../shared/types";
-import {
-  NotFoundError,
-  AuthorizationError,
-  ValidationError,
-} from "../middleware/error.middleware";
+import { AppError } from "../middleware/error.middleware";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 /**
@@ -167,25 +163,23 @@ export class ContractService {
       });
 
       if (!contract) {
-        throw new NotFoundError(`Contrato con ID ${id} no encontrado`);
+        throw AppError.notFound(`Contrato con ID ${id} no encontrado`, "CONTRACT_NOT_FOUND");
       }
 
       // Verificar permisos si no es admin
       if (userRole !== "Admin") {
         const hasAccess = this.checkContractAccess(contract, userId);
         if (!hasAccess) {
-          throw new AuthorizationError(
-            "No tiene permiso para acceder a este contrato"
+          throw AppError.forbidden(
+            "No tiene permiso para acceder a este contrato",
+            "CONTRACT_ACCESS_DENIED"
           );
         }
       }
 
       return this.mapContractToDTO(contract, true);
     } catch (error) {
-      if (
-        error instanceof NotFoundError ||
-        error instanceof AuthorizationError
-      ) {
+      if (error instanceof AppError) {
         throw error;
       }
       logger.error(`Error al obtener contrato ${id}:`, error);
@@ -244,14 +238,14 @@ export class ContractService {
       logger.info(`Contrato creado: ${contract.id} por usuario ${userId}`);
       return this.mapContractToDTO(contract);
     } catch (error) {
-      if (error instanceof ValidationError) {
+      if (error instanceof AppError) {
         throw error;
       }
 
       logger.error("Error al crear contrato:", error);
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
-          throw new ValidationError("Ya existe un contrato con estos datos");
+          throw AppError.validation("Ya existe un contrato con estos datos");
         }
       }
       throw error;
@@ -286,7 +280,7 @@ export class ContractService {
       });
 
       if (!existingContract) {
-        throw new NotFoundError(`Contrato con ID ${id} no encontrado`);
+        throw AppError.notFound(`Contrato con ID ${id} no encontrado`, "CONTRACT_NOT_FOUND");
       }
 
       // Verificar permisos si no es admin
@@ -296,8 +290,9 @@ export class ContractService {
           userId
         );
         if (!hasUpdateAccess) {
-          throw new AuthorizationError(
-            "No tiene permiso para actualizar este contrato"
+          throw AppError.forbidden(
+            "No tiene permiso para actualizar este contrato",
+            "CONTRACT_UPDATE_DENIED"
           );
         }
       }
@@ -348,11 +343,7 @@ export class ContractService {
       logger.info(`Contrato actualizado: ${id} por usuario ${userId}`);
       return this.mapContractToDTO(contract);
     } catch (error) {
-      if (
-        error instanceof NotFoundError ||
-        error instanceof AuthorizationError ||
-        error instanceof ValidationError
-      ) {
+      if (error instanceof AppError) {
         throw error;
       }
 
@@ -384,7 +375,7 @@ export class ContractService {
         "cancelled",
       ];
       if (!validStatuses.includes(status)) {
-        throw new ValidationError(`Estado inválido: ${status}`);
+        throw AppError.validation(`Estado inválido: ${status}`);
       }
 
       // Buscar el contrato
@@ -401,7 +392,7 @@ export class ContractService {
       });
 
       if (!existingContract) {
-        throw new NotFoundError(`Contrato con ID ${id} no encontrado`);
+        throw AppError.notFound(`Contrato con ID ${id} no encontrado`, "CONTRACT_NOT_FOUND");
       }
 
       // Verificar permisos si no es admin
@@ -416,8 +407,9 @@ export class ContractService {
             userId
           );
           if (!hasApproveAccess) {
-            throw new AuthorizationError(
-              "No tiene permiso para aprobar este contrato"
+            throw AppError.forbidden(
+              "No tiene permiso para aprobar este contrato",
+              "CONTRACT_APPROVE_DENIED"
             );
           }
         } else {
@@ -427,8 +419,9 @@ export class ContractService {
             userId
           );
           if (!hasUpdateAccess) {
-            throw new AuthorizationError(
-              "No tiene permiso para actualizar este contrato"
+            throw AppError.forbidden(
+              "No tiene permiso para actualizar este contrato",
+              "CONTRACT_UPDATE_DENIED"
             );
           }
         }
@@ -468,11 +461,7 @@ export class ContractService {
       );
       return this.mapContractToDTO(contract);
     } catch (error) {
-      if (
-        error instanceof NotFoundError ||
-        error instanceof AuthorizationError ||
-        error instanceof ValidationError
-      ) {
+      if (error instanceof AppError) {
         throw error;
       }
 
@@ -503,7 +492,7 @@ export class ContractService {
       });
 
       if (!existingContract) {
-        throw new NotFoundError(`Contrato con ID ${id} no encontrado`);
+        throw AppError.notFound(`Contrato con ID ${id} no encontrado`, "CONTRACT_NOT_FOUND");
       }
 
       // Verificar permisos si no es admin
@@ -513,8 +502,9 @@ export class ContractService {
           userId
         );
         if (!hasDeleteAccess) {
-          throw new AuthorizationError(
-            "No tiene permiso para eliminar este contrato"
+          throw AppError.forbidden(
+            "No tiene permiso para eliminar este contrato",
+            "CONTRACT_DELETE_DENIED"
           );
         }
       }
@@ -527,10 +517,7 @@ export class ContractService {
       logger.info(`Contrato ${id} eliminado por usuario ${userId}`);
       return { success: true };
     } catch (error) {
-      if (
-        error instanceof NotFoundError ||
-        error instanceof AuthorizationError
-      ) {
+      if (error instanceof AppError) {
         throw error;
       }
 
@@ -559,13 +546,14 @@ export class ContractService {
       });
 
       if (!existingContract) {
-        throw new NotFoundError(`Contrato con ID ${id} no encontrado`);
+        throw AppError.notFound(`Contrato con ID ${id} no encontrado`, "CONTRACT_NOT_FOUND");
       }
 
       // Verificar permisos - solo admin o el creador pueden cambiar permisos
       if (userRole !== "Admin" && existingContract.createdById !== userId) {
-        throw new AuthorizationError(
-          "No tiene permiso para actualizar permisos de acceso"
+        throw AppError.forbidden(
+          "No tiene permiso para actualizar permisos de acceso",
+          "CONTRACT_ACCESS_UPDATE_DENIED"
         );
       }
 
@@ -631,10 +619,7 @@ export class ContractService {
       );
       return this.mapContractToDTO(contract);
     } catch (error) {
-      if (
-        error instanceof NotFoundError ||
-        error instanceof AuthorizationError
-      ) {
+      if (error instanceof AppError) {
         throw error;
       }
 
@@ -669,13 +654,14 @@ export class ContractService {
       });
 
       if (!existingContract) {
-        throw new NotFoundError(`Contrato con ID ${id} no encontrado`);
+        throw AppError.notFound(`Contrato con ID ${id} no encontrado`, "CONTRACT_NOT_FOUND");
       }
 
       // Verificar permisos
       if (userRole !== "Admin" && existingContract.createdById !== userId) {
-        throw new AuthorizationError(
-          "No tiene permiso para asignar usuarios a este contrato"
+        throw AppError.forbidden(
+          "No tiene permiso para asignar usuarios a este contrato",
+          "CONTRACT_USER_ASSIGN_DENIED"
         );
       }
 
@@ -741,10 +727,7 @@ export class ContractService {
 
       return this.mapContractToDTO(updatedContract);
     } catch (error) {
-      if (
-        error instanceof NotFoundError ||
-        error instanceof AuthorizationError
-      ) {
+      if (error instanceof AppError) {
         throw error;
       }
 
@@ -816,7 +799,7 @@ export class ContractService {
     }
 
     if (Object.keys(errors).length > 0) {
-      throw new ValidationError("Error de validación", errors);
+      throw AppError.validation("Error de validación", errors);
     }
   }
 
