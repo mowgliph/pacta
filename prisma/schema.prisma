@@ -1,0 +1,251 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(uuid())
+  name              String
+  email             String    @unique
+  password          String
+  roleId            String
+  role              Role      @relation(fields: [roleId], references: [id])
+  customPermissions String? // Permisos que sobrescriben los del rol
+  isActive          Boolean   @default(true)
+  lastLogin         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relaciones
+  createdContracts    Contract[]         @relation("CreatedByUser")
+  ownedContracts      Contract[]         @relation("OwnedByUser")
+  contractAccess      ContractAccess[]
+  actions             HistoryRecord[]
+  backups             Backup[]
+  supplements         Supplement[]
+  preferences         UserPreference?
+  notifications       UserNotification[]
+  uploadedDocuments   Document[]         @relation("UploadedDocuments")
+  approvedSupplements Supplement[]       @relation("ApprovedByUser")
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String
+  permissions String // Estructura de permisos para contratos, usuarios, etc.
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relaciones
+  users            User[]
+  allowedContracts ContractAccessRole[]
+}
+
+model Contract {
+  id             String    @id @default(uuid())
+  contractNumber String    @unique
+  title          String
+  description    String?
+  parties        String
+  startDate      DateTime
+  endDate        DateTime?
+  value          String? // {amount, currency}
+  amount         Float?   // Campo agregado para las agregaciones
+  status         String
+  documentUrl    String?
+  type           String
+  companyName    String
+  companyAddress String?
+  signDate       DateTime
+  signPlace      String?
+  paymentMethod  String?
+  paymentTerm    String?
+  isRestricted   Boolean   @default(false)
+  createdById    String
+  createdBy      User      @relation("CreatedByUser", fields: [createdById], references: [id])
+  ownerId        String
+  owner          User      @relation("OwnedByUser", fields: [ownerId], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  
+  // Relaciones
+  supplements    Supplement[]
+  history        HistoryRecord[]
+  accessRoles    ContractAccessRole[]
+  accessUsers    ContractAccess[]
+  documents      Document[]
+  notifications  UserNotification[]
+}
+
+model Supplement {
+  id            String    @id @default(uuid())
+  contractId    String
+  contract      Contract  @relation(fields: [contractId], references: [id])
+  title         String
+  description   String?
+  documentUrl   String?
+  changes       String // Qué campos cambiaron, valores anteriores y nuevos
+  effectiveDate DateTime
+  isApproved    Boolean   @default(false)
+  approvedById  String?
+  approvedBy    User?     @relation("ApprovedByUser", fields: [approvedById], references: [id])
+  approvedAt    DateTime?
+  createdById   String
+  createdBy     User      @relation(fields: [createdById], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relaciones
+  history    HistoryRecord[]
+  documents  Document[]
+}
+
+model ContractAccess {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  contractId  String
+  contract    Contract @relation(fields: [contractId], references: [id])
+  permissions String // {read, update, delete, approve, assign}
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, contractId])
+}
+
+model ContractAccessRole {
+  id         String   @id @default(uuid())
+  roleId     String
+  role       Role     @relation(fields: [roleId], references: [id])
+  contractId String
+  contract   Contract @relation(fields: [contractId], references: [id])
+
+  @@unique([roleId, contractId])
+}
+
+model HistoryRecord {
+  id         String   @id @default(uuid())
+  entityType String // "Contract" o "Supplement"
+  entityId   String // ID del contrato o suplemento
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  action     String // Tipo de acción realizada
+  changes    String? // Cambios realizados
+  timestamp  DateTime @default(now())
+
+  // Relaciones polimórficas
+  contract     Contract?   @relation(fields: [contractId], references: [id])
+  contractId   String?
+  supplement   Supplement? @relation(fields: [supplementId], references: [id])
+  supplementId String?
+}
+
+model Document {
+  id           String      @id @default(uuid())
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  path         String
+  contractId   String?
+  contract     Contract?   @relation(fields: [contractId], references: [id])
+  supplementId String?
+  supplement   Supplement? @relation(fields: [supplementId], references: [id])
+  uploadedById String
+  uploadedBy   User        @relation("UploadedDocuments", fields: [uploadedById], references: [id])
+  description  String?
+  tags         String?     // JSON array
+  isPublic     Boolean     @default(false)
+  uploadedAt   DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  downloads    Int         @default(0)
+  views        Int         @default(0)
+}
+
+model Backup {
+  id                String   @id @default(uuid())
+  fileName          String
+  filePath          String
+  fileSize          Int
+  createdById       String
+  createdBy         User     @relation(fields: [createdById], references: [id])
+  createdAt         DateTime @default(now())
+  note              String?
+  emailNotification Boolean  @default(false)
+  isAutomatic       Boolean  @default(true)
+}
+
+model UserPreference {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id])
+  theme                String   @default("light") // "light" o "dark"
+  notificationsEnabled Boolean  @default(true)
+  notificationDays     Int      @default(30) // Días de anticipación para notificaciones
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  category  String // "backup", "notification", "general", etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EmailConfig {
+  id        String   @id @default(uuid())
+  host      String
+  port      Int
+  username  String
+  password  String
+  secure    Boolean  @default(true)
+  from      String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EmailTemplate {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  subject   String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EmailLog {
+  id           String   @id @default(uuid())
+  to           String
+  subject      String
+  body         String
+  status       String // "sent" o "failed"
+  errorMessage String?
+  createdAt    DateTime @default(now())
+}
+
+model UserNotification {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  title      String
+  message    String
+  type       String // info, warning, error, success
+  isRead     Boolean   @default(false)
+  contractId String?
+  contract   Contract? @relation(fields: [contractId], references: [id])
+  createdAt  DateTime  @default(now())
+  readAt     DateTime?
+}

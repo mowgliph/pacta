@@ -1,0 +1,16 @@
+appId: com.pacta.app
+productName: PACTA
+copyright: Copyright © 2025 Pacta Inc.
+directories:
+  output: dist
+  buildResources: resources
+files:
+  - from: .
+    filter:
+      - package.json
+      - app
+publish:
+  provider: github
+  owner: pacta
+  repo: pacta-app
+  releaseType: release
