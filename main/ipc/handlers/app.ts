@@ -206,7 +206,30 @@ function sanitizeText(text: string): string {
     return '';
   }
   
-  return text
+  // Lista de expresiones regulares maliciosas
+  const dangerousPatterns = [
+    /javascript:/gi,
+    /data:/gi,
+    /vbscript:/gi,
+    /on\w+\s*=/gi,  // eventos como onclick, onload, etc.
+    /\beval\s*\(/gi,
+    /document\./gi,
+    /window\./gi,
+    /alert\s*\(/gi,
+    /\bURL\s*\(/gi,
+    /\bdocument\b/gi,
+    /\blocation\b/gi,
+  ];
+  
+  // Reemplazar patrones peligrosos
+  let safeText = text;
+  
+  // Reemplazar todos los patrones peligrosos
+  dangerousPatterns.forEach(pattern => {
+    safeText = safeText.replace(pattern, '');
+  });
+  
+  return safeText
     // Eliminar etiquetas HTML
     .replace(/<[^>]*>/g, '')
     // Escapar caracteres especiales para prevenir XSS
@@ -215,6 +238,8 @@ function sanitizeText(text: string): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;')
+    // Eliminar caracteres Unicode potencialmente engañosos/confusos
+    .replace(/[\u00A0-\u9999<>\&]/g, (i) => '&#' + i.charCodeAt(0) + ';')
     // Eliminar caracteres de control y no imprimibles
     .replace(/[\x00-\x1F\x7F-\x9F]/g, '')
     // Limitar longitud

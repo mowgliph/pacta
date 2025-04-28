@@ -8,6 +8,12 @@ import { authenticateJWT } from "../middleware/auth.middleware"
 const router = express.Router()
 const prisma = new PrismaClient()
 
+// Verificar que la variable JWT_SECRET está configurada
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET environment variable is required")
+}
+
 // Validation schemas
 const loginSchema = z.object({
   email: z.string().email(),
@@ -43,7 +49,7 @@ router.post("/login", async (req, res, next) => {
     }
 
     // Generate JWT token
-    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET || "default_secret", {
+    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, {
       expiresIn: "24h",
     })
 
@@ -125,7 +131,7 @@ router.post("/register", async (req, res, next) => {
     })
 
     // Generate JWT token
-    const token = jwt.sign({ userId: user.id, role: user.role }, process.env.JWT_SECRET || "default_secret", {
+    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, {
       expiresIn: "24h",
     })
 

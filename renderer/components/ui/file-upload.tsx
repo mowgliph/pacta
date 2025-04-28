@@ -38,35 +38,56 @@ export function FileUpload({
   }
 
   const validateFile = (file: File): boolean => {
+    // Validación del nombre del archivo (prevenir caracteres maliciosos)
+    const safeName = file.name.replace(/[^\w\s.-]/g, '_');
+    if (safeName !== file.name) {
+      setError(`Nombre de archivo no válido. Solo se permiten letras, números, espacios, guiones y puntos.`);
+      return false;
+    }
+    
+    // Validar extensión del archivo explícitamente
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    const safeExtensions = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'txt', 'xlsx', 'xls', 'csv'];
+    
+    if (!extension || !safeExtensions.includes(extension)) {
+      setError(`Extensión de archivo no permitida. Extensiones seguras: ${safeExtensions.join(', ')}`);
+      return false;
+    }
+    
     // Validar tipo de archivo
     if (accept !== "*/*") {
-      const acceptedTypes = accept.split(",").map((type) => type.trim())
-      const fileType = file.type
-      const fileExtension = `.${file.name.split(".").pop()}`
+      const acceptedTypes = accept.split(",").map((type) => type.trim());
+      const fileType = file.type;
+      const fileExtension = `.${extension}`;
 
+      // Comprobar si el tipo MIME o la extensión están en la lista de aceptados
       const isValidType = acceptedTypes.some((type) => {
         if (type.startsWith(".")) {
           // Es una extensión
-          return fileExtension.toLowerCase() === type.toLowerCase()
+          return fileExtension.toLowerCase() === type.toLowerCase();
+        } else if (type.includes('*')) {
+          // Es un patrón MIME type con wildcard
+          const regex = new RegExp('^' + type.replace('*', '.*') + '$');
+          return regex.test(fileType);
         } else {
-          // Es un MIME type
-          return fileType.match(new RegExp(type.replace("*", ".*")))
+          // Es un MIME type exacto
+          return fileType === type;
         }
-      })
+      });
 
       if (!isValidType) {
-        setError(`Tipo de archivo no permitido. Tipos aceptados: ${accept}`)
-        return false
+        setError(`Tipo de archivo no permitido. Tipos aceptados: ${accept}`);
+        return false;
       }
     }
 
     // Validar tamaño
     if (file.size > maxSize) {
-      setError(`El archivo es demasiado grande. Tamaño máximo: ${maxSize / (1024 * 1024)}MB`)
-      return false
+      setError(`El archivo es demasiado grande. Tamaño máximo: ${(maxSize / (1024 * 1024)).toFixed(1)}MB`);
+      return false;
     }
 
-    return true
+    return true;
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

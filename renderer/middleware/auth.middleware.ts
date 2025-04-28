@@ -5,6 +5,12 @@ import { logger } from "../index"
 
 const prisma = new PrismaClient()
 
+// Verificar que la variable JWT_SECRET está configurada
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) {
+  throw new Error("JWT_SECRET environment variable is required")
+}
+
 // Interface for decoded JWT token
 interface DecodedToken {
   userId: number
@@ -40,7 +46,7 @@ export const authenticateJWT = async (req: Request, res: Response, next: NextFun
       return res.status(401).json({ message: "Authentication token missing" })
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "default_secret") as DecodedToken
+    const decoded = jwt.verify(token, JWT_SECRET) as DecodedToken
 
     // Set user info in request object
     req.user = {

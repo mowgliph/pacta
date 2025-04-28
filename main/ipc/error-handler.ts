@@ -58,7 +58,57 @@ export class ErrorHandler {
    */
   public static logError(channel: string, error: any): void {
     const errorType = error.type || 'UnknownError';
-    logger.error(`Error en canal IPC ${channel} [${errorType}]:`, error);
+    // Sanitizar información sensible antes de registrar
+    const sanitizedError = ErrorHandler.sanitizeErrorForLogging(error);
+    logger.error(`Error en canal IPC ${channel} [${errorType}]:`, sanitizedError);
+  }
+
+  /**
+   * Sanitiza errores para evitar registrar información sensible
+   */
+  private static sanitizeErrorForLogging(error: any): any {
+    if (!error) return error;
+    
+    // Clonar el error para no modificar el original
+    const sanitized = { ...error };
+    
+    // Lista de propiedades potencialmente sensibles
+    const sensitivePaths = [
+      'password', 'token', 'auth', 'key', 'secret', 'credential', 'apiKey',
+      'data.password', 'data.token', 'data.auth', 'data.key', 'data.secret', 'data.credential',
+      'data.apiKey', 'stack'
+    ];
+    
+    // Eliminar o sanitizar propiedades sensibles
+    sensitivePaths.forEach(path => {
+      const parts = path.split('.');
+      let current = sanitized;
+      
+      for (let i = 0; i < parts.length - 1; i++) {
+        if (current && typeof current === 'object' && parts[i] in current) {
+          current = current[parts[i]];
+        } else {
+          return;
+        }
+      }
+      
+      const lastPart = parts[parts.length - 1];
+      if (current && typeof current === 'object' && lastPart in current) {
+        if (lastPart === 'stack') {
+          // Para stack traces, mantener pero eliminar rutas absolutas
+          if (typeof current[lastPart] === 'string') {
+            current[lastPart] = current[lastPart]
+              .replace(/\(([A-Z]:)?[\\\/].*?[\\\/]/g, '(path/')
+              .replace(/at ([A-Z]:)?[\\\/].*?[\\\/]/g, 'at path/');
+          }
+        } else {
+          // Para credenciales, reemplazar con [REDACTED]
+          current[lastPart] = '[REDACTED]';
+        }
+      }
+    });
+    
+    return sanitized;
   }
 
   /**

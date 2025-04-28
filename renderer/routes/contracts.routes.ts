@@ -6,6 +6,7 @@ import { DocumentService } from "../services/document.service"
 import multer from "multer"
 import { z } from "zod"
 import { validateRequest } from "../middleware/validation.middleware"
+import { sensitiveRateLimiter, queryRateLimiter } from "../middleware/rate-limit.middleware"
 
 const router = express.Router()
 
@@ -61,6 +62,7 @@ router.post(
   "/",
   authenticateJWT,
   checkPermission("contracts", "create"),
+  sensitiveRateLimiter,
   validateRequest(createContractSchema),
   async (req, res, next) => {
     try {
@@ -72,7 +74,7 @@ router.post(
   },
 )
 
-router.get("/", authenticateJWT, checkPermission("contracts", "read"), async (req, res, next) => {
+router.get("/", authenticateJWT, checkPermission("contracts", "read"), queryRateLimiter, async (req, res, next) => {
   try {
     const contracts = await ContractService.getContracts(req.query)
     res.json({ contracts })
@@ -81,7 +83,7 @@ router.get("/", authenticateJWT, checkPermission("contracts", "read"), async (re
   }
 })
 
-router.get("/search", authenticateJWT, checkPermission("contracts", "read"), async (req, res, next) => {
+router.get("/search", authenticateJWT, checkPermission("contracts", "read"), queryRateLimiter, async (req, res, next) => {
   try {
     const { q } = req.query
     if (!q || typeof q !== "string") {
@@ -95,7 +97,7 @@ router.get("/search", authenticateJWT, checkPermission("contracts", "read"), asy
   }
 })
 
-router.get("/:id", authenticateJWT, checkPermission("contracts", "read"), async (req, res, next) => {
+router.get("/:id", authenticateJWT, checkPermission("contracts", "read"), queryRateLimiter, async (req, res, next) => {
   try {
     const contract = await ContractService.getContractById(req.params.id)
 
@@ -114,6 +116,7 @@ router.post(
   "/:contractId/supplements",
   authenticateJWT,
   checkPermission("contracts", "update"),
+  sensitiveRateLimiter,
   validateRequest(createSupplementSchema),
   async (req, res, next) => {
     try {
@@ -132,6 +135,7 @@ router.get(
   "/:contractId/supplements",
   authenticateJWT,
   checkPermission("contracts", "read"),
+  queryRateLimiter,
   async (req, res, next) => {
     try {
       const supplements = await SupplementService.getContractSupplements(req.params.contractId)
@@ -146,6 +150,7 @@ router.post(
   "/supplements/:id/approve",
   authenticateJWT,
   checkPermission("contracts", "approve"),
+  sensitiveRateLimiter,
   async (req, res, next) => {
     try {
       const supplement = await SupplementService.approveSupplement(req.params.id, req.user!.id)
@@ -160,6 +165,7 @@ router.post(
   "/supplements/:id/reject",
   authenticateJWT,
   checkPermission("contracts", "approve"),
+  sensitiveRateLimiter,
   async (req, res, next) => {
     try {
       const { reason } = req.body
@@ -180,6 +186,7 @@ router.post(
   "/:contractId/documents",
   authenticateJWT,
   checkPermission("contracts", "update"),
+  sensitiveRateLimiter,
   upload.single("file"),
   async (req, res, next) => {
     try {
@@ -206,6 +213,7 @@ router.post(
   "/supplements/:supplementId/documents",
   authenticateJWT,
   checkPermission("contracts", "update"),
+  sensitiveRateLimiter,
   upload.single("file"),
   async (req, res, next) => {
     try {
@@ -228,7 +236,7 @@ router.post(
   },
 )
 
-router.get("/:contractId/documents", authenticateJWT, checkPermission("contracts", "read"), async (req, res, next) => {
+router.get("/:contractId/documents", authenticateJWT, checkPermission("contracts", "read"), queryRateLimiter, async (req, res, next) => {
   try {
     const documents = await DocumentService.getContractDocuments(req.params.contractId)
     res.json({ documents })
@@ -237,7 +245,7 @@ router.get("/:contractId/documents", authenticateJWT, checkPermission("contracts
   }
 })
 
-router.delete("/documents/:id", authenticateJWT, checkPermission("contracts", "delete"), async (req, res, next) => {
+router.delete("/documents/:id", authenticateJWT, checkPermission("contracts", "delete"), sensitiveRateLimiter, async (req, res, next) => {
   try {
     await DocumentService.deleteDocument(req.params.id, req.user!.id)
     res.json({ success: true })
