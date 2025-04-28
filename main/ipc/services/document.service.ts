@@ -1,11 +1,11 @@
-import { prisma } from "../lib/prisma";
-import { logger } from "../lib/logger";
+import { prisma } from "../../lib/prisma";
+import { logger } from "../../lib/logger";
 import fs from "fs/promises";
 import path from "path";
 import { app } from "electron";
 import crypto from "crypto";
-import { DocumentFilters } from "../shared/types";
-import { AppError } from "../middleware/error.middleware";
+import { DocumentFilters } from "../../shared/types";
+import { AppError } from "../../middleware/error.middleware";
 
 /**
  * Servicio para la gestión de documentos
@@ -51,8 +51,8 @@ export class DocumentService {
                 some: {
                   userId,
                   permissions: {
-                    contains: "read"
-                  }
+                    contains: "read",
+                  },
                 },
               },
             },
@@ -126,15 +126,21 @@ export class DocumentService {
       });
 
       if (!document) {
-        throw AppError.notFound(`Documento con ID ${id} no encontrado`, "DOCUMENT_NOT_FOUND");
+        throw AppError.notFound(
+          `Documento con ID ${id} no encontrado`,
+          "DOCUMENT_NOT_FOUND"
+        );
       }
 
       // Verificar permisos si no es admin
       if (userRole !== "Admin") {
         const hasAccess =
           document.uploadedById === userId ||
-          (document.contractId && 
-            await this.checkDocumentContractAccess(document.contractId, userId));
+          (document.contractId &&
+            (await this.checkDocumentContractAccess(
+              document.contractId,
+              userId
+            )));
 
         if (!hasAccess) {
           throw AppError.forbidden(
@@ -181,28 +187,29 @@ export class DocumentService {
       const contract = await prisma.contract.findUnique({
         where: { id: contractId },
         include: {
-          accessUsers: true
+          accessUsers: true,
         },
       });
 
       if (!contract) {
-        throw AppError.notFound(`Contrato con ID ${contractId} no encontrado`, "CONTRACT_NOT_FOUND");
+        throw AppError.notFound(
+          `Contrato con ID ${contractId} no encontrado`,
+          "CONTRACT_NOT_FOUND"
+        );
       }
 
       // Verificar permisos si no es admin
       if (userRole !== "Admin") {
         const hasUpdateAccess =
           contract.createdById === userId ||
-          contract.accessUsers?.some(
-            (access) => {
-              try {
-                const permissions = JSON.parse(access.permissions);
-                return access.userId === userId && permissions.update === true;
-              } catch (e) {
-                return false;
-              }
+          contract.accessUsers?.some((access) => {
+            try {
+              const permissions = JSON.parse(access.permissions);
+              return access.userId === userId && permissions.update === true;
+            } catch (e) {
+              return false;
             }
-          );
+          });
 
         if (!hasUpdateAccess) {
           throw AppError.forbidden(
@@ -249,7 +256,7 @@ export class DocumentService {
           },
           uploadedBy: {
             connect: { id: userId },
-          }
+          },
         },
         include: {
           contract: {
@@ -275,7 +282,7 @@ export class DocumentService {
           action: "DOCUMENT_ADDED",
           entityType: "Contract",
           entityId: contractId,
-          userId
+          userId,
         },
       });
 
@@ -306,30 +313,31 @@ export class DocumentService {
         include: {
           contract: {
             include: {
-              accessUsers: true
+              accessUsers: true,
             },
           },
         },
       });
 
       if (!document) {
-        throw AppError.notFound(`Documento con ID ${id} no encontrado`, "DOCUMENT_NOT_FOUND");
+        throw AppError.notFound(
+          `Documento con ID ${id} no encontrado`,
+          "DOCUMENT_NOT_FOUND"
+        );
       }
 
       // Verificar permisos si no es admin
       if (userRole !== "Admin" && document.contract) {
         const hasAccess =
           document.contract.createdById === userId ||
-          document.contract.accessUsers?.some(
-            (access) => {
-              try {
-                const permissions = JSON.parse(access.permissions);
-                return access.userId === userId && permissions.read === true;
-              } catch (e) {
-                return false;
-              }
+          document.contract.accessUsers?.some((access) => {
+            try {
+              const permissions = JSON.parse(access.permissions);
+              return access.userId === userId && permissions.read === true;
+            } catch (e) {
+              return false;
             }
-          );
+          });
 
         if (!hasAccess) {
           throw AppError.forbidden(
@@ -387,30 +395,31 @@ export class DocumentService {
         include: {
           contract: {
             include: {
-              accessUsers: true
+              accessUsers: true,
             },
           },
         },
       });
 
       if (!document) {
-        throw AppError.notFound(`Documento con ID ${id} no encontrado`, "DOCUMENT_NOT_FOUND");
+        throw AppError.notFound(
+          `Documento con ID ${id} no encontrado`,
+          "DOCUMENT_NOT_FOUND"
+        );
       }
 
       // Verificar permisos si no es admin
       if (userRole !== "Admin" && document.contract) {
         const hasDeleteAccess =
           document.contract.createdById === userId ||
-          document.contract.accessUsers?.some(
-            (access) => {
-              try {
-                const permissions = JSON.parse(access.permissions);
-                return access.userId === userId && permissions.delete === true;
-              } catch (e) {
-                return false;
-              }
+          document.contract.accessUsers?.some((access) => {
+            try {
+              const permissions = JSON.parse(access.permissions);
+              return access.userId === userId && permissions.delete === true;
+            } catch (e) {
+              return false;
             }
-          );
+          });
 
         if (!hasDeleteAccess) {
           throw AppError.forbidden(
@@ -450,7 +459,7 @@ export class DocumentService {
             action: "DOCUMENT_DELETED",
             entityType: "Contract",
             entityId: contractId,
-            userId
+            userId,
           },
         });
       }
@@ -521,7 +530,11 @@ export class DocumentService {
     }
 
     if (Object.keys(errors).length > 0) {
-      throw AppError.validation("Error de validación", "VALIDATION_ERROR", errors);
+      throw AppError.validation(
+        "Error de validación",
+        "VALIDATION_ERROR",
+        errors
+      );
     }
   }
 
@@ -539,7 +552,11 @@ export class DocumentService {
     try {
       // Omitimos esta funcionalidad ya que DocumentActivity no está definido en el schema
       // Podríamos implementarlo cuando exista el modelo en Prisma
-      logger.info(`Actividad de documento: ${action} - ${documentId} - Usuario: ${userId || 'anónimo'}`);
+      logger.info(
+        `Actividad de documento: ${action} - ${documentId} - Usuario: ${
+          userId || "anónimo"
+        }`
+      );
     } catch (error) {
       logger.error(
         `Error registrando actividad de documento: ${error.message}`
@@ -585,26 +602,28 @@ export class DocumentService {
     userId?: string
   ): Promise<boolean> {
     if (!userId) return false;
-    
+
     const contract = await prisma.contract.findUnique({
       where: { id: contractId },
       select: {
         createdById: true,
-        accessUsers: true
-      }
+        accessUsers: true,
+      },
     });
-    
+
     if (!contract) return false;
-    
+
     // Es el creador o tiene acceso explícito
-    return contract.createdById === userId || 
-           contract.accessUsers.some(access => {
-             try {
-               const permissions = JSON.parse(access.permissions);
-               return access.userId === userId && permissions.read === true;
-             } catch (e) {
-               return false;
-             }
-           });
+    return (
+      contract.createdById === userId ||
+      contract.accessUsers.some((access) => {
+        try {
+          const permissions = JSON.parse(access.permissions);
+          return access.userId === userId && permissions.read === true;
+        } catch (e) {
+          return false;
+        }
+      })
+    );
   }
 }

@@ -6,7 +6,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "../components/providers/theme-provider";
 import { Toaster } from "sonner";
 import { MainLayout } from "../components/layout/main-layout";
-import { queryClient } from "../lib/api";
+import { queryClient } from "../api/api";
 import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "../context/auth-provider";
 import "../styles/globals.css";

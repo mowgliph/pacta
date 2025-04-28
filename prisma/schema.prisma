@@ -145,6 +145,7 @@ model HistoryRecord {
   userId      String
   user        User      @relation(fields: [userId], references: [id])
   action      String    // Tipo de acción realizada
+  details     String    
   changes     String?   // Cambios realizados
   description String?   // Descripción de la acción
   timestamp   DateTime  @default(now())

@@ -1,9 +1,9 @@
 import fs from "fs/promises";
 import path from "path";
 import { app } from "electron";
-import { prisma } from "../lib/prisma";
+import { prisma } from "../../lib/prisma";
 import { v4 as uuidv4 } from "uuid";
-import { logger } from "../lib/logger";
+import { logger } from "../../lib/logger";
 import * as FileSystem from "fs";
 import { exec } from "child_process";
 import { promisify } from "util";
@@ -65,7 +65,7 @@ export async function createBackup(description?: string): Promise<any> {
 
     // Calcular tamaño del respaldo
     const backupSize = await calculateDirectorySize(backupPath);
-    
+
     // Registrar el respaldo en la base de datos
     const backup = await prisma.backup.create({
       data: {
@@ -73,10 +73,11 @@ export async function createBackup(description?: string): Promise<any> {
         fileName: `Backup-${timestamp.toISOString().slice(0, 10)}`,
         filePath: backupPath,
         fileSize: backupSize,
-        note: description || `Respaldo automático - ${timestamp.toLocaleString()}`,
+        note:
+          description || `Respaldo automático - ${timestamp.toLocaleString()}`,
         isAutomatic: description ? false : true,
-        createdById: 'system', // Modificar según los requisitos
-        emailNotification: false
+        createdById: "system", // Modificar según los requisitos
+        emailNotification: false,
       },
     });
 

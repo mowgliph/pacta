@@ -1,10 +1,10 @@
-import { withErrorHandling } from '../setup';
-import { ErrorHandler } from '../error-handler';
-import { logger } from '../../utils/logger';
-import { z } from 'zod';
-import { UserService } from '../../services/user.service';
-import { RoleService } from '../../services/role.service';
-import { UsersChannels, RolesChannels } from '../channels/users.channels';
+import { withErrorHandling } from "../setup";
+import { ErrorHandler } from "../error-handler";
+import { logger } from "../../utils/logger";
+import { z } from "zod";
+import { UserService } from "../services/user.service";
+import { RoleService } from "../services/role.service";
+import { UsersChannels, RolesChannels } from "../channels/users.channels";
 
 // Esquemas de validación
 const userCreateSchema = z.object({
@@ -26,21 +26,23 @@ const userUpdateSchema = z.object({
 const passwordChangeSchema = z.object({
   userId: z.string().uuid(),
   currentPassword: z.string(),
-  newPassword: z.string().min(6, "La nueva contraseña debe tener al menos 6 caracteres"),
+  newPassword: z
+    .string()
+    .min(6, "La nueva contraseña debe tener al menos 6 caracteres"),
 });
 
 /**
  * Configurar manejadores IPC para usuarios y roles
  */
 export function setupUserHandlers(): void {
-  logger.info('Configurando manejadores IPC para usuarios');
+  logger.info("Configurando manejadores IPC para usuarios");
 
   // Obtener todos los usuarios
   withErrorHandling(UsersChannels.GET_ALL, async () => {
     try {
       return await UserService.getUsers();
     } catch (error) {
-      logger.error('Error al obtener usuarios:', error);
+      logger.error("Error al obtener usuarios:", error);
       throw error;
     }
   });
@@ -49,13 +51,19 @@ export function setupUserHandlers(): void {
   withErrorHandling(UsersChannels.GET_BY_ID, async (_, userId: string) => {
     try {
       if (!userId) {
-        throw ErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
+        throw ErrorHandler.createError(
+          "ValidationError",
+          "El ID del usuario es requerido"
+        );
       }
 
       const user = await UserService.getUserById(userId);
 
       if (!user) {
-        throw ErrorHandler.createError('NotFoundError', 'Usuario no encontrado');
+        throw ErrorHandler.createError(
+          "NotFoundError",
+          "Usuario no encontrado"
+        );
       }
 
       return user;
@@ -66,129 +74,166 @@ export function setupUserHandlers(): void {
   });
 
   // Crear un nuevo usuario
-  withErrorHandling(UsersChannels.CREATE, async (_, userData, creatorId: string) => {
-    try {
-      // Validar datos con Zod
-      const validatedData = userCreateSchema.parse(userData);
+  withErrorHandling(
+    UsersChannels.CREATE,
+    async (_, userData, creatorId: string) => {
+      try {
+        // Validar datos con Zod
+        const validatedData = userCreateSchema.parse(userData);
 
-      // Verificar si el email ya existe
-      const existingUser = await UserService.getUserByEmail(validatedData.email);
-      if (existingUser) {
-        throw ErrorHandler.createError(
-          'ValidationError',
-          'Ya existe un usuario con este email'
+        // Verificar si el email ya existe
+        const existingUser = await UserService.getUserByEmail(
+          validatedData.email
         );
-      }
-
-      // Crear usuario
-      const newUser = await UserService.createUser(validatedData, creatorId);
-
-      logger.info(`Usuario creado: ${newUser.id} (${newUser.email})`);
-      return {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        roleId: newUser.roleId,
-        isActive: newUser.isActive,
-        createdAt: newUser.createdAt
-      };
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const validationErrors = error.errors.map(err => ({
-          path: err.path.join('.'),
-          message: err.message
-        }));
-
-        logger.warn('Error de validación al crear usuario:', validationErrors);
-        throw ErrorHandler.createError(
-          'ValidationError',
-          `Error de validación: ${validationErrors[0].message}`,
-          validationErrors
-        );
-      }
-
-      logger.error('Error al crear usuario:', error);
-      throw error;
-    }
-  });
-
-  // Actualizar un usuario
-  withErrorHandling(UsersChannels.UPDATE, async (_, userData, updaterId: string) => {
-    try {
-      // Validar datos con Zod
-      const validatedData = userUpdateSchema.parse(userData);
-
-      // Si se está actualizando el email, verificar que no exista
-      if (validatedData.email) {
-        const existingUser = await UserService.getUserByEmail(validatedData.email);
-        if (existingUser && existingUser.id !== validatedData.id) {
+        if (existingUser) {
           throw ErrorHandler.createError(
-            'ValidationError',
-            'Ya existe un usuario con este email'
+            "ValidationError",
+            "Ya existe un usuario con este email"
           );
         }
+
+        // Crear usuario
+        const newUser = await UserService.createUser(validatedData, creatorId);
+
+        logger.info(`Usuario creado: ${newUser.id} (${newUser.email})`);
+        return {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          roleId: newUser.roleId,
+          isActive: newUser.isActive,
+          createdAt: newUser.createdAt,
+        };
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          const validationErrors = error.errors.map((err) => ({
+            path: err.path.join("."),
+            message: err.message,
+          }));
+
+          logger.warn(
+            "Error de validación al crear usuario:",
+            validationErrors
+          );
+          throw ErrorHandler.createError(
+            "ValidationError",
+            `Error de validación: ${validationErrors[0].message}`,
+            validationErrors
+          );
+        }
+
+        logger.error("Error al crear usuario:", error);
+        throw error;
       }
-
-      // Actualizar usuario
-      const updatedUser = await UserService.updateUser(validatedData.id, validatedData, updaterId);
-
-      if (!updatedUser) {
-        throw ErrorHandler.createError('NotFoundError', 'Usuario no encontrado');
-      }
-
-      logger.info(`Usuario actualizado: ${updatedUser.id}`);
-      return {
-        id: updatedUser.id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        roleId: updatedUser.roleId,
-        isActive: updatedUser.isActive,
-        updatedAt: updatedUser.updatedAt
-      };
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        const validationErrors = error.errors.map(err => ({
-          path: err.path.join('.'),
-          message: err.message
-        }));
-
-        logger.warn('Error de validación al actualizar usuario:', validationErrors);
-        throw ErrorHandler.createError(
-          'ValidationError',
-          `Error de validación: ${validationErrors[0].message}`,
-          validationErrors
-        );
-      }
-
-      logger.error('Error al actualizar usuario:', error);
-      throw error;
     }
-  });
+  );
+
+  // Actualizar un usuario
+  withErrorHandling(
+    UsersChannels.UPDATE,
+    async (_, userData, updaterId: string) => {
+      try {
+        // Validar datos con Zod
+        const validatedData = userUpdateSchema.parse(userData);
+
+        // Si se está actualizando el email, verificar que no exista
+        if (validatedData.email) {
+          const existingUser = await UserService.getUserByEmail(
+            validatedData.email
+          );
+          if (existingUser && existingUser.id !== validatedData.id) {
+            throw ErrorHandler.createError(
+              "ValidationError",
+              "Ya existe un usuario con este email"
+            );
+          }
+        }
+
+        // Actualizar usuario
+        const updatedUser = await UserService.updateUser(
+          validatedData.id,
+          validatedData,
+          updaterId
+        );
+
+        if (!updatedUser) {
+          throw ErrorHandler.createError(
+            "NotFoundError",
+            "Usuario no encontrado"
+          );
+        }
+
+        logger.info(`Usuario actualizado: ${updatedUser.id}`);
+        return {
+          id: updatedUser.id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          roleId: updatedUser.roleId,
+          isActive: updatedUser.isActive,
+          updatedAt: updatedUser.updatedAt,
+        };
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          const validationErrors = error.errors.map((err) => ({
+            path: err.path.join("."),
+            message: err.message,
+          }));
+
+          logger.warn(
+            "Error de validación al actualizar usuario:",
+            validationErrors
+          );
+          throw ErrorHandler.createError(
+            "ValidationError",
+            `Error de validación: ${validationErrors[0].message}`,
+            validationErrors
+          );
+        }
+
+        logger.error("Error al actualizar usuario:", error);
+        throw error;
+      }
+    }
+  );
 
   // Eliminar un usuario (desactivar)
-  withErrorHandling(UsersChannels.TOGGLE_ACTIVE, async (_, userId: string, adminId: string) => {
-    try {
-      if (!userId) {
-        throw ErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
+  withErrorHandling(
+    UsersChannels.TOGGLE_ACTIVE,
+    async (_, userId: string, adminId: string) => {
+      try {
+        if (!userId) {
+          throw ErrorHandler.createError(
+            "ValidationError",
+            "El ID del usuario es requerido"
+          );
+        }
+
+        if (!adminId) {
+          throw ErrorHandler.createError(
+            "ValidationError",
+            "El ID del administrador es requerido"
+          );
+        }
+
+        const result = await UserService.toggleUserActive(userId, adminId);
+
+        if (!result) {
+          throw ErrorHandler.createError(
+            "NotFoundError",
+            "Usuario no encontrado"
+          );
+        }
+
+        logger.info(
+          `Estado de usuario cambiado: ${userId}, activo: ${result.isActive}`
+        );
+        return { success: true, isActive: result.isActive };
+      } catch (error) {
+        logger.error(`Error al cambiar estado de usuario ${userId}:`, error);
+        throw error;
       }
-
-      if (!adminId) {
-        throw ErrorHandler.createError('ValidationError', 'El ID del administrador es requerido');
-      }
-
-      const result = await UserService.toggleUserActive(userId, adminId);
-
-      if (!result) {
-        throw ErrorHandler.createError('NotFoundError', 'Usuario no encontrado');
-      }
-
-      logger.info(`Estado de usuario cambiado: ${userId}, activo: ${result.isActive}`);
-      return { success: true, isActive: result.isActive };
-    } catch (error) {
-      logger.error(`Error al cambiar estado de usuario ${userId}:`, error);
-      throw error;
     }
-  });
+  );
 
   // Cambiar contraseña
   withErrorHandling(UsersChannels.CHANGE_PASSWORD, async (_, passwordData) => {
@@ -204,8 +249,8 @@ export function setupUserHandlers(): void {
 
       if (!success) {
         throw ErrorHandler.createError(
-          'ValidationError',
-          'La contraseña actual es incorrecta'
+          "ValidationError",
+          "La contraseña actual es incorrecta"
         );
       }
 
@@ -213,20 +258,23 @@ export function setupUserHandlers(): void {
       return { success: true };
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const validationErrors = error.errors.map(err => ({
-          path: err.path.join('.'),
-          message: err.message
+        const validationErrors = error.errors.map((err) => ({
+          path: err.path.join("."),
+          message: err.message,
         }));
 
-        logger.warn('Error de validación al cambiar contraseña:', validationErrors);
+        logger.warn(
+          "Error de validación al cambiar contraseña:",
+          validationErrors
+        );
         throw ErrorHandler.createError(
-          'ValidationError',
+          "ValidationError",
           `Error de validación: ${validationErrors[0].message}`,
           validationErrors
         );
       }
 
-      logger.error('Error al cambiar contraseña:', error);
+      logger.error("Error al cambiar contraseña:", error);
       throw error;
     }
   });
@@ -236,16 +284,19 @@ export function setupUserHandlers(): void {
     try {
       return await RoleService.getRoles();
     } catch (error) {
-      logger.error('Error al obtener roles:', error);
+      logger.error("Error al obtener roles:", error);
       throw error;
     }
   });
 
   // Obtener permisos de un usuario
-  withErrorHandling('users:getPermissions', async (_, userId: string) => {
+  withErrorHandling("users:getPermissions", async (_, userId: string) => {
     try {
       if (!userId) {
-        throw ErrorHandler.createError('ValidationError', 'El ID del usuario es requerido');
+        throw ErrorHandler.createError(
+          "ValidationError",
+          "El ID del usuario es requerido"
+        );
       }
 
       const permissions = await UserService.getUserPermissions(userId);
@@ -256,4 +307,4 @@ export function setupUserHandlers(): void {
       throw error;
     }
   });
-} 
+}

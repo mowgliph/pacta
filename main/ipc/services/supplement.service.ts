@@ -1,6 +1,6 @@
-import { prisma } from '../lib/prisma';
-import { logger } from '../lib/logger';
-import { AppError } from '../middleware/error.middleware';
+import { prisma } from "../../lib/prisma";
+import { logger } from "../../lib/logger";
+import { AppError } from "../../middleware/error.middleware";
 
 export class SupplementService {
   /**
@@ -12,11 +12,11 @@ export class SupplementService {
       const contract = await prisma.contract.findUnique({
         where: { id: data.contractId },
       });
-      
+
       if (!contract) {
-        throw AppError.notFound('Contrato no encontrado');
+        throw AppError.notFound("Contrato no encontrado");
       }
-      
+
       // Crear suplemento
       const supplement = await prisma.supplement.create({
         data: {
@@ -28,54 +28,54 @@ export class SupplementService {
             select: {
               id: true,
               name: true,
-              email: true
-            }
+              email: true,
+            },
           },
-          contract: true
-        }
+          contract: true,
+        },
       });
-      
+
       // Actualizar contrato si es necesario según los cambios del suplemento
-      const changes = JSON.parse(supplement.changes || '{}');
+      const changes = JSON.parse(supplement.changes || "{}");
       const updates: any = {};
-      
+
       // Actualizar fecha de fin si cambió en el suplemento
       if (changes.endDate) {
         updates.endDate = new Date(changes.endDate.to);
       }
-      
+
       // Actualizar valor si cambió en el suplemento
       if (changes.value) {
         updates.value = changes.value.to;
       }
-      
+
       // Actualizar tipo si cambió en el suplemento
       if (changes.type) {
         updates.type = changes.type.to;
       }
-      
+
       // Si hay cambios para actualizar en el contrato
       if (Object.keys(updates).length > 0) {
         await prisma.contract.update({
           where: { id: contract.id },
           data: updates,
         });
-        
+
         // Si cambió la fecha de fin, actualizar estado si es necesario
         if (updates.endDate) {
           const today = new Date();
           const warningDays = 30;
           const warningDate = new Date();
           warningDate.setDate(today.getDate() + warningDays);
-          
+
           // Determinar nuevo estado
-          let newStatus = 'active';
+          let newStatus = "active";
           if (updates.endDate < today) {
-            newStatus = 'expired';
+            newStatus = "expired";
           } else if (updates.endDate < warningDate) {
-            newStatus = 'expiring_soon';
+            newStatus = "expiring_soon";
           }
-          
+
           // Actualizar estado solo si debe cambiar
           if (newStatus !== contract.status) {
             await prisma.contract.update({
@@ -85,23 +85,23 @@ export class SupplementService {
           }
         }
       }
-      
+
       // Registrar en historial
       await prisma.historyRecord.create({
         data: {
-          entityType: 'Supplement',
+          entityType: "Supplement",
           entityId: supplement.id,
           userId,
-          action: 'CREATE',
+          action: "CREATE",
           changes: supplement.changes,
           supplementId: supplement.id,
-          contractId: contract.id
+          contractId: contract.id,
         },
       });
-      
+
       return supplement;
     } catch (error) {
-      logger.error('Error creando suplemento:', error);
+      logger.error("Error creando suplemento:", error);
       throw error;
     }
   }
@@ -116,10 +116,13 @@ export class SupplementService {
         include: {
           createdBy: { select: { id: true, name: true, email: true } },
         },
-        orderBy: { effectiveDate: 'desc' },
+        orderBy: { effectiveDate: "desc" },
       });
     } catch (error) {
-      logger.error(`Error obteniendo suplementos para contrato ${contractId}:`, error);
+      logger.error(
+        `Error obteniendo suplementos para contrato ${contractId}:`,
+        error
+      );
       throw error;
     }
   }
@@ -149,11 +152,11 @@ export class SupplementService {
     try {
       // Verificar que el suplemento existe
       const supplement = await prisma.supplement.findUnique({
-        where: { id: supplementId }
+        where: { id: supplementId },
       });
 
       if (!supplement) {
-        throw AppError.notFound('Suplemento no encontrado');
+        throw AppError.notFound("Suplemento no encontrado");
       }
 
       // Actualizar el suplemento
@@ -162,8 +165,8 @@ export class SupplementService {
         data,
         include: {
           createdBy: { select: { id: true, name: true, email: true } },
-          contract: true
-        }
+          contract: true,
+        },
       });
 
       return updatedSupplement;
@@ -181,19 +184,19 @@ export class SupplementService {
       // Verificar que el suplemento existe
       const supplement = await prisma.supplement.findUnique({
         where: { id: supplementId },
-        include: { contract: true }
+        include: { contract: true },
       });
 
       if (!supplement) {
-        throw AppError.notFound('Suplemento no encontrado');
+        throw AppError.notFound("Suplemento no encontrado");
       }
 
       // Obtener los cambios definidos en el suplemento
-      const changes = JSON.parse(supplement.changes || '{}');
+      const changes = JSON.parse(supplement.changes || "{}");
       const contractUpdates: any = {};
 
       // Mapear los cambios al contrato
-      Object.keys(changes).forEach(key => {
+      Object.keys(changes).forEach((key) => {
         if (changes[key] && changes[key].to !== undefined) {
           contractUpdates[key] = changes[key].to;
         }
@@ -203,7 +206,7 @@ export class SupplementService {
       if (Object.keys(contractUpdates).length > 0) {
         await prisma.contract.update({
           where: { id: supplement.contractId },
-          data: contractUpdates
+          data: contractUpdates,
         });
       }
 
@@ -213,12 +216,12 @@ export class SupplementService {
         data: {
           isApproved: true,
           approvedById: userId,
-          approvedAt: new Date()
+          approvedAt: new Date(),
         },
         include: {
           createdBy: { select: { id: true, name: true, email: true } },
-          contract: true
-        }
+          contract: true,
+        },
       });
 
       // Crear notificación para el creador del suplemento
@@ -226,11 +229,11 @@ export class SupplementService {
         await prisma.userNotification.create({
           data: {
             userId: supplement.createdById,
-            title: 'Suplemento aprobado',
+            title: "Suplemento aprobado",
             message: `Su suplemento para el contrato ${supplement.contract.contractNumber} ha sido aprobado`,
-            type: 'success',
-            contractId: supplement.contractId
-          }
+            type: "success",
+            contractId: supplement.contractId,
+          },
         });
       }
 
@@ -249,16 +252,18 @@ export class SupplementService {
       // Verificar que el suplemento existe
       const supplement = await prisma.supplement.findUnique({
         where: { id: supplementId },
-        include: { contract: true }
+        include: { contract: true },
       });
 
       if (!supplement) {
-        throw AppError.notFound('Suplemento no encontrado');
+        throw AppError.notFound("Suplemento no encontrado");
       }
 
       // Verificar que el suplemento no ha sido aprobado
       if (supplement.isApproved) {
-        throw AppError.forbidden('No se puede eliminar un suplemento que ya ha sido aprobado');
+        throw AppError.forbidden(
+          "No se puede eliminar un suplemento que ya ha sido aprobado"
+        );
       }
 
       // Verificar que el usuario es el creador o tiene acceso al contrato
@@ -266,39 +271,41 @@ export class SupplementService {
         where: {
           userId,
           contractId: supplement.contractId,
-          permissions: { contains: '"delete"' }
-        }
+          permissions: { contains: '"delete"' },
+        },
       });
 
       const isCreator = supplement.createdById === userId;
 
       if (!isCreator && !userHasAccess) {
-        throw AppError.forbidden('No tienes permisos para eliminar este suplemento');
+        throw AppError.forbidden(
+          "No tienes permisos para eliminar este suplemento"
+        );
       }
 
       // Registrar en historial antes de eliminar
       await prisma.historyRecord.create({
         data: {
-          entityType: 'Supplement',
+          entityType: "Supplement",
           entityId: supplementId,
           userId,
-          action: 'DELETE',
+          action: "DELETE",
           changes: JSON.stringify({
-            message: 'Suplemento eliminado',
+            message: "Suplemento eliminado",
             supplementTitle: supplement.title,
             contractId: supplement.contractId,
-            contractNumber: supplement.contract.contractNumber
+            contractNumber: supplement.contract.contractNumber,
           }),
-          contractId: supplement.contractId
+          contractId: supplement.contractId,
         },
       });
 
       // Eliminar el suplemento
       await prisma.supplement.delete({
-        where: { id: supplementId }
+        where: { id: supplementId },
       });
 
-      return { success: true, message: 'Suplemento eliminado con éxito' };
+      return { success: true, message: "Suplemento eliminado con éxito" };
     } catch (error) {
       logger.error(`Error eliminando suplemento ${supplementId}:`, error);
       throw error;

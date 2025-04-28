@@ -1,7 +1,7 @@
-import { prisma } from "../lib/prisma";
-import { logger } from "../lib/logger";
+import { prisma } from "../../lib/prisma";
+import { logger } from "../../lib/logger";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
-import { AppError } from "../middleware/error.middleware";
+import { AppError } from "../../middleware/error.middleware";
 
 /**
  * Servicio para manejar operaciones CRUD de contratos
@@ -13,11 +13,7 @@ export class ContractService {
    * @param userId - ID del usuario que realiza la consulta
    * @param userRole - Rol del usuario
    */
-  static async getContracts(
-    filters?: any,
-    userId?: string,
-    userRole?: string
-  ) {
+  static async getContracts(filters?: any, userId?: string, userRole?: string) {
     try {
       // Construir las condiciones de filtrado
       const where: any = {};
@@ -63,7 +59,7 @@ export class ContractService {
           },
           owner: {
             select: {
-              id: true, 
+              id: true,
               name: true,
               email: true,
             },
@@ -129,7 +125,10 @@ export class ContractService {
       });
 
       if (!contract) {
-        throw AppError.notFound(`Contrato con ID ${id} no encontrado`, "CONTRACT_NOT_FOUND");
+        throw AppError.notFound(
+          `Contrato con ID ${id} no encontrado`,
+          "CONTRACT_NOT_FOUND"
+        );
       }
 
       // Verificar permisos si no es admin
@@ -176,7 +175,9 @@ export class ContractService {
           endDate: contractData.endDate ? new Date(contractData.endDate) : null,
           status: contractData.status || "draft",
           type: contractData.type || "general",
-          signDate: contractData.signDate ? new Date(contractData.signDate) : new Date(),
+          signDate: contractData.signDate
+            ? new Date(contractData.signDate)
+            : new Date(),
           signPlace: contractData.signPlace,
           paymentMethod: contractData.paymentMethod,
           paymentTerm: contractData.paymentTerm,
@@ -184,7 +185,7 @@ export class ContractService {
           value: contractData.value,
           isRestricted: false,
           createdById: userId,
-          ownerId: userId
+          ownerId: userId,
         },
         include: {
           createdBy: {
@@ -197,7 +198,7 @@ export class ContractService {
           owner: {
             select: {
               id: true,
-              name: true, 
+              name: true,
               email: true,
             },
           },
@@ -208,11 +209,11 @@ export class ContractService {
       await prisma.historyRecord.create({
         data: {
           action: "CREATE",
-          entityType: "Contract", 
+          entityType: "Contract",
           entityId: contract.id,
           contractId: contract.id,
-          userId: userId
-        }
+          userId: userId,
+        },
       });
 
       logger.info(`Contrato creado: ${contract.id} por usuario ${userId}`);
@@ -225,7 +226,10 @@ export class ContractService {
       logger.error("Error al crear contrato:", error);
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
-          throw AppError.validation("Ya existe un contrato con estos datos", "DUPLICATE_CONTRACT");
+          throw AppError.validation(
+            "Ya existe un contrato con estos datos",
+            "DUPLICATE_CONTRACT"
+          );
         }
       }
       throw error;
@@ -252,7 +256,10 @@ export class ContractService {
       });
 
       if (!existingContract) {
-        throw AppError.notFound(`Contrato con ID ${id} no encontrado`, "CONTRACT_NOT_FOUND");
+        throw AppError.notFound(
+          `Contrato con ID ${id} no encontrado`,
+          "CONTRACT_NOT_FOUND"
+        );
       }
 
       // Verificar permisos si no es admin
@@ -267,7 +274,10 @@ export class ContractService {
       this.validateContractData(contractData, true);
 
       // Obtener campos cambiados para el historial
-      const changedFields = this.getChangedFields(existingContract, contractData);
+      const changedFields = this.getChangedFields(
+        existingContract,
+        contractData
+      );
 
       // Actualizar el contrato
       const contract = await prisma.contract.update({
@@ -278,7 +288,9 @@ export class ContractService {
           parties: contractData.parties,
           companyName: contractData.companyName,
           companyAddress: contractData.companyAddress,
-          startDate: contractData.startDate ? new Date(contractData.startDate) : undefined,
+          startDate: contractData.startDate
+            ? new Date(contractData.startDate)
+            : undefined,
           endDate: contractData.endDate ? new Date(contractData.endDate) : null,
           status: contractData.status,
           type: contractData.type,
@@ -287,7 +299,7 @@ export class ContractService {
           paymentTerm: contractData.paymentTerm,
           amount: contractData.amount,
           value: contractData.value,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         },
         include: {
           createdBy: {
@@ -308,7 +320,10 @@ export class ContractService {
       });
 
       // Registrar en historial de forma separada
-      const changes = Object.keys(changedFields).length > 0 ? JSON.stringify(changedFields) : null;
+      const changes =
+        Object.keys(changedFields).length > 0
+          ? JSON.stringify(changedFields)
+          : null;
       await prisma.historyRecord.create({
         data: {
           action: "UPDATE",
@@ -316,8 +331,8 @@ export class ContractService {
           entityId: contract.id,
           contractId: contract.id,
           userId: userId,
-          changes: changes
-        }
+          changes: changes,
+        },
       });
 
       logger.info(`Contrato actualizado: ${id} por usuario ${userId}`);
@@ -346,7 +361,10 @@ export class ContractService {
       });
 
       if (!existingContract) {
-        throw AppError.notFound(`Contrato con ID ${id} no encontrado`, "CONTRACT_NOT_FOUND");
+        throw AppError.notFound(
+          `Contrato con ID ${id} no encontrado`,
+          "CONTRACT_NOT_FOUND"
+        );
       }
 
       // Verificar permisos si no es admin
@@ -364,8 +382,8 @@ export class ContractService {
           entityType: "Contract",
           entityId: id,
           contractId: id,
-          userId: userId
-        }
+          userId: userId,
+        },
       });
 
       // Eliminar contrato
@@ -481,16 +499,20 @@ export class ContractService {
       "paymentMethod",
       "paymentTerm",
       "amount",
-      "value"
+      "value",
     ];
 
     fieldsToCheck.forEach((field) => {
       if (newData[field] !== undefined && oldData[field] !== newData[field]) {
         if (field === "startDate" || field === "endDate") {
           // Formatear fechas para comparación
-          const oldDate = oldData[field] ? new Date(oldData[field]).toISOString().split('T')[0] : null;
-          const newDate = newData[field] ? new Date(newData[field]).toISOString().split('T')[0] : null;
-          
+          const oldDate = oldData[field]
+            ? new Date(oldData[field]).toISOString().split("T")[0]
+            : null;
+          const newDate = newData[field]
+            ? new Date(newData[field]).toISOString().split("T")[0]
+            : null;
+
           if (oldDate !== newDate) {
             changes[field] = {
               old: oldDate,
@@ -512,9 +534,12 @@ export class ContractService {
   /**
    * Convierte un objeto de contrato de la base de datos al formato DTO
    */
-  private static mapContractToDTO(contract: any, includeDetails: boolean = false): any {
+  private static mapContractToDTO(
+    contract: any,
+    includeDetails: boolean = false
+  ): any {
     if (!contract) return null;
-    
+
     // Datos básicos del contrato
     const contractDTO = {
       id: contract.id,
@@ -536,18 +561,22 @@ export class ContractService {
       value: contract.value,
       createdAt: contract.createdAt,
       updatedAt: contract.updatedAt,
-      createdBy: contract.createdBy ? {
-        id: contract.createdBy.id,
-        name: contract.createdBy.name,
-        email: contract.createdBy.email
-      } : null,
-      owner: contract.owner ? {
-        id: contract.owner.id,
-        name: contract.owner.name,
-        email: contract.owner.email
-      } : null
+      createdBy: contract.createdBy
+        ? {
+            id: contract.createdBy.id,
+            name: contract.createdBy.name,
+            email: contract.createdBy.email,
+          }
+        : null,
+      owner: contract.owner
+        ? {
+            id: contract.owner.id,
+            name: contract.owner.name,
+            email: contract.owner.email,
+          }
+        : null,
     };
-    
+
     // Si se solicitan detalles, agregar información adicional
     if (includeDetails) {
       return {
@@ -559,22 +588,50 @@ export class ContractService {
           description: supplement.description,
           effectiveDate: supplement.effectiveDate,
           isApproved: supplement.isApproved,
-          createdAt: supplement.createdAt
+          createdAt: supplement.createdAt,
         })),
         history: (contract.history || []).map((record: any) => ({
           id: record.id,
           action: record.action,
           changes: record.changes,
           timestamp: record.timestamp,
-          user: record.user ? {
-            id: record.user.id,
-            name: record.user.name,
-            email: record.user.email
-          } : null
-        }))
+          user: record.user
+            ? {
+                id: record.user.id,
+                name: record.user.name,
+                email: record.user.email,
+              }
+            : null,
+        })),
       };
     }
-    
+
     return contractDTO;
+  }
+
+  /**
+   * Actualiza el control de acceso de un contrato
+   */
+  static async updateContractAccessControl(
+    id: string,
+    accessControl: any,
+    userId: string,
+    userRole: string
+  ) {
+    // TODO: Implementar la lógica para actualizar el control de acceso
+    return { success: true };
+  }
+
+  /**
+   * Asigna usuarios a un contrato
+   */
+  static async assignUsersToContract(
+    id: string,
+    userAssignments: any,
+    userId: string,
+    userRole: string
+  ) {
+    // TODO: Implementar la lógica para asignar usuarios
+    return { success: true };
   }
 }

@@ -10,6 +10,7 @@ export const ContractsChannels = {
   DELETE: "contracts:delete",
   ASSIGN_USERS: "contracts:assignUsers",
   UPDATE_ACCESS: "contracts:updateAccess",
+  ADD_SUPPLEMENT: "contracts:addSupplement",
 };
 
 // Esquemas para validación en el lado del cliente
@@ -64,6 +65,18 @@ export const updateContractSchema = z.object({
   amount: z.number().nonnegative().optional(),
   currency: z.string().length(3).optional(),
   tags: z.string().optional(),
+  metadata: z.record(z.any()).optional(),
+});
+
+// Esquema para validación de suplementos
+export const supplementSchema = z.object({
+  title: z.string().min(3, "El título debe tener al menos 3 caracteres"),
+  description: z.string().optional(),
+  changedField: z.string(), // Campo que se modifica en el contrato
+  previousValue: z.any(), // Valor anterior
+  newValue: z.any(), // Nuevo valor
+  effectiveDate: z.string().or(z.date()),
+  createdById: z.string().uuid().optional(),
   metadata: z.record(z.any()).optional(),
 });
 
@@ -135,6 +148,18 @@ export const contractsApi = {
       userAssignments,
       userId,
       userRole
+    });
+  },
+
+  /**
+   * Añadir un suplemento a un contrato
+   */
+  addSupplement: async (contractId, supplementData) => {
+    // Validar datos antes de enviar
+    const validData = supplementSchema.parse(supplementData);
+    return window.Electron.ipcRenderer.invoke(ContractsChannels.ADD_SUPPLEMENT, {
+      contractId,
+      supplement: validData
     });
   }
 }; 

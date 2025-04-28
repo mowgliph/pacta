@@ -1,10 +1,10 @@
-import { prisma } from '../../lib/prisma';
-import { withErrorHandling } from '../setup';
-import { logger } from '../../utils/logger';
-import { ContractService } from '../../services/contract.service';
-import { ContractsChannels } from '../channels/contracts.channels';
-import { z } from 'zod';
-import { ErrorHandler } from '../error-handler';
+import { prisma } from "../../lib/prisma";
+import { withErrorHandling } from "../setup";
+import { logger } from "../../utils/logger";
+import { ContractService } from "../services/contract.service";
+import { ContractsChannels } from "../channels/contracts.channels";
+import { z } from "zod";
+import { ErrorHandler } from "../error-handler";
 
 // Esquemas de validación
 const contractFilterSchema = z.object({
@@ -14,25 +14,40 @@ const contractFilterSchema = z.object({
   page: z.number().int().positive().optional().default(1),
   limit: z.number().int().positive().optional().default(10),
   sortBy: z.string().optional(),
-  sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+  sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
 });
 
 const createContractSchema = z.object({
   title: z.string().min(3, "El título debe tener al menos 3 caracteres"),
   description: z.string().optional(),
   type: z.string().optional(),
-  startDate: z.string().or(z.date()).transform((val) => new Date(val)),
-  endDate: z.string().or(z.date()).optional().transform((val) => val ? new Date(val) : undefined),
-  status: z.string().default('draft'),
+  contractNumber: z.string(),
+  companyName: z.string(),
+  signDate: z
+    .string()
+    .or(z.date())
+    .transform((val) => new Date(val)),
+  signPlace: z.string().optional(),
+  parties: z.string(),
+  startDate: z
+    .string()
+    .or(z.date())
+    .transform((val) => new Date(val)),
+  endDate: z
+    .string()
+    .or(z.date())
+    .optional()
+    .transform((val) => (val ? new Date(val) : undefined)),
+  status: z.string().default("draft"),
   amount: z.number().nonnegative().optional(),
   currency: z.string().length(3).optional(),
-  parties: z.array(z.object({
-    name: z.string(),
-    role: z.string(),
-    contact: z.string().optional(),
-  })).optional(),
+  companyAddress: z.string().optional(),
+  paymentMethod: z.string().optional(),
+  paymentTerm: z.string().optional(),
+  isRestricted: z.boolean().default(false),
   tags: z.string().optional(),
   createdById: z.string().uuid(),
+  ownerId: z.string().uuid(),
   metadata: z.record(z.any()).optional(),
 });
 
@@ -42,8 +57,16 @@ const updateContractSchema = z.object({
     title: z.string().min(3).optional(),
     description: z.string().optional(),
     type: z.string().optional(),
-    startDate: z.string().or(z.date()).transform((val) => val ? new Date(val) : undefined).optional(),
-    endDate: z.string().or(z.date()).transform((val) => val ? new Date(val) : undefined).optional(),
+    startDate: z
+      .string()
+      .or(z.date())
+      .transform((val) => (val ? new Date(val) : undefined))
+      .optional(),
+    endDate: z
+      .string()
+      .or(z.date())
+      .transform((val) => (val ? new Date(val) : undefined))
+      .optional(),
     status: z.string().optional(),
     amount: z.number().nonnegative().optional(),
     currency: z.string().length(3).optional(),
@@ -59,23 +82,24 @@ export function setupContractHandlers(): void {
     try {
       // Validar filtros
       const validatedFilters = contractFilterSchema.parse(filters);
-      
-      const { type, status, search, page, limit, sortBy, sortOrder } = validatedFilters;
-      
+
+      const { type, status, search, page, limit, sortBy, sortOrder } =
+        validatedFilters;
+
       // Construir condiciones de consulta
       const where = {
         ...(type && { type }),
         ...(status && { status }),
         ...(search && {
           OR: [
-            { title: { contains: search, mode: 'insensitive' } },
-            { description: { contains: search, mode: 'insensitive' } },
+            { title: { contains: search, mode: "insensitive" } },
+            { description: { contains: search, mode: "insensitive" } },
           ],
         }),
       };
 
       // Construir ordenación
-      const orderBy = sortBy 
+      const orderBy = sortBy
         ? { [sortBy]: sortOrder }
         : { createdAt: sortOrder };
 
@@ -91,22 +115,12 @@ export function setupContractHandlers(): void {
               select: {
                 id: true,
                 name: true,
-                email: true
-              }
+                email: true,
+              },
             },
-            parties: true,
-            supplements: {
-              select: {
-                id: true,
-                title: true,
-                effectiveDate: true,
-                status: true,
-                changeType: true
-              }
-            }
-          }
+          },
         }),
-        prisma.contract.count({ where })
+        prisma.contract.count({ where }),
       ]);
 
       logger.info(`Contratos recuperados: ${contracts.length} de ${total}`);
@@ -118,132 +132,169 @@ export function setupContractHandlers(): void {
           total,
           page,
           limit,
-          pages: Math.ceil(total / limit)
-        }
+          pages: Math.ceil(total / limit),
+        },
       };
     } catch (error) {
       if (error instanceof z.ZodError) {
-        logger.warn('Error de validación en filtros de contratos:', error.errors);
-        throw ErrorHandler.createError('ValidationError', 'Filtros de búsqueda inválidos');
+        logger.warn(
+          "Error de validación en filtros de contratos:",
+          error.errors
+        );
+        throw ErrorHandler.createError(
+          "ValidationError",
+          "Filtros de búsqueda inválidos"
+        );
       }
       throw error;
     }
   });
 
   // Obtener un contrato por ID
-  withErrorHandling(ContractsChannels.GET_BY_ID, async (_, { id, includeDocuments = false }) => {
-    try {
-      // Validar ID
-      if (!id || typeof id !== 'string') {
-        throw ErrorHandler.createError('ValidationError', 'ID de contrato no válido');
-      }
-
-      // Definir relaciones a incluir
-      const include = {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        parties: true,
-        supplements: true,
-        history: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true
-              }
-            }
-          },
-          orderBy: {
-            timestamp: 'desc'
-          }
+  withErrorHandling(
+    ContractsChannels.GET_BY_ID,
+    async (_, { id, includeDocuments = false }) => {
+      try {
+        // Validar ID
+        if (!id || typeof id !== "string") {
+          throw ErrorHandler.createError(
+            "ValidationError",
+            "ID de contrato no válido"
+          );
         }
-      };
 
-      // Incluir documentos si se solicita
-      if (includeDocuments) {
-        include['documents'] = true;
+        // Definir relaciones a incluir
+        const include = {
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          parties: true,
+          supplements: true,
+          history: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
+            orderBy: {
+              timestamp: "desc" as const,
+            },
+          },
+        };
+
+        // Incluir documentos si se solicita
+        if (includeDocuments) {
+          include["documents"] = true;
+        }
+
+        // Buscar contrato con relaciones
+        const contract = await prisma.contract.findUnique({
+          where: { id },
+          include,
+        });
+
+        if (!contract) {
+          throw ErrorHandler.createError(
+            "NotFoundError",
+            "Contrato no encontrado"
+          );
+        }
+
+        logger.info(`Contrato recuperado: ${id}`);
+        return { contract };
+      } catch (error) {
+        if (
+          error.type === "NotFoundError" ||
+          error.type === "ValidationError"
+        ) {
+          throw error;
+        }
+        logger.error(`Error al obtener contrato ${id}:`, error);
+        throw ErrorHandler.createError(
+          "UnknownError",
+          "Error al recuperar el contrato"
+        );
       }
-
-      // Buscar contrato con relaciones
-      const contract = await prisma.contract.findUnique({
-        where: { id },
-        include
-      });
-
-      if (!contract) {
-        throw ErrorHandler.createError('NotFoundError', 'Contrato no encontrado');
-      }
-
-      logger.info(`Contrato recuperado: ${id}`);
-      return { contract };
-    } catch (error) {
-      if (error.type === 'NotFoundError' || error.type === 'ValidationError') {
-        throw error;
-      }
-      logger.error(`Error al obtener contrato ${id}:`, error);
-      throw ErrorHandler.createError('UnknownError', 'Error al recuperar el contrato');
     }
-  });
+  );
 
   // Crear un nuevo contrato
   withErrorHandling(ContractsChannels.CREATE, async (_, contractData) => {
     try {
       // Validar datos
       const validatedData = createContractSchema.parse(contractData);
-      
-      // Extraer parties si existen
-      const { parties, ...contractInfo } = validatedData;
-      
-      // Crear contrato con Prisma
+
+      // Extraer datos para el modelo Contract
+      const { createdById, ownerId, metadata, ...contractInfo } = validatedData;
+
+      // Construir objeto value si hay amount y currency
+      let value = undefined;
+      if (validatedData.amount && validatedData.currency) {
+        value = JSON.stringify({
+          amount: validatedData.amount,
+          currency: validatedData.currency,
+        });
+      }
+
+      // Crear contrato con Prisma - con el modo correcto para las relaciones
       const contract = await prisma.contract.create({
         data: {
           ...contractInfo,
-          // Crear relaciones de partes si se proporcionaron
-          ...(parties && {
-            parties: {
-              create: parties
-            }
-          }),
-          // Crear registro de historial
-          history: {
-            create: {
-              action: 'CREATE',
-              userId: contractInfo.createdById,
-              entityType: 'Contract',
-              details: 'Contrato creado'
-            }
-          }
-        },
-        include: {
-          parties: true,
+          value,
+          contractNumber: contractInfo.contractNumber,
+          companyName: contractInfo.companyName,
+          parties: contractInfo.parties,
+          title: contractInfo.title,
+          startDate: contractInfo.startDate,
+          signDate: contractInfo.signDate,
+          type: contractInfo.type || "default",
+          status: contractInfo.status || "draft",
           createdBy: {
-            select: {
-              id: true,
-              name: true,
-              email: true
-            }
-          }
-        }
+            connect: { id: createdById },
+          },
+          owner: {
+            connect: { id: ownerId },
+          },
+        },
+      });
+
+      // Crear registro de historial separado
+      await prisma.historyRecord.create({
+        data: {
+          action: "CREATE",
+          userId: createdById,
+          entityType: "Contract",
+          entityId: contract.id,
+        },
       });
 
       logger.info(`Contrato creado: ${contract.id} - ${contract.title}`);
-      return { 
-        success: true, 
+      return {
+        success: true,
         contract,
-        message: 'Contrato creado exitosamente' 
+        message: "Contrato creado exitosamente",
       };
     } catch (error) {
       if (error instanceof z.ZodError) {
-        logger.warn('Error de validación al crear contrato:', error.errors);
-        throw ErrorHandler.createError('ValidationError', 'Datos de contrato inválidos', error.format());
+        logger.warn("Error de validación al crear contrato:", error.errors);
+        throw ErrorHandler.createError(
+          "ValidationError",
+          "Datos de contrato inválidos",
+          error.format()
+        );
       }
-      logger.error('Error al crear contrato:', error);
-      throw ErrorHandler.createError('DatabaseError', 'Error al crear el contrato');
+      logger.error("Error al crear contrato:", error);
+      throw ErrorHandler.createError(
+        "DatabaseError",
+        "Error al crear el contrato"
+      );
     }
   });
 
@@ -252,20 +303,23 @@ export function setupContractHandlers(): void {
     try {
       // Validar datos
       const { id, data } = updateContractSchema.parse(payload);
-      
+
       // Guardar ID de usuario para historial
       const { updatedById } = data;
-      
+
       // Buscar contrato existente para verificar
       const existingContract = await prisma.contract.findUnique({
         where: { id },
-        select: { id: true, title: true }
+        select: { id: true, title: true },
       });
-      
+
       if (!existingContract) {
-        throw ErrorHandler.createError('NotFoundError', 'Contrato no encontrado');
+        throw ErrorHandler.createError(
+          "NotFoundError",
+          "Contrato no encontrado"
+        );
       }
-      
+
       // Actualizar contrato
       const contract = await prisma.contract.update({
         where: { id },
@@ -274,41 +328,50 @@ export function setupContractHandlers(): void {
           // Crear registro de historial
           history: {
             create: {
-              action: 'UPDATE',
+              action: "UPDATE",
               userId: updatedById,
-              entityType: 'Contract',
-              details: `Contrato "${existingContract.title}" actualizado`,
-              changes: JSON.stringify(data)
-            }
-          }
+              entityType: "Contract",
+              entityId: id,
+              changes: JSON.stringify(data),
+            },
+          },
         },
         include: {
-          parties: true,
           createdBy: {
             select: {
               id: true,
-              name: true
-            }
-          }
-        }
+              name: true,
+            },
+          },
+        },
       });
 
       logger.info(`Contrato actualizado: ${id}`);
-      return { 
-        success: true, 
+      return {
+        success: true,
         contract,
-        message: 'Contrato actualizado exitosamente' 
+        message: "Contrato actualizado exitosamente",
       };
     } catch (error) {
       if (error instanceof z.ZodError) {
-        logger.warn('Error de validación al actualizar contrato:', error.errors);
-        throw ErrorHandler.createError('ValidationError', 'Datos de actualización inválidos', error.format());
+        logger.warn(
+          "Error de validación al actualizar contrato:",
+          error.errors
+        );
+        throw ErrorHandler.createError(
+          "ValidationError",
+          "Datos de actualización inválidos",
+          error.format()
+        );
       }
-      if (error.type === 'NotFoundError') {
+      if (error.type === "NotFoundError") {
         throw error;
       }
       logger.error(`Error al actualizar contrato:`, error);
-      throw ErrorHandler.createError('DatabaseError', 'Error al actualizar el contrato');
+      throw ErrorHandler.createError(
+        "DatabaseError",
+        "Error al actualizar el contrato"
+      );
     }
   });
 
@@ -316,108 +379,131 @@ export function setupContractHandlers(): void {
   withErrorHandling(ContractsChannels.DELETE, async (_, { id, userId }) => {
     try {
       // Validar ID
-      if (!id || typeof id !== 'string' || !userId) {
-        throw ErrorHandler.createError('ValidationError', 'ID de contrato y usuario son requeridos');
+      if (!id || typeof id !== "string" || !userId) {
+        throw ErrorHandler.createError(
+          "ValidationError",
+          "ID de contrato y usuario son requeridos"
+        );
       }
 
       // Iniciar transacción para operación atómica
       await prisma.$transaction(async (tx) => {
         // Eliminar partes relacionadas
-        await tx.contractParty.deleteMany({
-          where: { contractId: id }
+        await tx.contractAccess.deleteMany({
+          where: { contractId: id },
         });
-        
+
         // Eliminar historial
         await tx.historyRecord.deleteMany({
-          where: { 
+          where: {
             entityId: id,
-            entityType: 'Contract'
-          }
+            entityType: "Contract",
+          },
         });
-        
+
         // Eliminar contrato
         await tx.contract.delete({
-          where: { id }
+          where: { id },
         });
       });
 
       // Crear registro de historial independiente
       await prisma.historyRecord.create({
         data: {
-          action: 'DELETE',
+          action: "DELETE",
           userId,
-          entityType: 'Contract',
+          entityType: "Contract",
           entityId: id,
-          details: 'Contrato eliminado'
-        }
+        },
       });
 
       logger.info(`Contrato eliminado: ${id}`);
-      return { 
-        success: true, 
-        message: 'Contrato eliminado exitosamente' 
+      return {
+        success: true,
+        message: "Contrato eliminado exitosamente",
       };
     } catch (error) {
-      if (error.type === 'ValidationError') {
+      if (error.type === "ValidationError") {
         throw error;
       }
-      if (error.code === 'P2025') {
-        throw ErrorHandler.createError('NotFoundError', 'Contrato no encontrado');
+      if (error.code === "P2025") {
+        throw ErrorHandler.createError(
+          "NotFoundError",
+          "Contrato no encontrado"
+        );
       }
       logger.error(`Error al eliminar contrato ${id}:`, error);
-      throw ErrorHandler.createError('DatabaseError', 'Error al eliminar el contrato');
+      throw ErrorHandler.createError(
+        "DatabaseError",
+        "Error al eliminar el contrato"
+      );
     }
   });
 
   // Actualizar control de acceso de un contrato
-  withErrorHandling(ContractsChannels.UPDATE_ACCESS, async (_, { id, accessControl, userId, userRole }) => {
-    try {
-      if (!id || !userId) {
-        throw ErrorHandler.createError('ValidationError', 'ID de contrato y usuario son requeridos');
+  withErrorHandling(
+    ContractsChannels.UPDATE_ACCESS,
+    async (_, { id, accessControl, userId, userRole }) => {
+      try {
+        if (!id || !userId) {
+          throw ErrorHandler.createError(
+            "ValidationError",
+            "ID de contrato y usuario son requeridos"
+          );
+        }
+
+        const result = await ContractService.updateContractAccessControl(
+          id,
+          accessControl,
+          userId,
+          userRole
+        );
+
+        logger.info(`Control de acceso actualizado para contrato: ${id}`);
+        return {
+          success: true,
+          ...result,
+          message: "Control de acceso actualizado",
+        };
+      } catch (error) {
+        logger.error(
+          `Error al actualizar control de acceso para contrato ${id}:`,
+          error
+        );
+        throw error;
       }
-      
-      const result = await ContractService.updateContractAccessControl(
-        id, 
-        accessControl, 
-        userId, 
-        userRole
-      );
-      
-      logger.info(`Control de acceso actualizado para contrato: ${id}`);
-      return {
-        success: true,
-        ...result,
-        message: 'Control de acceso actualizado'
-      };
-    } catch (error) {
-      logger.error(`Error al actualizar control de acceso para contrato ${id}:`, error);
-      throw error;
     }
-  });
+  );
 
   // Asignar usuarios a un contrato
-  withErrorHandling(ContractsChannels.ASSIGN_USERS, async (_, { id, userAssignments, userId, userRole }) => {
-    try {
-      if (!id || !userId || !userAssignments) {
-        throw ErrorHandler.createError('ValidationError', 'Datos incompletos para asignación de usuarios');
+  withErrorHandling(
+    ContractsChannels.ASSIGN_USERS,
+    async (_, { id, userAssignments, userId, userRole }) => {
+      try {
+        if (!id || !userId || !userAssignments) {
+          throw ErrorHandler.createError(
+            "ValidationError",
+            "Datos incompletos para asignación de usuarios"
+          );
+        }
+
+        const result = await ContractService.assignUsersToContract(
+          id,
+          userAssignments,
+          userId,
+          userRole
+        );
+
+        logger.info(`Usuarios asignados a contrato: ${id}`);
+        return {
+          success: true,
+          ...result,
+          message: "Usuarios asignados correctamente",
+        };
+      } catch (error) {
+        logger.error(`Error al asignar usuarios a contrato ${id}:`, error);
+        throw error;
       }
-      
-      const result = await ContractService.assignUsersToContract(
-        id, 
-        userAssignments, 
-        userId, 
-        userRole
-      );
-      
-      logger.info(`Usuarios asignados a contrato: ${id}`);
-      return {
-        success: true,
-        ...result,
-        message: 'Usuarios asignados correctamente'
-      };
-    } catch (error) {
-      logger.error(`Error al asignar usuarios a contrato ${id}:`, error);
-      throw error;
     }
-  });
-} 
+  );
+}

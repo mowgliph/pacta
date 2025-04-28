@@ -1,10 +1,10 @@
-import { prisma } from "../lib/prisma";
+import { prisma } from "../../lib/prisma";
 import { compare, hash } from "bcrypt";
 import jwt from "jsonwebtoken";
-import { config } from "../lib/config";
-import { logger } from "../lib/logger";
-import { AppError } from "../middleware/error.middleware";
-import { LoginCredentials, AuthResult, UserSession } from "../shared/types";
+import { config } from "../../lib/config";
+import { logger } from "../../lib/logger";
+import { AppError } from "../../middleware/error.middleware";
+import { LoginCredentials, AuthResult, UserSession } from "../../shared/types";
 
 /**
  * Servicio de autenticación y autorización
@@ -58,9 +58,10 @@ export class AuthService {
       role: {
         id: user.role.id,
         name: user.role.name,
-        permissions: typeof user.role.permissions === 'string' 
-          ? JSON.parse(user.role.permissions) 
-          : user.role.permissions
+        permissions:
+          typeof user.role.permissions === "string"
+            ? JSON.parse(user.role.permissions)
+            : user.role.permissions,
       },
       token,
       expiresAt: rememberMe

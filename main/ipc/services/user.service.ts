@@ -1,7 +1,7 @@
-import { prisma } from "../lib/prisma";
-import { logger } from "../lib/logger";
+import { prisma } from "../../lib/prisma";
+import { logger } from "../../lib/logger";
 import bcrypt from "bcrypt";
-import { ErrorHandler } from "../ipc/error-handler";
+import { ErrorHandler } from "../error-handler";
 
 /**
  * Servicio para la gestión de usuarios
@@ -26,18 +26,18 @@ export class UserService {
             select: {
               id: true,
               name: true,
-              description: true
-            }
-          }
+              description: true,
+            },
+          },
         },
         orderBy: {
-          name: 'asc'
-        }
+          name: "asc",
+        },
       });
 
       return { users, total: users.length };
     } catch (error) {
-      logger.error('Error al obtener usuarios:', error);
+      logger.error("Error al obtener usuarios:", error);
       throw error;
     }
   }
@@ -63,10 +63,10 @@ export class UserService {
             select: {
               id: true,
               name: true,
-              description: true
-            }
-          }
-        }
+              description: true,
+            },
+          },
+        },
       });
     } catch (error) {
       logger.error(`Error al obtener usuario ${id}:`, error);
@@ -87,8 +87,8 @@ export class UserService {
           name: true,
           email: true,
           roleId: true,
-          isActive: true
-        }
+          isActive: true,
+        },
       });
     } catch (error) {
       logger.error(`Error al obtener usuario por email ${email}:`, error);
@@ -113,24 +113,24 @@ export class UserService {
           email: userData.email,
           password: hashedPassword,
           roleId: userData.roleId,
-          isActive: true
-        }
+          isActive: true,
+        },
       });
 
       // Registrar en historial
       await prisma.historyRecord.create({
         data: {
-          action: 'CREATE',
-          entityType: 'User',
+          action: "CREATE",
+          entityType: "User",
           entityId: user.id,
           userId: creatorId,
-          changes: `Usuario ${user.name} (${user.email}) creado`
-        }
+          changes: `Usuario ${user.name} (${user.email}) creado`,
+        },
       });
 
       return user;
     } catch (error) {
-      logger.error('Error al crear usuario:', error);
+      logger.error("Error al crear usuario:", error);
       throw error;
     }
   }
@@ -145,12 +145,13 @@ export class UserService {
     try {
       // Preparar datos para actualizar
       const updateData: any = {};
-      
+
       if (userData.name) updateData.name = userData.name;
       if (userData.email) updateData.email = userData.email;
       if (userData.roleId) updateData.roleId = userData.roleId;
-      if (userData.isActive !== undefined) updateData.isActive = userData.isActive;
-      
+      if (userData.isActive !== undefined)
+        updateData.isActive = userData.isActive;
+
       // Si hay contraseña, encriptarla
       if (userData.password) {
         updateData.password = await bcrypt.hash(userData.password, 10);
@@ -159,18 +160,18 @@ export class UserService {
       // Actualizar usuario
       const user = await prisma.user.update({
         where: { id },
-        data: updateData
+        data: updateData,
       });
 
       // Registrar en historial
       await prisma.historyRecord.create({
         data: {
-          action: 'UPDATE',
-          entityType: 'User',
+          action: "UPDATE",
+          entityType: "User",
           entityId: id,
           userId: updaterId,
-          changes: `Usuario ${user.name} (${user.email}) actualizado`
-        }
+          changes: `Usuario ${user.name} (${user.email}) actualizado`,
+        },
       });
 
       return user;
@@ -189,7 +190,7 @@ export class UserService {
     try {
       // Obtener usuario actual
       const user = await prisma.user.findUnique({
-        where: { id }
+        where: { id },
       });
 
       if (!user) {
@@ -200,19 +201,21 @@ export class UserService {
       const updatedUser = await prisma.user.update({
         where: { id },
         data: {
-          isActive: !user.isActive
-        }
+          isActive: !user.isActive,
+        },
       });
 
       // Registrar en historial
       await prisma.historyRecord.create({
         data: {
-          action: 'UPDATE',
-          entityType: 'User',
+          action: "UPDATE",
+          entityType: "User",
           entityId: id,
           userId: adminId,
-          changes: `Usuario ${user.name} ${updatedUser.isActive ? 'activado' : 'desactivado'}`
-        }
+          changes: `Usuario ${user.name} ${
+            updatedUser.isActive ? "activado" : "desactivado"
+          }`,
+        },
       });
 
       return updatedUser;
@@ -228,15 +231,19 @@ export class UserService {
    * @param currentPassword - Contraseña actual
    * @param newPassword - Nueva contraseña
    */
-  static async changePassword(userId: string, currentPassword: string, newPassword: string) {
+  static async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string
+  ) {
     try {
       // Obtener usuario
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: {
           id: true,
-          password: true
-        }
+          password: true,
+        },
       });
 
       if (!user) {
@@ -254,19 +261,19 @@ export class UserService {
       await prisma.user.update({
         where: { id: userId },
         data: {
-          password: hashedPassword
-        }
+          password: hashedPassword,
+        },
       });
 
       // Registrar en historial
       await prisma.historyRecord.create({
         data: {
-          action: 'UPDATE',
-          entityType: 'User',
+          action: "UPDATE",
+          entityType: "User",
           entityId: userId,
           userId,
-          changes: 'Contraseña actualizada'
-        }
+          changes: "Contraseña actualizada",
+        },
       });
 
       return true;
@@ -285,24 +292,27 @@ export class UserService {
       const user = await prisma.user.findUnique({
         where: { id: userId },
         include: {
-          role: true
-        }
+          role: true,
+        },
       });
 
       if (!user) {
-        throw ErrorHandler.createError('NotFoundError', 'Usuario no encontrado');
+        throw ErrorHandler.createError(
+          "NotFoundError",
+          "Usuario no encontrado"
+        );
       }
 
       // Convertir permisos de string a objeto si es necesario
       let permissions = {};
-      
-      if (user.role && typeof user.role.permissions === 'string') {
+
+      if (user.role && typeof user.role.permissions === "string") {
         try {
           permissions = JSON.parse(user.role.permissions);
         } catch (e) {
           logger.warn(`Error al parsear permisos para usuario ${userId}:`, e);
         }
-      } else if (user.role && typeof user.role.permissions === 'object') {
+      } else if (user.role && typeof user.role.permissions === "object") {
         permissions = user.role.permissions;
       }
 
@@ -310,17 +320,17 @@ export class UserService {
         user: {
           id: user.id,
           name: user.name,
-          email: user.email
+          email: user.email,
         },
         role: {
           id: user.role?.id,
-          name: user.role?.name
+          name: user.role?.name,
         },
-        permissions
+        permissions,
       };
     } catch (error) {
       logger.error(`Error al obtener permisos de usuario ${userId}:`, error);
       throw error;
     }
   }
-} 
+}

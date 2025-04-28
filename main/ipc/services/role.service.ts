@@ -1,5 +1,5 @@
-import { prisma } from "../lib/prisma";
-import { logger } from "../lib/logger";
+import { prisma } from "../../lib/prisma";
+import { logger } from "../../lib/logger";
 
 /**
  * Servicio para la gestión de roles
@@ -20,18 +20,18 @@ export class RoleService {
           updatedAt: true,
           _count: {
             select: {
-              users: true
-            }
-          }
+              users: true,
+            },
+          },
         },
         orderBy: {
-          name: 'asc'
-        }
+          name: "asc",
+        },
       });
 
       return { roles };
     } catch (error) {
-      logger.error('Error al obtener roles:', error);
+      logger.error("Error al obtener roles:", error);
       throw error;
     }
   }
@@ -53,10 +53,10 @@ export class RoleService {
           updatedAt: true,
           _count: {
             select: {
-              users: true
-            }
-          }
-        }
+              users: true,
+            },
+          },
+        },
       });
 
       return role;
@@ -76,12 +76,12 @@ export class RoleService {
       // Verificar si ya existe un rol con el mismo nombre (comparación directa)
       const existingRole = await prisma.role.findFirst({
         where: {
-          name: roleData.name
-        }
+          name: roleData.name,
+        },
       });
 
       if (existingRole) {
-        throw new Error('Ya existe un rol con este nombre');
+        throw new Error("Ya existe un rol con este nombre");
       }
 
       // Crear el rol
@@ -89,24 +89,24 @@ export class RoleService {
         data: {
           name: roleData.name,
           description: roleData.description,
-          permissions: roleData.permissions
-        }
+          permissions: roleData.permissions,
+        },
       });
 
       // Registrar en historial
       await prisma.historyRecord.create({
         data: {
-          action: 'CREATE',
-          entityType: 'Role',
+          action: "CREATE",
+          entityType: "Role",
           entityId: role.id,
           userId: creatorId,
-          changes: JSON.stringify(roleData)
-        }
+          changes: JSON.stringify(roleData),
+        },
       });
 
       return role;
     } catch (error) {
-      logger.error('Error al crear rol:', error);
+      logger.error("Error al crear rol:", error);
       throw error;
     }
   }
@@ -121,11 +121,11 @@ export class RoleService {
     try {
       // Verificar si el rol existe
       const role = await prisma.role.findUnique({
-        where: { id }
+        where: { id },
       });
 
       if (!role) {
-        throw new Error('Rol no encontrado');
+        throw new Error("Rol no encontrado");
       }
 
       // Si se actualiza el nombre, verificar que no exista otro rol con el mismo nombre
@@ -134,13 +134,13 @@ export class RoleService {
           where: {
             name: roleData.name,
             id: {
-              not: id
-            }
-          }
+              not: id,
+            },
+          },
         });
 
         if (existingRole) {
-          throw new Error('Ya existe un rol con este nombre');
+          throw new Error("Ya existe un rol con este nombre");
         }
       }
 
@@ -150,19 +150,19 @@ export class RoleService {
         data: {
           name: roleData.name,
           description: roleData.description,
-          permissions: roleData.permissions
-        }
+          permissions: roleData.permissions,
+        },
       });
 
       // Registrar cambios en historial
       await prisma.historyRecord.create({
         data: {
-          action: 'UPDATE',
-          entityType: 'Role',
+          action: "UPDATE",
+          entityType: "Role",
           entityId: id,
           userId: updaterId,
-          changes: JSON.stringify(roleData)
-        }
+          changes: JSON.stringify(roleData),
+        },
       });
 
       return updatedRole;
@@ -185,34 +185,36 @@ export class RoleService {
         include: {
           _count: {
             select: {
-              users: true
-            }
-          }
-        }
+              users: true,
+            },
+          },
+        },
       });
 
       if (!role) {
-        throw new Error('Rol no encontrado');
+        throw new Error("Rol no encontrado");
       }
 
       // Verificar si hay usuarios que usan este rol
       if (role._count.users > 0) {
-        throw new Error('No se puede eliminar un rol que está siendo utilizado por usuarios');
+        throw new Error(
+          "No se puede eliminar un rol que está siendo utilizado por usuarios"
+        );
       }
 
       // Eliminar el rol
       await prisma.role.delete({
-        where: { id }
+        where: { id },
       });
 
       // Registrar en historial
       await prisma.historyRecord.create({
         data: {
-          action: 'DELETE',
-          entityType: 'Role',
+          action: "DELETE",
+          entityType: "Role",
           entityId: id,
-          userId
-        }
+          userId,
+        },
       });
 
       return true;
