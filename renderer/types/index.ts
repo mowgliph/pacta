@@ -317,10 +317,12 @@ export interface AccessControl {
 
 export interface Backup {
   id: string;
-  filename: string;
-  size: number;
-  path: string;
+  fileName: string;
+  filePath: string;
+  fileSize: string;
   createdAt: string;
-  description: string;
+  note?: string;
   isAutomatic: boolean;
+  canDelete: boolean;
+  createdById?: string;
 }

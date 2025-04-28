@@ -26,7 +26,7 @@ import {
 } from "../../components/ui/dialog";
 import { useAuth } from "../../hooks/useAuth";
 import { Backup } from "../../types/index";
-import { getBackups } from "../../lib/api";
+import { backupApi } from "../../api/backup";
 
 // Componente principal de la página de respaldos
 // Este componente maneja la creación, restauración y eliminación de respaldos
@@ -42,7 +42,7 @@ export default function BackupPage() {
   const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { toast } = useToast();
-  const { hasRole } = useAuth();
+  const { hasRole, user } = useAuth();
 
   useEffect(() => {
     fetchBackups();
@@ -53,8 +53,12 @@ export default function BackupPage() {
   const fetchBackups = async () => {
     setIsLoading(true);
     try {
-      const data = await getBackups();
-      setBackups(data);
+      const response = await backupApi.getBackups();
+      if (response.success && response.backups) {
+        setBackups(response.backups);
+      } else {
+        throw new Error("No se recibieron datos válidos");
+      }
     } catch (error) {
       console.error("Error al cargar los respaldos:", error);
       toast({
@@ -69,22 +73,36 @@ export default function BackupPage() {
 
   // Función para crear un nuevo respaldo
   const createBackup = async () => {
+    if (!user || !user.id) {
+      toast({
+        title: "Error",
+        description: "Usuario no identificado",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsCreating(true);
     try {
-      await import("../../lib/api").then(async ({ createBackup }) => {
-        await createBackup();
+      const response = await backupApi.createBackup(
+        user.id,
+        backupDescription || undefined
+      );
+      if (response.success) {
         toast({
           title: "Éxito",
           description: "El respaldo se ha creado correctamente",
         });
         setBackupDescription(""); // Limpiar el campo de descripción
         fetchBackups(); // Refrescar la lista de respaldos
-      });
+      } else {
+        throw new Error(response.error || "Error al crear respaldo");
+      }
     } catch (error) {
       console.error("Error al crear respaldo:", error);
       toast({
         title: "Error",
-        description: "No se pudo crear el respaldo",
+        description: error.message || "No se pudo crear el respaldo",
         variant: "destructive",
       });
     } finally {
@@ -94,14 +112,16 @@ export default function BackupPage() {
 
   // Función para restaurar un respaldo seleccionado
   const restoreBackup = async () => {
-    if (!selectedBackup) return;
+    if (!selectedBackup || !user || !user.id) return;
 
     setIsRestoring(true);
     try {
-      // Importar la función de la API y restaurar el respaldo
-      await import("../../lib/api").then(async ({ restoreBackup }) => {
-        await restoreBackup(selectedBackup.id);
+      const response = await backupApi.restoreBackup(
+        selectedBackup.id,
+        user.id
+      );
 
+      if (response.success) {
         toast({
           title: "Éxito",
           description:
@@ -111,10 +131,8 @@ export default function BackupPage() {
         setIsRestoreDialogOpen(false);
 
         // Reiniciar la aplicación después de restaurar el respaldo
-        // Usamos relaunch y exit según la documentación oficial de Electron
         setTimeout(() => {
           if (window.Electron && window.Electron.app) {
-            // Verificamos que los métodos existan
             if (
               typeof window.Electron.app.relaunch === "function" &&
               typeof window.Electron.app.exit === "function"
@@ -122,20 +140,20 @@ export default function BackupPage() {
               window.Electron.app.relaunch();
               window.Electron.app.exit(0);
             } else {
-              // Fallback si los métodos no están disponibles
               window.location.reload();
             }
           } else {
-            // Fallback para desarrollo o si la API de Electron no está disponible
             window.location.reload();
           }
-        }, 3000); // Dar tiempo para que el usuario vea el mensaje de éxito
-      });
+        }, 3000); // Dar tiempo para que el usuario vea el mensaje
+      } else {
+        throw new Error(response.error || "Error al restaurar el respaldo");
+      }
     } catch (error) {
       console.error("Error al restaurar respaldo:", error);
       toast({
         title: "Error",
-        description: "No se pudo restaurar el respaldo",
+        description: error.message || "No se pudo restaurar el respaldo",
         variant: "destructive",
       });
     } finally {
@@ -148,20 +166,22 @@ export default function BackupPage() {
     if (!selectedBackup) return;
 
     try {
-      await import("../../lib/api").then(async ({ deleteBackup }) => {
-        await deleteBackup(selectedBackup.id);
+      const response = await backupApi.deleteBackup(selectedBackup.id);
+      if (response.success) {
         toast({
           title: "Éxito",
           description: "El respaldo ha sido eliminado correctamente",
         });
         setIsDeleteDialogOpen(false);
         fetchBackups(); // Refrescar la lista de respaldos
-      });
+      } else {
+        throw new Error(response.error || "Error al eliminar el respaldo");
+      }
     } catch (error) {
       console.error("Error al eliminar respaldo:", error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar el respaldo",
+        description: error.message || "No se pudo eliminar el respaldo",
         variant: "destructive",
       });
     }

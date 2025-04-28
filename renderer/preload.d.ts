@@ -13,15 +13,23 @@ declare global {
       
       auth: {
         login: (credentials: { 
-          usuario: string, 
-          password: string, 
-          rememberMe?: boolean,
-          deviceId?: string,
-          isSpecialUser?: boolean
+          usuario: string; 
+          password: string; 
+          rememberMe?: boolean;
+          deviceId?: string;
+          isSpecialUser?: boolean;
         }) => Promise<any>;
         logout: () => Promise<any>;
         getPerfil: () => Promise<any>;
-        cambiarContrasena: (datos: { actual: string, nueva: string }) => Promise<any>;
+        cambiarContrasena: (datos: { 
+          currentPassword: string;
+          newPassword: string;
+        }) => Promise<any>;
+      };
+
+      theme: {
+        getSystemTheme: () => Promise<'light' | 'dark'>;
+        setAppTheme: (theme: 'light' | 'dark' | 'system') => Promise<void>;
       };
       
       users: {
@@ -82,7 +90,9 @@ declare global {
       
       ipcRenderer: {
         invoke: (channel: string, ...args: any[]) => Promise<any>;
-      };
+        on: (channel: string, listener: (...args: any[]) => void) => void;
+        removeListener: (channel: string, listener: (...args: any[]) => void) => void;
+    };
       
       receive: (channel: string, callback: (...args: any[]) => void) => boolean;
       removeListener: (channel: string) => boolean;

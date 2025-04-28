@@ -1,10 +1,10 @@
-import { app } from 'electron';
-import * as fs from 'fs';
-import * as path from 'path';
-import * as cron from 'node-cron';
-import { randomBytes } from 'crypto';
-import { prisma } from './prisma';
-import { logger } from './logger';
+import { app } from "electron";
+import * as fs from "fs";
+import * as path from "path";
+import * as cron from "node-cron";
+import { randomBytes } from "crypto";
+import { prisma } from "./prisma";
+import { logger } from "./logger";
 
 /**
  * Clase para gestionar copias de seguridad de la base de datos
@@ -16,7 +16,7 @@ export class BackupManager {
   private scheduledTask: cron.ScheduledTask | null = null;
 
   private constructor() {
-    this.backupDir = path.join(app.getPath('userData'), 'backups');
+    this.backupDir = path.join(app.getPath("userData"), "backups");
     this.ensureBackupDirectory();
   }
 
@@ -35,7 +35,7 @@ export class BackupManager {
       try {
         fs.chmodSync(this.backupDir, 0o700);
       } catch (error) {
-        logger.error('Could not set permissions on backup directory:', error);
+        logger.error("Could not set permissions on backup directory:", error);
       }
     }
   }
@@ -44,7 +44,7 @@ export class BackupManager {
    * Configura un backup automático según la expresión cron proporcionada
    * @param cronExpression Expresión cron para programar la tarea (por defecto diariamente a medianoche)
    */
-  public setupScheduledBackup(cronExpression = '0 0 * * *'): void {
+  public setupScheduledBackup(cronExpression = "0 0 * * *"): void {
     // Cancela cualquier tarea programada anterior
     if (this.scheduledTask) {
       this.scheduledTask.stop();
@@ -54,10 +54,10 @@ export class BackupManager {
     this.scheduledTask = cron.schedule(cronExpression, async () => {
       try {
         const systemUserId = await this.getSystemUserId();
-        await this.createBackup(systemUserId, 'Backup automático programado');
+        await this.createBackup(systemUserId, "Backup automático programado");
         await this.cleanOldBackups();
       } catch (error) {
-        logger.error('Error in scheduled backup:', error);
+        logger.error("Error in scheduled backup:", error);
       }
     });
 
@@ -71,33 +71,35 @@ export class BackupManager {
     // Buscar o crear un usuario de sistema para los backups automáticos
     let systemUser = await prisma.user.findFirst({
       where: {
-        email: 'system@pacta.local'
-      }
+        email: "system@pacta.local",
+      },
     });
 
     if (!systemUser) {
       // Buscar un rol de administrador
       const adminRole = await prisma.role.findFirst({
         where: {
-          name: 'Admin'
-        }
+          name: "Admin",
+        },
       });
 
       if (!adminRole) {
-        throw new Error('No se encontró un rol de administrador para el usuario del sistema');
+        throw new Error(
+          "No se encontró un rol de administrador para el usuario del sistema"
+        );
       }
 
       systemUser = await prisma.user.create({
         data: {
-          name: 'Sistema',
-          email: 'system@pacta.local',
-          password: 'no-login-' + randomBytes(16).toString('hex'),
+          name: "Sistema",
+          email: "system@pacta.local",
+          password: "no-login-" + randomBytes(16).toString("hex"),
           roleId: adminRole.id,
-          isActive: true
-        }
+          isActive: true,
+        },
       });
 
-      logger.info('Usuario de sistema creado para backups automáticos');
+      logger.info("Usuario de sistema creado para backups automáticos");
     }
 
     return systemUser.id;
@@ -111,16 +113,16 @@ export class BackupManager {
    */
   public async createBackup(userId: string, note?: string): Promise<any> {
     // Generar nombre de archivo con timestamp
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const fileName = `backup-${timestamp}.sqlite`;
     const filePath = path.join(this.backupDir, fileName);
 
     // Obtener la ruta de la base de datos actual
-    const dbPath = path.join(app.getPath('userData'), 'database.sqlite');
+    const dbPath = path.join(app.getPath("userData"), "database.sqlite");
 
     // Verificar que la DB existe
     if (!fs.existsSync(dbPath)) {
-      throw new Error('Base de datos no encontrada');
+      throw new Error("Base de datos no encontrada");
     }
 
     // Copiar la base de datos actual
@@ -139,9 +141,9 @@ export class BackupManager {
         filePath,
         fileSize,
         createdById: userId,
-        note: note || 'Backup manual',
-        isAutomatic: note?.includes('automático') || false
-      }
+        note: note || "Backup manual",
+        isAutomatic: note?.includes("automático") || false,
+      },
     });
 
     logger.info(`Backup creado: ${fileName}`);
@@ -154,28 +156,34 @@ export class BackupManager {
    * @param userId ID del usuario que realiza la restauración
    * @returns true si la restauración fue exitosa
    */
-  public async restoreBackup(backupId: string, userId: string): Promise<boolean> {
+  public async restoreBackup(
+    backupId: string,
+    userId: string
+  ): Promise<boolean> {
     // Buscar el backup en la base de datos
     const backup = await prisma.backup.findUnique({
-      where: { id: backupId }
+      where: { id: backupId },
     });
 
     if (!backup) {
-      throw new Error('Backup no encontrado');
+      throw new Error("Backup no encontrado");
     }
 
     // Verificar que el archivo existe
     if (!fs.existsSync(backup.filePath)) {
-      throw new Error('Archivo de backup no encontrado');
+      throw new Error("Archivo de backup no encontrado");
     }
 
     // Obtener la ruta de la base de datos actual
-    const dbPath = path.join(app.getPath('userData'), 'database.sqlite');
+    const dbPath = path.join(app.getPath("userData"), "database.sqlite");
 
     // Crear una copia de seguridad antes de restaurar
-    const preRestoreBackupPath = path.join(this.backupDir, `pre-restore-${Date.now()}.sqlite`);
+    const preRestoreBackupPath = path.join(
+      this.backupDir,
+      `pre-restore-${Date.now()}.sqlite`
+    );
     fs.copyFileSync(dbPath, preRestoreBackupPath);
-    
+
     // Establecer permisos adecuados
     fs.chmodSync(preRestoreBackupPath, 0o600);
 
@@ -187,8 +195,8 @@ export class BackupManager {
         fileSize: fs.statSync(preRestoreBackupPath).size,
         createdById: userId,
         note: `Backup automático pre-restauración`,
-        isAutomatic: true
-      }
+        isAutomatic: true,
+      },
     });
 
     // Desconectar Prisma antes de restaurar
@@ -196,7 +204,7 @@ export class BackupManager {
 
     // Restaurar el backup
     fs.copyFileSync(backup.filePath, dbPath);
-    
+
     // Establecer permisos adecuados
     fs.chmodSync(dbPath, 0o600);
 
@@ -212,33 +220,38 @@ export class BackupManager {
   public async deleteBackup(backupId: string): Promise<boolean> {
     // Buscar el backup en la base de datos
     const backup = await prisma.backup.findUnique({
-      where: { id: backupId }
+      where: { id: backupId },
     });
 
     if (!backup) {
-      throw new Error('Backup no encontrado');
+      throw new Error("Backup no encontrado");
     }
 
     // Prevenir eliminación de backups automáticos recientes (menos de 3 días)
-    if (backup.isAutomatic && 
-        (new Date().getTime() - new Date(backup.createdAt).getTime() < 3 * 24 * 60 * 60 * 1000)) {
-      throw new Error('No se pueden eliminar backups automáticos recientes');
+    if (
+      backup.isAutomatic &&
+      new Date().getTime() - new Date(backup.createdAt).getTime() <
+        3 * 24 * 60 * 60 * 1000
+    ) {
+      throw new Error("No se pueden eliminar backups automáticos recientes");
     }
 
     // Eliminar el archivo con protección de path traversal
-    const safePath = path.normalize(backup.filePath).replace(/^(\.\.[\/\\])+/, '');
-    
+    const safePath = path
+      .normalize(backup.filePath)
+      .replace(/^(\.\.[\/\\])+/, "");
+
     if (safePath !== backup.filePath) {
-      throw new Error('Ruta de backup inválida');
+      throw new Error("Ruta de backup inválida");
     }
-    
+
     if (fs.existsSync(safePath)) {
       fs.unlinkSync(safePath);
     }
 
     // Eliminar el registro en la base de datos
     await prisma.backup.delete({
-      where: { id: backupId }
+      where: { id: backupId },
     });
 
     logger.info(`Backup eliminado: ${backup.fileName}`);
@@ -246,68 +259,107 @@ export class BackupManager {
   }
 
   /**
-   * Obtiene la lista de todos los backups
-   * @returns Lista de backups ordenados por fecha de creación
+   * Elimina backups antiguos, conservando solo los últimos 7 días
+   * para los backups automáticos, o según la configuración del sistema
    */
-  public async getBackups(): Promise<any[]> {
-    return await prisma.backup.findMany({
-      orderBy: { createdAt: 'desc' },
-      include: {
-        createdBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
-  }
-
-  /**
-   * Limpia backups antiguos según las políticas definidas
-   * - Backups manuales: más de 30 días
-   * - Backups automáticos: más de 7 días
-   */
-  public async cleanOldBackups(): Promise<void> {
+  public async cleanOldBackups(): Promise<number> {
+    let deletedCount = 0;
     try {
-      // Eliminar backups manuales más antiguos que 30 días
-      const oldManualBackups = await prisma.backup.findMany({
-        where: {
-          isAutomatic: false,
-          createdAt: {
-            lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-          }
-        }
-      });
+      // Buscar backups antiguos (más de 7 días)
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-      // Eliminar backups automáticos más antiguos que 7 días
-      const oldAutoBackups = await prisma.backup.findMany({
+      // Buscar backups automáticos antiguos
+      const oldAutomaticBackups = await prisma.backup.findMany({
         where: {
           isAutomatic: true,
           createdAt: {
-            lt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-          }
-        }
+            lt: sevenDaysAgo,
+          },
+        },
       });
 
-      const oldBackups = [...oldManualBackups, ...oldAutoBackups];
-
-      for (const backup of oldBackups) {
-        // Eliminar archivo
-        if (fs.existsSync(backup.filePath)) {
-          fs.unlinkSync(backup.filePath);
+      // Eliminar los backups automáticos antiguos
+      for (const backup of oldAutomaticBackups) {
+        try {
+          await this.deleteBackup(backup.id);
+          deletedCount++;
+        } catch (error) {
+          logger.error(
+            `Error al eliminar backup antiguo ${backup.fileName}:`,
+            error
+          );
         }
-
-        // Eliminar registro
-        await prisma.backup.delete({
-          where: { id: backup.id }
-        });
-
-        logger.info(`Backup antiguo eliminado: ${backup.fileName}`);
       }
+
+      logger.info(
+        `Limpieza de backups completada: ${deletedCount} backups eliminados`
+      );
+      return deletedCount;
     } catch (error) {
-      logger.error('Error cleaning old backups:', error);
+      logger.error("Error en limpieza de backups antiguos:", error);
+      throw new Error(`Error al limpiar backups antiguos: ${error.message}`);
     }
   }
-} 
+
+  /**
+   * Obtiene todos los backups ordenados por fecha de creación
+   * @returns Lista de backups
+   */
+  public async getBackups(): Promise<any[]> {
+    try {
+      const backups = await prisma.backup.findMany({
+        include: {
+          createdBy: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      // Añadir información adicional útil para la UI
+      return backups.map((backup) => ({
+        ...backup,
+        fileSize: this.formatFileSize(backup.fileSize),
+        formattedDate: new Date(backup.createdAt).toLocaleString(),
+        canDelete:
+          !backup.isAutomatic ||
+          new Date().getTime() - new Date(backup.createdAt).getTime() >=
+            3 * 24 * 60 * 60 * 1000,
+      }));
+    } catch (error) {
+      logger.error("Error al obtener backups:", error);
+      throw new Error(`Error al obtener la lista de backups: ${error.message}`);
+    }
+  }
+
+  /**
+   * Verifica si existe un backup específico
+   * @param id ID del backup a verificar
+   * @returns boolean que indica si existe
+   */
+  public async backupExists(id: string): Promise<boolean> {
+    const backup = await prisma.backup.findUnique({
+      where: { id },
+    });
+    return !!backup;
+  }
+
+  /**
+   * Formatea el tamaño de archivo a una representación legible
+   * @param bytes Tamaño en bytes
+   * @returns Texto formateado (ej: "1.5 MB")
+   */
+  private formatFileSize(bytes: number): string {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    if (bytes < 1024 * 1024 * 1024)
+      return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    return (bytes / (1024 * 1024 * 1024)).toFixed(1) + " GB";
+  }
+}

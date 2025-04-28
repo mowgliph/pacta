@@ -1,9 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/router";
-import { useAuth } from "../hooks/useAuth";
-import { useToast } from "../hooks/use-toast";
+import { useZodForm } from "../hooks/useZodForm";
+import { useAuthStore } from "../store/useAuthStore";
+import { loginSchema } from "../api/auth";
+import { toast } from "sonner";
+import { motion } from "framer-motion";
+import { z } from "zod";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import {
@@ -12,60 +16,70 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
-  CardFooter,
 } from "../components/ui/card";
 import { Label } from "../components/ui/label";
 import { Checkbox } from "../components/ui/checkbox";
 
+// Definir el tipo para los valores del formulario
+type LoginFormValues = z.infer<typeof loginSchema>;
+
 export default function Auth() {
-  const [usuario, setUsuario] = useState("");
-  const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
   const router = useRouter();
-  const { toast } = useToast();
+  const login = useAuthStore((state) => state.login);
+  const isLoading = useAuthStore((state) => state.isLoading);
+  const error = useAuthStore((state) => state.error);
+  
+  const {
+    values,
+    errors,
+    handleChange,
+    handleSubmit
+  } = useZodForm<typeof loginSchema>(
+    loginSchema,
+    { username: "", password: "", rememberMe: false }
+  );
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!usuario || !password) {
-      toast({
-        title: "Campos requeridos",
-        description: "Por favor complete todos los campos",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleLogin = handleSubmit(async (data) => {
     try {
-      setIsLoading(true);
-      // Corregir la llamada a login pasando los argumentos separados
-      await login(usuario, password, rememberMe);
-      router.push("/dashboard");
+      const success = await login(data.username, data.password, data.rememberMe);
+      if (success) {
+        router.push("/dashboard");
+      }
     } catch (error) {
       console.error("Error de inicio de sesión:", error);
       toast({
         title: "Error de autenticación",
-        description: "Usuario o contraseña incorrectos",
-        variant: "destructive",
+        description: "Ha ocurrido un error al intentar iniciar sesión",
       });
-    } finally {
-      setIsLoading(false);
     }
-  };
+  });
+
+  // Mostrar mensaje de error si existe
+  useMemo(() => {
+    if (error) {
+      toast({
+        title: "Error de autenticación",
+        description: error,
+      });
+    }
+  }, [error]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <motion.div 
+      className="min-h-screen flex items-center justify-center bg-background"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4 }}
+    >
       <div className="w-full max-w-md p-4">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold">PACTA</h1>
+          <h1 className="text-3xl font-bold text-primary-200">PACTA</h1>
           <p className="text-muted-foreground">
             Sistema de Gestión de Contratos
           </p>
         </div>
 
-        <Card>
+        <Card className="border-primary-100/20 shadow-lg">
           <CardHeader>
             <CardTitle>Iniciar Sesión</CardTitle>
             <CardDescription>
@@ -76,16 +90,20 @@ export default function Auth() {
             <form onSubmit={handleLogin}>
               <div className="grid gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="usuario">Usuario</Label>
+                  <Label htmlFor="username">Usuario</Label>
                   <Input
-                    id="usuario"
+                    id="username"
                     placeholder="Ingrese su nombre de usuario"
                     type="text"
-                    value={usuario}
-                    onChange={(e) => setUsuario(e.target.value)}
+                    value={values.username}
+                    onChange={(e) => handleChange("username", e.target.value)}
                     autoComplete="username"
                     disabled={isLoading}
+                    className={errors.username ? "border-error-400" : ""}
                   />
+                  {errors.username && (
+                    <p className="text-sm text-error-500">{errors.username}</p>
+                  )}
                 </div>
 
                 <div className="grid gap-2">
@@ -94,19 +112,23 @@ export default function Auth() {
                     id="password"
                     placeholder="Ingrese su contraseña"
                     type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    value={values.password}
+                    onChange={(e) => handleChange("password", e.target.value)}
                     autoComplete="current-password"
                     disabled={isLoading}
+                    className={errors.password ? "border-error-400" : ""}
                   />
+                  {errors.password && (
+                    <p className="text-sm text-error-500">{errors.password}</p>
+                  )}
                 </div>
 
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="remember"
-                    checked={rememberMe}
+                    checked={values.rememberMe}
                     onCheckedChange={(checked) =>
-                      setRememberMe(checked === true)
+                      handleChange("rememberMe", checked === true)
                     }
                     disabled={isLoading}
                   />
@@ -120,7 +142,7 @@ export default function Auth() {
               </div>
 
               <Button
-                className="w-full mt-4"
+                className="w-full mt-6 bg-primary-200 hover:bg-primary-300"
                 type="submit"
                 disabled={isLoading}
               >
@@ -129,7 +151,11 @@ export default function Auth() {
             </form>
           </CardContent>
         </Card>
+        
+        <div className="mt-4 text-center text-sm text-muted-foreground">
+          <p>© {new Date().getFullYear()} PACTA - Todos los derechos reservados</p>
+        </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

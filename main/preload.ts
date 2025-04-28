@@ -51,10 +51,12 @@ const validInvokeChannels = [
   "documents:open",
   
   // Canales para backups
-  "backups:crear",
-  "backups:restaurar",
-  "backups:eliminar",
-  "backups:listar",
+  "backups:getAll",
+  "backups:create",
+  "backups:restore",
+  "backups:delete",
+  "backups:cleanOld",
+  "backups:updateSchedule",
   
   // Canales para notificaciones
   "notificaciones:mostrar",
@@ -170,10 +172,12 @@ contextBridge.exposeInMainWorld("Electron", {
 
   // API para backups
   backups: {
-    crear: (descripcion: string) => ipcRenderer.invoke("backups:crear", descripcion),
-    restaurar: (id: string) => ipcRenderer.invoke("backups:restaurar", id),
-    eliminar: (id: string) => ipcRenderer.invoke("backups:eliminar", id),
-    listar: () => ipcRenderer.invoke("backups:listar"),
+    crear: (userId: string, descripcion?: string) => ipcRenderer.invoke("backups:create", userId, descripcion),
+    restaurar: (backupId: string, userId: string) => ipcRenderer.invoke("backups:restore", backupId, userId),
+    eliminar: (backupId: string) => ipcRenderer.invoke("backups:delete", backupId),
+    listar: () => ipcRenderer.invoke("backups:getAll"),
+    limpiarAntiguos: () => ipcRenderer.invoke("backups:cleanOld"),
+    actualizarProgramacion: (config: any) => ipcRenderer.invoke("backups:updateSchedule", config),
   },
 
   // API para notificaciones
