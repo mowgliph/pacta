@@ -5,8 +5,33 @@ import type {
   UpdateContractRequest,
   BankDetails,
   LegalRepresentative,
-  Attachment
-} from '../../main/shared/types';
+  Attachment,
+} from "../../main/shared/types";
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: "ADMIN" | "RA";
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-
+export interface Supplement {
+  id: string;
+  title: string;
+  description: string;
+  effectiveDate: Date;
+  amount: number;
+  isApproved: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  approvedAt?: Date;
+  createdById: string;
+  approvedById?: string;
+  contractId: string;
+  createdBy?: User;
+  approvedBy?: User;
+  contract?: Contract;
+  documents?: Document[];
+}

@@ -1,35 +1,31 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useContractStore } from '../../store/useContractStore';
-import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Input } from '../ui/input';
-import { Textarea } from '../ui/textarea';
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useContractStore } from "../../store/useContractStore";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Textarea } from "../ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '../ui/popover';
-import { FileUpload } from '../ui/file-upload';
-import { contractSchema } from '../../lib/shemas';
-import { contractsApi } from '../../api/contracts';
-import { cn } from '../../lib/utils';
+} from "../ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { FileUpload } from "../ui/file-upload";
+import { contractSchema } from "../../lib/shemas";
+import { contractsApi } from "../../api/contracts";
+import { cn } from "../../lib/utils";
 import type {
   CreateContractRequest,
   BankDetails,
   LegalRepresentative,
-  Attachment
-} from '../../../main/shared/types';
+  Attachment,
+} from "../../../main/shared/types";
 import {
   Form,
   FormControl,
@@ -38,9 +34,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '../ui/form';
-import { Calendar } from '../ui/calendar';
-import { useState } from 'react';
+} from "../ui/form";
+import { Calendar } from "../ui/calendar";
+import { useState } from "react";
 
 // Tipo para props del componente
 interface ContractFormProps {
@@ -48,55 +44,81 @@ interface ContractFormProps {
   isEditing?: boolean;
 }
 
-export function ContractForm({ contractData, isEditing = false }: ContractFormProps) {
+export function ContractForm({
+  contractData,
+  isEditing = false,
+}: ContractFormProps) {
   const router = useRouter();
   const createContract = useContractStore((state) => state.createContract);
   const updateContract = useContractStore((state) => state.updateContract); // Si existe en el store
   const [loading, setLoading] = useState(false);
-  
+
   // Inicializar formulario con React Hook Form + Zod
   const form = useForm<any>({
     resolver: zodResolver(contractSchema),
-    defaultValues: isEditing && contractData
-      ? contractData
-      : {
-          contractNumber: '',
-          title: '',
-          type: 'Cliente',
-          status: 'Vigente',
-          description: '',
-          parties: '',
-          signDate: '',
-          signPlace: '',
-          startDate: '',
-          endDate: '',
-          companyName: '',
-          companyAddress: '',
-          nationality: '',
-          commercialAuth: '',
-          reeupCode: '',
-          nit: '',
-          contactPhones: [''],
-          bankDetails: {
-            account: '',
-            branch: '',
-            agency: '',
-            holder: '',
-            currency: 'CUP',
+    defaultValues:
+      isEditing && contractData
+        ? contractData
+        : {
+            contractNumber: "",
+            title: "",
+            type: "Cliente",
+            status: "Vigente",
+            description: "",
+            parties: "",
+            signDate: "",
+            signPlace: "",
+            startDate: "",
+            endDate: "",
+            companyName: "",
+            companyAddress: "",
+            nationality: "",
+            commercialAuth: "",
+            reeupCode: "",
+            nit: "",
+            contactPhones: [""],
+            bankDetails: {
+              account: "",
+              branch: "",
+              agency: "",
+              holder: "",
+              currency: "CUP",
+            },
+            legalRepresentative: {
+              name: "",
+              position: "",
+              documentType: "",
+              documentNumber: "",
+              documentDate: "",
+            },
+            providerObligations: [""],
+            clientObligations: [""],
+            deliveryPlace: "",
+            deliveryTerm: "",
+            acceptanceProcedure: "",
+            value: 0,
+            currency: "MN",
+            paymentMethod: "",
+            paymentTerm: "",
+            warrantyTerm: "",
+            warrantyScope: "",
+            technicalStandards: "",
+            claimProcedure: "",
+            disputeResolution: "",
+            latePaymentInterest: "",
+            breachPenalties: "",
+            notificationMethods: [""],
+            minimumNoticeTime: "",
+            extensionTerms: "",
+            earlyTerminationNotice: "",
+            forceMajeure: "",
+            attachments: [],
+            isRestricted: false,
+            createdById: "",
+            ownerId: "",
           },
-          legalRepresentative: {
-            name: '',
-            position: '',
-            documentType: '',
-            documentNumber: '',
-            documentDate: '',
-          },
-          attachments: [],
-          createdById: '',
-          ownerId: '',
-        },
   });
-  
+
   // Manejar envío del formulario
   const onSubmit = async (data: any) => {
     setLoading(true);
@@ -104,7 +126,7 @@ export function ContractForm({ contractData, isEditing = false }: ContractFormPr
       let id;
       if (isEditing && contractData?.id) {
         const ok = await updateContract(contractData.id, data);
-        if (!ok) throw new Error('Error al actualizar el contrato');
+        if (!ok) throw new Error("Error al actualizar el contrato");
         id = contractData.id;
       } else {
         id = await createContract(data);
@@ -112,16 +134,18 @@ export function ContractForm({ contractData, isEditing = false }: ContractFormPr
       router.push(`/contracts/${id}`);
       router.refresh();
     } catch (error) {
-      alert('Error al guardar el contrato');
+      alert("Error al guardar el contrato");
     } finally {
       setLoading(false);
     }
   };
-  
+
   // Helpers para arrays dinámicos
-  const addToArray = (field: any, value: any) => field.onChange([...(field.value || []), value]);
-  const removeFromArray = (field: any, idx: number) => field.onChange(field.value.filter((_: any, i: number) => i !== idx));
-  
+  const addToArray = (field: any, value: any) =>
+    field.onChange([...(field.value || []), value]);
+  const removeFromArray = (field: any, idx: number) =>
+    field.onChange(field.value.filter((_: any, i: number) => i !== idx));
+
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
       {/* 1. Datos Generales */}
@@ -182,13 +206,15 @@ export function ContractForm({ contractData, isEditing = false }: ContractFormPr
               <FormItem>
                 <FormLabel>Estado del Contrato</FormLabel>
                 <FormControl>
-                  <Select {...field} defaultValue={form.watch('status')}>
+                  <Select {...field} defaultValue={form.watch("status")}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecciona el estado del contrato" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Vigente">Vigente</SelectItem>
-                      <SelectItem value="Próximo a Vencer">Próximo a Vencer</SelectItem>
+                      <SelectItem value="Próximo a Vencer">
+                        Próximo a Vencer
+                      </SelectItem>
                       <SelectItem value="Vencido">Vencido</SelectItem>
                       <SelectItem value="Archivado">Archivado</SelectItem>
                     </SelectContent>
@@ -206,7 +232,10 @@ export function ContractForm({ contractData, isEditing = false }: ContractFormPr
             <FormItem>
               <FormLabel>Descripción General del Contrato</FormLabel>
               <FormControl>
-                <Textarea {...field} placeholder="Descripción general del contrato" />
+                <Textarea
+                  {...field}
+                  placeholder="Descripción general del contrato"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -219,7 +248,10 @@ export function ContractForm({ contractData, isEditing = false }: ContractFormPr
             <FormItem>
               <FormLabel>Describa las partes involucradas</FormLabel>
               <FormControl>
-                <Textarea {...field} placeholder="Describa las partes involucradas" />
+                <Textarea
+                  {...field}
+                  placeholder="Describa las partes involucradas"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -382,12 +414,15 @@ export function ContractForm({ contractData, isEditing = false }: ContractFormPr
                           {...field.onChange(phone)}
                           placeholder="Ej: 555-1234"
                         />
-                        <button type="button" onClick={() => removeFromArray(field, idx)}>
+                        <button
+                          type="button"
+                          onClick={() => removeFromArray(field, idx)}
+                        >
                           Eliminar
                         </button>
                       </div>
                     ))}
-                    <button type="button" onClick={() => addToArray(field, '')}>
+                    <button type="button" onClick={() => addToArray(field, "")}>
                       Agregar teléfono
                     </button>
                   </div>
@@ -544,11 +579,431 @@ export function ContractForm({ contractData, isEditing = false }: ContractFormPr
         </div>
       </section>
 
-      {/* 5. Anexos (array dinámico) */}
+      {/* 5. Obligaciones */}
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Obligaciones</h2>
+        <div className="space-y-6">
+          <div>
+            <h3 className="font-medium mb-2">Obligaciones del Prestador</h3>
+            <FormField
+              control={form.control}
+              name="providerObligations"
+              render={({ field }: { field: any }) => (
+                <FormItem>
+                  <FormControl>
+                    <div className="space-y-2">
+                      {field.value.map((obligation: string, idx: number) => (
+                        <div key={idx} className="flex gap-2">
+                          <Input
+                            {...field.onChange(obligation)}
+                            placeholder="Obligación del prestador"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeFromArray(field, idx)}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => addToArray(field, "")}
+                      >
+                        Agregar obligación
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div>
+            <h3 className="font-medium mb-2">Obligaciones del Cliente</h3>
+            <FormField
+              control={form.control}
+              name="clientObligations"
+              render={({ field }: { field: any }) => (
+                <FormItem>
+                  <FormControl>
+                    <div className="space-y-2">
+                      {field.value.map((obligation: string, idx: number) => (
+                        <div key={idx} className="flex gap-2">
+                          <Input
+                            {...field.onChange(obligation)}
+                            placeholder="Obligación del cliente"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeFromArray(field, idx)}
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => addToArray(field, "")}
+                      >
+                        Agregar obligación
+                      </button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* 6. Entrega y Aceptación */}
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Entrega y Aceptación</h2>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="deliveryPlace"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Lugar de Entrega</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Lugar de entrega" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="deliveryTerm"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Plazo de Entrega</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Plazo de entrega" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="acceptanceProcedure"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Procedimiento de Aceptación</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    placeholder="Procedimiento de aceptación"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </section>
+
+      {/* 7. Condiciones Económicas */}
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Condiciones Económicas</h2>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="value"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Valor Total</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} placeholder="Valor total" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="currency"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Moneda</FormLabel>
+                <FormControl>
+                  <Select {...field}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona la moneda" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="MN">MN</SelectItem>
+                      <SelectItem value="MLC">MLC</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="paymentMethod"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Forma de Pago</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Forma de pago" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="paymentTerm"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Plazo de Pago</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Plazo de pago" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </section>
+
+      {/* 8. Garantía y Calidad */}
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Garantía y Calidad</h2>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="warrantyTerm"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Plazo de Garantía</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Plazo de garantía" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="warrantyScope"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Alcance de Garantía</FormLabel>
+                <FormControl>
+                  <Textarea {...field} placeholder="Alcance de garantía" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="technicalStandards"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Normas Técnicas</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    placeholder="Normas técnicas aplicables"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </section>
+
+      {/* 9. Reclamaciones y Conflictos */}
+      <section>
+        <h2 className="font-semibold text-lg mb-2">
+          Reclamaciones y Conflictos
+        </h2>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="claimProcedure"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Procedimiento de Reclamación</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    placeholder="Procedimiento de reclamación"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="disputeResolution"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Resolución de Conflictos</FormLabel>
+                <FormControl>
+                  <Textarea {...field} placeholder="Resolución de conflictos" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </section>
+
+      {/* 10. Penalidades */}
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Penalidades</h2>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="latePaymentInterest"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Intereses por Mora</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Intereses por mora" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="breachPenalties"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Sanciones por Incumplimiento</FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    placeholder="Sanciones por incumplimiento"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </section>
+
+      {/* 11. Avisos */}
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Avisos</h2>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="notificationMethods"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Métodos de Notificación</FormLabel>
+                <FormControl>
+                  <div className="space-y-2">
+                    {field.value.map((method: string, idx: number) => (
+                      <div key={idx} className="flex gap-2">
+                        <Input
+                          {...field.onChange(method)}
+                          placeholder="Método de notificación"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeFromArray(field, idx)}
+                        >
+                          Eliminar
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => addToArray(field, "")}>
+                      Agregar método
+                    </button>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="minimumNoticeTime"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Plazo Mínimo de Aviso</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Plazo mínimo de aviso" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </section>
+
+      {/* 12. Duración y Terminación */}
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Duración y Terminación</h2>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="extensionTerms"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Términos de Prórroga</FormLabel>
+                <FormControl>
+                  <Textarea {...field} placeholder="Términos de prórroga" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="earlyTerminationNotice"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Plazo de Preaviso</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Plazo de preaviso" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </section>
+
+      {/* 13. Causas Eximentes */}
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Causas Eximentes</h2>
+        <FormField
+          control={form.control}
+          name="forceMajeure"
+          render={({ field }: { field: any }) => (
+            <FormItem>
+              <FormLabel>Definición de Fuerza Mayor</FormLabel>
+              <FormControl>
+                <Textarea {...field} placeholder="Definición de fuerza mayor" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </section>
+
+      {/* 14. Anexos */}
       <section>
         <h2 className="font-semibold text-lg mb-2">Anexos</h2>
         <div className="space-y-2">
-          {form.watch('attachments').map((anexo: Attachment, idx: number) => (
+          {form.watch("attachments").map((anexo: Attachment, idx: number) => (
             <div key={idx} className="flex gap-2 items-center">
               <FormField
                 control={form.control}
@@ -583,24 +1038,41 @@ export function ContractForm({ contractData, isEditing = false }: ContractFormPr
                   <FormItem>
                     <FormLabel>URL del Documento</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="URL del documento (opcional)" />
+                      <Input
+                        {...field}
+                        placeholder="URL del documento (opcional)"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <button type="button" onClick={() => removeFromArray(form.register(`attachments.${idx}`), 0)}>
+              <button
+                type="button"
+                onClick={() =>
+                  removeFromArray(form.register(`attachments.${idx}`), 0)
+                }
+              >
                 Eliminar
               </button>
             </div>
           ))}
-          <button type="button" onClick={() => addToArray(form.register('attachments'), { type: '', description: '', documentUrl: '' })}>
+          <button
+            type="button"
+            onClick={() =>
+              addToArray(form.register("attachments"), {
+                type: "",
+                description: "",
+                documentUrl: "",
+              })
+            }
+          >
             Agregar anexo
           </button>
         </div>
       </section>
 
-      {/* 6. Documentos */}
+      {/* 15. Documentos */}
       <section>
         <h2 className="font-semibold text-lg mb-2">Documento Principal</h2>
         <div className="space-y-2">
@@ -611,7 +1083,10 @@ export function ContractForm({ contractData, isEditing = false }: ContractFormPr
               <FormItem>
                 <FormLabel>Descripción del Documento Principal</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="Descripción del documento principal" />
+                  <Input
+                    {...field}
+                    placeholder="Descripción del documento principal"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -660,10 +1135,12 @@ export function ContractForm({ contractData, isEditing = false }: ContractFormPr
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {isEditing ? 'Actualizando...' : 'Creando...'}
+              {isEditing ? "Actualizando..." : "Creando..."}
             </>
+          ) : isEditing ? (
+            "Actualizar Contrato"
           ) : (
-            isEditing ? 'Actualizar Contrato' : 'Crear Contrato'
+            "Crear Contrato"
           )}
         </button>
       </div>

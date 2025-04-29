@@ -116,7 +116,7 @@ export interface BankDetails {
   branch: string;
   agency: string;
   holder: string;
-  currency: 'CUP' | 'MLC';
+  currency: "CUP" | "MLC";
 }
 
 export interface LegalRepresentative {
@@ -155,7 +155,7 @@ export interface Contract {
   deliveryTerm: string;
   acceptanceProcedure: string;
   value: number;
-  currency: 'MN' | 'MLC';
+  currency: "MN" | "MLC";
   paymentMethod: string;
   paymentTerm: string;
   warrantyTerm: string;
@@ -173,7 +173,7 @@ export interface Contract {
   earlyTerminationNotice: string;
   forceMajeure: string;
   attachments: Attachment[];
-  status: 'Vigente' | 'Próximo a Vencer' | 'Vencido' | 'Archivado';
+  status: "Vigente" | "Próximo a Vencer" | "Vencido" | "Archivado";
   isRestricted: boolean;
   createdById: string;
   ownerId: string;
@@ -195,11 +195,17 @@ export interface ContractFilters {
   limit?: number;
 }
 
-export interface CreateContractRequest extends Omit<Contract, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'owner'> {}
+export interface CreateContractRequest
+  extends Omit<
+    Contract,
+    "id" | "createdAt" | "updatedAt" | "createdBy" | "owner"
+  > {}
 
 export interface UpdateContractRequest {
   id: string;
-  data: Partial<Omit<Contract, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'owner'>> & { updatedById: string };
+  data: Partial<
+    Omit<Contract, "id" | "createdAt" | "updatedAt" | "createdBy" | "owner">
+  > & { updatedById: string };
 }
 
 // Respuesta de lista de contratos
