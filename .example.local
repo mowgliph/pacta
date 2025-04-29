@@ -1,0 +1,68 @@
+# URL de conexión a la base de datos SQLite (usada por Prisma)
+# Asegúrate de que la ruta sea correcta para tu sistema.
+DATABASE_URL="file:./db/pacta.db"
+
+# Secreto para firmar y verificar los tokens JWT (JSON Web Tokens)
+# Cambia esto por una cadena larga, aleatoria y segura en tu archivo .env real
+JWT_SECRET="your_strong_jwt_secret_here"
+
+# Tiempo de expiración de los tokens JWT
+JWT_EXPIRE="24h"
+
+# Orígenes permitidos para CORS (Cross-Origin Resource Sharing)
+# Usa '*' para permitir cualquier origen (solo para desarrollo)
+# En producción, especifica el origen de tu frontend
+CORS_ORIGIN="*"
+
+# Nivel de logs para Winston (error, warn, info, http, verbose, debug, silly)
+LOG_LEVEL="info"
+
+# Puerto para el servidor de desarrollo
+PORT=3001
+
+# Modo de ejecución (development o production)
+NODE_ENV="development"
+
+# Ruta para almacenar documentos
+DOCUMENTS_PATH="data/documents"
+
+# Ruta temporal para archivos
+TEMP_PATH="data/temp"
+
+# Tamaño máximo de archivo en MB
+MAX_FILE_SIZE="10"
+
+# Tipos MIME permitidos para documentos
+ALLOWED_MIME_TYPES="application/pdf,image/jpeg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+# Clave de encriptación para electron-store
+STORE_ENCRYPTION_KEY="pacta-secure-key"
+
+# Configuración de ruta de logs
+LOGS_PATH="data/logs"
+
+# Configuración de envío de correos
+EMAIL_ENABLED="false"
+EMAIL_HOST="smtp.example.com"
+EMAIL_PORT="587"
+EMAIL_SECURE="false"
+EMAIL_USER="user@example.com"
+EMAIL_PASS="your_password"
+EMAIL_FROM="noreply@pacta-app.com"
+
+# Configuración SMTP
+SMTP_HOST="smtp.example.com"
+SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_USER="user@example.com"
+SMTP_PASSWORD="your_password"
+SMTP_FROM="PACTA <noreply@pacta.com>"
+
+# URL de la aplicación (para enlaces en correos)
+APP_URL="http://localhost:3000"
+
+# Configuración de respaldos
+BACKUP_PATH="data/backups"
+BACKUP_RETENTION_DAYS=7
+BACKUP_SCHEDULE="0 3 * * *"
+
