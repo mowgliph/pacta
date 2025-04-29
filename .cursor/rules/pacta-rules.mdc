@@ -20,6 +20,7 @@ PACTA es una aplicación de escritorio para gestión de contratos empresariales 
 - Sigue el paradigma de programación orientada a objetos
 - Emplea prácticas modernas de desarrollo
 - Usa pnpm en vez de npm para todas las operaciones de paquetes
+- Repaza los archivos modificados y resuelve los errores de importacion de los componentes y errores de tipado y de logica de programacion
 
 ### 3.2 Arquitectura y Estructura
 - Mantén clara separación entre procesos main (Electron) y renderer (Next.js)

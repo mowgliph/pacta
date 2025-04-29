@@ -5,6 +5,7 @@ import { ContractService } from "../services/contract.service";
 import { ContractsChannels } from "../channels/contracts.channels";
 import { z } from "zod";
 import { ErrorHandler } from "../error-handler";
+import { ipcMain } from "electron";
 
 // Esquemas de validación
 const contractFilterSchema = z.object({
@@ -32,7 +33,10 @@ const legalRepresentativeSchema = z.object({
   position: z.string().min(1),
   documentType: z.string().min(1),
   documentNumber: z.string().min(1),
-  documentDate: z.string().or(z.date()).transform((val) => new Date(val)),
+  documentDate: z
+    .string()
+    .or(z.date())
+    .transform((val) => new Date(val)),
 });
 
 // Esquema de validación para Attachment
@@ -47,7 +51,10 @@ const createContractSchema = z.object({
   contractNumber: z.string().min(1),
   title: z.string().min(1),
   parties: z.string().min(1),
-  signDate: z.string().or(z.date()).transform((val) => new Date(val)),
+  signDate: z
+    .string()
+    .or(z.date())
+    .transform((val) => new Date(val)),
   signPlace: z.string().min(1),
   type: z.string().min(1),
   companyName: z.string().min(1),
@@ -78,8 +85,14 @@ const createContractSchema = z.object({
   breachPenalties: z.string().min(1),
   notificationMethods: z.array(z.string().min(1)),
   minimumNoticeTime: z.string().min(1),
-  startDate: z.string().or(z.date()).transform((val) => new Date(val)),
-  endDate: z.string().or(z.date()).transform((val) => new Date(val)),
+  startDate: z
+    .string()
+    .or(z.date())
+    .transform((val) => new Date(val)),
+  endDate: z
+    .string()
+    .or(z.date())
+    .transform((val) => new Date(val)),
   extensionTerms: z.string().min(1),
   earlyTerminationNotice: z.string().min(1),
   forceMajeure: z.string().min(1),
@@ -92,7 +105,9 @@ const createContractSchema = z.object({
 
 const updateContractSchema = z.object({
   id: z.string().uuid(),
-  data: createContractSchema.partial().extend({ updatedById: z.string().uuid() }),
+  data: createContractSchema
+    .partial()
+    .extend({ updatedById: z.string().uuid() }),
 });
 
 export function setupContractHandlers(): void {
@@ -389,10 +404,14 @@ export function setupContractHandlers(): void {
         dataToUpdate.repDocumentNumber = legalRepresentative.documentNumber;
         dataToUpdate.repDocumentDate = legalRepresentative.documentDate;
       }
-      if (contactPhones) dataToUpdate.contactPhones = JSON.stringify(contactPhones);
-      if (providerObligations) dataToUpdate.providerObligations = JSON.stringify(providerObligations);
-      if (clientObligations) dataToUpdate.clientObligations = JSON.stringify(clientObligations);
-      if (notificationMethods) dataToUpdate.notificationMethods = JSON.stringify(notificationMethods);
+      if (contactPhones)
+        dataToUpdate.contactPhones = JSON.stringify(contactPhones);
+      if (providerObligations)
+        dataToUpdate.providerObligations = JSON.stringify(providerObligations);
+      if (clientObligations)
+        dataToUpdate.clientObligations = JSON.stringify(clientObligations);
+      if (notificationMethods)
+        dataToUpdate.notificationMethods = JSON.stringify(notificationMethods);
       if (attachments) dataToUpdate.attachments = JSON.stringify(attachments);
 
       // Actualizar contrato
@@ -538,7 +557,9 @@ export function setupContractHandlers(): void {
         logger.info(`Control de acceso actualizado para contrato: ${id}`);
         return {
           success: true,
-          ...Object.fromEntries(Object.entries(result).filter(([k]) => k !== 'success')),
+          ...Object.fromEntries(
+            Object.entries(result).filter(([k]) => k !== "success")
+          ),
           message: "Control de acceso actualizado",
         };
       } catch (error) {
@@ -573,7 +594,9 @@ export function setupContractHandlers(): void {
         logger.info(`Usuarios asignados a contrato: ${id}`);
         return {
           success: true,
-          ...Object.fromEntries(Object.entries(result).filter(([k]) => k !== 'success')),
+          ...Object.fromEntries(
+            Object.entries(result).filter(([k]) => k !== "success")
+          ),
           message: "Usuarios asignados correctamente",
         };
       } catch (error) {
@@ -582,4 +605,33 @@ export function setupContractHandlers(): void {
       }
     }
   );
+
+  // Handler para actualizar estado de contrato
+  ipcMain.handle(
+    "contracts:update-status",
+    async (event, { contractId, newStatus, userId }) => {
+      try {
+        const updatedContract = await ContractService.updateContractStatus(
+          contractId,
+          newStatus,
+          userId
+        );
+        return { success: true, contract: updatedContract };
+      } catch (error) {
+        console.error("Error al actualizar estado del contrato:", error);
+        return { success: false, error: error.message };
+      }
+    }
+  );
+
+  // Handler para verificación automática de estados
+  ipcMain.handle("contracts:check-statuses", async () => {
+    try {
+      await ContractService.checkAndUpdateContractStatuses();
+      return { success: true };
+    } catch (error) {
+      console.error("Error al verificar estados de contratos:", error);
+      return { success: false, error: error.message };
+    }
+  });
 }

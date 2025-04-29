@@ -118,7 +118,7 @@ model Contract {
   forceMajeure        String
   
   // Metadatos del sistema
-  status              String                @default("Vigente")
+  status              String                @default("Vigente") @db.Enum("Vigente", "Próximo a Vencer", "Vencido", "Archivado")
   isRestricted        Boolean               @default(false)
   createdById         String
   ownerId             String

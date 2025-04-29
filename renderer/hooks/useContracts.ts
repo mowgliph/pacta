@@ -1,36 +1,20 @@
 import { useState } from "react";
-import apiClient from "../lib/api-client";
 import { toast } from "sonner";
-import { Contract, ContractStatus } from "../types/contract";
-
-// Tipos
-export interface ContractFilters {
-  status?: string;
-  type?: string;
-  search?: string;
-}
-
-export interface ContractStats {
-  active: number;
-  pending: number;
-  expired: number;
-  archived: number;
-  total: number;
-}
-
-// Actualizar las constantes de estado
-const CONTRACT_STATUS: Record<ContractStatus, string> = {
-  Vigente: "ACTIVE",
-  "Próximo a Vencer": "PENDING",
-  Vencido: "EXPIRED",
-  Archivado: "ARCHIVED",
-};
+import {
+  Contract,
+  ContractStatus,
+  ContractFilters,
+  ContractStats,
+} from "../types/contract";
+import { useAuth } from "../context/AuthContext";
+import { contractsApi } from "../api/contracts";
 
 /**
  * Hook para la gestión de contratos
  */
 export function useContracts() {
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
 
   /**
    * Obtiene la lista de contratos con filtros opcionales
@@ -40,7 +24,7 @@ export function useContracts() {
   ): Promise<Contract[]> => {
     setIsLoading(true);
     try {
-      const data = await apiClient.get<Contract[]>("/api/contracts", filters);
+      const data = await contractsApi.getContracts(user?.id || "");
       return data;
     } catch (error) {
       toast.error("Error al cargar los contratos");
@@ -57,7 +41,7 @@ export function useContracts() {
   const getContractById = async (id: string): Promise<Contract | null> => {
     setIsLoading(true);
     try {
-      const data = await apiClient.get<Contract>(`/api/contracts/${id}`);
+      const data = await contractsApi.getContractById(id, user?.id || "");
       return data;
     } catch (error) {
       toast.error("Error al cargar el contrato");
@@ -71,14 +55,24 @@ export function useContracts() {
   /**
    * Crea un nuevo contrato
    */
-  const createContract = async (
-    newContract: Omit<Contract, "id" | "createdAt" | "updatedAt">
-  ): Promise<Contract | null> => {
+  const createContract = async (newContract: {
+    title: string;
+    description?: string;
+    type?: string;
+    startDate: string | Date;
+    endDate?: string | Date;
+    status: string;
+    amount?: number;
+    currency?: string;
+    parties?: Array<{ name: string; role: string; contact?: string }>;
+    tags?: string;
+    metadata?: Record<string, any>;
+  }): Promise<Contract | null> => {
     setIsLoading(true);
     try {
-      const data = await apiClient.post<Contract>(
-        "/api/contracts",
-        newContract
+      const data = await contractsApi.createContract(
+        newContract,
+        user?.id || ""
       );
       toast.success("Contrato creado correctamente");
       return data;
@@ -92,32 +86,43 @@ export function useContracts() {
   };
 
   /**
-   * Actualiza el estado de un contrato
+   * Actualiza un contrato existente
    */
-  const updateContractStatus = async (
+  const updateContract = async (
     id: string,
-    status: Contract["status"]
+    contractData: Partial<Contract>
   ): Promise<Contract | null> => {
     setIsLoading(true);
     try {
-      const data = await apiClient.patch<Contract>(
-        `/api/contracts/${id}/status`,
-        { status }
+      const data = await contractsApi.updateContract(
+        id,
+        contractData,
+        user?.id || ""
       );
-
-      const statusMessages = {
-        ACTIVE: "activado",
-        PENDING: "puesto en revisión",
-        EXPIRED: "marcado como vencido",
-        ARCHIVED: "archivado",
-      };
-
-      toast.success(`Contrato ${statusMessages[status]} correctamente`);
+      toast.success("Contrato actualizado correctamente");
       return data;
     } catch (error) {
-      toast.error("Error al actualizar el estado del contrato");
+      toast.error("Error al actualizar el contrato");
       console.error(error);
       return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Elimina un contrato
+   */
+  const deleteContract = async (id: string): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      await contractsApi.deleteContract(id, user?.id || "");
+      toast.success("Contrato eliminado correctamente");
+      return true;
+    } catch (error) {
+      toast.error("Error al eliminar el contrato");
+      console.error(error);
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -129,10 +134,24 @@ export function useContracts() {
   const getContractStats = async (): Promise<ContractStats | null> => {
     setIsLoading(true);
     try {
-      const data = await apiClient.get<ContractStats>("/api/contracts/stats");
-      return data;
+      const contracts = await getContracts();
+      const stats: ContractStats = {
+        total: contracts.length,
+        byStatus: {
+          Vigente: 0,
+          "Próximo a Vencer": 0,
+          Vencido: 0,
+          Archivado: 0,
+        },
+      };
+
+      contracts.forEach((contract) => {
+        stats.byStatus[contract.status]++;
+      });
+
+      return stats;
     } catch (error) {
-      toast.error("Error al cargar las estadísticas");
+      toast.error("Error al cargar estadísticas");
       console.error(error);
       return null;
     } finally {
@@ -145,7 +164,8 @@ export function useContracts() {
     getContracts,
     getContractById,
     createContract,
-    updateContractStatus,
+    updateContract,
+    deleteContract,
     getContractStats,
   };
 }

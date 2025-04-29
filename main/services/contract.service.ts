@@ -634,4 +634,136 @@ export class ContractService {
     // TODO: Implementar la lógica para asignar usuarios
     return { success: true };
   }
+
+  /**
+   * Actualiza el estado de un contrato
+   * @param contractId - ID del contrato
+   * @param newStatus - Nuevo estado
+   * @param userId - ID del usuario que realiza la acción
+   */
+  static async updateContractStatus(
+    contractId: string,
+    newStatus: "Vigente" | "Próximo a Vencer" | "Vencido" | "Archivado",
+    userId: string
+  ) {
+    try {
+      const contract = await prisma.contract.findUnique({
+        where: { id: contractId },
+        include: {
+          supplements: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+          },
+        },
+      });
+
+      if (!contract) {
+        throw new Error("Contrato no encontrado");
+      }
+
+      // Validar transiciones de estado
+      const validTransitions: Record<string, string[]> = {
+        Vigente: ["Próximo a Vencer", "Vencido", "Archivado"],
+        "Próximo a Vencer": ["Vigente", "Vencido", "Archivado"],
+        Vencido: ["Archivado"],
+        Archivado: ["Vigente"],
+      };
+
+      if (!validTransitions[contract.status]?.includes(newStatus)) {
+        throw new Error(
+          `Transición de estado no válida: ${contract.status} -> ${newStatus}`
+        );
+      }
+
+      // Si se está desarchivando, verificar que haya un suplemento válido
+      if (contract.status === "Archivado" && newStatus === "Vigente") {
+        const lastSupplement = contract.supplements[0];
+        if (!lastSupplement || new Date(lastSupplement.endDate) <= new Date()) {
+          throw new Error(
+            "No se puede desarchivar un contrato sin suplemento válido"
+          );
+        }
+      }
+
+      const updatedContract = await prisma.contract.update({
+        where: { id: contractId },
+        data: {
+          status: newStatus,
+          updatedAt: new Date(),
+        },
+      });
+
+      // Registrar en el historial
+      await prisma.historyRecord.create({
+        data: {
+          contractId,
+          action: `Estado actualizado a ${newStatus}`,
+          userId,
+          details: `Cambio de estado: ${contract.status} -> ${newStatus}`,
+        },
+      });
+
+      return updatedContract;
+    } catch (error) {
+      console.error("Error al actualizar estado del contrato:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Verifica y actualiza automáticamente los estados de los contratos
+   */
+  static async checkAndUpdateContractStatuses() {
+    try {
+      const today = new Date();
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(today.getDate() + 30);
+
+      // Actualizar contratos vencidos
+      await prisma.contract.updateMany({
+        where: {
+          status: "Vigente",
+          endDate: {
+            lt: today,
+          },
+        },
+        data: {
+          status: "Vencido",
+        },
+      });
+
+      // Actualizar contratos próximos a vencer
+      await prisma.contract.updateMany({
+        where: {
+          status: "Vigente",
+          endDate: {
+            gte: today,
+            lte: thirtyDaysFromNow,
+          },
+        },
+        data: {
+          status: "Próximo a Vencer",
+        },
+      });
+
+      // Archivar contratos vencidos automáticamente después de 30 días
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(today.getDate() - 30);
+
+      await prisma.contract.updateMany({
+        where: {
+          status: "Vencido",
+          endDate: {
+            lt: thirtyDaysAgo,
+          },
+        },
+        data: {
+          status: "Archivado",
+        },
+      });
+    } catch (error) {
+      console.error("Error al actualizar estados de contratos:", error);
+      throw error;
+    }
+  }
 }
