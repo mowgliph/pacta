@@ -9,7 +9,10 @@
     "dev": "nextron",
     "build": "nextron build",
     "postinstall": "electron-builder install-app-deps",
-    "seed": "prisma db seed"
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "node prisma/seed.js",
+    "db:setup": "npm run prisma:generate && npm run prisma:migrate && npm run prisma:seed"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -51,12 +54,13 @@
     "next-themes": "^0.4.6",
     "node-cron": "^3.0.3",
     "nodemailer": "^6.10.1",
-    "rate-limiter-flexible": "^3.0.4",
+    "rate-limiter-flexible": "^3.0.6",
     "react-hook-form": "^7.56.1",
     "recharts": "^2.15.3",
     "sonner": "^2.0.3",
     "tailwind-merge": "^3.2.0",
     "tailwindcss-animate": "^1.0.7",
+    "ts-node": "^10.9.2",
     "uuid": "^11.1.0",
     "winston": "^3.17.0",
     "zod": "^3.24.3",

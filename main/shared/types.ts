@@ -111,26 +111,69 @@ export interface UsersListResponse {
 // Contratos
 // ====================================================================
 
-// Información básica de un contrato
+export interface BankDetails {
+  account: string;
+  branch: string;
+  agency: string;
+  holder: string;
+  currency: 'CUP' | 'MLC';
+}
+
+export interface LegalRepresentative {
+  name: string;
+  position: string;
+  documentType: string;
+  documentNumber: string;
+  documentDate: Date;
+}
+
+export interface Attachment {
+  type: string;
+  description: string;
+  documentUrl?: string;
+}
+
 export interface Contract {
   id: string;
   contractNumber: string;
-  title: string;
-  description?: string;
-  parties: string;
-  startDate: Date;
-  endDate?: Date;
-  value?: string;
-  amount?: number;
-  status: string;
-  documentUrl?: string;
+  signDate: Date;
+  signPlace: string;
   type: string;
   companyName: string;
-  companyAddress?: string;
-  signDate: Date;
-  signPlace?: string;
-  paymentMethod?: string;
-  paymentTerm?: string;
+  companyAddress: string;
+  nationality: string;
+  commercialAuth: string;
+  bankDetails: BankDetails;
+  reeupCode: string;
+  nit: string;
+  contactPhones: string[];
+  legalRepresentative: LegalRepresentative;
+  description: string;
+  providerObligations: string[];
+  clientObligations: string[];
+  deliveryPlace: string;
+  deliveryTerm: string;
+  acceptanceProcedure: string;
+  value: number;
+  currency: 'MN' | 'MLC';
+  paymentMethod: string;
+  paymentTerm: string;
+  warrantyTerm: string;
+  warrantyScope: string;
+  technicalStandards?: string;
+  claimProcedure: string;
+  disputeResolution: string;
+  latePaymentInterest: string;
+  breachPenalties: string;
+  notificationMethods: string[];
+  minimumNoticeTime: string;
+  startDate: Date;
+  endDate: Date;
+  extensionTerms: string;
+  earlyTerminationNotice: string;
+  forceMajeure: string;
+  attachments: Attachment[];
+  status: 'Vigente' | 'Próximo a Vencer' | 'Vencido' | 'Archivado';
   isRestricted: boolean;
   createdById: string;
   ownerId: string;
@@ -152,51 +195,11 @@ export interface ContractFilters {
   limit?: number;
 }
 
-// Solicitud para crear contrato
-export interface CreateContractRequest {
-  contractNumber: string;
-  title: string;
-  description?: string;
-  parties: string;
-  startDate: Date;
-  endDate?: Date;
-  value?: string;
-  amount?: number;
-  status: string;
-  documentUrl?: string;
-  type: string;
-  companyName: string;
-  companyAddress?: string;
-  signDate: Date;
-  signPlace?: string;
-  paymentMethod?: string;
-  paymentTerm?: string;
-  isRestricted?: boolean;
-  ownerId: string;
-}
+export interface CreateContractRequest extends Omit<Contract, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'owner'> {}
 
-// Solicitud para actualizar contrato
 export interface UpdateContractRequest {
   id: string;
-  contractNumber?: string;
-  title?: string;
-  description?: string;
-  parties?: string;
-  startDate?: Date;
-  endDate?: Date;
-  value?: string;
-  amount?: number;
-  status?: string;
-  documentUrl?: string;
-  type?: string;
-  companyName?: string;
-  companyAddress?: string;
-  signDate?: Date;
-  signPlace?: string;
-  paymentMethod?: string;
-  paymentTerm?: string;
-  isRestricted?: boolean;
-  ownerId?: string;
+  data: Partial<Omit<Contract, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'owner'>> & { updatedById: string };
 }
 
 // Respuesta de lista de contratos

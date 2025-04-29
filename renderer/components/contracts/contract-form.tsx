@@ -1,23 +1,11 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { useContractStore } from '../../store/useContractStore';
 import { Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '../ui/form';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import {
@@ -32,11 +20,27 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '../ui/popover';
-import { Calendar } from '../ui/calendar';
 import { FileUpload } from '../ui/file-upload';
 import { contractSchema } from '../../lib/shemas';
-import { createContract, updateContract } from '../../lib/api';
+import { contractsApi } from '../../api/contracts';
 import { cn } from '../../lib/utils';
+import type {
+  CreateContractRequest,
+  BankDetails,
+  LegalRepresentative,
+  Attachment
+} from '../../../main/shared/types';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '../ui/form';
+import { Calendar } from '../ui/calendar';
+import { useState } from 'react';
 
 // Tipo para props del componente
 interface ContractFormProps {
@@ -46,504 +50,623 @@ interface ContractFormProps {
 
 export function ContractForm({ contractData, isEditing = false }: ContractFormProps) {
   const router = useRouter();
-  const [mainDocument, setMainDocument] = useState<File | null>(null);
+  const createContract = useContractStore((state) => state.createContract);
+  const updateContract = useContractStore((state) => state.updateContract); // Si existe en el store
+  const [loading, setLoading] = useState(false);
   
   // Inicializar formulario con React Hook Form + Zod
-  const form = useForm({
+  const form = useForm<any>({
     resolver: zodResolver(contractSchema),
     defaultValues: isEditing && contractData
-      ? {
-          contractNumber: contractData.contractNumber,
-          title: contractData.title,
-          description: contractData.description || '',
-          parties: contractData.parties,
-          startDate: contractData.startDate,
-          endDate: contractData.endDate || '',
-          value: contractData.value
-            ? JSON.parse(contractData.value).amount + ''
-            : '',
-          currency: contractData.value
-            ? JSON.parse(contractData.value).currency
-            : 'MN',
-          type: contractData.type,
-          companyName: contractData.companyName,
-          companyAddress: contractData.companyAddress || '',
-          signDate: contractData.signDate,
-          signPlace: contractData.signPlace || '',
-          paymentMethod: contractData.paymentMethod || '',
-          paymentTerm: contractData.paymentTerm || '',
-        }
+      ? contractData
       : {
           contractNumber: '',
           title: '',
+          type: 'Cliente',
+          status: 'Vigente',
           description: '',
           parties: '',
-          startDate: '',
-          endDate: '',
-          value: '',
-          currency: 'MN',
-          type: 'Cliente',
-          companyName: '',
-          companyAddress: '',
           signDate: '',
           signPlace: '',
-          paymentMethod: '',
-          paymentTerm: '',
+          startDate: '',
+          endDate: '',
+          companyName: '',
+          companyAddress: '',
+          nationality: '',
+          commercialAuth: '',
+          reeupCode: '',
+          nit: '',
+          contactPhones: [''],
+          bankDetails: {
+            account: '',
+            branch: '',
+            agency: '',
+            holder: '',
+            currency: 'CUP',
+          },
+          legalRepresentative: {
+            name: '',
+            position: '',
+            documentType: '',
+            documentNumber: '',
+            documentDate: '',
+          },
+          attachments: [],
+          createdById: '',
+          ownerId: '',
         },
   });
   
-  // Mutación para crear/actualizar contrato
-  const contractMutation = useMutation({
-    mutationFn: async (data: any) => {
-      // Preparar datos del formulario
-      const formattedData = {
-        ...data,
-        value: data.value
-          ? JSON.stringify({ amount: data.value, currency: data.currency })
-          : undefined,
-      };
-      
-      // Eliminar campo currency que no está en el modelo
-      delete formattedData.currency;
-      
-      // Crear o actualizar según modo
-      if (isEditing) {
-        return updateContract(contractData.id, formattedData);
-      } else {
-        return createContract(formattedData);
-      }
-    },
-    onSuccess: async (data) => {
-      // Subir documento principal si existe
-      if (mainDocument) {
-        try {
-          const formData = new FormData();
-          formData.append('file', mainDocument);
-          formData.append('contractId', data.id);
-          formData.append('isMain', 'true');
-          formData.append('description', 'Documento principal');
-          
-          await fetch('/api/documents', {
-            method: 'POST',
-            body: formData,
-          });
-        } catch (error) {
-          console.error('Error uploading document:', error);
-          toast.error('El contrato se creó pero hubo un error al subir el documento');
-        }
-      }
-      
-      toast.success(
-        isEditing
-          ? 'Contrato actualizado correctamente'
-          : 'Contrato creado correctamente'
-      );
-      
-      // Redirigir a la página del contrato
-      router.push(`/contracts/${data.id}`);
-      // Refrescar la lista de contratos en caso de estar utilizando cache
-      router.refresh();
-    },
-    onError: (error: any) => {
-      console.error('Error:', error);
-      toast.error(
-        error.response?.data?.message ||
-          (isEditing
-            ? 'Error al actualizar el contrato'
-            : 'Error al crear el contrato')
-      );
-    },
-  });
-  
   // Manejar envío del formulario
-  const onSubmit = (data: any) => {
-    contractMutation.mutate(data);
+  const onSubmit = async (data: any) => {
+    setLoading(true);
+    try {
+      let id;
+      if (isEditing && contractData?.id) {
+        const ok = await updateContract(contractData.id, data);
+        if (!ok) throw new Error('Error al actualizar el contrato');
+        id = contractData.id;
+      } else {
+        id = await createContract(data);
+      }
+      router.push(`/contracts/${id}`);
+      router.refresh();
+    } catch (error) {
+      alert('Error al guardar el contrato');
+    } finally {
+      setLoading(false);
+    }
   };
   
+  // Helpers para arrays dinámicos
+  const addToArray = (field: any, value: any) => field.onChange([...(field.value || []), value]);
+  const removeFromArray = (field: any, idx: number) => field.onChange(field.value.filter((_: any, i: number) => i !== idx));
+  
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10">
+      {/* 1. Datos Generales */}
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Datos Generales</h2>
         <div className="grid gap-6 sm:grid-cols-2">
           <FormField
             control={form.control}
             name="contractNumber"
-            render={({ field }) => (
+            render={({ field }: { field: any }) => (
               <FormItem>
                 <FormLabel>Número de Contrato</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ej: CONT-2025-001" {...field} />
+                  <Input {...field} placeholder="Ej: CONT-2025-001" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
+          <FormField
+            control={form.control}
+            name="title"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Título del Contrato</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Título del contrato" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="type"
-            render={({ field }) => (
+            render={({ field }: { field: any }) => (
               <FormItem>
-                <FormLabel>Tipo</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  disabled={isEditing}
-                >
-                  <FormControl>
+                <FormLabel>Tipo de Contrato</FormLabel>
+                <FormControl>
+                  <Select {...field} disabled={isEditing}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccione un tipo" />
+                      <SelectValue placeholder="Selecciona el tipo de contrato" />
                     </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Cliente">Cliente</SelectItem>
-                    <SelectItem value="Proveedor">Proveedor</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  {isEditing && "El tipo no puede modificarse después de crear el contrato"}
-                </FormDescription>
+                    <SelectContent>
+                      <SelectItem value="Cliente">Cliente</SelectItem>
+                      <SelectItem value="Proveedor">Proveedor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="status"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Estado del Contrato</FormLabel>
+                <FormControl>
+                  <Select {...field} defaultValue={form.watch('status')}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona el estado del contrato" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Vigente">Vigente</SelectItem>
+                      <SelectItem value="Próximo a Vencer">Próximo a Vencer</SelectItem>
+                      <SelectItem value="Vencido">Vencido</SelectItem>
+                      <SelectItem value="Archivado">Archivado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-        
         <FormField
           control={form.control}
-          name="title"
-          render={({ field }) => (
+          name="description"
+          render={({ field }: { field: any }) => (
             <FormItem>
-              <FormLabel>Título</FormLabel>
+              <FormLabel>Descripción General del Contrato</FormLabel>
               <FormControl>
-                <Input placeholder="Ingrese el título del contrato" {...field} />
+                <Textarea {...field} placeholder="Descripción general del contrato" />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        
+        <FormField
+          control={form.control}
+          name="parties"
+          render={({ field }: { field: any }) => (
+            <FormItem>
+              <FormLabel>Describa las partes involucradas</FormLabel>
+              <FormControl>
+                <Textarea {...field} placeholder="Describa las partes involucradas" />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </section>
+
+      {/* 2. Fechas y Lugar */}
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Fechas y Lugar</h2>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="signDate"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Fecha de Firma</FormLabel>
+                <FormControl>
+                  <Calendar value={field.value} onChange={field.onChange} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="signPlace"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Lugar de Firma</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Ciudad, País" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="startDate"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Fecha de Inicio</FormLabel>
+                <FormControl>
+                  <Calendar value={field.value} onChange={field.onChange} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="endDate"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Fecha de Finalización</FormLabel>
+                <FormControl>
+                  <Calendar value={field.value} onChange={field.onChange} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      </section>
+
+      {/* 3. Empresa y Dirección */}
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Empresa y Dirección</h2>
         <div className="grid gap-6 sm:grid-cols-2">
           <FormField
             control={form.control}
             name="companyName"
-            render={({ field }) => (
+            render={({ field }: { field: any }) => (
               <FormItem>
-                <FormLabel>Razón Social</FormLabel>
+                <FormLabel>Nombre de la Empresa</FormLabel>
                 <FormControl>
-                  <Input placeholder="Nombre de la empresa" {...field} />
+                  <Input {...field} placeholder="Nombre de la empresa" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
           <FormField
             control={form.control}
             name="companyAddress"
-            render={({ field }) => (
+            render={({ field }: { field: any }) => (
               <FormItem>
-                <FormLabel>Domicilio Legal</FormLabel>
+                <FormLabel>Dirección Legal</FormLabel>
                 <FormControl>
-                  <Input placeholder="Domicilio de la empresa (opcional)" {...field} />
+                  <Input {...field} placeholder="Dirección legal" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="nationality"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Nacionalidad de la Empresa</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Nacionalidad de la empresa" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="commercialAuth"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Código de Autorización</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Código de autorización" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="reeupCode"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Código REEUP</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Código REEUP" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="nit"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>NIT</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="NIT" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="contactPhones"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Teléfonos de Contacto</FormLabel>
+                <FormControl>
+                  <div className="space-y-2">
+                    {field.value.map((phone: string, idx: number) => (
+                      <div key={idx} className="flex gap-2">
+                        <Input
+                          {...field.onChange(phone)}
+                          placeholder="Ej: 555-1234"
+                        />
+                        <button type="button" onClick={() => removeFromArray(field, idx)}>
+                          Eliminar
+                        </button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => addToArray(field, '')}>
+                      Agregar teléfono
+                    </button>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="bankDetails.account"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Número de Cuenta</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Número de cuenta" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="bankDetails.branch"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Sucursal Bancaria</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Sucursal bancaria" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="bankDetails.agency"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Agencia Bancaria</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Agencia bancaria" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="bankDetails.holder"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Titular de la Cuenta</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Titular de la cuenta" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="bankDetails.currency"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Moneda</FormLabel>
+                <FormControl>
+                  <Select {...field}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona la moneda" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CUP">CUP</SelectItem>
+                      <SelectItem value="MLC">MLC</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-        
-        <div className="grid gap-6 sm:grid-cols-3">
+      </section>
+
+      {/* 4. Representante Legal */}
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Representante Legal</h2>
+        <div className="grid gap-6 sm:grid-cols-2">
           <FormField
             control={form.control}
-            name="signDate"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Fecha de Firma</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(new Date(field.value), "dd/MM/yyyy")
-                        ) : (
-                          <span>Seleccione una fecha</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value ? new Date(field.value) : undefined}
-                      onSelect={(date) => field.onChange(date?.toISOString())}
-                      disabled={(date) =>
-                        date > new Date() || date < new Date("1900-01-01")
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+            name="legalRepresentative.name"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Nombre Completo</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Nombre completo" />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
           <FormField
             control={form.control}
-            name="signPlace"
-            render={({ field }) => (
+            name="legalRepresentative.position"
+            render={({ field }: { field: any }) => (
               <FormItem>
-                <FormLabel>Lugar de Firma</FormLabel>
+                <FormLabel>Cargo</FormLabel>
                 <FormControl>
-                  <Input placeholder="Ciudad, País (opcional)" {...field} />
+                  <Input {...field} placeholder="Cargo" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="legalRepresentative.documentType"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Tipo de Documento</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Tipo de documento" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="legalRepresentative.documentNumber"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Número de Documento</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="Número de documento" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="legalRepresentative.documentDate"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Fecha de Emisión</FormLabel>
+                <FormControl>
+                  <Calendar value={field.value} onChange={field.onChange} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
         </div>
-        
-        <div className="grid gap-6 sm:grid-cols-3">
-          <FormField
-            control={form.control}
-            name="startDate"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Fecha de Inicio</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
+      </section>
+
+      {/* 5. Anexos (array dinámico) */}
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Anexos</h2>
+        <div className="space-y-2">
+          {form.watch('attachments').map((anexo: Attachment, idx: number) => (
+            <div key={idx} className="flex gap-2 items-center">
+              <FormField
+                control={form.control}
+                name={`attachments.${idx}.type`}
+                render={({ field }: { field: any }) => (
+                  <FormItem>
+                    <FormLabel>Tipo de Anexo</FormLabel>
                     <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(new Date(field.value), "dd/MM/yyyy")
-                        ) : (
-                          <span>Seleccione una fecha</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
+                      <Input {...field} placeholder="Tipo de anexo" />
                     </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value ? new Date(field.value) : undefined}
-                      onSelect={(date) => field.onChange(date?.toISOString())}
-                      disabled={(date) =>
-                        date < new Date("1900-01-01")
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="endDate"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Fecha de Fin (opcional)</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name={`attachments.${idx}.description`}
+                render={({ field }: { field: any }) => (
+                  <FormItem>
+                    <FormLabel>Descripción</FormLabel>
                     <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(new Date(field.value), "dd/MM/yyyy")
-                        ) : (
-                          <span>Sin fecha de fin</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
+                      <Input {...field} placeholder="Descripción" />
                     </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value ? new Date(field.value) : undefined}
-                      onSelect={(date) => field.onChange(date?.toISOString())}
-                      disabled={(date) =>
-                        date < new Date("1900-01-01")
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormDescription>
-                  Dejar en blanco para contratos sin fecha de finalización definida
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name={`attachments.${idx}.documentUrl`}
+                render={({ field }: { field: any }) => (
+                  <FormItem>
+                    <FormLabel>URL del Documento</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="URL del documento (opcional)" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <button type="button" onClick={() => removeFromArray(form.register(`attachments.${idx}`), 0)}>
+                Eliminar
+              </button>
+            </div>
+          ))}
+          <button type="button" onClick={() => addToArray(form.register('attachments'), { type: '', description: '', documentUrl: '' })}>
+            Agregar anexo
+          </button>
         </div>
-        
-        <div className="grid gap-6 sm:grid-cols-3">
+      </section>
+
+      {/* 6. Documentos */}
+      <section>
+        <h2 className="font-semibold text-lg mb-2">Documento Principal</h2>
+        <div className="space-y-2">
           <FormField
             control={form.control}
-            name="value"
-            render={({ field }) => (
+            name="attachments.0.description"
+            render={({ field }: { field: any }) => (
               <FormItem>
-                <FormLabel>Valor (opcional)</FormLabel>
+                <FormLabel>Descripción del Documento Principal</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    placeholder="Monto"
-                    {...field} 
+                  <Input {...field} placeholder="Descripción del documento principal" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="attachments.0.documentUrl"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>URL del Documento Principal</FormLabel>
+                <FormControl>
+                  <Input {...field} placeholder="URL del documento principal" />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="attachments.0.file"
+            render={({ field }: { field: any }) => (
+              <FormItem>
+                <FormLabel>Documento Principal</FormLabel>
+                <FormControl>
+                  <FileUpload
+                    accept=".pdf,.doc,.docx"
+                    maxSize={10}
+                    label="Documento principal"
+                    onFileSelected={(file) => field.onChange(file)}
+                    description="Seleccione el documento principal del contrato (PDF, DOC, DOCX, máx. 10MB)"
                   />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
-          <FormField
-            control={form.control}
-            name="currency"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Moneda</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione moneda" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="MN">Moneda Nacional (MN)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
-        
-        <div className="grid gap-6 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="paymentMethod"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Forma de Pago (opcional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ej: Transferencia bancaria" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          <FormField
-            control={form.control}
-            name="paymentTerm"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Plazo de Pago (opcional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ej: 30 días" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-        
-        <FormField
-          control={form.control}
-          name="parties"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Partes Involucradas</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Describa las partes involucradas en el contrato"
-                  className="min-h-[80px]"
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+      </section>
+
+      <div className="flex justify-end space-x-4">
+        <button type="button" onClick={() => router.back()}>
+          Cancelar
+        </button>
+        <button type="submit" disabled={loading}>
+          {loading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {isEditing ? 'Actualizando...' : 'Creando...'}
+            </>
+          ) : (
+            isEditing ? 'Actualizar Contrato' : 'Crear Contrato'
           )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descripción (opcional)</FormLabel>
-              <FormControl>
-                <Textarea 
-                  placeholder="Descripción adicional del contrato"
-                  className="min-h-[100px]"
-                  {...field} 
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        {!isEditing && (
-          <div className="space-y-2">
-            <FormLabel>Documento Principal (opcional)</FormLabel>
-            <FileUpload
-              accept=".pdf,.doc,.docx"
-              maxSize={10}
-              onFileSelected={(file) => setMainDocument(file)}
-              description="Seleccione el documento principal del contrato (PDF, DOC, DOCX, máx. 10MB)"
-            />
-          </div>
-        )}
-        
-        <div className="flex justify-end space-x-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.back()}
-          >
-            Cancelar
-          </Button>
-          <Button 
-            type="submit"
-            disabled={contractMutation.isPending}
-          >
-            {contractMutation.isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {isEditing ? 'Actualizando...' : 'Creando...'}
-              </>
-            ) : (
-              isEditing ? 'Actualizar Contrato' : 'Crear Contrato'
-            )}
-          </Button>
-        </div>
-      </form>
-    </Form>
+        </button>
+      </div>
+    </form>
   );
 }

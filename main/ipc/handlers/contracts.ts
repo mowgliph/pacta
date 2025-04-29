@@ -17,63 +17,82 @@ const contractFilterSchema = z.object({
   sortOrder: z.enum(["asc", "desc"]).optional().default("desc"),
 });
 
+// Esquema de validación para BankDetails
+const bankDetailsSchema = z.object({
+  account: z.string().min(1),
+  branch: z.string().min(1),
+  agency: z.string().min(1),
+  holder: z.string().min(1),
+  currency: z.enum(["CUP", "MLC"]),
+});
+
+// Esquema de validación para LegalRepresentative
+const legalRepresentativeSchema = z.object({
+  name: z.string().min(1),
+  position: z.string().min(1),
+  documentType: z.string().min(1),
+  documentNumber: z.string().min(1),
+  documentDate: z.string().or(z.date()).transform((val) => new Date(val)),
+});
+
+// Esquema de validación para Attachment
+const attachmentSchema = z.object({
+  type: z.string().min(1),
+  description: z.string().min(1),
+  documentUrl: z.string().optional(),
+});
+
+// Esquema de validación para contrato completo
 const createContractSchema = z.object({
-  title: z.string().min(3, "El título debe tener al menos 3 caracteres"),
-  description: z.string().optional(),
-  type: z.string().optional(),
-  contractNumber: z.string(),
-  companyName: z.string(),
-  signDate: z
-    .string()
-    .or(z.date())
-    .transform((val) => new Date(val)),
-  signPlace: z.string().optional(),
-  parties: z.string(),
-  startDate: z
-    .string()
-    .or(z.date())
-    .transform((val) => new Date(val)),
-  endDate: z
-    .string()
-    .or(z.date())
-    .optional()
-    .transform((val) => (val ? new Date(val) : undefined)),
-  status: z.string().default("draft"),
-  amount: z.number().nonnegative().optional(),
-  currency: z.string().length(3).optional(),
-  companyAddress: z.string().optional(),
-  paymentMethod: z.string().optional(),
-  paymentTerm: z.string().optional(),
+  contractNumber: z.string().min(1),
+  title: z.string().min(1),
+  parties: z.string().min(1),
+  signDate: z.string().or(z.date()).transform((val) => new Date(val)),
+  signPlace: z.string().min(1),
+  type: z.string().min(1),
+  companyName: z.string().min(1),
+  companyAddress: z.string().min(1),
+  nationality: z.string().min(1),
+  commercialAuth: z.string().min(1),
+  bankDetails: bankDetailsSchema,
+  reeupCode: z.string().min(1),
+  nit: z.string().min(1),
+  contactPhones: z.array(z.string().min(1)),
+  legalRepresentative: legalRepresentativeSchema,
+  description: z.string().min(1),
+  providerObligations: z.array(z.string().min(1)),
+  clientObligations: z.array(z.string().min(1)),
+  deliveryPlace: z.string().min(1),
+  deliveryTerm: z.string().min(1),
+  acceptanceProcedure: z.string().min(1),
+  value: z.number().min(0),
+  currency: z.enum(["MN", "MLC"]),
+  paymentMethod: z.string().min(1),
+  paymentTerm: z.string().min(1),
+  warrantyTerm: z.string().min(1),
+  warrantyScope: z.string().min(1),
+  technicalStandards: z.string().optional(),
+  claimProcedure: z.string().min(1),
+  disputeResolution: z.string().min(1),
+  latePaymentInterest: z.string().min(1),
+  breachPenalties: z.string().min(1),
+  notificationMethods: z.array(z.string().min(1)),
+  minimumNoticeTime: z.string().min(1),
+  startDate: z.string().or(z.date()).transform((val) => new Date(val)),
+  endDate: z.string().or(z.date()).transform((val) => new Date(val)),
+  extensionTerms: z.string().min(1),
+  earlyTerminationNotice: z.string().min(1),
+  forceMajeure: z.string().min(1),
+  attachments: z.array(attachmentSchema),
+  status: z.enum(["Vigente", "Próximo a Vencer", "Vencido", "Archivado"]),
   isRestricted: z.boolean().default(false),
-  tags: z.string().optional(),
   createdById: z.string().uuid(),
   ownerId: z.string().uuid(),
-  metadata: z.record(z.any()).optional(),
 });
 
 const updateContractSchema = z.object({
   id: z.string().uuid(),
-  data: z.object({
-    title: z.string().min(3).optional(),
-    description: z.string().optional(),
-    type: z.string().optional(),
-    startDate: z
-      .string()
-      .or(z.date())
-      .transform((val) => (val ? new Date(val) : undefined))
-      .optional(),
-    endDate: z
-      .string()
-      .or(z.date())
-      .transform((val) => (val ? new Date(val) : undefined))
-      .optional(),
-    status: z.string().optional(),
-    amount: z.number().nonnegative().optional(),
-    currency: z.string().length(3).optional(),
-    tags: z.string().optional(),
-    metadata: z.record(z.any()).optional(),
-    updatedById: z.string().uuid(),
-  }),
+  data: createContractSchema.partial().extend({ updatedById: z.string().uuid() }),
 });
 
 export function setupContractHandlers(): void {
@@ -164,7 +183,7 @@ export function setupContractHandlers(): void {
         }
 
         // Definir relaciones a incluir
-        const include = {
+        const include: any = {
           createdBy: {
             select: {
               id: true,
@@ -172,7 +191,6 @@ export function setupContractHandlers(): void {
               email: true,
             },
           },
-          parties: true,
           supplements: true,
           history: {
             include: {
@@ -191,7 +209,7 @@ export function setupContractHandlers(): void {
 
         // Incluir documentos si se solicita
         if (includeDocuments) {
-          include["documents"] = true;
+          include.documents = true;
         }
 
         // Buscar contrato con relaciones
@@ -230,52 +248,91 @@ export function setupContractHandlers(): void {
     try {
       // Validar datos
       const validatedData = createContractSchema.parse(contractData);
+      const {
+        createdById,
+        ownerId,
+        bankDetails,
+        legalRepresentative,
+        contactPhones,
+        providerObligations,
+        clientObligations,
+        notificationMethods,
+        attachments,
+        ...rest
+      } = validatedData;
 
-      // Extraer datos para el modelo Contract
-      const { createdById, ownerId, metadata, ...contractInfo } = validatedData;
+      // Serializar arrays y objetos
+      const dataToSave = {
+        contractNumber: validatedData.contractNumber,
+        title: validatedData.title,
+        parties: validatedData.parties,
+        signDate: validatedData.signDate,
+        signPlace: validatedData.signPlace,
+        type: validatedData.type,
+        companyName: validatedData.companyName,
+        companyAddress: validatedData.companyAddress,
+        nationality: validatedData.nationality,
+        commercialAuth: validatedData.commercialAuth,
+        bankAccount: bankDetails.account,
+        bankBranch: bankDetails.branch,
+        bankAgency: bankDetails.agency,
+        bankHolder: bankDetails.holder,
+        bankCurrency: bankDetails.currency,
+        reeupCode: validatedData.reeupCode,
+        nit: validatedData.nit,
+        contactPhones: JSON.stringify(contactPhones),
+        repName: legalRepresentative.name,
+        repPosition: legalRepresentative.position,
+        repDocumentType: legalRepresentative.documentType,
+        repDocumentNumber: legalRepresentative.documentNumber,
+        repDocumentDate: legalRepresentative.documentDate,
+        description: validatedData.description,
+        providerObligations: JSON.stringify(providerObligations),
+        clientObligations: JSON.stringify(clientObligations),
+        deliveryPlace: validatedData.deliveryPlace,
+        deliveryTerm: validatedData.deliveryTerm,
+        acceptanceProcedure: validatedData.acceptanceProcedure,
+        value: String(validatedData.value),
+        currency: validatedData.currency,
+        paymentMethod: validatedData.paymentMethod,
+        paymentTerm: validatedData.paymentTerm,
+        warrantyTerm: validatedData.warrantyTerm,
+        warrantyScope: validatedData.warrantyScope,
+        technicalStandards: validatedData.technicalStandards,
+        claimProcedure: validatedData.claimProcedure,
+        disputeResolution: validatedData.disputeResolution,
+        latePaymentInterest: validatedData.latePaymentInterest,
+        breachPenalties: validatedData.breachPenalties,
+        notificationMethods: JSON.stringify(notificationMethods),
+        minimumNoticeTime: validatedData.minimumNoticeTime,
+        startDate: validatedData.startDate,
+        endDate: validatedData.endDate,
+        extensionTerms: validatedData.extensionTerms,
+        earlyTerminationNotice: validatedData.earlyTerminationNotice,
+        forceMajeure: validatedData.forceMajeure,
+        attachments: JSON.stringify(attachments),
+        status: validatedData.status,
+        isRestricted: validatedData.isRestricted,
+        createdBy: { connect: { id: createdById } },
+        owner: { connect: { id: ownerId } },
+      };
 
-      // Construir objeto value si hay amount y currency
-      let value = undefined;
-      if (validatedData.amount && validatedData.currency) {
-        value = JSON.stringify({
-          amount: validatedData.amount,
-          currency: validatedData.currency,
-        });
-      }
-
-      // Crear contrato con Prisma - con el modo correcto para las relaciones
       const contract = await prisma.contract.create({
-        data: {
-          ...contractInfo,
-          value,
-          contractNumber: contractInfo.contractNumber,
-          companyName: contractInfo.companyName,
-          parties: contractInfo.parties,
-          title: contractInfo.title,
-          startDate: contractInfo.startDate,
-          signDate: contractInfo.signDate,
-          type: contractInfo.type || "default",
-          status: contractInfo.status || "draft",
-          createdBy: {
-            connect: { id: createdById },
-          },
-          owner: {
-            connect: { id: ownerId },
-          },
-        },
+        data: dataToSave,
       });
 
-      // Crear registro de historial separado
+      // Crear registro de historial
       await prisma.historyRecord.create({
         data: {
           action: "CREATE",
           userId: createdById,
           entityType: "Contract",
           entityId: contract.id,
+          details: "Contrato creado",
         },
       });
 
-      logger.info(`Contrato creado: ${contract.id} - ${contract.title}`);
+      logger.info(`Contrato creado: ${contract.id}`);
       return {
         success: true,
         contract,
@@ -301,41 +358,47 @@ export function setupContractHandlers(): void {
   // Actualizar un contrato
   withErrorHandling(ContractsChannels.UPDATE, async (_, payload) => {
     try {
-      // Validar datos
       const { id, data } = updateContractSchema.parse(payload);
+      const {
+        bankDetails,
+        legalRepresentative,
+        contactPhones,
+        providerObligations,
+        clientObligations,
+        notificationMethods,
+        attachments,
+        updatedById,
+        ...rest
+      } = data;
 
-      // Guardar ID de usuario para historial
-      const { updatedById } = data;
-
-      // Buscar contrato existente para verificar
-      const existingContract = await prisma.contract.findUnique({
-        where: { id },
-        select: { id: true, title: true },
-      });
-
-      if (!existingContract) {
-        throw ErrorHandler.createError(
-          "NotFoundError",
-          "Contrato no encontrado"
-        );
+      // Serializar arrays y objetos si existen
+      const dataToUpdate: any = {
+        ...rest,
+      };
+      if (bankDetails) {
+        dataToUpdate.bankAccount = bankDetails.account;
+        dataToUpdate.bankBranch = bankDetails.branch;
+        dataToUpdate.bankAgency = bankDetails.agency;
+        dataToUpdate.bankHolder = bankDetails.holder;
+        dataToUpdate.bankCurrency = bankDetails.currency;
       }
+      if (legalRepresentative) {
+        dataToUpdate.repName = legalRepresentative.name;
+        dataToUpdate.repPosition = legalRepresentative.position;
+        dataToUpdate.repDocumentType = legalRepresentative.documentType;
+        dataToUpdate.repDocumentNumber = legalRepresentative.documentNumber;
+        dataToUpdate.repDocumentDate = legalRepresentative.documentDate;
+      }
+      if (contactPhones) dataToUpdate.contactPhones = JSON.stringify(contactPhones);
+      if (providerObligations) dataToUpdate.providerObligations = JSON.stringify(providerObligations);
+      if (clientObligations) dataToUpdate.clientObligations = JSON.stringify(clientObligations);
+      if (notificationMethods) dataToUpdate.notificationMethods = JSON.stringify(notificationMethods);
+      if (attachments) dataToUpdate.attachments = JSON.stringify(attachments);
 
       // Actualizar contrato
       const contract = await prisma.contract.update({
         where: { id },
-        data: {
-          ...data,
-          // Crear registro de historial
-          history: {
-            create: {
-              action: "UPDATE",
-              userId: updatedById,
-              entityType: "Contract",
-              entityId: id,
-              changes: JSON.stringify(data),
-            },
-          },
-        },
+        data: dataToUpdate,
         include: {
           createdBy: {
             select: {
@@ -343,6 +406,18 @@ export function setupContractHandlers(): void {
               name: true,
             },
           },
+        },
+      });
+
+      // Crear registro de historial
+      await prisma.historyRecord.create({
+        data: {
+          action: "UPDATE",
+          userId: updatedById,
+          entityType: "Contract",
+          entityId: id,
+          changes: JSON.stringify(data),
+          details: "Contrato actualizado",
         },
       });
 
@@ -414,6 +489,7 @@ export function setupContractHandlers(): void {
           userId,
           entityType: "Contract",
           entityId: id,
+          details: "Contrato eliminado",
         },
       });
 
@@ -462,7 +538,7 @@ export function setupContractHandlers(): void {
         logger.info(`Control de acceso actualizado para contrato: ${id}`);
         return {
           success: true,
-          ...result,
+          ...Object.fromEntries(Object.entries(result).filter(([k]) => k !== 'success')),
           message: "Control de acceso actualizado",
         };
       } catch (error) {
@@ -497,7 +573,7 @@ export function setupContractHandlers(): void {
         logger.info(`Usuarios asignados a contrato: ${id}`);
         return {
           success: true,
-          ...result,
+          ...Object.fromEntries(Object.entries(result).filter(([k]) => k !== 'success')),
           message: "Usuarios asignados correctamente",
         };
       } catch (error) {

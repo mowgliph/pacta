@@ -84,6 +84,7 @@ interface ContractState {
   createSupplement: (supplement: Omit<ContractSupplement, "id" | "createdAt">) => Promise<void>;
   archiveContract: (id: string) => Promise<void>;
   resetState: () => void;
+  updateContract: (id: string, contractData: Partial<Contract>) => Promise<boolean>;
 }
 
 /**
@@ -295,7 +296,7 @@ export const useContractStore = create<ContractState>()((set, get) => ({
       if (response && response.success) {
         // Si tenemos un contrato seleccionado y el suplemento es para ese contrato,
         // actualizamos también el contrato seleccionado
-        if (get().selectedContract && get().selectedContract.id === supplementData.contractId) {
+        if (get().selectedContract?.id === supplementData.contractId) {
           await get().fetchContractById(supplementData.contractId);
         }
         
@@ -324,7 +325,7 @@ export const useContractStore = create<ContractState>()((set, get) => ({
       
       if (response && response.success) {
         // Si era el contrato seleccionado, lo actualizamos
-        if (get().selectedContract && get().selectedContract.id === id) {
+        if (get().selectedContract?.id === id) {
           set(state => ({
             selectedContract: state.selectedContract ? {
               ...state.selectedContract,
@@ -375,6 +376,27 @@ export const useContractStore = create<ContractState>()((set, get) => ({
       isLoading: false,
       error: null,
     });
+  },
+  
+  // Actualizar un contrato
+  updateContract: async (id, contractData) => {
+    try {
+      set({ isLoading: true, error: null });
+      const response = await window.Electron.ipcRenderer.invoke("contracts:update", { id, data: contractData });
+      if (response && response.success) {
+        await get().fetchContracts();
+        set({ isLoading: false });
+        return true;
+      }
+      throw new Error(response.error || "Error al actualizar contrato");
+    } catch (error: any) {
+      console.error("Error al actualizar contrato:", error);
+      set({
+        error: error.message || "Error al actualizar contrato",
+        isLoading: false
+      });
+      return false;
+    }
   }
 }));
 
