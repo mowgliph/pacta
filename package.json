@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "nextron",
     "build": "nextron build",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "seed": "prisma db seed"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",

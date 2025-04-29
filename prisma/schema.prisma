@@ -160,32 +160,21 @@ model HistoryRecord {
 
 model Document {
   id           String      @id @default(uuid())
-  // Campos originales
-  filename     String      // Nombre del archivo en el sistema
-  originalName String      // Nombre original del archivo
-  mimeType     String      // Tipo MIME
-  size         Int         // Tamaño en bytes
-  path         String      // Ruta relativa en el sistema
-
-  // Campos adicionales para compatibilidad con el servicio
   name         String      // Nombre para mostrar
-  fileName     String      // Nombre original (alias de originalName)
-  fileType     String      // Tipo MIME (alias de mimeType)
-  fileSize     Int         // Tamaño (alias de size)
-  filePath     String      // Ruta (alias de path)
-
+  fileName     String      // Nombre original del archivo
+  fileType     String      // Tipo MIME
+  fileSize     Int         // Tamaño en bytes
+  filePath     String      // Ruta en el sistema
+  description  String?
+  tags         String?     // JSON array
+  isPublic     Boolean     @default(false)
   contractId   String?
   contract     Contract?   @relation(fields: [contractId], references: [id])
   supplementId String?
   supplement   Supplement? @relation(fields: [supplementId], references: [id])
   uploadedById String
   uploadedBy   User        @relation("UploadedDocuments", fields: [uploadedById], references: [id])
-  createdById  String?     // Alias de uploadedById para compatibilidad
-  description  String?
-  tags         String?     // JSON array
-  isPublic     Boolean     @default(false)
   uploadedAt   DateTime    @default(now())
-  createdAt    DateTime    @default(now()) // Alias de uploadedAt
   updatedAt    DateTime    @updatedAt
   downloads    Int         @default(0)
   views        Int         @default(0)
