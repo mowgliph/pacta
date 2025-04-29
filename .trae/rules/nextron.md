@@ -1,0 +1,387 @@
+# Documentación Oficial: Nextron para la Integración Next.js + Electron
+
+## 1. Introducción a Nextron
+
+Nextron es un framework que permite crear aplicaciones de escritorio con Next.js y Electron de manera integrada. Combina lo mejor de ambos mundos: la potente experiencia de desarrollo web de Next.js con las capacidades de aplicación de escritorio nativa de Electron.
+
+### 1.1 Características Principales
+
+- **Desarrollo rápido**: Aprovecha las capacidades de hot-reloading de Next.js
+- **Estructura optimizada**: Organización clara de código para procesos main y renderer
+- **Integración nativa**: Acceso completo a las APIs de Electron desde Next.js
+- **Empaquetado sencillo**: Sistema de build integrado con electron-builder
+- **TypeScript por defecto**: Soporte completo para desarrollo tipado
+- **HMR (Hot Module Replacement)**: Recarga en tiempo real durante el desarrollo
+
+## 2. Instalación y Configuración
+
+### 2.1 Requisitos Previos
+
+- Node.js 14.0.0 o superior
+- npm 7.0.0 o superior (o yarn/pnpm)
+
+### 2.2 Crear un Nuevo Proyecto
+
+```bash
+# Usando NPM
+npx create-nextron-app my-app
+
+# Usando Yarn
+yarn create nextron-app my-app
+
+# Usando PNPM
+pnpm dlx create-nextron-app my-app
+```
+
+Durante la creación, puedes seleccionar entre plantillas predefinidas:
+
+- `with-javascript` (JavaScript básico)
+- `with-typescript` (TypeScript configurado)
+- `with-tailwindcss` (Tailwind CSS integrado)
+- `with-material-ui` (Material UI configurado)
+- `with-chakra-ui` (Chakra UI integrado)
+
+### 2.3 Estructura de un Proyecto Nextron
+
+```
+my-app/
+├── electron-builder.yml    # Configuración de empaquetado
+├── main/                   # Proceso principal de Electron
+│   ├── background.ts       # Punto de entrada de Electron
+│   ├── helpers/            # Funciones auxiliares para el proceso principal
+│   └── preload.ts          # Script de precarga para comunicación segura
+├── renderer/               # Proceso de renderizado (Next.js)
+│   ├── components/         # Componentes React
+│   ├── hooks/              # Hooks personalizados
+│   ├── lib/                # Utilidades y configuración
+│   ├── pages/              # Rutas de Next.js
+│   ├── public/             # Archivos estáticos
+│   ├── styles/             # Estilos CSS
+│   ├── next.config.js      # Configuración de Next.js
+│   └── tsconfig.json       # Configuración de TypeScript para renderer
+├── resources/              # Recursos para la aplicación (iconos, etc.)
+├── package.json            # Dependencias y scripts
+└── tsconfig.json           # Configuración global de TypeScript
+```
+
+## 3. Comunicación entre Next.js y Electron
+
+Nextron facilita la comunicación entre el proceso principal de Electron y el proceso de renderizado de Next.js a través de IPC (Inter-Process Communication).
+
+### 3.1 Configuración del Preload Script
+
+El archivo `main/preload.ts` es fundamental para la comunicación segura:
+
+```typescript
+import { contextBridge, ipcRenderer } from "electron";
+
+// Exponer APIs seguras al proceso de renderizado
+contextBridge.exposeInMainWorld("electron", {
+  // Ejemplo de exposición de funcionalidades específicas
+  sayHello: () => ipcRenderer.invoke("say-hello"),
+
+  // API para enviar/recibir datos
+  send: (channel: string, data: any) => {
+    const validChannels = ["toMain", "saveFile", "openDialog"];
+    if (validChannels.includes(channel)) {
+      ipcRenderer.send(channel, data);
+    }
+  },
+
+  // API para recibir respuestas
+  receive: (channel: string, func: Function) => {
+    const validChannels = ["fromMain", "fileData", "dialogResult"];
+    if (validChannels.includes(channel)) {
+      ipcRenderer.on(channel, (_, ...args) => func(...args));
+    }
+  },
+
+  // API basada en promesas (recomendada)
+  invoke: (channel: string, data: any) => {
+    const validChannels = ["getData", "processFile", "showDialog"];
+    if (validChannels.includes(channel)) {
+      return ipcRenderer.invoke(channel, data);
+    }
+  },
+});
+```
+
+### 3.2 Uso en Componentes Next.js
+
+```typescript
+// En un componente o página Next.js
+import { useEffect, useState } from "react";
+
+function MyComponent() {
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    // Llamada a un método expuesto por electron
+    window.electron.invoke("getData", { id: 123 }).then((result) => {
+      setMessage(result.message);
+    });
+  }, []);
+
+  const handleClick = async () => {
+    // Ejemplo de operación con archivos
+    const result = await window.electron.invoke("showDialog", {
+      title: "Seleccionar archivo",
+      properties: ["openFile"],
+    });
+
+    if (!result.canceled) {
+      console.log("Archivo seleccionado:", result.filePaths[0]);
+    }
+  };
+
+  return (
+    <div>
+      <p>{message}</p>
+      <button onClick={handleClick}>Seleccionar Archivo</button>
+    </div>
+  );
+}
+```
+
+### 3.3 Manejadores IPC en el Proceso Principal
+
+```typescript
+// En main/background.ts o en un archivo separado de handlers
+import { ipcMain, dialog } from "electron";
+
+// Manejador simple
+ipcMain.on("toMain", (event, args) => {
+  console.log("Mensaje recibido desde renderer:", args);
+  // Enviar respuesta
+  event.sender.send("fromMain", "Mensaje recibido");
+});
+
+// Manejador basado en promesas (recomendado)
+ipcMain.handle("getData", async (_, args) => {
+  const { id } = args;
+  // Simulación de obtención de datos
+  return {
+    message: `Datos para ID ${id}`,
+    timestamp: Date.now(),
+  };
+});
+
+// Manejador para diálogos nativos
+ipcMain.handle("showDialog", async (_, options) => {
+  return await dialog.showOpenDialog(options);
+});
+```
+
+## 4. Hooks Personalizados para IPC
+
+Una práctica recomendada es crear hooks personalizados para manejar la comunicación IPC:
+
+```typescript
+// renderer/hooks/useIPC.ts
+import { useState, useEffect } from "react";
+
+// Hook para invocaciones IPC
+export function useIPCInvoke<T = any, R = any>(
+  channel: string,
+  payload?: T
+): { data: R | null; error: Error | null; isLoading: boolean } {
+  const [data, setData] = useState<R | null>(null);
+  const [error, setError] = useState<Error | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const result = await window.electron.invoke(channel, payload);
+        setData(result);
+        setError(null);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error(String(err)));
+        setData(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [channel, JSON.stringify(payload)]);
+
+  return { data, error, isLoading };
+}
+
+// Hook para escuchar eventos IPC
+export function useIPCOn<T = any>(channel: string) {
+  const [data, setData] = useState<T | null>(null);
+
+  useEffect(() => {
+    const handler = (data: T) => setData(data);
+
+    // Suscribirse al evento
+    window.electron.receive(channel, handler);
+
+    // Limpiar al desmontar
+    return () => {
+      // Idealmente, deberíamos tener un método para eliminar listeners
+      // window.electron.removeListener(channel, handler)
+    };
+  }, [channel]);
+
+  return data;
+}
+```
+
+## 5. Scripts y Comandos
+
+Nextron proporciona varios scripts útiles en package.json:
+
+```json
+{
+  "scripts": {
+    "dev": "nextron", // Inicia la aplicación en modo desarrollo
+    "build": "nextron build", // Construye la aplicación para producción
+    "postinstall": "electron-builder install-app-deps" // Instala dependencias nativas
+  }
+}
+```
+
+### 5.1 Opciones de Configuración de Nextron
+
+```typescript
+// nextron.config.js (opcional)
+module.exports = {
+  // Puerto personalizado para el servidor Next.js
+  rendererPort: 8888,
+
+  // Configuración de Webpack para el proceso principal
+  webpack: (config, { isServer }) => {
+    // Personalizar configuración
+    return config;
+  },
+};
+```
+
+## 6. Empaquetado y Distribución
+
+Nextron utiliza electron-builder para empaquetar las aplicaciones:
+
+### 6.1 Configuración de electron-builder
+
+```yaml
+# electron-builder.yml
+appId: com.example.nextron
+productName: My Nextron App
+copyright: Copyright © 2023 My Company
+
+# Configuración de Mac
+mac:
+  category: public.app-category.productivity
+  target: dmg
+
+# Configuración de Windows
+win:
+  target:
+    - nsis
+    - portable
+
+# Configuración de Linux
+linux:
+  target:
+    - AppImage
+    - deb
+    - rpm
+  category: Office
+
+# Configuración de Publicación
+publish:
+  provider: github
+  repo: my-repo
+  owner: my-username
+```
+
+### 6.2 Generar Instaladores
+
+```bash
+# Construir para la plataforma actual
+npm run build
+
+# Construir para Windows
+npm run build -- --win
+
+# Construir para Mac
+npm run build -- --mac
+
+# Construir para Linux
+npm run build -- --linux
+```
+
+## 7. Mejores Prácticas
+
+### 7.1 Seguridad
+
+- Validar todos los datos que pasan por IPC
+- Usar listas blancas para canales IPC
+- Implementar CSP (Content Security Policy)
+- Mantener Electron actualizado
+
+### 7.2 Rendimiento
+
+- Cargar recursos pesados de forma asíncrona
+- Usar la técnica de carga diferida (lazy loading) para componentes
+- Minimizar la comunicación IPC para operaciones frecuentes
+- Optimizar assets estáticos
+
+### 7.3 Estructura de Código
+
+- Separar claramente lógica de UI y lógica de negocio
+- Usar TypeScript para definiciones de tipos entre procesos
+- Implementar manejo de errores robusto
+- Documentar APIs personalizadas
+
+## 8. Herramientas de Desarrollo
+
+- **Electron DevTools Extension**: Para depuración del renderer
+- **electron-debug**: Herramientas adicionales de depuración
+- **electron-store**: Almacenamiento persistente simple
+- **electron-updater**: Actualizaciones automáticas
+
+## 9. Referencias y Recursos
+
+- [Repositorio oficial de Nextron](https://github.com/saltyshiomix/nextron)
+- [Documentación de Next.js](https://nextjs.org/docs)
+- [Documentación de Electron](https://www.electronjs.org/docs)
+- [Ejemplos de Nextron](https://github.com/saltyshiomix/nextron/tree/main/examples)
+
+## 10. Solución de Problemas Comunes
+
+### 10.1 El Hot Module Replacement (HMR) no funciona
+
+Asegúrate de que:
+
+- No estás usando rutas de Next.js dinámicas para la página principal
+- Tu versión de Nextron es compatible con la versión de Next.js
+- Has configurado correctamente los permisos CORS
+
+### 10.2 Error en la comunicación IPC
+
+Verifica:
+
+- Que los canales estén incluidos en las listas blancas del preload
+- Que la sintaxis de invocación sea correcta
+- Que los datos sean serializables
+
+### 10.3 Problemas al empaquetar
+
+Posibles soluciones:
+
+- Ejecutar `npm run postinstall` para reconstruir dependencias nativas
+- Verificar la configuración en electron-builder.yml
+- Eliminar la carpeta `dist` y construir nuevamente
+
+## 11. Actualizaciones y Cambios Recientes
+
+- Soporte para Next.js 13 y 14
+- Mejoras en el sistema de empaquetado
+- Mejor integración con TailwindCSS y otras librerías de estilo
+
+- Soporte mejorado para React Server Components

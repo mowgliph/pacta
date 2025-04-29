@@ -1,0 +1,127 @@
+# PACTA: Reglas de Desarrollo e Instrucciones para IA
+
+## 1. Documentación y Referencias
+
+[prd.md](prd.md) [app-flow.md](app-flow.md) [pacta.md](pacta.md) [branding.md](branding.md) [frontend.md](frontend.md) [ipc.md](ipc.md) [nextron.md](nextron.md) [electron.md](electron.md)
+
+## 2. Contexto del Proyecto
+
+PACTA es una aplicación de escritorio para gestión de contratos empresariales desarrollada con Next.js + Electron (Nextron), que permite seguimiento, organización y control de vencimientos de contratos, funcionando en entornos con o sin conexión a internet.
+
+## 3. Principios Generales de Desarrollo
+
+### 3.1 Flujo de Trabajo
+
+- Busca primero el archivo en el workspace antes de crear uno nuevo
+- Lee y analiza el código existente para mantener consistencia
+- Implementa cambios modulares y progresivos
+- Sigue el paradigma de programación orientada a objetos
+- Emplea prácticas modernas de desarrollo
+- Usa pnpm en vez de npm para todas las operaciones de paquetes
+
+### 3.2 Arquitectura y Estructura
+
+- Mantén clara separación entre procesos main (Electron) y renderer (Next.js)
+- Organiza código por dominios funcionales (contratos, suplementos, usuarios) etcetera
+- Implementa patrón de repositorio para acceso a datos
+- Usa interfaces para definir contratos entre capas
+- Evita dependencias circulares entre módulos
+
+## 4. Frontend (Proceso Renderer)
+
+### 4.1 Tecnologías y Patrones
+
+- Utiliza TypeScript estricto con interfaces bien definidas
+- Implementa componentes React funcionales y hooks personalizados
+- Emplea Shadcn/UI y Tailwind CSS siguiendo la guía de branding
+- Usa Zustand para gestión de estado global
+- Implementa React Hook Form con Zod para validación de formularios
+- Utiliza componentes suspense para carga asíncrona
+
+### 4.2 Diseño y UX
+
+- Sigue la paleta de colores definida en branding.mdc
+- Aplica principios de diseño responsive (desktop-first)
+- Prioriza la accesibilidad (contraste, navegación por teclado)
+- Implementa feedback visual para todas las acciones del usuario
+- Usa componentes de Shadcn para mantener coherencia visual
+
+### 4.3 Implementación Priorizada
+
+- **Alta prioridad**: Contratos, suplementos y notificaciones
+- **Media prioridad**: Dashboard, estadísticas básicas
+- **Baja prioridad**: Estadísticas avanzadas, notificaciones por correo, backups, carga de documentos
+
+## 5. Backend (Proceso Main)
+
+### 5.1 Arquitectura de Electron
+
+- Implementa comunicación IPC segura usando contextBridge
+- Evita importaciones directas entre procesos main y renderer
+- Valida todos los datos entrantes en canales IPC
+- Usa manejadores estructurados por dominio (handlers/)
+- Implementa servicios para lógica de negocio (services/)
+
+### 5.2 Base de Datos y Persistencia
+
+- Utiliza Prisma para interacción con SQLite
+- Verifica el esquema en schema.prisma para mantener coherencia
+- Implementa transacciones para operaciones complejas
+- Desarrolla sistema de respaldo diario automatizado
+- Proporciona mecanismo de restauración manual para admins
+
+## 6. Comunicación IPC
+
+### 6.1 Estructura de Canales
+
+- Define canales por dominio funcional (contratos, usuarios, etc.)
+- Implementa handlers IPC en main para operaciones CRUD
+- Crea cliente API en renderer para invocar handlers
+- Valida todos los datos usando Zod
+- Gestiona errores de forma consistente y descriptiva
+
+### 6.2 Seguridad
+
+- Implementa lista blanca de canales permitidos
+- Evita exponer APIs sensibles al renderer
+- Maneja permisos basados en roles de usuario
+- Registra intentos de acceso no autorizados
+- Usa contextIsolation y sandbox en webPreferences
+
+## 7. Testing y Calidad
+
+### 7.1 Pruebas
+
+- Escribe tests unitarios para lógica de negocio crítica
+- Implementa pruebas de integración para flujos principales
+- Verifica el correcto funcionamiento en entornos offline
+- Prueba la gestión de permisos y roles
+- Valida la persistencia de datos y backups
+
+### 7.2 Buenas Prácticas
+
+- Usa manejo de errores robusto con mensajes claros
+- Comenta código complejo o no obvio
+- Mantén consistencia en el estilo de código
+- Optimiza el rendimiento para carga rápida
+- Considera la seguridad en cada implementación
+
+## 8. Reglas para IA
+
+### 8.1 Comportamiento
+
+- No inventes nombres de archivos o rutas; verifica primero
+- Proporciona ejemplos concretos al explicar conceptos
+- Enfócate en implementar las características priorizadas
+- Si tienes dudas sobre requisitos, aclara antes de implementar
+- Evita sugerencias que impliquen cambiar la arquitectura base
+
+### 8.2 Generación de Código
+
+- Genera código completo y funcional, no fragmentos parciales
+- Cumple con las convenciones de TypeScript estricto
+- Sigue el estilo de código existente
+- Implementa siempre manejo de errores
+- Provee comentarios útiles en código complejo
+
+Estas reglas están diseñadas para guiar el desarrollo de PACTA siguiendo las mejores prácticas, asegurando un producto final de alta calidad, seguro y fácil de mantener.

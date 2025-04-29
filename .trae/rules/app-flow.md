@@ -1,0 +1,203 @@
+# Flujo de la Aplicación PACTA (Basado en Tareas de Usuario)
+
+Este documento describe los flujos clave que los usuarios seguirán para completar tareas específicas dentro de la aplicación PACTA. Se basa en las mejores prácticas de documentación de flujos de usuario, centrándose en los objetivos y pasos del usuario.
+
+## Convenciones
+
+- `[Rol]` indica que la acción o flujo es específico para ese rol (ej. [Admin]).
+- `->` indica un paso secuencial.
+- `?` indica un punto de decisión.
+- `=>` indica el resultado de una acción o decisión.
+
+---
+
+## 1. Flujo de Autenticación
+
+**Objetivo:** Acceder a la aplicación de forma segura.
+
+1.  **Inicio:** Usuario abre la aplicación PACTA.
+2.  **Pantalla:** Se muestra la página de inicio de sesión.
+3.  **Entrada:** Usuario ingresa nombre de usuario y contraseña.
+4.  **Acción:** Usuario hace clic en "Iniciar Sesión".
+5.  **Validación:** Sistema verifica las credenciales.
+    - **? Credenciales Válidas:**
+      - **Sí =>** Sistema genera un token JWT, redirige al Dashboard Principal.
+    - **? Credenciales Inválidas:**
+      - **Sí =>** Muestra mensaje de error "Usuario o contraseña incorrectos". Usuario permanece en la página de inicio de sesión.
+6.  **[Opcional - Cierre de Sesión]:**
+    - **Acción:** Usuario hace clic en "Cerrar Sesión" (desde el menú de perfil o similar).
+    - **Resultado:** Token JWT invalidado, redirige a la página de inicio de sesión.
+
+---
+
+## 2. Flujo de Creación de Contrato
+
+**Objetivo:** Añadir un nuevo registro de contrato al sistema.
+**Roles:** [Admin], [RA]
+
+1.  **Inicio:** Usuario autenticado en el Dashboard o sección de Gestión de Contratos.
+2.  **Acción:** Usuario hace clic en "Agregar Contrato" o similar.
+3.  **Pantalla:** Se muestra el formulario de creación de contrato.
+4.  **Entrada:** Usuario completa los campos requeridos (Número, Empresa, Tipo, Fechas, Monto, Descripción, etc., según PRD).
+5.  **[Opcional] Entrada:** Usuario adjunta el documento principal del contrato (PDF, Word).
+6.  **Acción:** Usuario hace clic en "Guardar Contrato".
+7.  **Validación:** Sistema valida los datos ingresados (formato, campos obligatorios).
+    - **? Datos Válidos:**
+      - **Sí =>** Sistema guarda el nuevo contrato en la base de datos (estado inicial "Vigente" o según fechas). Guarda el archivo adjunto si existe. Muestra notificación de éxito. Redirige a la lista de contratos o al detalle del nuevo contrato.
+    - **? Datos Inválidos:**
+      - **Sí =>** Muestra mensajes de error específicos por campo. Usuario permanece en el formulario de creación.
+
+---
+
+## 3. Flujo de Adición de Suplemento
+
+**Objetivo:** Registrar una modificación a un contrato existente.
+**Roles:** [Admin], [RA]
+
+1.  **Inicio:** Usuario autenticado visualizando la lista de contratos o el detalle de un contrato específico.
+2.  **Acción:** Usuario selecciona un contrato y hace clic en "Agregar Suplemento" o similar.
+3.  **Pantalla:** Se muestra el formulario de adición de suplemento, precargado con datos del contrato original.
+4.  **Entrada:** Usuario selecciona el campo a modificar (Monto, Fecha Fin, Descripción, etc.).
+5.  **Entrada:** Usuario ingresa el nuevo valor para el campo seleccionado.
+6.  **Entrada:** Usuario añade una descripción o motivo del suplemento.
+7.  **[Opcional] Entrada:** Usuario adjunta documentos relacionados al suplemento.
+8.  **Acción:** Usuario hace clic en "Guardar Suplemento".
+9.  **Validación:** Sistema valida los datos ingresados.
+    - **? Datos Válidos:**
+      - **Sí =>** Sistema guarda el suplemento, asociándolo al contrato original. Actualiza los datos relevantes del contrato (ej. si se modifica Fecha Fin, recalcula el estado). Guarda archivos adjuntos si existen. Muestra notificación de éxito. Actualiza la vista de detalles del contrato mostrando el nuevo suplemento en el historial.
+    - **? Datos Inválidos:**
+      - **Sí =>** Muestra mensajes de error. Usuario permanece en el formulario de suplemento.
+
+---
+
+## 4. Flujo de Búsqueda y Filtrado de Contratos
+
+**Objetivo:** Encontrar contratos específicos basados en criterios.
+**Roles:** [Admin], [RA]
+
+1.  **Inicio:** Usuario autenticado en la sección de Gestión de Contratos.
+2.  **Pantalla:** Se muestra la tabla/lista de contratos.
+3.  **Acción (Búsqueda):** Usuario ingresa texto en el campo de búsqueda (Número, Empresa, palabra clave).
+    - **Resultado:** La lista de contratos se actualiza dinámicamente mostrando solo los que coinciden con el término de búsqueda.
+4.  **Acción (Filtrado):** Usuario selecciona opciones en los controles de filtro (Tipo: Cliente/Proveedor, Estado: Vigente/Vencido/Archivado, etc.).
+    - **Resultado:** La lista de contratos se actualiza mostrando solo los que cumplen con los criterios de filtro seleccionados.
+5.  **Acción (Ordenar):** Usuario hace clic en las cabeceras de la tabla para ordenar por esa columna (Fecha Fin, Monto, etc.).
+    - **Resultado:** La lista de contratos se reordena según la columna y dirección seleccionada (ascendente/descendente).
+
+---
+
+## 5. Flujo de Visualización de Detalles del Contrato
+
+**Objetivo:** Consultar toda la información y el historial de un contrato.
+**Roles:** [Admin], [RA]
+
+1.  **Inicio:** Usuario autenticado en la sección de Gestión de Contratos.
+2.  **Acción:** Usuario hace clic en un contrato específico en la lista.
+3.  **Pantalla:** Se muestra la vista detallada del contrato.
+4.  **Contenido:**
+    - Información principal del contrato (campos iniciales inmutables).
+    - Estado actual calculado (Vigente, Vencido, etc.).
+    - Historial completo de suplementos asociados (fecha, campo modificado, valor anterior, valor nuevo, descripción).
+    - Acceso a los documentos adjuntos (contrato principal y de suplementos).
+    - Acciones disponibles (Agregar Suplemento, Archivar, Exportar PDF, etc.).
+
+---
+
+## 6. Flujo de Gestión de Usuarios [Admin]
+
+**Objetivo:** Administrar las cuentas de usuario de la aplicación.
+**Rol:** [Admin]
+
+1.  **Inicio:** Administrador autenticado accede a la sección de Configuración/Gestión de Usuarios.
+2.  **Pantalla:** Se muestra la lista de usuarios existentes (RA).
+3.  **Acción (Crear):**
+    - Admin hace clic en "Crear Usuario".
+    - Se muestra formulario de creación (Nombre, Email/Usuario, Contraseña inicial, Rol [RA]).
+    - Admin completa los datos y guarda.
+    - => Nuevo usuario RA creado. Se muestra notificación de éxito.
+4.  **Acción (Desactivar/Reactivar):**
+    - Admin selecciona un usuario de la lista.
+    - Admin hace clic en "Desactivar" o "Reactivar".
+    - => Estado del usuario actualizado. Se muestra notificación de éxito.
+5.  **Acción (Cambiar Contraseña Propia):**
+    - Cualquier usuario (Admin/RA) accede a su Perfil.
+    - Usuario hace clic en "Cambiar Contraseña".
+    - Ingresa contraseña actual y nueva contraseña (con confirmación).
+    - => Contraseña actualizada. Se muestra notificación de éxito.
+
+---
+
+## 7. Flujo de Backup Automático [Admin]
+
+**Objetivo:** Asegurar la creación de respaldos diarios de la base de datos.
+**Rol:** [Sistema/Admin]
+
+1.  **Inicio:** Tarea programada (cron job) se ejecuta diariamente (hora configurable).
+2.  **Acción:** Sistema ejecuta el script de backup de la base de datos SQLite.
+3.  **Proceso:** Se genera un archivo de respaldo (ej. `backup_YYYYMMDD_HHMMSS.db` o `.sql`).
+4.  **Almacenamiento:** El archivo de respaldo se guarda en la carpeta designada (`data/backups/`).
+5.  **Limpieza:** Sistema verifica los respaldos existentes en la carpeta.
+    - **? Respaldo > 7 días de antigüedad:**
+      - **Sí =>** Sistema elimina el archivo de respaldo obsoleto.
+    - **? Falla en Backup:**
+      - **Sí =>** Sistema registra el error y [Opcional] envía una notificación al Admin.
+
+---
+
+## 8. Flujo de Restauración Manual [Admin]
+
+**Objetivo:** Recuperar el estado de la base de datos desde un archivo de respaldo.
+**Rol:** [Admin]
+
+1.  **Inicio:** Administrador autenticado accede a la sección de Configuración/Restauración.
+2.  **Pantalla:** Se muestra la interfaz de restauración.
+3.  **Acción:** Admin hace clic en "Seleccionar Archivo de Backup".
+4.  **Entrada:** Admin elige un archivo de respaldo (`.db` o `.sql`) desde el sistema de archivos local (probablemente de la carpeta `data/backups/`).
+5.  **Confirmación:** Sistema muestra una advertencia clara: "Esta acción sobrescribirá todos los datos actuales. ¿Está seguro?".
+6.  **Acción:** Admin confirma la restauración.
+7.  **Proceso:**
+    - Sistema detiene temporalmente el acceso a la base de datos (si es necesario).
+    - Sistema ejecuta el comando para restaurar la base de datos desde el archivo seleccionado.
+    - Sistema verifica el éxito de la restauración.
+8.  **Resultado:**
+    - **? Éxito:**
+      - **Sí =>** Muestra mensaje "Restauración completada con éxito". [Opcional] Reinicia la aplicación o redirige al login.
+    - **? Falla:**
+      - **Sí =>** Muestra mensaje de error detallado. La base de datos puede quedar en un estado inconsistente (se debe advertir sobre esto).
+
+---
+
+## 9. Flujo de Visualización de Estadísticas
+
+**Objetivo:** Consultar métricas y análisis sobre los contratos.
+**Roles:** [Admin], [RA]
+
+1.  **Inicio:** Usuario autenticado.
+2.  **Acción:** Usuario navega al Dashboard Principal o a la sección de Estadísticas Avanzadas.
+3.  **Pantalla (Dashboard):**
+    - Muestra widgets con resúmenes clave (total contratos, por estado, por tipo).
+    - Muestra gráficos básicos interactivos.
+    - Muestra lista de contratos próximos a vencer.
+4.  **Pantalla (Estadísticas Avanzadas):**
+    - Muestra métricas más detalladas (distribución por monto, duración, etc.).
+    - Muestra gráficos comparativos y de tendencias.
+    - [Opcional] Permite filtrar las estadísticas por período de tiempo u otros criterios.
+    - [Opcional] Permite exportar reportes (CSV/PDF).
+
+---
+
+## 10. Flujo de Gestión de Notificaciones
+
+**Objetivo:** Informar al usuario sobre eventos relevantes.
+**Roles:** [Admin], [RA]
+
+1.  **Evento:** Ocurre un evento relevante (ej. contrato entra en estado "Próximo a Vencer", se crea un suplemento).
+2.  **Generación:** Sistema genera una notificación asociada al usuario/rol correspondiente.
+3.  **Visualización:**
+    - Aparece un indicador (ej. un punto rojo) en el icono/panel de notificaciones.
+    - Usuario hace clic en el icono/panel.
+4.  **Pantalla:** Se muestra la lista de notificaciones no leídas/recientes.
+5.  **Acción:** Usuario hace clic en una notificación.
+    - **Resultado:** [Opcional] Redirige a la pantalla relevante (ej. detalle del contrato próximo a vencer). Marca la notificación como leída.
+6.  **Acción:** Usuario hace clic en "Marcar todas como leídas" o similar.
+    - **Resultado:** Todas las notificaciones visibles se marcan como leídas. El indicador desaparece.
