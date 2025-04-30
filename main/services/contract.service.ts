@@ -1,7 +1,7 @@
-import { prisma } from "../../lib/prisma";
-import { logger } from "../../lib/logger";
+import { prisma } from "../lib/prisma";
+import { logger } from "../lib/logger";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
-import { AppError } from "../../middleware/error.middleware";
+import { ErrorHandler } from "../utils/error-handler";
 
 /**
  * Servicio para manejar operaciones CRUD de contratos
@@ -48,28 +48,20 @@ export class ContractService {
 
       // Obtener los contratos con sus relaciones
       const contracts = await prisma.contract.findMany({
+        select: {
+          id: true,
+          contractNumber: true,
+          status: true,
+          startDate: true,
+          endDate: true,
+          companyName: true,
+          companyAddress: true,
+        },
         where,
-        include: {
-          createdBy: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          owner: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          documents: true,
-          supplements: true,
-        },
         orderBy: {
-          updatedAt: "desc",
+          createdAt: "desc",
         },
+        take: 50, // Limitar resultados para paginación
       });
 
       // Transformar los resultados al formato esperado
@@ -90,58 +82,53 @@ export class ContractService {
     try {
       const contract = await prisma.contract.findUnique({
         where: { id },
-        include: {
-          createdBy: {
+        select: {
+          id: true,
+          contractNumber: true,
+          description: true,
+          status: true,
+          startDate: true,
+          endDate: true,
+          companyName: true,
+          companyAddress: true,
+          createdById: true,
+          documents: {
             select: {
               id: true,
               name: true,
-              email: true,
             },
+            take: 10,
           },
-          owner: {
+          supplements: {
             select: {
               id: true,
-              name: true,
-              email: true,
+              createdAt: true,
+              effectiveDate: true,
+              isApproved: true,
             },
-          },
-          documents: true,
-          supplements: true,
-          history: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  email: true,
-                },
-              },
-            },
-            orderBy: {
-              timestamp: "desc",
-            },
+            take: 10,
           },
         },
       });
 
       if (!contract) {
-        throw AppError.notFound(
-          `Contrato con ID ${id} no encontrado`,
-          "CONTRACT_NOT_FOUND"
+        throw ErrorHandler.createError(
+          "NotFoundError",
+          `Contrato con ID ${id} no encontrado`
         );
       }
 
       // Verificar permisos si no es admin
       if (userRole !== "Admin" && contract.createdById !== userId) {
-        throw AppError.forbidden(
-          "No tiene permiso para acceder a este contrato",
-          "CONTRACT_ACCESS_DENIED"
+        throw ErrorHandler.createError(
+          "AuthorizationError",
+          "No tiene permiso para acceder a este contrato"
         );
       }
 
       return this.mapContractToDTO(contract, true);
     } catch (error) {
-      if (error instanceof AppError) {
+      if (error instanceof ErrorHandler) {
         throw error;
       }
       logger.error(`Error al obtener contrato ${id}:`, error);
@@ -166,24 +153,53 @@ export class ContractService {
       const contract = await prisma.contract.create({
         data: {
           contractNumber,
-          title: contractData.title,
           description: contractData.description || "",
-          parties: contractData.parties || "",
           companyName: contractData.companyName || "",
           companyAddress: contractData.companyAddress,
+          nationality: contractData.nationality || "",
+          commercialAuth: contractData.commercialAuth || "",
+          bankAccount: contractData.bankAccount || "",
+          bankBranch: contractData.bankBranch || "",
+          bankAgency: contractData.bankAgency || "",
+          bankHolder: contractData.bankHolder || "",
+          bankCurrency: contractData.bankCurrency || "CUP",
+          reeupCode: contractData.reeupCode || "",
+          nit: contractData.nit || "",
+          contactPhones: contractData.contactPhones || "[]",
+          repName: contractData.repName || "",
+          repPosition: contractData.repPosition || "",
+          repDocumentType: contractData.repDocumentType || "",
+          repDocumentNumber: contractData.repDocumentNumber || "",
+          repDocumentDate: new Date(),
+          providerObligations: contractData.providerObligations || "[]",
+          clientObligations: contractData.clientObligations || "[]",
+          deliveryPlace: contractData.deliveryPlace || "",
+          deliveryTerm: contractData.deliveryTerm || "",
+          acceptanceProcedure: contractData.acceptanceProcedure || "",
+          value: contractData.value || 0,
+          currency: contractData.currency || "CUP",
+          paymentMethod: contractData.paymentMethod || "",
+          paymentTerm: contractData.paymentTerm || "",
+          warrantyTerm: contractData.warrantyTerm || "",
+          warrantyScope: contractData.warrantyScope || "",
+          technicalStandards: contractData.technicalStandards || "",
+          claimProcedure: contractData.claimProcedure || "",
+          disputeResolution: contractData.disputeResolution || "",
+          latePaymentInterest: contractData.latePaymentInterest || "",
+          breachPenalties: contractData.breachPenalties || "",
+          notificationMethods: contractData.notificationMethods || "[]",
+          minimumNoticeTime: contractData.minimumNoticeTime || "",
           startDate: new Date(contractData.startDate),
-          endDate: contractData.endDate ? new Date(contractData.endDate) : null,
+          endDate: contractData.endDate
+            ? new Date(contractData.endDate)
+            : new Date(),
+          extensionTerms: contractData.extensionTerms || "",
+          earlyTerminationNotice: contractData.earlyTerminationNotice || "",
+          forceMajeure: contractData.forceMajeure || "",
           status: contractData.status || "draft",
           type: contractData.type || "general",
-          signDate: contractData.signDate
-            ? new Date(contractData.signDate)
-            : new Date(),
-          signPlace: contractData.signPlace,
-          paymentMethod: contractData.paymentMethod,
-          paymentTerm: contractData.paymentTerm,
-          amount: contractData.amount,
-          value: contractData.value,
-          isRestricted: false,
+          signDate: new Date(),
+          signPlace: contractData.signPlace || "",
           createdById: userId,
           ownerId: userId,
         },
@@ -213,22 +229,23 @@ export class ContractService {
           entityId: contract.id,
           contractId: contract.id,
           userId: userId,
+          details: "Contrato creado",
         },
       });
 
       logger.info(`Contrato creado: ${contract.id} por usuario ${userId}`);
       return this.mapContractToDTO(contract);
     } catch (error) {
-      if (error instanceof AppError) {
+      if (error instanceof ErrorHandler) {
         throw error;
       }
 
       logger.error("Error al crear contrato:", error);
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
-          throw AppError.validation(
-            "Ya existe un contrato con estos datos",
-            "DUPLICATE_CONTRACT"
+          throw ErrorHandler.createError(
+            "ValidationError",
+            "Ya existe un contrato con estos datos"
           );
         }
       }
@@ -256,17 +273,17 @@ export class ContractService {
       });
 
       if (!existingContract) {
-        throw AppError.notFound(
-          `Contrato con ID ${id} no encontrado`,
-          "CONTRACT_NOT_FOUND"
+        throw ErrorHandler.createError(
+          "NotFoundError",
+          `Contrato con ID ${id} no encontrado`
         );
       }
 
       // Verificar permisos si no es admin
       if (userRole !== "Admin" && existingContract.createdById !== userId) {
-        throw AppError.forbidden(
-          "No tiene permiso para actualizar este contrato",
-          "CONTRACT_UPDATE_DENIED"
+        throw ErrorHandler.createError(
+          "AuthorizationError",
+          "No tiene permiso para actualizar este contrato"
         );
       }
 
@@ -283,21 +300,21 @@ export class ContractService {
       const contract = await prisma.contract.update({
         where: { id },
         data: {
-          title: contractData.title,
+          contractNumber: contractData.contractNumber,
           description: contractData.description,
-          parties: contractData.parties,
           companyName: contractData.companyName,
           companyAddress: contractData.companyAddress,
           startDate: contractData.startDate
             ? new Date(contractData.startDate)
             : undefined,
-          endDate: contractData.endDate ? new Date(contractData.endDate) : null,
+          endDate: contractData.endDate
+            ? new Date(contractData.endDate)
+            : new Date(),
           status: contractData.status,
           type: contractData.type,
           signPlace: contractData.signPlace,
           paymentMethod: contractData.paymentMethod,
           paymentTerm: contractData.paymentTerm,
-          amount: contractData.amount,
           value: contractData.value,
           updatedAt: new Date(),
         },
@@ -332,13 +349,14 @@ export class ContractService {
           contractId: contract.id,
           userId: userId,
           changes: changes,
+          details: "Contrato actualizado",
         },
       });
 
       logger.info(`Contrato actualizado: ${id} por usuario ${userId}`);
       return this.mapContractToDTO(contract);
     } catch (error) {
-      if (error instanceof AppError) {
+      if (error instanceof ErrorHandler) {
         throw error;
       }
 
@@ -361,17 +379,17 @@ export class ContractService {
       });
 
       if (!existingContract) {
-        throw AppError.notFound(
-          `Contrato con ID ${id} no encontrado`,
-          "CONTRACT_NOT_FOUND"
+        throw ErrorHandler.createError(
+          "NotFoundError",
+          `Contrato con ID ${id} no encontrado`
         );
       }
 
       // Verificar permisos si no es admin
       if (userRole !== "Admin" && existingContract.createdById !== userId) {
-        throw AppError.forbidden(
-          "No tiene permiso para eliminar este contrato",
-          "CONTRACT_DELETE_DENIED"
+        throw ErrorHandler.createError(
+          "AuthorizationError",
+          "No tiene permiso para eliminar este contrato"
         );
       }
 
@@ -383,6 +401,7 @@ export class ContractService {
           entityId: id,
           contractId: id,
           userId: userId,
+          details: "Contrato eliminado",
         },
       });
 
@@ -394,7 +413,7 @@ export class ContractService {
       logger.info(`Contrato ${id} eliminado por usuario ${userId}`);
       return { success: true, message: "Contrato eliminado correctamente" };
     } catch (error) {
-      if (error instanceof AppError) {
+      if (error instanceof ErrorHandler) {
         throw error;
       }
 
@@ -472,7 +491,11 @@ export class ContractService {
     }
 
     if (Object.keys(errors).length > 0) {
-      throw AppError.validation("Error de validación", JSON.stringify(errors));
+      throw ErrorHandler.createError(
+        "ValidationError",
+        "Error de validación",
+        JSON.stringify(errors)
+      );
     }
   }
 
@@ -678,7 +701,10 @@ export class ContractService {
       // Si se está desarchivando, verificar que haya un suplemento válido
       if (contract.status === "Archivado" && newStatus === "Vigente") {
         const lastSupplement = contract.supplements[0];
-        if (!lastSupplement || new Date(lastSupplement.endDate) <= new Date()) {
+        if (
+          !lastSupplement ||
+          new Date(lastSupplement.effectiveDate) <= new Date()
+        ) {
           throw new Error(
             "No se puede desarchivar un contrato sin suplemento válido"
           );
@@ -700,6 +726,8 @@ export class ContractService {
           action: `Estado actualizado a ${newStatus}`,
           userId,
           details: `Cambio de estado: ${contract.status} -> ${newStatus}`,
+          entityType: "Contract",
+          entityId: contractId,
         },
       });
 

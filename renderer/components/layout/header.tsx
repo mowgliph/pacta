@@ -1,73 +1,91 @@
-import { useState, useEffect } from "react"
-import { useRouter } from "next/router"
-import Link from "next/link"
-import { Bell, Search, Sun, Moon, Plus, LogIn, User } from "lucide-react"
-import { Button } from "../ui/button"
-import { Input } from "../ui/input"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
-import { useTheme } from "next-themes"
-import { motion } from "framer-motion"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
-import { useAuth } from "../../hooks/useAuth"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
+import Link from "next/link";
+import { Bell, Search, Sun, Moon, Plus, LogIn, User } from "lucide-react";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
+import { useTheme } from "next-themes";
+import { motion } from "framer-motion";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { useAuth } from "../../hooks/useAuth";
 
-export function Header() {
-  const router = useRouter()
-  const { theme, setTheme } = useTheme()
-  const { isAuthenticated, user } = useAuth()
-  const [searchQuery, setSearchQuery] = useState("")
-  const [pageTitle, setPageTitle] = useState("")
-  const currentDate = new Date()
-  
+interface HeaderProps {
+  title?: string;
+  description?: string;
+}
+
+export function Header({ title, description }: HeaderProps) {
+  const router = useRouter();
+  const { theme, setTheme } = useTheme();
+  const { isAuthenticated, user } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [pageTitle, setPageTitle] = useState(title || "");
+  const currentDate = new Date();
+
   // Determinar el título de la página basado en la ruta actual
   useEffect(() => {
-    const pathParts = router.pathname.split("/").filter(Boolean)
-    
-    if (pathParts.length === 0) {
-      setPageTitle("Dashboard")
-      return
+    if (title) {
+      setPageTitle(title);
+      return;
     }
-    
+
+    const pathParts = router.pathname.split("/").filter(Boolean);
+
+    if (pathParts.length === 0) {
+      setPageTitle("Dashboard");
+      return;
+    }
+
     // Manejar casos especiales
     if (pathParts[0] === "dashboard") {
-      setPageTitle("Dashboard")
+      setPageTitle("Dashboard");
     } else if (pathParts[0] === "contracts") {
       if (pathParts.length === 1) {
-        setPageTitle("Contratos")
+        setPageTitle("Contratos");
       } else if (pathParts[1] === "new") {
-        setPageTitle("Nuevo Contrato")
+        setPageTitle("Nuevo Contrato");
       } else if (pathParts[1] === "edit") {
-        setPageTitle("Editar Contrato")
+        setPageTitle("Editar Contrato");
       }
     } else if (pathParts[0] === "admin") {
       if (pathParts[1] === "users") {
-        setPageTitle("Usuarios")
+        setPageTitle("Usuarios");
       } else if (pathParts[1] === "roles") {
-        setPageTitle("Roles")
+        setPageTitle("Roles");
       }
     } else if (pathParts[0] === "reports") {
-      setPageTitle("Reportes")
+      setPageTitle("Reportes");
     } else if (pathParts[0] === "settings") {
-      setPageTitle("Configuración")
+      setPageTitle("Configuración");
     } else {
       // Capitalizar primera letra
-      setPageTitle(pathParts[0].charAt(0).toUpperCase() + pathParts[0].slice(1).replace(/-/g, " "))
+      setPageTitle(
+        pathParts[0].charAt(0).toUpperCase() +
+          pathParts[0].slice(1).replace(/-/g, " ")
+      );
     }
-  }, [router.pathname])
-  
+  }, [router.pathname, title]);
+
   const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/search?q=${encodeURIComponent(searchQuery)}`)
+      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
     }
-  }
+  };
 
   const navigateToLogin = () => {
-    router.push("/auth")
-  }
-  
+    router.push("/auth");
+  };
+
   return (
-    <motion.header 
+    <motion.header
       className="sticky top-0 z-20 app-background"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -81,7 +99,7 @@ export function Header() {
             {format(currentDate, "d 'de' MMMM, yyyy", { locale: es })}
           </p>
         </div>
-        
+
         {/* Right side actions */}
         <div className="flex items-center space-x-2">
           {/* Search */}
@@ -95,23 +113,31 @@ export function Header() {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </form>
-          
+
           {/* Notifications */}
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
             <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
           </Button>
-          
+
           {/* Theme toggle */}
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            title={theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            title={
+              theme === "dark"
+                ? "Cambiar a tema claro"
+                : "Cambiar a tema oscuro"
+            }
           >
-            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
           </Button>
-          
+
           {/* User profile */}
           {isAuthenticated ? (
             <DropdownMenu>
@@ -146,5 +172,5 @@ export function Header() {
         </div>
       </div>
     </motion.header>
-  )
-} 
+  );
+}

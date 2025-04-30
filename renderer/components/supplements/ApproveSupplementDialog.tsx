@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { useForm, ControllerRenderProps } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useSupplements } from "../../hooks/useSupplements";
-import { useToast } from "../../hooks/use-toast";
-import { Button } from "../ui/button";
+import { useSupplements } from "@/hooks/useSupplements";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "../ui/dialog";
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -19,8 +19,9 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../ui/form";
-import { Textarea } from "../ui/textarea";
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { ControllerRenderProps } from "react-hook-form";
 
 const approveSchema = z.object({
   description: z.string().min(1, "La descripción es requerida"),
@@ -30,37 +31,51 @@ type ApproveFormValues = z.infer<typeof approveSchema>;
 
 interface ApproveSupplementDialogProps {
   supplementId: string;
-  trigger?: React.ReactNode;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
 export function ApproveSupplementDialog({
   supplementId,
-  trigger,
+  isOpen,
+  onClose,
+  onSuccess,
 }: ApproveSupplementDialogProps) {
-  const [open, setOpen] = useState(false);
-  const { approveSupplement } = useSupplements();
+  const { approveSupplement, isLoading } = useSupplements();
   const { toast } = useToast();
 
   const form = useForm<ApproveFormValues>({
     resolver: zodResolver(approveSchema),
+    defaultValues: {
+      description: "",
+    },
   });
 
   const onSubmit = async (data: ApproveFormValues) => {
     try {
-      await approveSupplement(supplementId, data.description);
-      form.reset();
-      setOpen(false);
+      const result = await approveSupplement(supplementId);
+      if (result) {
+        toast({
+          title: "Éxito",
+          description: "Suplemento aprobado correctamente",
+        });
+        form.reset();
+        onSuccess();
+        onClose();
+      }
     } catch (error) {
-      console.error("Error approving supplement:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo aprobar el suplemento",
+        variant: "destructive",
+      });
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || <Button variant="outline">Aprobar</Button>}
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Aprobar Suplemento</DialogTitle>
         </DialogHeader>
@@ -77,15 +92,23 @@ export function ApproveSupplementDialog({
                 <FormItem>
                   <FormLabel>Descripción de la Aprobación</FormLabel>
                   <FormControl>
-                    <Textarea {...field} />
+                    <Textarea
+                      {...field}
+                      placeholder="Ingrese una descripción de la aprobación"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full">
-              Aprobar Suplemento
-            </Button>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? "Aprobando..." : "Aprobar Suplemento"}
+              </Button>
+            </DialogFooter>
           </form>
         </Form>
       </DialogContent>

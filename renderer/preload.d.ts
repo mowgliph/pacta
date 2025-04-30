@@ -10,28 +10,28 @@ declare global {
         getPath: (name: string) => Promise<string>;
         getInfo: () => Promise<any>;
       };
-      
+
       auth: {
-        login: (credentials: { 
-          usuario: string; 
-          password: string; 
+        login: (credentials: {
+          usuario: string;
+          password: string;
           rememberMe?: boolean;
           deviceId?: string;
           isSpecialUser?: boolean;
         }) => Promise<any>;
         logout: () => Promise<any>;
         getPerfil: () => Promise<any>;
-        cambiarContrasena: (datos: { 
+        cambiarContrasena: (datos: {
           currentPassword: string;
           newPassword: string;
         }) => Promise<any>;
       };
 
       theme: {
-        getSystemTheme: () => Promise<'light' | 'dark'>;
-        setAppTheme: (theme: 'light' | 'dark' | 'system') => Promise<void>;
+        getSystemTheme: () => Promise<"light" | "dark">;
+        setAppTheme: (theme: "light" | "dark" | "system") => Promise<void>;
       };
-      
+
       users: {
         list: () => Promise<any[]>;
         getById: (id: string) => Promise<any>;
@@ -40,11 +40,11 @@ declare global {
         toggleActive: (userId: string) => Promise<any>;
         changePassword: (passwordData: any) => Promise<any>;
       };
-      
+
       roles: {
         getAll: () => Promise<any[]>;
       };
-      
+
       contratos: {
         listar: (filtros?: any) => Promise<any[]>;
         crear: (datos: any) => Promise<any>;
@@ -52,48 +52,78 @@ declare global {
         actualizar: (id: string, datos: any) => Promise<any>;
         archivar: (id: string) => Promise<any>;
       };
-      
+
       suplementos: {
         listar: (contratoId: string) => Promise<any[]>;
         crear: (contratoId: string, datos: any) => Promise<any>;
         obtener: (id: string) => Promise<any>;
       };
-      
+
       documentos: {
         abrir: (path: string) => Promise<any>;
         guardar: (path: string, content: any) => Promise<any>;
         listar: (contratoId: string) => Promise<any[]>;
       };
-      
+
       backups: {
-        crear: (descripcion: string) => Promise<any>;
-        restaurar: (id: string) => Promise<any>;
-        eliminar: (id: string) => Promise<any>;
-        listar: () => Promise<any[]>;
+        crear: (descripcion?: string) => Promise<any>;
+        restaurar: (
+          id: string
+        ) => Promise<{ success: boolean; message?: string }>;
+        eliminar: (
+          id: string
+        ) => Promise<{ success: boolean; message?: string }>;
+        listar: () => Promise<
+          Array<{
+            id: string;
+            fileName: string;
+            filePath: string;
+            fileSize: string | number;
+            createdAt: string;
+            createdById: string;
+            note?: string;
+            isAutomatic: boolean;
+            createdBy?: {
+              name: string;
+              email: string;
+            };
+            formattedDate?: string;
+            canDelete?: boolean;
+          }>
+        >;
+        limpiarAntiguos: () => Promise<{ success: boolean; message: string }>;
       };
-      
+
       notificaciones: {
         mostrar: (opciones: { titulo: string; cuerpo: string }) => Promise<any>;
         marcarLeida: (id: string) => Promise<any>;
         obtenerNoLeidas: () => Promise<any[]>;
       };
-      
+
       estadisticas: {
         dashboard: () => Promise<any>;
         contratos: (filtros?: any) => Promise<any>;
         exportar: (tipo: string, filtros?: any) => Promise<any>;
       };
-      
+
       api: {
-        request: (req: { method: string, endpoint: string, data?: any, params?: any }) => Promise<any>;
+        request: (req: {
+          method: string;
+          endpoint: string;
+          data?: any;
+          params?: any;
+        }) => Promise<any>;
       };
-      
+
       ipcRenderer: {
         invoke: (channel: string, ...args: any[]) => Promise<any>;
         on: (channel: string, listener: (...args: any[]) => void) => void;
-        removeListener: (channel: string, listener: (...args: any[]) => void) => void;
-    };
-      
+        removeListener: (
+          channel: string,
+          listener: (...args: any[]) => void
+        ) => void;
+      };
+
       receive: (channel: string, callback: (...args: any[]) => void) => boolean;
       removeListener: (channel: string) => boolean;
     };

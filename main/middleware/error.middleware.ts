@@ -117,3 +117,13 @@ export class ErrorHandler {
     };
   }
 }
+
+export function withErrorHandling(channel: string, handler: Function) {
+  return async (...args: any[]) => {
+    try {
+      return await handler(...args);
+    } catch (error) {
+      return ErrorHandler.handle(error);
+    }
+  };
+}

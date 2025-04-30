@@ -10,7 +10,7 @@ const validInvokeChannels = [
   "app:getVersion",
   "app:getPath",
   "app:getInfo",
-  
+
   // Canales para contratos
   "contratos:listar",
   "contratos:crear",
@@ -19,12 +19,12 @@ const validInvokeChannels = [
   "contratos:archivar",
   "contracts:updateAccessControl",
   "contracts:assignUsers",
-  
+
   // Canales para suplementos
   "suplementos:listar",
   "suplementos:crear",
   "suplementos:obtener",
-  
+
   // Canales para usuarios y autenticación
   "usuario:autenticar",
   "usuario:cerrarSesion",
@@ -38,7 +38,7 @@ const validInvokeChannels = [
   "users:toggleActive",
   "users:changePassword",
   "roles:getAll",
-  
+
   // Canales para gestión de documentos
   "documents:save",
   "documents:getAll",
@@ -49,7 +49,7 @@ const validInvokeChannels = [
   "documents:getByContract",
   "documents:getBySupplement",
   "documents:open",
-  
+
   // Canales para backups
   "backups:getAll",
   "backups:create",
@@ -57,22 +57,27 @@ const validInvokeChannels = [
   "backups:delete",
   "backups:cleanOld",
   "backups:updateSchedule",
-  
+  "backup:getAll",
+  "backup:create",
+  "backup:restore",
+  "backup:delete",
+  "backup:cleanOld",
+
   // Canales para notificaciones
   "notificaciones:mostrar",
   "notificaciones:marcarLeida",
   "notificaciones:obtenerNoLeidas",
-  
+
   // Canales para estadísticas
   "estadisticas:dashboard",
   "estadisticas:contratos",
   "estadisticas:exportar",
-  
+
   // Canales para sistema
   "sistema:config",
   "sistema:tema",
   "sistema:logs",
-  
+
   // Canales para API
   "api:request",
   "auth:login",
@@ -102,7 +107,10 @@ const validReceiveChannels = [
  * @param {string[]} allowedChannels - Lista de canales permitidos
  * @returns {boolean} - Verdadero si el canal está permitido
  */
-const isValidChannel = (channel: string, allowedChannels: string[]): boolean => {
+const isValidChannel = (
+  channel: string,
+  allowedChannels: string[]
+): boolean => {
   return allowedChannels.includes(channel);
 };
 
@@ -122,28 +130,31 @@ contextBridge.exposeInMainWorld("Electron", {
     listar: (filtros?: any) => ipcRenderer.invoke("contratos:listar", filtros),
     crear: (datos: any) => ipcRenderer.invoke("contratos:crear", datos),
     obtener: (id: string) => ipcRenderer.invoke("contratos:obtener", id),
-    actualizar: (id: string, datos: any) => ipcRenderer.invoke("contratos:actualizar", id, datos),
+    actualizar: (id: string, datos: any) =>
+      ipcRenderer.invoke("contratos:actualizar", id, datos),
     archivar: (id: string) => ipcRenderer.invoke("contratos:archivar", id),
   },
 
   // API para suplementos
   suplementos: {
-    listar: (contratoId: string) => ipcRenderer.invoke("suplementos:listar", contratoId),
-    crear: (contratoId: string, datos: any) => ipcRenderer.invoke("suplementos:crear", contratoId, datos),
+    listar: (contratoId: string) =>
+      ipcRenderer.invoke("suplementos:listar", contratoId),
+    crear: (contratoId: string, datos: any) =>
+      ipcRenderer.invoke("suplementos:crear", contratoId, datos),
     obtener: (id: string) => ipcRenderer.invoke("suplementos:obtener", id),
   },
 
   // API para usuarios y autenticación
   auth: {
-    login: (credentials: { 
-      usuario: string, 
-      password: string, 
-      rememberMe?: boolean,
-      deviceId?: string,
-      isSpecialUser?: boolean
+    login: (credentials: {
+      usuario: string;
+      password: string;
+      rememberMe?: boolean;
+      deviceId?: string;
+      isSpecialUser?: boolean;
     }) => ipcRenderer.invoke("auth:login", credentials),
     logout: () => ipcRenderer.invoke("auth:logout"),
-    cambiarContrasena: (datos: { actual: string, nueva: string }) => 
+    cambiarContrasena: (datos: { actual: string; nueva: string }) =>
       ipcRenderer.invoke("usuario:cambiarContrasena", datos),
     getPerfil: () => ipcRenderer.invoke("usuario:perfil"),
   },
@@ -154,45 +165,54 @@ contextBridge.exposeInMainWorld("Electron", {
     getById: (id: string) => ipcRenderer.invoke("users:getById", id),
     create: (userData: any) => ipcRenderer.invoke("users:create", userData),
     update: (userData: any) => ipcRenderer.invoke("users:update", userData),
-    toggleActive: (userId: string) => ipcRenderer.invoke("users:toggleActive", userId),
-    changePassword: (passwordData: any) => ipcRenderer.invoke("users:changePassword", passwordData),
+    toggleActive: (userId: string) =>
+      ipcRenderer.invoke("users:toggleActive", userId),
+    changePassword: (passwordData: any) =>
+      ipcRenderer.invoke("users:changePassword", passwordData),
   },
 
   // API para roles
   roles: {
     getAll: () => ipcRenderer.invoke("roles:getAll"),
   },
-  
+
   // API para documentos
   documentos: {
     abrir: (path: string) => ipcRenderer.invoke("documents:open", path),
-    guardar: (path: string, content: any) => ipcRenderer.invoke("documents:save", path, content),
-    listar: (contratoId: string) => ipcRenderer.invoke("documents:getByContract", contratoId),
+    guardar: (path: string, content: any) =>
+      ipcRenderer.invoke("documents:save", path, content),
+    listar: (contratoId: string) =>
+      ipcRenderer.invoke("documents:getByContract", contratoId),
   },
 
   // API para backups
   backups: {
-    crear: (userId: string, descripcion?: string) => ipcRenderer.invoke("backups:create", userId, descripcion),
-    restaurar: (backupId: string, userId: string) => ipcRenderer.invoke("backups:restore", backupId, userId),
-    eliminar: (backupId: string) => ipcRenderer.invoke("backups:delete", backupId),
-    listar: () => ipcRenderer.invoke("backups:getAll"),
-    limpiarAntiguos: () => ipcRenderer.invoke("backups:cleanOld"),
-    actualizarProgramacion: (config: any) => ipcRenderer.invoke("backups:updateSchedule", config),
+    crear: (descripcion?: string) =>
+      ipcRenderer.invoke("backup:create", { description: descripcion }),
+    restaurar: (backupId: string) =>
+      ipcRenderer.invoke("backup:restore", { backupId }),
+    eliminar: (backupId: string) =>
+      ipcRenderer.invoke("backup:delete", { backupId }),
+    listar: () => ipcRenderer.invoke("backup:getAll"),
+    limpiarAntiguos: () => ipcRenderer.invoke("backup:cleanOld"),
   },
 
   // API para notificaciones
   notificaciones: {
-    mostrar: (opciones: { titulo: string; cuerpo: string }) => 
+    mostrar: (opciones: { titulo: string; cuerpo: string }) =>
       ipcRenderer.invoke("notificaciones:mostrar", opciones),
-    marcarLeida: (id: string) => ipcRenderer.invoke("notificaciones:marcarLeida", id),
+    marcarLeida: (id: string) =>
+      ipcRenderer.invoke("notificaciones:marcarLeida", id),
     obtenerNoLeidas: () => ipcRenderer.invoke("notificaciones:obtenerNoLeidas"),
   },
 
   // API para estadísticas
   estadisticas: {
     dashboard: () => ipcRenderer.invoke("estadisticas:dashboard"),
-    contratos: (filtros?: any) => ipcRenderer.invoke("estadisticas:contratos", filtros),
-    exportar: (tipo: string, filtros?: any) => ipcRenderer.invoke("estadisticas:exportar", tipo, filtros),
+    contratos: (filtros?: any) =>
+      ipcRenderer.invoke("estadisticas:contratos", filtros),
+    exportar: (tipo: string, filtros?: any) =>
+      ipcRenderer.invoke("estadisticas:exportar", tipo, filtros),
   },
 
   // API para IPC invocaciones generales
@@ -210,16 +230,16 @@ contextBridge.exposeInMainWorld("Electron", {
     if (isValidChannel(channel, validReceiveChannels)) {
       // Limpiar listeners previos para evitar duplicados
       ipcRenderer.removeAllListeners(channel);
-      
+
       // Registrar nuevo listener
       // Usar una función wrapper para omitir el evento en el callback
       ipcRenderer.on(channel, (_event, ...args) => func(...args));
-      
+
       return true;
     }
     return false;
   },
-  
+
   // API para eliminar un listener específico
   removeListener: (channel: string) => {
     if (isValidChannel(channel, validReceiveChannels)) {

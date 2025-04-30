@@ -1,137 +1,147 @@
-import { useState, useEffect } from "react";
-import { useToast } from "../hooks/use-toast";
-import { Supplement } from "../types";
+import { useState } from "react";
+import {
+  Supplement,
+  CreateSupplementPayload,
+  UpdateSupplementPayload,
+  SupplementChannels,
+  SupplementStatus,
+} from "@/types/supplement.types";
 
-export function useSupplements(contractId?: string) {
-  const [supplements, setSupplements] = useState<Supplement[]>([]);
-  const [loading, setLoading] = useState(false);
+export const useSupplements = () => {
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
 
-  useEffect(() => {
-    if (contractId) {
-      fetchSupplements();
-    }
-  }, [contractId]);
-
-  const fetchSupplements = async () => {
+  const getAllSupplements = async (): Promise<Supplement[]> => {
     try {
-      setLoading(true);
-      setError(null);
-      const result = await window.Electron.ipcRenderer.invoke(
-        "supplements:getByContract",
-        contractId
+      setIsLoading(true);
+      // @ts-ignore - Electron está expuesto por el preload script
+      const supplements = await window.Electron.ipcRenderer.invoke(
+        SupplementChannels.GET_ALL
       );
-      setSupplements(result);
+      return supplements;
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Error al cargar los suplementos"
+        err instanceof Error ? err.message : "Error al obtener suplementos"
       );
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los suplementos",
-        variant: "destructive",
-      });
+      return [];
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const deleteSupplement = async (supplementId: string) => {
+  const getSupplementsByContract = async (
+    contractId: string
+  ): Promise<Supplement[]> => {
     try {
-      setLoading(true);
-      setError(null);
-      await window.Electron.ipcRenderer.invoke(
-        "supplements:delete",
-        supplementId
+      setIsLoading(true);
+      // @ts-ignore - Electron está expuesto por el preload script
+      const supplements = await window.Electron.ipcRenderer.invoke(
+        SupplementChannels.GET_BY_CONTRACT,
+        contractId
       );
-      setSupplements(supplements.filter((s) => s.id !== supplementId));
+      return supplements;
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Error al eliminar el suplemento"
+        err instanceof Error
+          ? err.message
+          : "Error al obtener suplementos del contrato"
       );
-      throw err;
+      return [];
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   const createSupplement = async (
-    data: Omit<
-      Supplement,
-      | "id"
-      | "createdAt"
-      | "updatedAt"
-      | "createdBy"
-      | "approvedBy"
-      | "documents"
-    >
-  ) => {
+    payload: CreateSupplementPayload
+  ): Promise<Supplement | null> => {
     try {
-      setLoading(true);
-      setError(null);
-      const response = await window.Electron.ipcRenderer.invoke(
-        "supplements:create",
-        data
+      setIsLoading(true);
+      // @ts-ignore - Electron está expuesto por el preload script
+      const supplement = await window.Electron.ipcRenderer.invoke(
+        SupplementChannels.CREATE,
+        payload
       );
-      setSupplements((prev) => [...prev, response]);
-      toast({
-        title: "Éxito",
-        description: "Suplemento creado correctamente",
-      });
-      return response;
+      return supplement;
     } catch (err) {
-      setError("Error al crear el suplemento");
-      toast({
-        title: "Error",
-        description: "No se pudo crear el suplemento",
-        variant: "destructive",
-      });
-      throw err;
+      setError(
+        err instanceof Error ? err.message : "Error al crear suplemento"
+      );
+      return null;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const approveSupplement = async (
-    supplementId: string,
-    approvedById: string
-  ) => {
+  const updateSupplement = async (
+    id: string,
+    payload: UpdateSupplementPayload
+  ): Promise<Supplement | null> => {
     try {
-      setLoading(true);
-      setError(null);
-      const response = await window.Electron.ipcRenderer.invoke(
-        "supplements:approve",
-        { supplementId, approvedById }
+      setIsLoading(true);
+      // @ts-ignore - Electron está expuesto por el preload script
+      const supplement = await window.Electron.ipcRenderer.invoke(
+        SupplementChannels.UPDATE,
+        id,
+        payload
       );
-      setSupplements((prev) =>
-        prev.map((s) => (s.id === supplementId ? response : s))
-      );
-      toast({
-        title: "Éxito",
-        description: "Suplemento aprobado correctamente",
-      });
-      return response;
+      return supplement;
     } catch (err) {
-      setError("Error al aprobar el suplemento");
-      toast({
-        title: "Error",
-        description: "No se pudo aprobar el suplemento",
-        variant: "destructive",
-      });
-      throw err;
+      setError(
+        err instanceof Error ? err.message : "Error al actualizar suplemento"
+      );
+      return null;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
+    }
+  };
+
+  const approveSupplement = async (id: string): Promise<Supplement | null> => {
+    try {
+      setIsLoading(true);
+      // @ts-ignore - Electron está expuesto por el preload script
+      const supplement = await window.Electron.ipcRenderer.invoke(
+        SupplementChannels.APPROVE,
+        id
+      );
+      return supplement;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Error al aprobar suplemento"
+      );
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const rejectSupplement = async (id: string): Promise<Supplement | null> => {
+    try {
+      setIsLoading(true);
+      // @ts-ignore - Electron está expuesto por el preload script
+      const supplement = await window.Electron.ipcRenderer.invoke(
+        SupplementChannels.REJECT,
+        id
+      );
+      return supplement;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Error al rechazar suplemento"
+      );
+      return null;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return {
-    supplements,
-    loading,
+    isLoading,
     error,
-    deleteSupplement,
-    fetchSupplements,
+    getAllSupplements,
+    getSupplementsByContract,
     createSupplement,
+    updateSupplement,
     approveSupplement,
+    rejectSupplement,
   };
-}
+};

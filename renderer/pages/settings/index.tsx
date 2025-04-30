@@ -1,9 +1,7 @@
-// renderer/pages/settings/index.tsx
 import React, { useEffect, useState } from "react";
-import { Layout } from "../../components/layout/Layout";
-import { useRequireAuth } from "../../hooks/useRequireAuth";
+import { MainLayout } from "../../components/layout/main-layout";
 import { useAuth } from "../../hooks/useAuth";
-import { Heading } from "../../components/ui/heading";
+import { Header } from "../../components/layout/header";
 import {
   Card,
   CardContent,
@@ -61,15 +59,27 @@ import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert";
 
 type BackupItem = {
   id: string;
-  filename: string;
-  timestamp: string;
-  size: number;
-  description?: string;
+  fileName: string;
+  filePath: string;
+  fileSize: string | number;
+  createdAt: string;
+  timestamp?: string; // Para compatibilidad con el código existente
+  filename?: string; // Para compatibilidad con el código existente
+  size?: number; // Para compatibilidad con el código existente
+  createdById: string;
+  note?: string;
+  description?: string; // Para compatibilidad con el código existente
+  isAutomatic: boolean;
+  createdBy?: {
+    name: string;
+    email: string;
+  };
+  formattedDate?: string;
+  canDelete?: boolean;
 };
 
 export default function Settings() {
-  const auth = useRequireAuth();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -158,21 +168,25 @@ export default function Settings() {
 
     try {
       setIsRestoring(true);
-      await window.Electron.backups.restaurar(selectedBackup.id);
+      const result = await window.Electron.backups.restaurar(selectedBackup.id);
 
-      toast({
-        title: "Respaldo restaurado",
-        description:
-          "La base de datos ha sido restaurada exitosamente. La aplicación se reiniciará.",
-      });
+      if (result.success) {
+        toast({
+          title: "Respaldo restaurado",
+          description:
+            "La base de datos ha sido restaurada exitosamente. La aplicación se reiniciará.",
+        });
 
-      // Cerrar el diálogo
-      setSelectedBackup(null);
+        // Cerrar el diálogo
+        setSelectedBackup(null);
 
-      // Esperar un poco antes de reiniciar para que el usuario vea el mensaje
-      setTimeout(() => {
-        window.Electron.app.relaunch();
-      }, 3000);
+        // Esperar un poco antes de reiniciar para que el usuario vea el mensaje
+        setTimeout(() => {
+          window.Electron.app.relaunch();
+        }, 3000);
+      } else {
+        throw new Error(result.message || "Error al restaurar respaldo");
+      }
     } catch (error) {
       console.error("Error al restaurar respaldo:", error);
       toast({
@@ -187,19 +201,24 @@ export default function Settings() {
 
   const handleDeleteBackup = async (id: string) => {
     try {
-      await window.Electron.backups.eliminar(id);
+      const result = await window.Electron.backups.eliminar(id);
 
-      toast({
-        title: "Respaldo eliminado",
-        description: "El respaldo ha sido eliminado exitosamente",
-      });
+      if (result.success) {
+        toast({
+          title: "Respaldo eliminado",
+          description: "El respaldo ha sido eliminado exitosamente",
+        });
 
-      await loadBackups();
+        await loadBackups();
+      } else {
+        throw new Error(result.message || "Error al eliminar respaldo");
+      }
     } catch (error) {
       console.error("Error al eliminar respaldo:", error);
       toast({
         title: "Error",
-        description: "No se pudo eliminar el respaldo",
+        description:
+          typeof error === "string" ? error : "No se pudo eliminar el respaldo",
         variant: "destructive",
       });
     }
@@ -216,12 +235,12 @@ export default function Settings() {
     return date.toLocaleDateString() + " " + date.toLocaleTimeString();
   };
 
-  if (!auth.user) return null;
+  if (!isAuthenticated) return null;
 
   return (
-    <Layout>
+    <MainLayout>
       <div className="container mx-auto py-6">
-        <Heading
+        <Header
           title="Configuración"
           description="Personaliza la aplicación y gestiona configuraciones globales"
         />
@@ -394,14 +413,23 @@ export default function Settings() {
                             {backupsList.map((backup) => (
                               <TableRow key={backup.id}>
                                 <TableCell>
-                                  {formatDate(backup.timestamp)}
-                                </TableCell>
-                                <TableCell>{backup.filename}</TableCell>
-                                <TableCell>
-                                  {formatFileSize(backup.size)}
+                                  {formatDate(
+                                    backup.timestamp || backup.createdAt
+                                  )}
                                 </TableCell>
                                 <TableCell>
-                                  {backup.description || "-"}
+                                  {backup.filename || backup.fileName}
+                                </TableCell>
+                                <TableCell>
+                                  {typeof backup.fileSize === "string"
+                                    ? backup.fileSize
+                                    : formatFileSize(
+                                        backup.size ||
+                                          (backup.fileSize as number)
+                                      )}
+                                </TableCell>
+                                <TableCell>
+                                  {backup.description || backup.note || "-"}
                                 </TableCell>
                                 <TableCell className="text-right space-x-2">
                                   <Dialog>
@@ -439,17 +467,21 @@ export default function Settings() {
                                             <strong>Fecha de respaldo:</strong>{" "}
                                             {selectedBackup
                                               ? formatDate(
-                                                  selectedBackup.timestamp
+                                                  selectedBackup.timestamp ||
+                                                    selectedBackup.createdAt
                                                 )
                                               : "-"}
                                           </p>
                                           <p>
                                             <strong>Nombre del archivo:</strong>{" "}
-                                            {selectedBackup?.filename || "-"}
+                                            {selectedBackup?.filename ||
+                                              selectedBackup?.fileName ||
+                                              "-"}
                                           </p>
                                           <p>
                                             <strong>Descripción:</strong>{" "}
                                             {selectedBackup?.description ||
+                                              selectedBackup?.note ||
                                               "Sin descripción"}
                                           </p>
                                         </div>
@@ -526,6 +558,6 @@ export default function Settings() {
           )}
         </Tabs>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

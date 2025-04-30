@@ -1,61 +1,127 @@
-"use client"
+"use client";
 
-import { useState, useCallback } from "react"
-import { useToast } from "../components/ui/use-toast"
+import { useState } from "react";
+import {
+  User,
+  CreateUserPayload,
+  UpdateUserPayload,
+  ChangePasswordPayload,
+  UserChannels,
+} from "@/types/user.types";
 
-export function useUsers() {
-  const [users, setUsers] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
+export const useUsers = () => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchUsers = useCallback(async () => {
-    setIsLoading(true)
+  const getAllUsers = async (): Promise<User[]> => {
     try {
-      const response = await fetch("/api/users")
-      if (!response.ok) {
-        throw new Error("Error fetching users")
-      }
-      const data = await response.json()
-      setUsers(data.users)
-    } catch (error) {
-      console.error("Error fetching users:", error)
-      toast({
-        title: "Error",
-        description: "No se pudieron cargar los usuarios",
-        variant: "destructive",
-      })
+      setIsLoading(true);
+      // @ts-ignore - Electron está expuesto por el preload script
+      const users = await window.Electron.ipcRenderer.invoke(
+        UserChannels.GET_ALL
+      );
+      return users;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Error al obtener usuarios"
+      );
+      return [];
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [toast])
+  };
 
-  const toggleUserStatus = useCallback(
-    async (userId: string) => {
-      try {
-        const response = await fetch(`/api/users/${userId}/toggle-status`, {
-          method: "PUT",
-        })
-        if (!response.ok) {
-          throw new Error("Error toggling user status")
-        }
-        return true
-      } catch (error) {
-        console.error("Error toggling user status:", error)
-        toast({
-          title: "Error",
-          description: "No se pudo cambiar el estado del usuario",
-          variant: "destructive",
-        })
-        return false
-      }
-    },
-    [toast],
-  )
+  const createUser = async (
+    payload: CreateUserPayload
+  ): Promise<User | null> => {
+    try {
+      setIsLoading(true);
+      // @ts-ignore - Electron está expuesto por el preload script
+      const user = await window.Electron.ipcRenderer.invoke(
+        UserChannels.CREATE,
+        payload
+      );
+      return user;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al crear usuario");
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateUser = async (
+    id: string,
+    payload: UpdateUserPayload
+  ): Promise<User | null> => {
+    try {
+      setIsLoading(true);
+      // @ts-ignore - Electron está expuesto por el preload script
+      const user = await window.Electron.ipcRenderer.invoke(
+        UserChannels.UPDATE,
+        id,
+        payload
+      );
+      return user;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Error al actualizar usuario"
+      );
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleUserActive = async (id: string): Promise<User | null> => {
+    try {
+      setIsLoading(true);
+      // @ts-ignore - Electron está expuesto por el preload script
+      const user = await window.Electron.ipcRenderer.invoke(
+        UserChannels.TOGGLE_ACTIVE,
+        id
+      );
+      return user;
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Error al cambiar estado del usuario"
+      );
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const changePassword = async (
+    payload: ChangePasswordPayload
+  ): Promise<boolean> => {
+    try {
+      setIsLoading(true);
+      // @ts-ignore - Electron está expuesto por el preload script
+      const success = await window.Electron.ipcRenderer.invoke(
+        UserChannels.CHANGE_PASSWORD,
+        payload
+      );
+      return success;
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Error al cambiar contraseña"
+      );
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return {
-    users,
     isLoading,
-    fetchUsers,
-    toggleUserStatus,
-  }
-}
+    error,
+    getAllUsers,
+    createUser,
+    updateUser,
+    toggleUserActive,
+    changePassword,
+  };
+};

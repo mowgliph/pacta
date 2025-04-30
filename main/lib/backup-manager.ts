@@ -67,7 +67,7 @@ export class BackupManager {
   /**
    * Obtiene o crea un usuario de sistema para los backups automáticos
    */
-  private async getSystemUserId(): Promise<string> {
+  public async getSystemUserId(): Promise<string> {
     // Buscar o crear un usuario de sistema para los backups automáticos
     let systemUser = await prisma.user.findFirst({
       where: {
