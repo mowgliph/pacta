@@ -8,6 +8,9 @@ import type {
   Attachment,
 } from "../../main/shared/types";
 
+// Exportar tipos de contrato desde nuestro propio archivo
+export * from "./contract";
+
 export interface User {
   id: string;
   name: string;

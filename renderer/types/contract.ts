@@ -96,3 +96,128 @@ export interface ContractStats {
     [key in ContractStatus]: number;
   };
 }
+
+export interface ContractAccessControl {
+  isRestricted: boolean;
+  allowedRoles?: string[];
+}
+
+export interface UserPermission {
+  userId: string;
+  name: string;
+  email: string;
+  permissions: {
+    read: boolean;
+    update: boolean;
+    delete: boolean;
+    approve: boolean;
+    assign: boolean;
+  };
+}
+
+export interface CreateContractRequest {
+  title: string;
+  contractNumber: string;
+  description?: string;
+  parties: string;
+  signDate: Date;
+  signPlace: string;
+  type: string;
+  companyName: string;
+  companyAddress: string;
+  nationality: string;
+  commercialAuth: string;
+  bankDetails: {
+    account: string;
+    branch: string;
+    agency: string;
+    holder: string;
+    currency: "CUP" | "MLC";
+  };
+  reeupCode: string;
+  nit: string;
+  contactPhones: string[];
+  legalRepresentative: {
+    name: string;
+    position: string;
+    documentType: string;
+    documentNumber: string;
+    documentDate: Date;
+  };
+  providerObligations: string[];
+  clientObligations: string[];
+  deliveryPlace: string;
+  deliveryTerm: string;
+  acceptanceProcedure: string;
+  value: number;
+  currency: "MN" | "MLC";
+  paymentMethod: string;
+  paymentTerm: string;
+  warrantyTerm: string;
+  warrantyScope: string;
+  technicalStandards?: string;
+  claimProcedure: string;
+  disputeResolution: string;
+  latePaymentInterest: string;
+  breachPenalties: string;
+  notificationMethods: string[];
+  minimumNoticeTime: string;
+  startDate: Date;
+  endDate: Date;
+  extensionTerms: string;
+  earlyTerminationNotice: string;
+  forceMajeure: string;
+  attachments: {
+    type: string;
+    description: string;
+    documentUrl?: string;
+  }[];
+  status: ContractStatus;
+  createdById: string;
+  ownerId: string;
+}
+
+export type UpdateContractRequest = Partial<CreateContractRequest> & {
+  updatedById: string;
+};
+
+export interface ContractsListResponse {
+  data: Contract[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    pages: number;
+  };
+}
+
+export interface ContractHistoryRecord {
+  id: string;
+  action: string;
+  changes?: string;
+  details?: string;
+  timestamp: Date;
+  user?: {
+    id: string;
+    name: string;
+    email?: string;
+  };
+}
+
+export interface ContractWithDetails extends Contract {
+  documents?: {
+    id: string;
+    name: string;
+    url?: string;
+  }[];
+  supplements?: {
+    id: string;
+    title: string;
+    description?: string;
+    effectiveDate: Date;
+    isApproved: boolean;
+    createdAt: Date;
+  }[];
+  history?: ContractHistoryRecord[];
+  accessControl?: ContractAccessControl;
+}

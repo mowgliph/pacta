@@ -637,12 +637,75 @@ export class ContractService {
    */
   static async updateContractAccessControl(
     id: string,
-    accessControl: any,
+    accessControl: { isRestricted: boolean },
     userId: string,
     userRole: string
   ) {
-    // TODO: Implementar la lógica para actualizar el control de acceso
-    return { success: true };
+    try {
+      // Validar que el contrato existe
+      const contract = await prisma.contract.findUnique({
+        where: { id },
+      });
+
+      if (!contract) {
+        throw ErrorHandler.createError(
+          "NotFoundError",
+          `Contrato con ID ${id} no encontrado`
+        );
+      }
+
+      // Verificar permisos si no es admin
+      if (userRole !== "Admin" && contract.createdById !== userId) {
+        throw ErrorHandler.createError(
+          "AuthorizationError",
+          "No tiene permiso para modificar el control de acceso de este contrato"
+        );
+      }
+
+      // Actualizar el control de acceso del contrato
+      const updatedContract = await prisma.contract.update({
+        where: { id },
+        data: {
+          isRestricted: accessControl.isRestricted,
+          updatedAt: new Date(),
+        },
+        include: {
+          createdBy: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      });
+
+      // Registrar en el historial
+      await prisma.historyRecord.create({
+        data: {
+          action: "UPDATE_ACCESS",
+          entityType: "Contract",
+          entityId: id,
+          contractId: id,
+          userId: userId,
+          details: `Control de acceso modificado: ${
+            accessControl.isRestricted ? "Restringido" : "Abierto"
+          }`,
+        },
+      });
+
+      logger.info(`Control de acceso actualizado para contrato: ${id}`);
+      return {
+        success: true,
+        contract: updatedContract,
+        message: "Control de acceso actualizado correctamente",
+      };
+    } catch (error) {
+      logger.error(
+        `Error al actualizar control de acceso para contrato ${id}:`,
+        error
+      );
+      throw error;
+    }
   }
 
   /**
@@ -650,12 +713,89 @@ export class ContractService {
    */
   static async assignUsersToContract(
     id: string,
-    userAssignments: any,
+    userAssignments: { userId: string; role: "viewer" | "editor" | "admin" }[],
     userId: string,
     userRole: string
   ) {
-    // TODO: Implementar la lógica para asignar usuarios
-    return { success: true };
+    try {
+      // Validar que el contrato existe
+      const contract = await prisma.contract.findUnique({
+        where: { id },
+      });
+
+      if (!contract) {
+        throw ErrorHandler.createError(
+          "NotFoundError",
+          `Contrato con ID ${id} no encontrado`
+        );
+      }
+
+      // Verificar permisos si no es admin
+      if (userRole !== "Admin" && contract.createdById !== userId) {
+        throw ErrorHandler.createError(
+          "AuthorizationError",
+          "No tiene permiso para asignar usuarios a este contrato"
+        );
+      }
+
+      // Eliminar asignaciones existentes para evitar duplicados
+      await prisma.contractAccess.deleteMany({
+        where: { contractId: id },
+      });
+
+      // Crear las nuevas asignaciones
+      const assignments = await Promise.all(
+        userAssignments.map(async (assignment) => {
+          return prisma.contractAccess.create({
+            data: {
+              contractId: id,
+              userId: assignment.userId,
+              permissions: JSON.stringify({
+                canRead: true,
+                canUpdate:
+                  assignment.role === "editor" || assignment.role === "admin",
+                canDelete: assignment.role === "admin",
+                canApprove: assignment.role === "admin",
+                canAssign: assignment.role === "admin",
+              }),
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+            },
+          });
+        })
+      );
+
+      // Registrar en el historial
+      await prisma.historyRecord.create({
+        data: {
+          action: "ASSIGN_USERS",
+          entityType: "Contract",
+          entityId: id,
+          contractId: id,
+          userId: userId,
+          details: `Asignación de usuarios modificada: ${userAssignments.length} usuario(s)`,
+        },
+      });
+
+      logger.info(
+        `Usuarios asignados al contrato ${id}: ${userAssignments.length}`
+      );
+      return {
+        success: true,
+        assignments,
+        message: "Usuarios asignados correctamente",
+      };
+    } catch (error) {
+      logger.error(`Error al asignar usuarios al contrato ${id}:`, error);
+      throw error;
+    }
   }
 
   /**
