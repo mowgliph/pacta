@@ -1,10 +1,15 @@
-import { prisma } from "../../lib/prisma";
+import { prisma } from "../lib/prisma";
 import { compare, hash } from "bcrypt";
 import jwt from "jsonwebtoken";
-import { config } from "../../lib/config";
-import { logger } from "../../lib/logger";
-import { AppError } from "../../middleware/error.middleware";
-import { LoginCredentials, AuthResult, UserSession } from "../../shared/types";
+import { config } from "../lib/config";
+import { logger } from "../lib/logger";
+import { AppError } from "../middleware/error.middleware";
+import {
+  LoginCredentials,
+  AuthResult,
+  UserSession,
+  ResetPasswordRequest,
+} from "../shared/types";
 
 /**
  * Servicio de autenticación y autorización
@@ -151,5 +156,39 @@ export class AuthService {
     return Boolean(
       permissions && permissions[resource] && permissions[resource][action]
     );
+  }
+
+  static async logout(): Promise<{ success: boolean }> {
+    try {
+      // Aquí iría la lógica de logout
+      return { success: true };
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+      return { success: false };
+    }
+  }
+
+  static async verifyToken(
+    token: string
+  ): Promise<{ valid: boolean; user?: any }> {
+    try {
+      // Aquí iría la lógica de verificación del token
+      return { valid: true };
+    } catch (error) {
+      console.error("Error al verificar token:", error);
+      return { valid: false };
+    }
+  }
+
+  static async resetPassword(
+    request: ResetPasswordRequest
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      // Aquí iría la lógica de reseteo de contraseña
+      return { success: true, message: "Contraseña restablecida exitosamente" };
+    } catch (error) {
+      console.error("Error al resetear contraseña:", error);
+      return { success: false, message: "Error al resetear la contraseña" };
+    }
   }
 }

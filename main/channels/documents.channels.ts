@@ -1,10 +1,10 @@
 /**
  * Canales IPC relacionados con documentos
  */
-import { 
+import {
   DocumentsListResponse,
-  UpdateDocumentMetadataRequest
-} from '../../shared/types';
+  UpdateDocumentMetadataRequest,
+} from "../shared/types";
 
 /**
  * Enumera los canales IPC para documentos
@@ -44,11 +44,17 @@ export interface DocumentsRequests {
     response: { success: boolean; path: string; message?: string };
   };
   [DocumentsChannels.SAVE]: {
-    request: { contractId?: string; supplementId?: string; description?: string; isPublic?: boolean; tags?: string[] };
+    request: {
+      contractId?: string;
+      supplementId?: string;
+      description?: string;
+      isPublic?: boolean;
+      tags?: string[];
+    };
     response: { success: boolean; document?: any; message?: string };
   };
   [DocumentsChannels.DOWNLOAD]: {
     request: { id: string; destination?: string };
     response: { success: boolean; path?: string; message?: string };
   };
-} 
+}

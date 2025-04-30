@@ -7,6 +7,8 @@ import {
   UsersListResponse,
   ChangePasswordRequest,
 } from "../shared/types";
+import { ipcMain } from "electron";
+import { UserService } from "../services/user.service";
 
 /**
  * Enumera los canales IPC para usuarios
@@ -95,4 +97,46 @@ export interface RolesRequests {
     request: { id: string };
     response: { success: boolean; message?: string };
   };
+}
+
+export function registerUserChannels() {
+  ipcMain.handle(UsersChannels.GET_ALL, async () => {
+    return await UserService.getUsers();
+  });
+
+  ipcMain.handle(UsersChannels.GET_BY_ID, async (_, id: string) => {
+    return await UserService.getUserById(id);
+  });
+
+  ipcMain.handle(
+    UsersChannels.CREATE,
+    async (_, userData: any, creatorId: string) => {
+      return await UserService.createUser(userData, creatorId);
+    }
+  );
+
+  ipcMain.handle(
+    UsersChannels.UPDATE,
+    async (_, id: string, userData: any, updaterId: string) => {
+      return await UserService.updateUser(id, userData, updaterId);
+    }
+  );
+
+  ipcMain.handle(
+    UsersChannels.TOGGLE_ACTIVE,
+    async (_, id: string, adminId: string) => {
+      return await UserService.toggleUserActive(id, adminId);
+    }
+  );
+
+  ipcMain.handle(
+    UsersChannels.CHANGE_PASSWORD,
+    async (_, request: ChangePasswordRequest) => {
+      return await UserService.changePassword(
+        request.id,
+        request.currentPassword,
+        request.newPassword
+      );
+    }
+  );
 }

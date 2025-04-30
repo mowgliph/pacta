@@ -6,6 +6,8 @@ import {
   MarkNotificationReadRequest,
   NotificationsListResponse,
 } from "../shared/types";
+import { ipcMain } from "electron";
+import { NotificationService } from "../services/notification.service";
 
 /**
  * Enumera los canales IPC para notificaciones
@@ -94,4 +96,18 @@ export enum NotificationPriority {
   MEDIUM = "medium",
   HIGH = "high",
   URGENT = "urgent",
+}
+
+export function registerNotificationChannels() {
+  ipcMain.handle("notifications:getAll", async (_, filters?: any) => {
+    return await NotificationService.getNotifications(filters);
+  });
+
+  ipcMain.handle("notifications:markAsRead", async (_, id: string) => {
+    return await NotificationService.markAsRead(id);
+  });
+
+  ipcMain.handle("notifications:markAllAsRead", async () => {
+    return await NotificationService.markAllAsRead();
+  });
 }

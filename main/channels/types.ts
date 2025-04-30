@@ -1,78 +1,28 @@
 /**
- * Archivo central para exportar todos los tipos de canales IPC
+ * Archivo consolidado con todos los tipos de canales IPC
  */
 
-import { AppChannels, AppRequests } from './app.channels';
-import { AuthChannels, AuthRequests } from './auth.channels';
-import { BackupChannels, BackupRequests } from './backup.channels';
-import { ContractsChannels, ContractsRequests } from './contracts.channels';
-import { DocumentsChannels, DocumentsRequests } from './documents.channels';
-import { NotificationsChannels, NotificationsRequests } from './notifications.channels';
-import { SupplementsChannels, SupplementsRequests } from './supplements.channels';
-import { SettingsChannels, SettingsRequests } from './settings.channels';
-import { UsersChannels, RolesChannels, UsersRequests, RolesRequests } from './users.channels';
-
-/**
- * Exportar todos los enums de canales
- */
-export {
-  AppChannels,
-  AuthChannels,
-  BackupChannels,
-  ContractsChannels,
-  DocumentsChannels,
-  NotificationsChannels,
-  RolesChannels,
-  SettingsChannels,
-  SupplementsChannels,
-  UsersChannels
-};
+import { AppChannels } from "./app.channels";
+import { AuthChannels } from "./auth.channels";
+import { BackupChannels } from "./backup.channels";
+import { ContractsChannels } from "./contracts.channels";
+import { DocumentsChannels } from "./documents.channels";
+import { NotificationChannels } from "./notifications.channels";
+import { RolesChannels, UsersChannels } from "./users.channels";
+import { SettingsChannels } from "./settings.channels";
+import { SupplementsChannels } from "./supplements.channels";
 
 /**
  * Tipo unión de todos los canales posibles
  */
-export type AllChannels = 
+export type AllChannels =
   | AppChannels
   | AuthChannels
   | BackupChannels
   | ContractsChannels
   | DocumentsChannels
-  | NotificationsChannels
+  | NotificationChannels
   | RolesChannels
   | SettingsChannels
   | SupplementsChannels
   | UsersChannels;
-
-/**
- * Tipo intersección de todas las interfaces de solicitudes
- */
-export type AllRequests = 
-  & AppRequests
-  & AuthRequests
-  & BackupRequests
-  & ContractsRequests
-  & DocumentsRequests
-  & NotificationsRequests
-  & RolesRequests
-  & SettingsRequests
-  & SupplementsRequests
-  & UsersRequests;
-
-/**
- * Definición de interfaz genérica para solicitudes IPC
- */
-export interface IpcRequest<T = any> {
-  id: string;
-  channel: string;
-  data: T;
-}
-
-/**
- * Definición de interfaz genérica para respuestas IPC
- */
-export interface IpcResponse<T = any> {
-  id: string;
-  success: boolean;
-  data?: T;
-  error?: string;
-} 

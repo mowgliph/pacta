@@ -1,7 +1,16 @@
 /**
  * Canales IPC relacionados con autenticación
  */
-import { AuthResult, ChangePasswordRequest, LoginCredentials, ResetPasswordRequest } from '../../shared/types';
+import { ipcMain } from "electron";
+import {
+  AuthResult,
+  ChangePasswordRequest,
+  LoginCredentials,
+  ResetPasswordRequest,
+} from "../shared/types";
+import { AuthService } from "../services/auth.service";
+
+const authService = new AuthService();
 
 /**
  * Enumera los canales IPC para autenticación
@@ -38,4 +47,42 @@ export interface AuthRequests {
     request: ChangePasswordRequest;
     response: { success: boolean; message?: string };
   };
-} 
+}
+
+/**
+ * Registra los manejadores de canales IPC para autenticación
+ */
+export function registerAuthChannels() {
+  ipcMain.handle(
+    AuthChannels.LOGIN,
+    async (_, credentials: LoginCredentials) => {
+      return await AuthService.login(credentials);
+    }
+  );
+
+  ipcMain.handle(AuthChannels.LOGOUT, async () => {
+    return await AuthService.logout();
+  });
+
+  ipcMain.handle(AuthChannels.VERIFY_TOKEN, async (_, { token }) => {
+    return await AuthService.verifyToken(token);
+  });
+
+  ipcMain.handle(
+    AuthChannels.RESET_PASSWORD,
+    async (_, request: ResetPasswordRequest) => {
+      return await AuthService.resetPassword(request);
+    }
+  );
+
+  ipcMain.handle(
+    AuthChannels.CHANGE_PASSWORD,
+    async (_, request: ChangePasswordRequest) => {
+      return await AuthService.changePassword(
+        request.id,
+        request.currentPassword,
+        request.newPassword
+      );
+    }
+  );
+}

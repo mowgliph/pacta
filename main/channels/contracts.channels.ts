@@ -1,11 +1,13 @@
 /**
  * Canales IPC relacionados con contratos
  */
-import { 
+import {
   ContractsListResponse,
   CreateContractRequest,
-  UpdateContractRequest
-} from '../../shared/types';
+  UpdateContractRequest,
+} from "../../shared/types";
+import { ipcMain } from "electron";
+import { ContractService } from "../services/contract.service";
 
 /**
  * Enumera los canales IPC para contratos
@@ -52,4 +54,29 @@ export interface ContractsRequests {
     request: { id: string; isRestricted: boolean };
     response: { success: boolean; message?: string };
   };
-} 
+}
+
+export function registerContractChannels() {
+  ipcMain.handle("contracts:getAll", async (_, filters?: any) => {
+    return await ContractService.getContracts(filters);
+  });
+
+  ipcMain.handle("contracts:getById", async (_, id: string) => {
+    return await ContractService.getContractById(id);
+  });
+
+  ipcMain.handle("contracts:create", async (_, contractData: any) => {
+    return await ContractService.createContract(contractData);
+  });
+
+  ipcMain.handle(
+    "contracts:update",
+    async (_, id: string, contractData: any) => {
+      return await ContractService.updateContract(id, contractData);
+    }
+  );
+
+  ipcMain.handle("contracts:delete", async (_, id: string) => {
+    return await ContractService.deleteContract(id);
+  });
+}

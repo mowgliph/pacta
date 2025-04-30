@@ -280,4 +280,12 @@ contextBridge.exposeInMainWorld("Electron", {
     checkFileExists: (filePath: string) =>
       ipcRenderer.invoke(FilesChannels.CHECK_FILE_EXISTS, filePath),
   },
+
+  // Dashboard
+  dashboard: {
+    getStatistics: () => ipcRenderer.invoke("dashboard:getStatistics"),
+    getTrends: () => ipcRenderer.invoke("dashboard:getTrends"),
+    getUpcomingActions: () =>
+      ipcRenderer.invoke("dashboard:getUpcomingActions"),
+  },
 });

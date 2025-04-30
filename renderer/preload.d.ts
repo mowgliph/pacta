@@ -126,6 +126,79 @@ declare global {
 
       receive: (channel: string, callback: (...args: any[]) => void) => boolean;
       removeListener: (channel: string) => boolean;
+
+      dashboard: DashboardAPI;
     };
   }
+}
+
+interface DashboardAPI {
+  getStatistics: () => Promise<{
+    success: boolean;
+    data?: {
+      totals: {
+        total: number;
+        active: number;
+        expiring: number;
+        expired: number;
+      };
+      distribution: {
+        client: number;
+        supplier: number;
+      };
+      recentActivity: Array<{
+        id: string;
+        title: string;
+        contractNumber: string;
+        updatedAt: Date;
+        createdBy: {
+          name: string;
+        };
+      }>;
+    };
+    error?: string;
+  }>;
+
+  getTrends: () => Promise<{
+    success: boolean;
+    data?: {
+      [key: string]: {
+        total: number;
+        client: number;
+        supplier: number;
+        active: number;
+        expired: number;
+      };
+    };
+    error?: string;
+  }>;
+
+  getUpcomingActions: () => Promise<{
+    success: boolean;
+    data?: {
+      upcomingContracts: Array<{
+        id: string;
+        title: string;
+        contractNumber: string;
+        endDate: Date;
+        owner: {
+          name: string;
+          email: string;
+        };
+      }>;
+      pendingSupplements: Array<{
+        id: string;
+        description: string;
+        createdAt: Date;
+        contract: {
+          title: string;
+          contractNumber: string;
+        };
+        createdBy: {
+          name: string;
+        };
+      }>;
+    };
+    error?: string;
+  }>;
 }

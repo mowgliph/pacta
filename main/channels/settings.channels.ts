@@ -1,11 +1,13 @@
 /**
  * Canales IPC relacionados con configuración del sistema
  */
-import { 
+import {
   UpdateEmailConfigRequest,
   UpdateSystemSettingRequest,
-  UpdateUserPreferenceRequest
-} from '../../shared/types';
+  UpdateUserPreferenceRequest,
+} from "../../shared/types";
+import { ipcMain } from "electron";
+import { SettingsService } from "../services/settings.service";
 
 /**
  * Enumera los canales IPC para configuración
@@ -47,4 +49,18 @@ export interface SettingsRequests {
     request: UpdateSystemSettingRequest;
     response: { success: boolean; setting: any; message?: string };
   };
-} 
+}
+
+export function registerSettingsChannels() {
+  ipcMain.handle("settings:get", async () => {
+    return await SettingsService.getSettings();
+  });
+
+  ipcMain.handle("settings:update", async (_, settings: any) => {
+    return await SettingsService.updateSettings(settings);
+  });
+
+  ipcMain.handle("settings:reset", async () => {
+    return await SettingsService.resetSettings();
+  });
+}
