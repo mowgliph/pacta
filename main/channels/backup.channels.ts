@@ -2,15 +2,17 @@
  * Canales IPC relacionados con copias de seguridad
  */
 
+import { Backup } from "../models/backup.model";
+
 /**
  * Enumera los canales IPC para backups
  */
 export enum BackupChannels {
-  GET_ALL = "backup:getAll",
+  GET_ALL = "backup:get-all",
   CREATE = "backup:create",
   RESTORE = "backup:restore",
   DELETE = "backup:delete",
-  CLEAN_OLD = "backup:cleanOld",
+  CLEAN_OLD = "backup:clean-old",
 }
 
 /**
@@ -53,24 +55,52 @@ export type BackupsListResponse = BackupResponse[];
  * Interfaz para solicitudes relacionadas con backups
  */
 export interface BackupRequests {
-  [BackupChannels.GET_ALL]: {
+  GET_ALL: {
     request: void;
-    response: BackupsListResponse;
+    response: {
+      success: boolean;
+      data?: Backup[];
+      error?: string;
+    };
   };
-  [BackupChannels.CREATE]: {
-    request: CreateBackupRequest;
-    response: BackupResponse;
+  CREATE: {
+    request: {
+      description?: string;
+      userId?: string;
+    };
+    response: {
+      success: boolean;
+      data?: Backup;
+      error?: string;
+    };
   };
-  [BackupChannels.RESTORE]: {
-    request: RestoreBackupRequest;
-    response: { success: boolean; message?: string };
+  RESTORE: {
+    request: {
+      backupId: string;
+      userId?: string;
+    };
+    response: {
+      success: boolean;
+      data?: boolean;
+      error?: string;
+    };
   };
-  [BackupChannels.DELETE]: {
-    request: DeleteBackupRequest;
-    response: { success: boolean; message?: string };
+  DELETE: {
+    request: {
+      backupId: string;
+    };
+    response: {
+      success: boolean;
+      data?: boolean;
+      error?: string;
+    };
   };
-  [BackupChannels.CLEAN_OLD]: {
+  CLEAN_OLD: {
     request: void;
-    response: { success: boolean; message: string };
+    response: {
+      success: boolean;
+      data?: number;
+      error?: string;
+    };
   };
 }

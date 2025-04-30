@@ -30,6 +30,7 @@ model User {
   notifications       UserNotification[] @relation("UserNotifications")
   preferences         UserPreference?
   documentActivities  DocumentActivity[]
+  restoredBackups     BackupRestore[]    // Relación con BackupRestore
 }
 
 model Role {
@@ -239,16 +240,17 @@ model DocumentActivity {
 }
 
 model Backup {
-  id                String   @id @default(uuid())
+  id                String          @id @default(uuid())
   fileName          String
   filePath          String
   fileSize          Int
   createdById       String
-  createdAt         DateTime @default(now())
+  createdAt         DateTime        @default(now())
   note              String?
-  emailNotification Boolean  @default(false)
-  isAutomatic       Boolean  @default(true)
-  createdBy         User     @relation(fields: [createdById], references: [id])
+  emailNotification Boolean         @default(false)
+  isAutomatic       Boolean         @default(true)
+  createdBy         User            @relation(fields: [createdById], references: [id])
+  restores          BackupRestore[] // Relación con BackupRestore
 }
 
 model UserPreference {
@@ -332,4 +334,13 @@ model PerformanceMetric {
   metadata    Json?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model BackupRestore {
+  id          String   @id @default(uuid())
+  backupId    String
+  restoredById String
+  restoredAt  DateTime @default(now())
+  backup      Backup   @relation(fields: [backupId], references: [id])
+  restoredBy  User     @relation(fields: [restoredById], references: [id])
 }

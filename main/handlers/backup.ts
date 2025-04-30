@@ -1,126 +1,112 @@
-import { withErrorHandling } from "../middleware/error.middleware";
+import { ipcMain } from "electron";
+import { BackupService } from "../services/backup.service";
 import { logger } from "../lib/logger";
-import { z } from "zod";
-import { BackupManager } from "../lib/backup-manager";
-import {
-  BackupChannels,
-  CreateBackupRequest,
-  RestoreBackupRequest,
-  DeleteBackupRequest,
-} from "../channels/backup.channels";
+import { BackupChannels } from "../channels/backup.channels";
+import { BackupRequests } from "../channels/backup.channels";
 
-// Esquemas de validación
-const createBackupSchema = z.object({
-  description: z.string().max(200).optional(),
-});
+const backupService = BackupService.getInstance();
 
-const restoreBackupSchema = z.object({
-  backupId: z.string().uuid(),
-});
-
-const deleteBackupSchema = z.object({
-  backupId: z.string().uuid(),
-});
-
-export function setupBackupHandlers(): void {
-  // Inicializar el BackupManager y programar backups automáticos
-  const backupManager = BackupManager.getInstance();
-  backupManager.setupScheduledBackup();
-
-  // Obtener lista de backups
-  withErrorHandling(BackupChannels.GET_ALL, async () => {
-    try {
-      const backups = await backupManager.getBackups();
-      return backups;
-    } catch (error) {
-      logger.error("Error obteniendo backups:", error);
-      throw error;
+/**
+ * Configura los manejadores IPC para las operaciones de backup
+ */
+export function setupBackupHandlers() {
+  // Obtener todos los backups
+  ipcMain.handle(
+    BackupChannels.GET_ALL,
+    async (event): Promise<BackupRequests["GET_ALL"]["response"]> => {
+      try {
+        const backups = await backupService.getBackups();
+        return { success: true, data: backups };
+      } catch (error) {
+        logger.error("Error al obtener backups:", error);
+        return {
+          success: false,
+          error: "Error al obtener la lista de backups",
+        };
+      }
     }
-  });
+  );
 
-  // Crear backup
-  withErrorHandling(
+  // Crear un nuevo backup
+  ipcMain.handle(
     BackupChannels.CREATE,
-    async (_, data: CreateBackupRequest) => {
+    async (
+      event,
+      request: BackupRequests["CREATE"]["request"]
+    ): Promise<BackupRequests["CREATE"]["response"]> => {
       try {
-        // Validar datos
-        const { description } = createBackupSchema.parse(data);
-
-        // Obtener el ID del usuario desde el token
-        const userId = data.userId || (await backupManager.getSystemUserId());
-
-        // Crear backup
-        const backup = await backupManager.createBackup(userId, description);
-        logger.info(`Backup creado por usuario ${userId}: ${backup.fileName}`);
-
-        return backup;
+        const backup = await backupService.createBackup(
+          request.description,
+          request.userId
+        );
+        return { success: true, data: backup };
       } catch (error) {
-        if (error instanceof z.ZodError) {
-          logger.warn("Error de validación en backup:create:", error.errors);
-          throw new Error("Datos de entrada inválidos");
-        }
-        throw error;
+        logger.error("Error al crear backup:", error);
+        return {
+          success: false,
+          error: "Error al crear el backup",
+        };
       }
     }
   );
 
-  // Restaurar backup
-  withErrorHandling(
+  // Restaurar un backup
+  ipcMain.handle(
     BackupChannels.RESTORE,
-    async (_, data: RestoreBackupRequest) => {
+    async (
+      event,
+      request: BackupRequests["RESTORE"]["request"]
+    ): Promise<BackupRequests["RESTORE"]["response"]> => {
       try {
-        // Validar datos
-        const { backupId } = restoreBackupSchema.parse(data);
-
-        // Obtener el ID del usuario desde el token
-        const userId = data.userId || (await backupManager.getSystemUserId());
-
-        // Restaurar backup
-        await backupManager.restoreBackup(backupId, userId);
-        logger.info(`Backup ${backupId} restaurado por usuario ${userId}`);
-
-        return { success: true, message: "Backup restaurado con éxito" };
+        const success = await backupService.restoreBackup(
+          request.backupId,
+          request.userId
+        );
+        return { success: true, data: success };
       } catch (error) {
-        if (error instanceof z.ZodError) {
-          logger.warn("Error de validación en backup:restore:", error.errors);
-          throw new Error("Datos de entrada inválidos");
-        }
-        throw error;
+        logger.error("Error al restaurar backup:", error);
+        return {
+          success: false,
+          error: "Error al restaurar el backup",
+        };
       }
     }
   );
 
-  // Eliminar backup
-  withErrorHandling(
+  // Eliminar un backup
+  ipcMain.handle(
     BackupChannels.DELETE,
-    async (_, data: DeleteBackupRequest) => {
+    async (
+      event,
+      request: BackupRequests["DELETE"]["request"]
+    ): Promise<BackupRequests["DELETE"]["response"]> => {
       try {
-        // Validar datos
-        const { backupId } = deleteBackupSchema.parse(data);
-
-        // Eliminar backup
-        await backupManager.deleteBackup(backupId);
-        logger.info(`Backup ${backupId} eliminado`);
-
-        return { success: true, message: "Backup eliminado con éxito" };
+        const success = await backupService.deleteBackup(request.backupId);
+        return { success: true, data: success };
       } catch (error) {
-        if (error instanceof z.ZodError) {
-          logger.warn("Error de validación en backup:delete:", error.errors);
-          throw new Error("Datos de entrada inválidos");
-        }
-        throw error;
+        logger.error("Error al eliminar backup:", error);
+        return {
+          success: false,
+          error: "Error al eliminar el backup",
+        };
       }
     }
   );
 
-  // Limpiar backups antiguos manualmente
-  withErrorHandling(BackupChannels.CLEAN_OLD, async () => {
-    const deletedCount = await backupManager.cleanOldBackups();
-    return {
-      success: true,
-      message: `Se eliminaron ${deletedCount} backups antiguos`,
-    };
-  });
-
-  logger.info("Manejadores de backup inicializados correctamente");
+  // Limpiar backups antiguos
+  ipcMain.handle(
+    BackupChannels.CLEAN_OLD,
+    async (event): Promise<BackupRequests["CLEAN_OLD"]["response"]> => {
+      try {
+        const deletedCount = await backupService.cleanOldBackups();
+        return { success: true, data: deletedCount };
+      } catch (error) {
+        logger.error("Error al limpiar backups antiguos:", error);
+        return {
+          success: false,
+          error: "Error al limpiar los backups antiguos",
+        };
+      }
+    }
+  );
 }
