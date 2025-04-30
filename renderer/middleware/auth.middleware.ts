@@ -1,22 +1,22 @@
-import type { Request, Response, NextFunction } from "express"
-import jwt from "jsonwebtoken"
-import { PrismaClient } from "@prisma/client"
-import { logger } from "../index"
+import type { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+import { PrismaClient } from "@prisma/client";
+import { logger } from "../index";
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 // Verificar que la variable JWT_SECRET está configurada
-const JWT_SECRET = process.env.JWT_SECRET
+const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
-  throw new Error("JWT_SECRET environment variable is required")
+  throw new Error("JWT_SECRET environment variable is required");
 }
 
 // Interface for decoded JWT token
 interface DecodedToken {
-  userId: number
-  role: string
-  iat: number
-  exp: number
+  userId: number;
+  role: string;
+  iat: number;
+  exp: number;
 }
 
 // Extend Express Request interface
@@ -24,35 +24,39 @@ declare global {
   namespace Express {
     interface Request {
       user?: {
-        id: number
-        role: string
-      }
+        id: number;
+        role: string;
+      };
     }
   }
 }
 
 // Middleware to authenticate JWT token
-export const authenticateJWT = async (req: Request, res: Response, next: NextFunction) => {
+export const authenticateJWT = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
-    const authHeader = req.headers.authorization
+    const authHeader = req.headers.authorization;
 
     if (!authHeader) {
-      return res.status(401).json({ message: "Authentication required" })
+      return res.status(401).json({ message: "Authentication required" });
     }
 
-    const token = authHeader.split(" ")[1]
+    const token = authHeader.split(" ")[1];
 
     if (!token) {
-      return res.status(401).json({ message: "Authentication token missing" })
+      return res.status(401).json({ message: "Authentication token missing" });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET) as DecodedToken
+    const decoded = jwt.verify(token, JWT_SECRET) as DecodedToken;
 
     // Set user info in request object
     req.user = {
       id: decoded.userId,
       role: decoded.role,
-    }
+    };
 
     // Log access
     await prisma.accessLog.create({
@@ -63,34 +67,37 @@ export const authenticateJWT = async (req: Request, res: Response, next: NextFun
         ip: req.ip,
         userAgent: req.get("User-Agent") || "Unknown",
       },
-    })
+    });
 
-    next()
+    next();
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      return res.status(401).json({ message: "Token expired" })
+      return res.status(401).json({ message: "Token expired" });
     }
 
     if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ message: "Invalid token" })
+      return res.status(401).json({ message: "Invalid token" });
     }
 
-    logger.error("Authentication error:", error)
-    return res.status(500).json({ message: "Authentication error" })
+    logger.error("Authentication error:", error);
+    return res.status(500).json({ message: "Authentication error" });
   }
-}
+};
 
 // Middleware to check user permissions
-export const checkPermission = (resource: string, action: "create" | "read" | "update" | "delete") => {
+export const checkPermission = (
+  resource: string,
+  action: "create" | "read" | "update" | "delete"
+) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {
-        return res.status(401).json({ message: "Authentication required" })
+        return res.status(401).json({ message: "Authentication required" });
       }
 
       // Admin role has all permissions
       if (req.user.role === "Admin") {
-        return next()
+        return next();
       }
 
       // Check user's specific permissions
@@ -100,31 +107,31 @@ export const checkPermission = (resource: string, action: "create" | "read" | "u
           resource,
           [`can${action.charAt(0).toUpperCase() + action.slice(1)}`]: true,
         },
-      })
+      });
 
       if (!permission) {
         return res.status(403).json({
           message: `You don't have permission to ${action} ${resource}`,
-        })
+        });
       }
 
-      next()
+      next();
     } catch (error) {
-      logger.error("Permission check error:", error)
-      return res.status(500).json({ message: "Permission check error" })
+      logger.error("Permission check error:", error);
+      return res.status(500).json({ message: "Permission check error" });
     }
-  }
-}
+  };
+};
 
 // Middleware to check if user is admin
 export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
   if (!req.user) {
-    return res.status(401).json({ message: "Authentication required" })
+    return res.status(401).json({ message: "Authentication required" });
   }
 
   if (req.user.role !== "Admin") {
-    return res.status(403).json({ message: "Admin access required" })
+    return res.status(403).json({ message: "Admin access required" });
   }
 
-  next()
-}
+  next();
+};

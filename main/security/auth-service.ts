@@ -12,6 +12,9 @@ const JWT_OPTIONS = {
   algorithm: "HS256" as jwt.Algorithm,
   audience: "pacta-app",
   issuer: "pacta-auth",
+  expiresIn: "1h",
+  notBefore: "0",
+  jwtid: uuidv4(),
 };
 
 // Tipos para sesiones activas
@@ -21,6 +24,8 @@ interface ActiveSession {
   token: string;
   expiresAt: number;
   lastActivity: number;
+  ipAddress?: string;
+  userAgent?: string;
 }
 
 /**
@@ -31,6 +36,10 @@ export class AuthService {
   private static instance: AuthService;
   private activeSessions: Map<string, ActiveSession> = new Map();
   private JWT_SECRET: string;
+  private MAX_LOGIN_ATTEMPTS = 5;
+  private LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutos
+  private failedAttempts: Map<string, { count: number; lockoutUntil: number }> =
+    new Map();
 
   private constructor() {
     // Obtener clave secreta para JWT
@@ -59,15 +68,34 @@ export class AuthService {
     rememberMe?: boolean;
     deviceId?: string;
     ipAddress?: string;
+    userAgent?: string;
   }) {
-    const { email, password, rememberMe = false, deviceId, ipAddress } = params;
+    const {
+      email,
+      password,
+      rememberMe = false,
+      deviceId,
+      ipAddress,
+      userAgent,
+    } = params;
 
-    // Crear clave única para rate limiting (combinación de email e IP)
+    // Verificar si la cuenta está bloqueada
+    const lockoutStatus = this.checkAccountLockout(email);
+    if (lockoutStatus.isLocked) {
+      throw new Error(
+        `Cuenta bloqueada. Intente nuevamente en ${Math.ceil(
+          lockoutStatus.remainingTime / 60000
+        )} minutos`
+      );
+    }
+
+    // Crear clave única para rate limiting
     const rateLimitKey = `login:${email}:${ipAddress || "unknown"}`;
 
     // Verificar rate limiting
     const allowed = await rateLimiter.checkLoginAttempt(rateLimitKey);
     if (!allowed) {
+      this.incrementFailedAttempts(email);
       logger.warn(`Intento de login bloqueado por rate limiting: ${email}`);
       throw new Error(
         "Demasiados intentos de inicio de sesión. Por favor, inténtelo más tarde."
@@ -90,6 +118,7 @@ export class AuthService {
       });
 
       if (!user) {
+        this.incrementFailedAttempts(email);
         logger.warn(
           `Intento de inicio de sesión con email no encontrado: ${email}`
         );
@@ -99,20 +128,23 @@ export class AuthService {
       // Verificar si el usuario está activo
       if (!user.isActive) {
         logger.warn(
-          `Intento de inicio de sesión con usuario desactivado: ${email}`
+          `Intento de inicio de sesión con cuenta inactiva: ${email}`
         );
-        throw new Error("Usuario desactivado");
+        throw new Error("Cuenta inactiva. Contacte al administrador.");
       }
 
-      // Comparar contraseña
+      // Verificar contraseña
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
-        logger.warn(`Contraseña incorrecta para usuario: ${email}`);
+        this.incrementFailedAttempts(email);
+        logger.warn(
+          `Intento de inicio de sesión con contraseña incorrecta: ${email}`
+        );
         throw new Error("Credenciales inválidas");
       }
 
-      // Resetear contador de intentos fallidos
-      await rateLimiter.loginSuccessful(rateLimitKey);
+      // Resetear intentos fallidos si la autenticación es exitosa
+      this.resetFailedAttempts(email);
 
       // Generar token y registrar sesión
       const { token, expiresAt } = this.generateToken({
@@ -121,31 +153,81 @@ export class AuthService {
         role: user.role.name,
         deviceId,
         rememberMe,
+        expiresIn: rememberMe ? "7d" : "1h",
       });
 
-      // Actualizar último login
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { lastLogin: new Date() },
+      // Registrar sesión activa
+      this.registerActiveSession({
+        userId: user.id,
+        deviceId: deviceId || uuidv4(),
+        token,
+        expiresAt,
+        lastActivity: Date.now(),
+        ipAddress,
+        userAgent,
       });
 
-      logger.info(
-        `Usuario autenticado: ${user.email} ${
-          rememberMe ? "(sesión extendida)" : ""
-        }`
-      );
-
-      // Devolver datos del usuario (sin contraseña)
-      const { password: _, ...userWithoutPassword } = user;
       return {
         token,
-        user: userWithoutPassword,
+        user: {
+          id: user.id,
+          email: user.email,
+          role: user.role.name,
+          name: user.name,
+        },
         expiresAt: new Date(expiresAt).toISOString(),
       };
     } catch (error) {
-      // No resetear el contador de intentos si hay error
+      logger.error(`Error en proceso de login: ${error.message}`);
       throw error;
     }
+  }
+
+  /**
+   * Verifica el estado de bloqueo de una cuenta
+   */
+  private checkAccountLockout(email: string): {
+    isLocked: boolean;
+    remainingTime: number;
+  } {
+    const attempt = this.failedAttempts.get(email);
+    if (!attempt) return { isLocked: false, remainingTime: 0 };
+
+    if (
+      attempt.count >= this.MAX_LOGIN_ATTEMPTS &&
+      Date.now() < attempt.lockoutUntil
+    ) {
+      return {
+        isLocked: true,
+        remainingTime: attempt.lockoutUntil - Date.now(),
+      };
+    }
+
+    return { isLocked: false, remainingTime: 0 };
+  }
+
+  /**
+   * Incrementa el contador de intentos fallidos
+   */
+  private incrementFailedAttempts(email: string): void {
+    const attempt = this.failedAttempts.get(email) || {
+      count: 0,
+      lockoutUntil: 0,
+    };
+    attempt.count++;
+
+    if (attempt.count >= this.MAX_LOGIN_ATTEMPTS) {
+      attempt.lockoutUntil = Date.now() + this.LOCKOUT_DURATION;
+    }
+
+    this.failedAttempts.set(email, attempt);
+  }
+
+  /**
+   * Resetea los intentos fallidos
+   */
+  private resetFailedAttempts(email: string): void {
+    this.failedAttempts.delete(email);
   }
 
   /**
@@ -376,13 +458,13 @@ export class AuthService {
         deviceId: finalDeviceId,
         iat: Math.floor(Date.now() / 1000),
       },
-      this.JWT_SECRET,
+      this.JWT_SECRET as jwt.Secret,
       {
-        expiresIn: tokenExpiresIn,
         algorithm: JWT_OPTIONS.algorithm,
         audience: JWT_OPTIONS.audience,
         issuer: JWT_OPTIONS.issuer,
-      }
+        expiresIn: tokenExpiresIn,
+      } as jwt.SignOptions
     );
 
     // Guardar token en el store
@@ -494,6 +576,13 @@ export class AuthService {
         `Limpieza de sesiones: ${count} sesiones expiradas eliminadas`
       );
     }
+  }
+
+  /**
+   * Registrar una sesión activa
+   */
+  private registerActiveSession(session: ActiveSession): void {
+    this.activeSessions.set(session.deviceId, session);
   }
 }
 

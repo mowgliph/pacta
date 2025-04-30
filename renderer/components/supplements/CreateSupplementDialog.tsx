@@ -31,11 +31,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SupplementType } from "@/types/supplement.types";
+import { SupplementType, SupplementChangeType } from "@/types/supplement.types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const createSchema = z.object({
+  title: z.string().min(1, "El título es requerido"),
   type: z.nativeEnum(SupplementType),
+  changeType: z.nativeEnum(SupplementChangeType),
+  effectiveDate: z.string().min(1, "La fecha efectiva es requerida"),
   previousValue: z.string().min(1, "El valor anterior es requerido"),
   newValue: z.string().min(1, "El nuevo valor es requerido"),
   description: z.string().min(1, "La descripción es requerida"),
@@ -62,7 +65,10 @@ export function CreateSupplementDialog({
   const form = useForm<CreateFormValues>({
     resolver: zodResolver(createSchema),
     defaultValues: {
+      title: "",
       type: SupplementType.AMOUNT,
+      changeType: SupplementChangeType.MODIFICATION,
+      effectiveDate: "",
       previousValue: "",
       newValue: "",
       description: "",

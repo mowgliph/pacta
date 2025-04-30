@@ -1,5 +1,5 @@
 import { randomBytes, createHash } from "crypto";
-import { ipcMain } from "electron";
+import { ipcMain, BrowserWindow } from "electron";
 import { logger } from "../utils/logger";
 import { scrypt, timingSafeEqual } from "crypto";
 import { promisify } from "util";
@@ -21,11 +21,14 @@ export class SecurityManager {
   private sessionInvalidationCallbacks: Map<string, Function[]> = new Map();
   private secretKeyCache: Map<string, string> = new Map();
   private envFilePath: string;
+  private secureProtocols: string[] = ["https:", "wss:"];
+  private allowedOrigins: string[] = ["file://", "app://"];
 
   private constructor() {
     this.envFilePath = path.join(app.getPath("userData"), ".env.secrets");
     this.setupListeners();
     this.startCleanupTasks();
+    this.setupSecurityHeaders();
   }
 
   /**
@@ -39,13 +42,80 @@ export class SecurityManager {
   }
 
   /**
+   * Configura las cabeceras de seguridad para todas las ventanas
+   */
+  private setupSecurityHeaders(): void {
+    app.on("web-contents-created", (event, contents) => {
+      contents.on("will-navigate", (event, navigationUrl) => {
+        const parsedUrl = new URL(navigationUrl);
+        if (!this.isAllowedOrigin(parsedUrl.origin)) {
+          event.preventDefault();
+          logger.warn(
+            `Navegación bloqueada a origen no permitido: ${parsedUrl.origin}`
+          );
+        }
+      });
+
+      contents.setWindowOpenHandler(({ url }) => {
+        const parsedUrl = new URL(url);
+        if (!this.isAllowedOrigin(parsedUrl.origin)) {
+          logger.warn(
+            `Apertura de ventana bloqueada a origen no permitido: ${parsedUrl.origin}`
+          );
+          return { action: "deny" };
+        }
+        return { action: "allow" };
+      });
+    });
+  }
+
+  /**
+   * Verifica si un origen está permitido
+   */
+  private isAllowedOrigin(origin: string): boolean {
+    return this.allowedOrigins.some((allowed) => origin.startsWith(allowed));
+  }
+
+  /**
    * Configura las opciones de seguridad para la aplicación
    */
   public setupSecurity(): void {
     logger.info("Configurando opciones de seguridad...");
 
-    // Configurar Content-Security-Policy y otras opciones de seguridad
-    // Implementar según necesidades específicas
+    // Configurar Content-Security-Policy
+    app.on("ready", () => {
+      const csp = [
+        "default-src 'self'",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: blob:",
+        "font-src 'self'",
+        "connect-src 'self'",
+        "frame-src 'none'",
+        "worker-src 'self' blob:",
+        "object-src 'none'",
+      ].join("; ");
+
+      BrowserWindow.getAllWindows().forEach((window) => {
+        window.webContents.session.webRequest.onHeadersReceived(
+          (details, callback) => {
+            callback({
+              responseHeaders: {
+                ...details.responseHeaders,
+                "Content-Security-Policy": [csp],
+                "X-Content-Type-Options": ["nosniff"],
+                "X-Frame-Options": ["DENY"],
+                "X-XSS-Protection": ["1; mode=block"],
+                "Referrer-Policy": ["strict-origin-when-cross-origin"],
+                "Permissions-Policy": [
+                  "camera=(), microphone=(), geolocation=()",
+                ],
+              },
+            });
+          }
+        );
+      });
+    });
   }
 
   /**
@@ -364,6 +434,17 @@ export class SecurityManager {
   private createSessionIdFromJwt(jwt: string): string {
     // Solo necesitamos un hash del token, no necesitamos descifrarlo
     return createHash("sha256").update(jwt).digest("hex");
+  }
+
+  /**
+   * Obtiene la clave secreta para JWT
+   */
+  public getJwtSecret(): string {
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      throw new Error("JWT_SECRET no está configurado");
+    }
+    return jwtSecret;
   }
 }
 

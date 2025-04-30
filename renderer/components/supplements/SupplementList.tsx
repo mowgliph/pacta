@@ -1,181 +1,150 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { Supplement, SupplementStatus } from "@/types/supplement.types";
 import { useSupplements } from "@/hooks/useSupplements";
-import {
-  Supplement,
-  SupplementStatus,
-  SupplementType,
-} from "@/types/supplement.types";
+import { Table } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { useToast } from "@/hooks/use-toast";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Eye, Check, X } from "lucide-react";
+import { ViewSupplementDialog } from "./ViewSupplementDialog";
+import { PermissionGate } from "../auth/permission-gate";
 
 interface SupplementListProps {
   contractId: string;
 }
 
-export const SupplementList = ({ contractId }: SupplementListProps) => {
+export function SupplementList({ contractId }: SupplementListProps) {
+  const [supplements, setSupplements] = useState<Supplement[]>([]);
+  const [selectedSupplement, setSelectedSupplement] =
+    useState<Supplement | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const {
     getSupplementsByContract,
     approveSupplement,
     rejectSupplement,
     isLoading,
-    error,
   } = useSupplements();
-  const [supplements, setSupplements] = useState<Supplement[]>([]);
-  const { toast } = useToast();
+
+  const loadSupplements = async () => {
+    const data = await getSupplementsByContract(contractId);
+    setSupplements(data);
+  };
 
   useEffect(() => {
     loadSupplements();
   }, [contractId]);
 
-  const loadSupplements = async () => {
-    const supplements = await getSupplementsByContract(contractId);
-    setSupplements(supplements);
+  const handleApprove = async (supplementId: string) => {
+    await approveSupplement(supplementId);
+    loadSupplements();
   };
 
-  const handleApprove = async (id: string) => {
-    const updatedSupplement = await approveSupplement(id);
-    if (updatedSupplement) {
-      setSupplements(
-        supplements.map((s) => (s.id === id ? updatedSupplement : s))
-      );
-      toast({
-        title: "Éxito",
-        description: "Suplemento aprobado correctamente",
-      });
-    }
-  };
-
-  const handleReject = async (id: string) => {
-    const updatedSupplement = await rejectSupplement(id);
-    if (updatedSupplement) {
-      setSupplements(
-        supplements.map((s) => (s.id === id ? updatedSupplement : s))
-      );
-      toast({
-        title: "Éxito",
-        description: "Suplemento rechazado correctamente",
-      });
-    }
+  const handleReject = async (supplementId: string) => {
+    await rejectSupplement(supplementId);
+    loadSupplements();
   };
 
   const getStatusBadge = (status: SupplementStatus) => {
-    switch (status) {
-      case SupplementStatus.PENDING:
-        return <Badge variant="secondary">Pendiente</Badge>;
-      case SupplementStatus.APPROVED:
-        return <Badge variant="default">Aprobado</Badge>;
-      case SupplementStatus.REJECTED:
-        return <Badge variant="destructive">Rechazado</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
+    const variants: Record<
+      SupplementStatus,
+      "destructive" | "default" | "secondary"
+    > = {
+      [SupplementStatus.PENDING]: "secondary",
+      [SupplementStatus.APPROVED]: "default",
+      [SupplementStatus.REJECTED]: "destructive",
+    };
+
+    const labels = {
+      [SupplementStatus.PENDING]: "Pendiente",
+      [SupplementStatus.APPROVED]: "Aprobado",
+      [SupplementStatus.REJECTED]: "Rechazado",
+    };
+
+    return <Badge variant={variants[status]}>{labels[status]}</Badge>;
   };
-
-  const getTypeLabel = (type: SupplementType) => {
-    switch (type) {
-      case SupplementType.AMOUNT:
-        return "Monto";
-      case SupplementType.DATE:
-        return "Fecha";
-      case SupplementType.DESCRIPTION:
-        return "Descripción";
-      case SupplementType.OTHER:
-        return "Otro";
-      default:
-        return type;
-    }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="space-y-4">
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-        <Skeleton className="h-10 w-full" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-lg border border-destructive bg-destructive/10 p-4 text-destructive">
-        {error}
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
-      <ScrollArea className="h-[400px] rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[100px]">Tipo</TableHead>
-              <TableHead>Valor Anterior</TableHead>
-              <TableHead>Nuevo Valor</TableHead>
-              <TableHead>Descripción</TableHead>
-              <TableHead className="w-[100px]">Estado</TableHead>
-              <TableHead className="w-[150px]">Fecha</TableHead>
-              <TableHead className="w-[150px]">Acciones</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {supplements.map((supplement) => (
-              <TableRow key={supplement.id}>
-                <TableCell className="font-medium">
-                  {getTypeLabel(supplement.type)}
-                </TableCell>
-                <TableCell>{supplement.previousValue}</TableCell>
-                <TableCell>{supplement.newValue}</TableCell>
-                <TableCell className="max-w-[200px] truncate">
-                  {supplement.description}
-                </TableCell>
-                <TableCell>{getStatusBadge(supplement.status)}</TableCell>
-                <TableCell>
-                  {format(new Date(supplement.createdAt), "PPP", {
-                    locale: es,
-                  })}
-                </TableCell>
-                <TableCell>
-                  {supplement.status === SupplementStatus.PENDING && (
-                    <div className="flex space-x-2">
+      <Table>
+        <thead>
+          <tr>
+            <th>Título</th>
+            <th>Tipo de Cambio</th>
+            <th>Fecha Efectiva</th>
+            <th>Estado</th>
+            <th>Creado Por</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {supplements.map((supplement) => (
+            <tr key={supplement.id}>
+              <td>{supplement.title}</td>
+              <td>{supplement.changeType}</td>
+              <td>
+                {format(new Date(supplement.effectiveDate), "dd/MM/yyyy", {
+                  locale: es,
+                })}
+              </td>
+              <td>{getStatusBadge(supplement.status)}</td>
+              <td>{supplement.createdBy.name}</td>
+              <td className="space-x-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setSelectedSupplement(supplement);
+                    setIsViewDialogOpen(true);
+                  }}
+                >
+                  <Eye className="h-4 w-4" />
+                </Button>
+
+                {supplement.status === SupplementStatus.PENDING && (
+                  <PermissionGate resource="contracts" action="approve">
+                    <>
                       <Button
-                        variant="outline"
                         size="sm"
+                        variant="default"
                         onClick={() => handleApprove(supplement.id)}
                       >
-                        Aprobar
+                        <Check className="h-4 w-4" />
                       </Button>
                       <Button
-                        variant="outline"
                         size="sm"
+                        variant="destructive"
                         onClick={() => handleReject(supplement.id)}
                       >
-                        Rechazar
+                        <X className="h-4 w-4" />
                       </Button>
-                    </div>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </ScrollArea>
+                    </>
+                  </PermissionGate>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+
+      {supplements.length === 0 && !isLoading && (
+        <div className="text-center py-4 text-muted-foreground">
+          No hay suplementos para este contrato
+        </div>
+      )}
+
+      {selectedSupplement && (
+        <ViewSupplementDialog
+          isOpen={isViewDialogOpen}
+          onClose={() => {
+            setIsViewDialogOpen(false);
+            setSelectedSupplement(null);
+          }}
+          supplement={selectedSupplement}
+        />
+      )}
     </div>
   );
-};
+}

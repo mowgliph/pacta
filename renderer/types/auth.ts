@@ -62,7 +62,7 @@ export interface LoginCredentials {
 }
 
 // Estado de token para UI
-export type TokenStatus = 'valid' | 'warning' | 'expired' | 'no-token';
+export type TokenStatus = "valid" | "warning" | "expired" | "no-token";
 
 // Tipo para el estado de autenticación
 export interface AuthState {
@@ -74,10 +74,15 @@ export interface AuthState {
   error: string | null;
   deviceId: string | null;
   lastTokenRefresh: string | null;
-  
+
   // Métodos
-  login: (email: string, password: string, rememberMe?: boolean, isSpecialUser?: boolean) => Promise<boolean>;
+  login: (
+    email: string,
+    password: string,
+    rememberMe?: boolean,
+    isSpecialUser?: boolean
+  ) => Promise<boolean>;
   logout: () => void;
   refreshToken: (force?: boolean) => Promise<boolean>;
   clearError: () => void;
-} 
+}
