@@ -2,14 +2,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "../../lib/utils";
-import { NAVIGATION_ITEMS, Route } from "../../lib/routes";
+import { NAVIGATION_ITEMS, Route } from "../../routes/routes";
 import { useNavigation } from "../../hooks/use-navigation";
 import { Icons } from "../ui/icons";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "../ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 interface NavigationItemProps {
   item: Route;
@@ -126,4 +122,4 @@ export function Navigation() {
       </button>
     </nav>
   );
-} 
+}

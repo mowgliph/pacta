@@ -3,7 +3,9 @@
 **Última actualización:** 22 de abril de 2025
 
 ## 1. Introducción y Resumen Ejecutivo
-PACTA es una aplicación de escritorio instalable localmente, diseñada para optimizar la gestión de contratos existentes en empresas grandes. Su objetivo es centralizar la documentación contractual, automatizar el seguimiento de vencimientos y mejorar la organización general, funcionando tanto online como offline. Este documento describe los requerimientos para la versión inicial de PACTA.
+PACTA es una aplicación de escritorio, diseñada para optimizar la gestión de contratos. 
+Su objetivo es centralizar la documentación contractual, automatizar el seguimiento de vencimientos y mejorar la organización general, 
+funcionando tanto online como offline. Este documento describe los requerimientos para la versión inicial de PACTA.
 
 ## 2. Objetivos del Producto
 - **Reducir errores:** Minimizar los riesgos legales y operativos asociados a vencimientos no detectados.

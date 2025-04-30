@@ -1,6 +1,6 @@
 import { useRouter } from "next/router";
 import { useCallback } from "react";
-import { ROUTES } from "../lib/routes";
+import { ROUTES } from "../routes/routes";
 import { useAuth } from "./useAuth";
 
 type Role = "admin" | "ra";
@@ -21,10 +21,7 @@ export function useNavigation() {
         return;
       }
 
-      if (
-        path.startsWith("/admin") &&
-        (!user || user.role.name !== "admin")
-      ) {
+      if (path.startsWith("/admin") && (!user || user.role.name !== "admin")) {
         await router.replace(ROUTES.DASHBOARD);
         return;
       }
@@ -59,4 +56,4 @@ export function useNavigation() {
     currentPath: router.pathname,
     isLoading: router.isFallback,
   };
-} 
+}

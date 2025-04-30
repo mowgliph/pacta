@@ -27,7 +27,7 @@ model User {
   supplements         Supplement[]
   approvedSupplements Supplement[]       @relation("ApprovedByUser")
   role                Role               @relation(fields: [roleId], references: [id])
-  notifications       UserNotification[]
+  notifications       UserNotification[] @relation("UserNotifications")
   preferences         UserPreference?
 }
 
@@ -118,7 +118,7 @@ model Contract {
   forceMajeure        String
   
   // Metadatos del sistema
-  status              String                @default("Vigente") @db.Enum("Vigente", "Próximo a Vencer", "Vencido", "Archivado")
+  status              String                @default("Vigente")
   isRestricted        Boolean               @default(false)
   createdById         String
   ownerId             String
@@ -133,7 +133,7 @@ model Contract {
   documents           Document[]
   history            HistoryRecord[]
   supplements        Supplement[]
-  notifications      UserNotification[]
+  notifications      UserNotification[]     @relation("ContractNotifications")
 }
 
 model Supplement {
@@ -305,10 +305,17 @@ model UserNotification {
   title      String
   message    String
   type       String
+  priority   String    @default("medium")
+  metadata   Json?
   isRead     Boolean   @default(false)
-  contractId String?
   createdAt  DateTime  @default(now())
-  readAt     DateTime?
-  contract   Contract? @relation(fields: [contractId], references: [id])
-  user       User      @relation(fields: [userId], references: [id])
+  updatedAt  DateTime  @updatedAt
+  contractId String?
+  user       User      @relation("UserNotifications", fields: [userId], references: [id])
+  contract   Contract? @relation("ContractNotifications", fields: [contractId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([priority])
+  @@index([isRead])
 }

@@ -1,60 +1,97 @@
 /**
  * Canales IPC relacionados con notificaciones
  */
-import { 
+import {
   CreateNotificationRequest,
   MarkNotificationReadRequest,
-  NotificationsListResponse
-} from '../../shared/types';
+  NotificationsListResponse,
+} from "../shared/types";
 
 /**
  * Enumera los canales IPC para notificaciones
  */
-export enum NotificationsChannels {
-  SHOW = "notifications:show",
-  GET_ALL = "notifications:getAll",
-  CREATE = "notifications:create",
-  MARK_READ = "notifications:markRead",
-  MARK_ALL_READ = "notifications:markAllRead",
-  DELETE = "notifications:delete",
+export enum NotificationChannels {
+  // Canales de lectura
+  GET_USER_NOTIFICATIONS = "notifications:getUserNotifications",
   GET_UNREAD_COUNT = "notifications:getUnreadCount",
-  GET_BY_USER = "notifications:getByUser",
+
+  // Canales de escritura
+  CREATE = "notifications:create",
+  MARK_AS_READ = "notifications:markAsRead",
+  MARK_ALL_AS_READ = "notifications:markAllAsRead",
+  DELETE = "notifications:delete",
+
+  // Canales de eventos
+  NOTIFICATION_CREATED = "notifications:created",
+  NOTIFICATION_READ = "notifications:read",
+  NOTIFICATION_DELETED = "notifications:deleted",
 }
 
 /**
  * Interfaz para solicitudes relacionadas con notificaciones
  */
 export interface NotificationsRequests {
-  [NotificationsChannels.GET_ALL]: {
-    request: { filters?: any };
+  [NotificationChannels.GET_USER_NOTIFICATIONS]: {
+    request: { userId: string; filters?: any };
     response: NotificationsListResponse;
   };
-  [NotificationsChannels.GET_BY_USER]: {
-    request: { userId: string, filters?: any };
-    response: { notifications: any[], total: number, page: number, limit: number };
-  };
-  [NotificationsChannels.CREATE]: {
-    request: CreateNotificationRequest;
-    response: { success: boolean; notification: any; message?: string };
-  };
-  [NotificationsChannels.MARK_READ]: {
-    request: MarkNotificationReadRequest;
-    response: { success: boolean; message?: string };
-  };
-  [NotificationsChannels.MARK_ALL_READ]: {
-    request: { userId: string };
-    response: { success: boolean; count: number; message?: string };
-  };
-  [NotificationsChannels.DELETE]: {
-    request: { id: string, userId: string };
-    response: { success: boolean; message?: string };
-  };
-  [NotificationsChannels.GET_UNREAD_COUNT]: {
+  [NotificationChannels.GET_UNREAD_COUNT]: {
     request: { userId: string };
     response: { count: number };
   };
-  [NotificationsChannels.SHOW]: {
-    request: { title: string; message: string; type?: string };
-    response: { success: boolean };
+  [NotificationChannels.CREATE]: {
+    request: CreateNotificationRequest;
+    response: { success: boolean; notification: any; message?: string };
   };
-} 
+  [NotificationChannels.MARK_AS_READ]: {
+    request: MarkNotificationReadRequest;
+    response: { success: boolean; message?: string };
+  };
+  [NotificationChannels.MARK_ALL_AS_READ]: {
+    request: { userId: string };
+    response: { success: boolean; count: number; message?: string };
+  };
+  [NotificationChannels.DELETE]: {
+    request: { id: string; userId: string };
+    response: { success: boolean; message?: string };
+  };
+  [NotificationChannels.NOTIFICATION_CREATED]: {
+    request: { notification: NotificationPayload };
+    response: { success: boolean; message?: string };
+  };
+  [NotificationChannels.NOTIFICATION_READ]: {
+    request: { notificationId: string; userId: string };
+    response: { success: boolean; message?: string };
+  };
+  [NotificationChannels.NOTIFICATION_DELETED]: {
+    request: { notificationId: string; userId: string };
+    response: { success: boolean; message?: string };
+  };
+}
+
+export interface NotificationPayload {
+  id?: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  priority: NotificationPriority;
+  metadata?: Record<string, any>;
+  createdAt?: Date;
+  read?: boolean;
+}
+
+export enum NotificationType {
+  CONTRACT = "contract",
+  SUPPLEMENT = "supplement",
+  SYSTEM = "system",
+  WARNING = "warning",
+  INFO = "info",
+}
+
+export enum NotificationPriority {
+  LOW = "low",
+  MEDIUM = "medium",
+  HIGH = "high",
+  URGENT = "urgent",
+}
