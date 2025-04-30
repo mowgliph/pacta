@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
+import { FilesChannels } from "./channels/files.channels";
 
 /**
  * Lista de canales IPC permitidos para invocar (del renderer al main)
@@ -84,6 +85,17 @@ const validInvokeChannels = [
   "auth:logout",
   "auth:verify",
   "auth:refresh",
+
+  // Canales de archivos
+  FilesChannels.SAVE_FILE,
+  FilesChannels.READ_FILE,
+  FilesChannels.DELETE_FILE,
+  FilesChannels.LIST_FILES,
+  FilesChannels.CREATE_BACKUP,
+  FilesChannels.RESTORE_BACKUP,
+  FilesChannels.LIST_BACKUPS,
+  FilesChannels.VALIDATE_FILE,
+  FilesChannels.CHECK_FILE_EXISTS,
 ];
 
 /**
@@ -178,23 +190,23 @@ contextBridge.exposeInMainWorld("Electron", {
 
   // API para documentos
   documentos: {
-    abrir: (path: string) => ipcRenderer.invoke("documents:open", path),
+    abrir: (path: string) => ipcRenderer.invoke(FilesChannels.READ_FILE, path),
     guardar: (path: string, content: any) =>
-      ipcRenderer.invoke("documents:save", path, content),
+      ipcRenderer.invoke(FilesChannels.SAVE_FILE, content, { path }),
     listar: (contratoId: string) =>
-      ipcRenderer.invoke("documents:getByContract", contratoId),
+      ipcRenderer.invoke(FilesChannels.LIST_FILES, contratoId),
   },
 
   // API para backups
   backups: {
     crear: (descripcion?: string) =>
-      ipcRenderer.invoke("backup:create", { description: descripcion }),
+      ipcRenderer.invoke(FilesChannels.CREATE_BACKUP),
     restaurar: (backupId: string) =>
-      ipcRenderer.invoke("backup:restore", { backupId }),
+      ipcRenderer.invoke(FilesChannels.RESTORE_BACKUP, backupId),
     eliminar: (backupId: string) =>
-      ipcRenderer.invoke("backup:delete", { backupId }),
-    listar: () => ipcRenderer.invoke("backup:getAll"),
-    limpiarAntiguos: () => ipcRenderer.invoke("backup:cleanOld"),
+      ipcRenderer.invoke(FilesChannels.DELETE_FILE, backupId),
+    listar: () => ipcRenderer.invoke(FilesChannels.LIST_BACKUPS),
+    limpiarAntiguos: () => ipcRenderer.invoke(FilesChannels.DELETE_FILE, "old"),
   },
 
   // API para notificaciones
@@ -247,5 +259,25 @@ contextBridge.exposeInMainWorld("Electron", {
       return true;
     }
     return false;
+  },
+
+  // Funciones de manejo de archivos
+  files: {
+    saveFile: (buffer: Buffer, metadata: any) =>
+      ipcRenderer.invoke(FilesChannels.SAVE_FILE, buffer, metadata),
+    readFile: (filePath: string) =>
+      ipcRenderer.invoke(FilesChannels.READ_FILE, filePath),
+    deleteFile: (filePath: string) =>
+      ipcRenderer.invoke(FilesChannels.DELETE_FILE, filePath),
+    listFiles: (directory: string) =>
+      ipcRenderer.invoke(FilesChannels.LIST_FILES, directory),
+    createBackup: () => ipcRenderer.invoke(FilesChannels.CREATE_BACKUP),
+    restoreBackup: (backupPath: string) =>
+      ipcRenderer.invoke(FilesChannels.RESTORE_BACKUP, backupPath),
+    listBackups: () => ipcRenderer.invoke(FilesChannels.LIST_BACKUPS),
+    validateFile: (filePath: string) =>
+      ipcRenderer.invoke(FilesChannels.VALIDATE_FILE, filePath),
+    checkFileExists: (filePath: string) =>
+      ipcRenderer.invoke(FilesChannels.CHECK_FILE_EXISTS, filePath),
   },
 });

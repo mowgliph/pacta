@@ -1,17 +1,17 @@
-\"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
-import { Button } from "../ui/button"
-import { Plus } from "lucide-react"
-import { SupplementList } from "../supplements/supplement-list"
-import { NewSupplementDialog } from "../supplements/NewSupplementDialog"
-import { PermissionGate } from "../auth/permission-gate"
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Button } from "../ui/button";
+import { Plus } from "lucide-react";
+import { SupplementList } from "../supplements/SupplementList";
+import { CreateSupplementDialog } from "../supplements/CreateSupplementDialog";
+import { PermissionGate } from "../auth/permission-gate";
 
 interface ContractSupplementsProps {
-  contractId: string
-  contractData: any
-  onSupplementCreated?: () => void
+  contractId: string;
+  contractData: any;
+  onSupplementCreated?: () => void;
 }
 
 /**
@@ -21,16 +21,16 @@ interface ContractSupplementsProps {
 export function ContractSupplements({
   contractId,
   contractData,
-  onSupplementCreated
+  onSupplementCreated,
 }: ContractSupplementsProps) {
-  const [isNewSupplementOpen, setIsNewSupplementOpen] = useState(false)
+  const [isNewSupplementOpen, setIsNewSupplementOpen] = useState(false);
 
   const handleSupplementCreated = () => {
-    setIsNewSupplementOpen(false)
+    setIsNewSupplementOpen(false);
     if (onSupplementCreated) {
-      onSupplementCreated()
+      onSupplementCreated();
     }
-  }
+  };
 
   return (
     <Card>
@@ -51,7 +51,7 @@ export function ContractSupplements({
         <SupplementList contractId={contractId} />
 
         {/* Diálogo para crear nuevo suplemento */}
-        <NewSupplementDialog
+        <CreateSupplementDialog
           isOpen={isNewSupplementOpen}
           onClose={() => setIsNewSupplementOpen(false)}
           contractId={contractId}
@@ -59,5 +59,5 @@ export function ContractSupplements({
         />
       </CardContent>
     </Card>
-  )
+  );
 }

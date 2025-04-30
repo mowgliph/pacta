@@ -1,16 +1,51 @@
-import { prisma } from "../../lib/prisma";
-import { logger } from "../../lib/logger";
+import { prisma } from "../lib/prisma";
+import { logger } from "../lib/logger";
 import fs from "fs/promises";
 import path from "path";
 import { app } from "electron";
 import crypto from "crypto";
-import { DocumentFilters } from "../../shared/types";
-import { AppError } from "../../middleware/error.middleware";
+import { DocumentFilters } from "../shared/types";
+import { AppError } from "../middleware/error.middleware";
+import { v4 as uuidv4 } from "uuid";
+import { z } from "zod";
+
+const documentSchema = z.object({
+  originalName: z.string(),
+  mimeType: z.string(),
+  size: z.number(),
+  description: z.string().optional(),
+  tags: z.string().optional(),
+  isPublic: z.boolean().optional(),
+  contractId: z.string().optional(),
+  supplementId: z.string().optional(),
+});
 
 /**
  * Servicio para la gestión de documentos
  */
 export class DocumentService {
+  private readonly uploadDir: string;
+
+  constructor() {
+    this.uploadDir = path.join(app.getPath("userData"), "uploads");
+    this.ensureUploadDirectory();
+  }
+
+  private async ensureUploadDirectory() {
+    try {
+      await fs.access(this.uploadDir);
+    } catch {
+      await fs.mkdir(this.uploadDir, { recursive: true });
+    }
+  }
+
+  private generateSafeFilename(originalName: string): string {
+    const ext = path.extname(originalName);
+    const baseName = path.basename(originalName, ext);
+    const safeName = baseName.replace(/[^a-zA-Z0-9]/g, "_");
+    return `${safeName}_${uuidv4()}${ext}`;
+  }
+
   /**
    * Obtiene todos los documentos con filtros opcionales
    * @param filters - Filtros opcionales
@@ -80,7 +115,7 @@ export class DocumentService {
           contract: {
             select: {
               id: true,
-              title: true,
+              contractNumber: true,
             },
           },
           uploadedBy: {
@@ -245,11 +280,11 @@ export class DocumentService {
       // Crear registro en base de datos
       const document = await prisma.document.create({
         data: {
-          filename: safeFileName,
-          originalName: documentData.name || fileData.originalname,
-          mimeType: fileData.mimetype,
-          size: fileStats.size,
-          path: safeFileName,
+          fileName: safeFileName,
+          name: documentData.name || fileData.originalname,
+          fileType: fileData.mimetype,
+          fileSize: fileStats.size,
+          filePath: safeFileName,
           description: documentData.description,
           contract: {
             connect: { id: contractId },
@@ -262,7 +297,7 @@ export class DocumentService {
           contract: {
             select: {
               id: true,
-              title: true,
+              contractNumber: true,
             },
           },
           uploadedBy: {
@@ -283,6 +318,7 @@ export class DocumentService {
           entityType: "Contract",
           entityId: contractId,
           userId,
+          details: `Documento añadido al contrato ${contractId}`,
         },
       });
 
@@ -349,7 +385,7 @@ export class DocumentService {
 
       // Construir ruta completa al archivo
       const userDataPath = app.getPath("userData");
-      const filePath = path.join(userDataPath, "documents", document.path);
+      const filePath = path.join(userDataPath, "documents", document.filePath);
 
       // Verificar que el archivo existe
       try {
@@ -369,8 +405,8 @@ export class DocumentService {
 
       return {
         buffer: fileBuffer,
-        name: document.originalName,
-        type: document.mimeType,
+        name: document.name,
+        type: document.fileType,
       };
     } catch (error) {
       if (error instanceof AppError) {
@@ -431,16 +467,16 @@ export class DocumentService {
 
       // Construir ruta al archivo
       const userDataPath = app.getPath("userData");
-      const filePath = path.join(userDataPath, "documents", document.path);
+      const filePath = path.join(userDataPath, "documents", document.filePath);
 
       // Eliminar archivo físico
       try {
+        await fs.access(filePath);
         await fs.unlink(filePath);
       } catch (err) {
         logger.warn(
-          `Archivo no encontrado al eliminar documento ${id}: ${filePath}`
+          `Archivo no encontrado al eliminar documento ${id}: ${document.filePath}`
         );
-        // Continuamos con la eliminación del registro aunque el archivo no exista
       }
 
       // Guardar referencia al contrato para historial
@@ -460,6 +496,7 @@ export class DocumentService {
             entityType: "Contract",
             entityId: contractId,
             userId,
+            details: `Documento eliminado del contrato ${contractId}`,
           },
         });
       }
@@ -573,7 +610,7 @@ export class DocumentService {
       id: document.id,
       name: document.name,
       description: document.description,
-      fileType: document.mimeType,
+      fileType: document.fileType,
       fileName: document.originalName,
       fileSize: document.size,
       contractId: document.contractId,
@@ -582,7 +619,7 @@ export class DocumentService {
       contract: document.contract
         ? {
             id: document.contract.id,
-            title: document.contract.title,
+            contractNumber: document.contract.contractNumber,
           }
         : undefined,
       createdBy: document.uploadedBy
@@ -625,5 +662,150 @@ export class DocumentService {
         }
       })
     );
+  }
+
+  async saveDocument(
+    file: Buffer,
+    metadata: z.infer<typeof documentSchema>,
+    userId: string
+  ): Promise<any> {
+    // Validar metadata
+    const validatedMetadata = documentSchema.parse(metadata);
+
+    // Generar nombre seguro y ruta
+    const safeFilename = this.generateSafeFilename(
+      validatedMetadata.originalName
+    );
+    const filePath = path.join(this.uploadDir, safeFilename);
+
+    // Guardar archivo
+    await fs.writeFile(filePath, file);
+
+    // Crear registro en la base de datos
+    const document = await prisma.document.create({
+      data: {
+        fileName: safeFilename,
+        name: validatedMetadata.originalName,
+        fileType: validatedMetadata.mimeType,
+        fileSize: validatedMetadata.size,
+        filePath: filePath,
+        description: validatedMetadata.description,
+        tags: validatedMetadata.tags,
+        isPublic: validatedMetadata.isPublic ?? false,
+        contractId: validatedMetadata.contractId,
+        supplementId: validatedMetadata.supplementId,
+        uploadedById: userId,
+      },
+    });
+
+    return document;
+  }
+
+  async getDocument(id: string): Promise<{ document: any; file: Buffer }> {
+    const document = await prisma.document.findUnique({
+      where: { id },
+    });
+
+    if (!document) {
+      throw new Error("Documento no encontrado");
+    }
+
+    const file = await fs.readFile(document.filePath);
+    return { document, file };
+  }
+
+  async updateDocument(
+    id: string,
+    metadata: Partial<z.infer<typeof documentSchema>>
+  ): Promise<any> {
+    const validatedMetadata = documentSchema.partial().parse(metadata);
+
+    return prisma.document.update({
+      where: { id },
+      data: validatedMetadata,
+    });
+  }
+
+  async deleteDocument(id: string): Promise<void> {
+    const document = await prisma.document.findUnique({
+      where: { id },
+    });
+
+    if (!document) {
+      throw new Error("Documento no encontrado");
+    }
+
+    // Eliminar archivo físico
+    try {
+      await fs.access(document.filePath);
+      await fs.unlink(document.filePath);
+    } catch (err) {
+      logger.warn(
+        `Archivo no encontrado al eliminar documento ${id}: ${document.filePath}`
+      );
+    }
+
+    // Eliminar registro de la base de datos
+    await prisma.document.delete({
+      where: { id },
+    });
+  }
+
+  async recordActivity(
+    documentId: string,
+    userId: string,
+    action: "DOWNLOAD" | "VIEW" | "UPDATE" | "DELETE",
+    ipAddress?: string
+  ): Promise<void> {
+    await prisma.documentActivity.create({
+      data: {
+        documentId,
+        userId,
+        action,
+        ipAddress,
+      },
+    });
+
+    // Actualizar contadores
+    if (action === "DOWNLOAD") {
+      await prisma.document.update({
+        where: { id: documentId },
+        data: {
+          downloads: { increment: 1 },
+        },
+      });
+    } else if (action === "VIEW") {
+      await prisma.document.update({
+        where: { id: documentId },
+        data: {
+          views: { increment: 1 },
+        },
+      });
+    }
+  }
+
+  async listDocuments(filters: {
+    contractId?: string;
+    supplementId?: string;
+    userId?: string;
+    isPublic?: boolean;
+  }): Promise<any[]> {
+    return prisma.document.findMany({
+      where: {
+        ...filters,
+      },
+      include: {
+        uploadedBy: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: {
+        uploadedAt: "desc",
+      },
+    });
   }
 }

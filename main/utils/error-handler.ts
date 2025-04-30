@@ -1,5 +1,7 @@
 import { logger } from "./logger";
 import { BrowserWindow, dialog } from "electron";
+import { ErrorMonitorService } from "../services/error-monitor.service";
+import { ErrorRecoveryManager } from "./error-recovery";
 
 // Tipos de error personalizados para la aplicación
 export type AppErrorType =
@@ -10,6 +12,7 @@ export type AppErrorType =
   | "DatabaseError" // Errores de base de datos
   | "FileSystemError" // Errores del sistema de archivos
   | "LimitExceeded" // Límites superados (ej: backups)
+  | "MemoryError" // Errores de memoria
   | "NotImplementedError" // Funcionalidad no implementada
   | "UnknownError"; // Error no categorizado
 
@@ -23,28 +26,53 @@ export interface IpcError {
 
 export class ErrorHandler {
   private mainWindow: BrowserWindow | null = null;
+  private errorMonitor: ErrorMonitorService;
+  private errorRecovery: ErrorRecoveryManager;
 
   constructor(mainWindow?: BrowserWindow) {
     this.mainWindow = mainWindow || null;
-  }
+    this.errorMonitor = ErrorMonitorService.getInstance();
+    this.errorRecovery = ErrorRecoveryManager.getInstance();
+    
+    if (mainWindow) {
+      this.errorMonitor.setMainWindow(mainWindow);
+      this.errorRecovery.setMainWindow(mainWindow);
+    }
 
   /**
    * Configura el manejo de errores para la aplicación
    */
   public setupErrorHandling(): void {
-    process.on("uncaughtException", (error) => {
+    process.on("uncaughtException", async (error) => {
       logger.error("Error no capturado:", error);
-      this.showErrorDialog(
-        "Error inesperado",
-        "Ha ocurrido un error inesperado en la aplicación."
-      );
+      await this.handleCriticalError(error);
     });
 
-    process.on("unhandledRejection", (reason) => {
+    process.on("unhandledRejection", async (reason) => {
       logger.error("Promesa rechazada no manejada:", reason);
+      if (reason instanceof Error) {
+        await this.handleCriticalError(reason);
+      }
     });
 
     logger.info("Sistema de manejo de errores configurado");
+  }
+
+  /**
+   * Maneja errores críticos de la aplicación
+   */
+  private async handleCriticalError(error: Error): Promise<void> {
+    // Monitorear el error
+    this.errorMonitor.monitorError(error);
+
+    // Intentar recuperación
+    await this.errorRecovery.handleCriticalError(error);
+
+    // Mostrar diálogo al usuario si es necesario
+    this.showErrorDialog(
+      "Error Crítico",
+      "Se ha detectado un error crítico. El sistema intentará recuperarse."
+    );
   }
 
   /**

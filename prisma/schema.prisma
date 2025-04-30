@@ -205,13 +205,13 @@ model HistoryRecord {
 
 model Document {
   id           String      @id @default(uuid())
-  name         String
-  fileName     String
-  fileType     String
-  fileSize     Int
-  filePath     String
-  description  String?
-  tags         String?
+  filename     String      // Nombre seguro del archivo en el sistema
+  originalName String      // Nombre original del archivo
+  mimeType     String      // Tipo MIME del archivo
+  size         Int         // Tamaño en bytes
+  path         String      // Ruta relativa al archivo
+  description  String?     // Descripción opcional
+  tags         String?     // Tags separados por comas
   isPublic     Boolean     @default(false)
   contractId   String?
   supplementId String?
@@ -223,15 +223,18 @@ model Document {
   uploadedBy   User        @relation("UploadedDocuments", fields: [uploadedById], references: [id])
   supplement   Supplement? @relation(fields: [supplementId], references: [id])
   contract     Contract?   @relation(fields: [contractId], references: [id])
+  activities   DocumentActivity[]
 }
 
 model DocumentActivity {
   id         String   @id @default(uuid())
   documentId String
   userId     String
-  action     String
+  action     String   // DOWNLOAD, VIEW, UPDATE, DELETE
   ipAddress  String?
   timestamp  DateTime @default(now())
+  document   Document @relation(fields: [documentId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 }
 
 model Backup {
