@@ -29,6 +29,7 @@ model User {
   role                Role               @relation(fields: [roleId], references: [id])
   notifications       UserNotification[] @relation("UserNotifications")
   preferences         UserPreference?
+  documentActivities  DocumentActivity[]
 }
 
 model Role {
@@ -321,4 +322,14 @@ model UserNotification {
   @@index([type])
   @@index([priority])
   @@index([isRead])
+}
+
+model PerformanceMetric {
+  id          String   @id @default(uuid())
+  metricName  String
+  value       Float
+  timestamp   DateTime @default(now())
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

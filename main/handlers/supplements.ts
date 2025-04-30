@@ -1,108 +1,112 @@
-import { z } from "zod";
-import { prisma } from "../lib/prisma";
-import { ipcMain } from "electron";
-import { createHistoryRecord } from "../utils/history.utils";
+import { withErrorHandling } from "../utils/setup";
+import { logger } from "../utils/logger";
 import { SupplementService } from "../services/supplement.service";
+import { SupplementsChannels } from "../channels/supplements.channels";
+import { ErrorHandler } from "../utils/error-handler";
+import { ipcMain } from "electron";
+import { ValidationService } from "../validations";
+import { createHistoryRecord } from "../utils/history.utils";
 import { NotificationService } from "../services/notification.service";
 import { checkPermissions } from "../middleware/auth.middleware";
-import { ErrorHandler } from "../utils/error-handler";
 import {
   NotificationType,
   NotificationPriority,
 } from "../channels/notifications.channels";
+import { z } from "zod";
 
-const supplementService = new SupplementService();
 const notificationService = NotificationService.getInstance();
+const supplementService = new SupplementService();
 
-// Esquema de validación para crear suplementos
-const createSupplementSchema = z.object({
-  contractId: z.string().uuid(),
-  title: z.string().min(1).max(200),
-  description: z.string().optional(),
-  changes: z.string().min(1),
-  effectiveDate: z.string().transform((str) => new Date(str)),
-  documentUrl: z.string().optional(),
-  changeType: z.enum([
-    "extension",
-    "modification",
-    "termination",
-    "price_adjustment",
-    "scope_change",
-    "force_majeure",
-  ]),
-});
+export function setupSupplementHandlers(): void {
+  const validationService = ValidationService.getInstance();
+
+  // Obtener todos los suplementos
+  withErrorHandling(SupplementsChannels.GET_ALL, async (_, filters) => {
+    try {
+      // Validar filtros
+      validationService.validateSupplement(filters);
+
+      const supplements = await supplementService.getAllSupplements(
+        filters.contractId
+      );
+      return { supplements };
+    } catch (error) {
+      if (error instanceof Error) {
+        logger.error("Error al obtener suplementos:", error);
+        throw ErrorHandler.createError("DatabaseError", error.message);
+      }
+      throw error;
+    }
+  });
+
+  // Obtener un suplemento por ID
+  withErrorHandling(
+    SupplementsChannels.GET_BY_ID,
+    async (_, { id, includeDocuments = false }) => {
+      try {
+        if (!id || typeof id !== "string") {
+          throw ErrorHandler.createError(
+            "ValidationError",
+            "ID de suplemento no válido"
+          );
+        }
+
+        const supplement = await supplementService.getSupplementById(id);
+        return { supplement };
+      } catch (error) {
+        logger.error(`Error al obtener suplemento ${id}:`, error);
+        throw error;
+      }
+    }
+  );
+
+  // Crear un nuevo suplemento
+  withErrorHandling(SupplementsChannels.CREATE, async (_, data) => {
+    try {
+      // Validar datos del suplemento
+      validationService.validateSupplement(data);
+
+      const supplement = await supplementService.createSupplement(data);
+      return {
+        success: true,
+        supplement,
+        message: "Suplemento creado exitosamente",
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        logger.error("Error al crear suplemento:", error);
+        throw ErrorHandler.createError("DatabaseError", error.message);
+      }
+      throw error;
+    }
+  });
+
+  // Actualizar un suplemento
+  withErrorHandling(SupplementsChannels.UPDATE, async (_, { id, data }) => {
+    try {
+      // Validar datos de actualización
+      validationService.validateSupplement(data);
+
+      const supplement = await supplementService.updateSupplement(id, data);
+      return {
+        success: true,
+        supplement,
+        message: "Suplemento actualizado exitosamente",
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        logger.error(`Error al actualizar suplemento ${id}:`, error);
+        throw ErrorHandler.createError("DatabaseError", error.message);
+      }
+      throw error;
+    }
+  });
+}
 
 // Esquema de validación para aprobar suplementos
 const approveSupplementSchema = z.object({
   supplementId: z.string().uuid(),
   approvedById: z.string().uuid(),
-});
-
-// Handler para crear un nuevo suplemento
-ipcMain.handle("supplements:create", async (_, data, userId) => {
-  try {
-    // Validar permisos
-    await checkPermissions(userId, "contracts", "update");
-
-    // Validar datos de entrada
-    const validatedData = createSupplementSchema.parse(data);
-
-    // Verificar que el contrato existe
-    const contract = await prisma.contract.findUnique({
-      where: { id: validatedData.contractId },
-      include: { owner: true },
-    });
-
-    if (!contract) {
-      throw ErrorHandler.createError("NotFoundError", "Contrato no encontrado");
-    }
-
-    // Crear el suplemento
-    const supplement = await supplementService.createSupplement({
-      contractId: validatedData.contractId,
-      title: validatedData.title,
-      description: validatedData.description || null,
-      changes: validatedData.changes,
-      effectiveDate: validatedData.effectiveDate,
-      documentUrl: validatedData.documentUrl || null,
-      createdById: userId,
-      isApproved: false,
-      approvedById: null,
-      createdBy: { connect: { id: userId } },
-      contract: { connect: { id: validatedData.contractId } },
-    });
-
-    // Registrar en el historial
-    await createHistoryRecord({
-      entityType: "Supplement",
-      entityId: supplement.id,
-      userId,
-      action: "CREATE",
-      details: `Suplemento creado para el contrato ${contract.contractNumber}`,
-      changes: JSON.stringify(validatedData),
-      contractId: contract.id,
-    });
-
-    // Crear notificación para el dueño del contrato
-    if (contract.owner) {
-      await notificationService.createNotification({
-        userId: contract.owner.id,
-        title: "Nuevo suplemento para revisar",
-        message: `Se ha creado un nuevo suplemento para el contrato ${contract.contractNumber}`,
-        type: NotificationType.SUPPLEMENT,
-        priority: NotificationPriority.MEDIUM,
-        metadata: {
-          supplementId: supplement.id,
-          contractId: supplement.contractId,
-        },
-      });
-    }
-
-    return { success: true, data: supplement };
-  } catch (error) {
-    console.error("Error al crear suplemento:", error);
-    return { success: false, error: error.message };
-  }
 });
 
 // Handler para obtener suplementos de un contrato
@@ -216,51 +220,6 @@ ipcMain.handle("supplements:delete", async (_, supplementId, userId) => {
     return { success: true };
   } catch (error) {
     console.error("Error al eliminar suplemento:", error);
-    return { success: false, error: error.message };
-  }
-});
-
-// Handler para actualizar un suplemento
-ipcMain.handle("supplements:update", async (_, data, userId) => {
-  try {
-    // Validar permisos
-    await checkPermissions(userId, "contracts", "update");
-
-    const { id, ...updateData } = data;
-
-    // Verificar que el suplemento existe y no está aprobado
-    const existingSupplement = await supplementService.findById(id);
-    if (!existingSupplement) {
-      throw ErrorHandler.createError(
-        "NotFoundError",
-        "Suplemento no encontrado"
-      );
-    }
-
-    if (existingSupplement.isApproved) {
-      throw ErrorHandler.createError(
-        "ValidationError",
-        "No se puede modificar un suplemento aprobado"
-      );
-    }
-
-    // Actualizar suplemento
-    const supplement = await supplementService.update(id, updateData);
-
-    // Registrar en el historial
-    await createHistoryRecord({
-      entityType: "Supplement",
-      entityId: id,
-      userId,
-      action: "UPDATE",
-      details: `Suplemento actualizado`,
-      changes: JSON.stringify(updateData),
-      contractId: supplement.contractId,
-    });
-
-    return { success: true, data: supplement };
-  } catch (error) {
-    console.error("Error al actualizar suplemento:", error);
     return { success: false, error: error.message };
   }
 });

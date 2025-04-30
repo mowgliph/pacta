@@ -1,76 +1,93 @@
-import { ipcMain } from "electron";
+import { prisma } from "../lib/prisma";
+import { withErrorHandling } from "../utils/setup";
 import { logger } from "../utils/logger";
-import { performanceService } from "../services/performance-service";
-import { performanceMonitor } from "../services/performance-monitor";
+import { PerformanceService } from "../services/performance-service";
+import { PerformanceChannels } from "../channels/performance.channels";
+import { ErrorHandler } from "../utils/error-handler";
+import { ValidationService } from "../validations";
 
 /**
  * Manejador de eventos IPC para operaciones relacionadas con el rendimiento
  */
 export function setupPerformanceHandlers(): void {
-  // Iniciar monitoreo de rendimiento
-  ipcMain.handle("performance:start-monitoring", async () => {
+  const validationService = ValidationService.getInstance();
+
+  // Obtener todas las métricas de rendimiento
+  withErrorHandling(PerformanceChannels.GET_ALL, async (_, filters) => {
     try {
-      performanceMonitor.startMonitoring();
-      return { success: true, message: "Monitoreo de rendimiento iniciado" };
+      // Validar filtros
+      validationService.validatePerformance(filters);
+
+      const metrics = await PerformanceService.getAllMetrics(filters);
+      return { metrics };
     } catch (error) {
-      logger.error("Error al iniciar monitoreo:", error);
+      if (error instanceof Error) {
+        logger.error("Error al obtener métricas:", error);
+        throw ErrorHandler.createError("DatabaseError", error.message);
+      }
       throw error;
     }
   });
 
-  // Detener monitoreo de rendimiento
-  ipcMain.handle("performance:stop-monitoring", async () => {
+  // Obtener una métrica por ID
+  withErrorHandling(PerformanceChannels.GET_BY_ID, async (_, { id }) => {
     try {
-      performanceMonitor.stopMonitoring();
-      return { success: true, message: "Monitoreo de rendimiento detenido" };
+      if (!id || typeof id !== "string") {
+        throw ErrorHandler.createError(
+          "ValidationError",
+          "ID de métrica no válido"
+        );
+      }
+
+      const metric = await PerformanceService.getMetricById(id);
+      return { metric };
     } catch (error) {
-      logger.error("Error al detener monitoreo:", error);
+      logger.error(`Error al obtener métrica ${id}:`, error);
       throw error;
     }
   });
 
-  // Obtener métricas de rendimiento
-  ipcMain.handle("performance:get-metrics", async () => {
+  // Crear una nueva métrica
+  withErrorHandling(PerformanceChannels.CREATE, async (_, data) => {
     try {
-      const memoryUsage = process.memoryUsage();
+      // Validar datos de la métrica
+      validationService.validatePerformance(data);
+
+      const metric = await PerformanceService.createMetric(data);
       return {
         success: true,
-        metrics: {
-          heapUsed: Math.round(memoryUsage.heapUsed / 1024 / 1024),
-          heapTotal: Math.round(memoryUsage.heapTotal / 1024 / 1024),
-          rss: Math.round(memoryUsage.rss / 1024 / 1024),
-        },
+        metric,
+        message: "Métrica creada exitosamente",
       };
     } catch (error) {
-      logger.error("Error al obtener métricas:", error);
-      throw error;
-    }
-  });
-
-  // Limpiar caché
-  ipcMain.handle("performance:clear-cache", async () => {
-    try {
-      performanceService.clearCache();
-      return { success: true, message: "Caché limpiada exitosamente" };
-    } catch (error) {
-      logger.error("Error al limpiar caché:", error);
-      throw error;
-    }
-  });
-
-  // Invalidar caché específica
-  ipcMain.handle(
-    "performance:invalidate-cache",
-    async (_event, key: string) => {
-      try {
-        performanceService.invalidateCache(key);
-        return { success: true, message: `Caché invalidada para: ${key}` };
-      } catch (error) {
-        logger.error("Error al invalidar caché:", error);
-        throw error;
+      if (error instanceof Error) {
+        logger.error("Error al crear métrica:", error);
+        throw ErrorHandler.createError("DatabaseError", error.message);
       }
+      throw error;
     }
-  );
+  });
+
+  // Actualizar una métrica
+  withErrorHandling(PerformanceChannels.UPDATE, async (_, { id, data }) => {
+    try {
+      // Validar datos de actualización
+      validationService.validatePerformance(data);
+
+      const metric = await PerformanceService.updateMetric(id, data);
+      return {
+        success: true,
+        metric,
+        message: "Métrica actualizada exitosamente",
+      };
+    } catch (error) {
+      if (error instanceof Error) {
+        logger.error(`Error al actualizar métrica ${id}:`, error);
+        throw ErrorHandler.createError("DatabaseError", error.message);
+      }
+      throw error;
+    }
+  });
 
   logger.info("Manejadores de rendimiento configurados");
 }

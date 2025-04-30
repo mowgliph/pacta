@@ -114,6 +114,31 @@ export class PerformanceService {
       rss: `${Math.round(memoryUsage.rss / 1024 / 1024)}MB`,
     });
   }
+
+  static async getAllMetrics(filters: any) {
+    return prisma.performanceMetric.findMany({
+      where: filters,
+    });
+  }
+
+  static async getMetricById(id: string) {
+    return prisma.performanceMetric.findUnique({
+      where: { id },
+    });
+  }
+
+  static async createMetric(data: any) {
+    return prisma.performanceMetric.create({
+      data,
+    });
+  }
+
+  static async updateMetric(id: string, data: any) {
+    return prisma.performanceMetric.update({
+      where: { id },
+      data,
+    });
+  }
 }
 
 // Exportar instancia única

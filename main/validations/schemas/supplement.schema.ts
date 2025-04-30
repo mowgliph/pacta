@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-// Tipos de cambio permitidos
 export const CHANGE_TYPES = [
   "extension",
   "modification",
@@ -10,7 +9,6 @@ export const CHANGE_TYPES = [
   "force_majeure",
 ] as const;
 
-// Esquema para documentos
 export const documentSchema = z.object({
   name: z.string().min(1, "El nombre del documento es requerido"),
   type: z.string().min(1, "El tipo de documento es requerido"),
@@ -19,8 +17,7 @@ export const documentSchema = z.object({
   url: z.string().url().optional(),
 });
 
-// Esquema principal de suplemento
-export const supplementSchema = z.object({
+export const SupplementSchema = z.object({
   title: z
     .string()
     .min(1, "El título es requerido")
@@ -50,8 +47,3 @@ export const supplementSchema = z.object({
   approvedById: z.string().uuid().optional(),
   approvedAt: z.date().optional(),
 });
-
-// Tipos derivados
-export type Supplement = z.infer<typeof supplementSchema>;
-export type Document = z.infer<typeof documentSchema>;
-export type ChangeType = (typeof CHANGE_TYPES)[number];
