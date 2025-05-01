@@ -1,6 +1,5 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { ipcRenderer } from "electron";
 
 /**
  * Combina clases con clsx y limpia clases conflictivas de Tailwind con twMerge
@@ -21,9 +20,13 @@ export function cn(...inputs: ClassValue[]) {
  */
 export async function getEnvVariable(key: string): Promise<string | undefined> {
   try {
-    // Obtener la variable desde el proceso main a través de IPC
-    const result = await ipcRenderer.invoke("env:getVariable", key);
-    return result;
+    if (typeof window !== 'undefined') {
+      const { ipcRenderer } = await import('electron');
+      // Obtener la variable desde el proceso main a través de IPC
+      const result = await ipcRenderer.invoke("env:getVariable", key);
+      return result;
+    }
+    return undefined;
   } catch (error) {
     console.error(`Error al obtener la variable de entorno ${key}:`, error);
     return undefined;

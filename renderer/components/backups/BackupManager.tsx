@@ -1,169 +1,221 @@
-import { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { formatFileSize, formatDate } from "@/lib/utils";
-import { toast } from "sonner";
-import { BackpackIcon, DownloadIcon, TrashIcon } from "@radix-ui/react-icons";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Trash2, RotateCcw, Save, Trash } from "lucide-react";
+import { useBackup } from "@/hooks/useBackup";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
-export const BackupManager = () => {
-  const [backups, setBackups] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+export const BackupManager: React.FC = () => {
+  const [openCreateDialog, setOpenCreateDialog] = useState(false);
+  const [description, setDescription] = useState("");
+  const [openRestoreDialog, setOpenRestoreDialog] = useState(false);
+  const [selectedBackup, setSelectedBackup] = useState<string | null>(null);
+  const [openCleanDialog, setOpenCleanDialog] = useState(false);
+  const [daysToKeep, setDaysToKeep] = useState(7);
 
-  useEffect(() => {
-    loadBackups();
-  }, []);
-
-  const loadBackups = async () => {
-    try {
-      setIsLoading(true);
-      const result = await window.Electron.backups.listar();
-      setBackups(result);
-    } catch (error) {
-      toast.error("Error al cargar los respaldos");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const {
+    backups,
+    loading,
+    error,
+    createBackup,
+    restoreBackup,
+    deleteBackup,
+    cleanOldBackups,
+  } = useBackup();
 
   const handleCreateBackup = async () => {
-    try {
-      setIsLoading(true);
-      await window.Electron.backups.crear();
-      toast.success("Respaldo creado exitosamente");
-      await loadBackups();
-    } catch (error) {
-      toast.error("Error al crear el respaldo");
-    } finally {
-      setIsLoading(false);
-    }
+    await createBackup(description);
+    setOpenCreateDialog(false);
+    setDescription("");
   };
 
-  const handleRestoreBackup = async (backupId: string) => {
-    try {
-      setIsLoading(true);
-      await window.Electron.backups.restaurar(backupId);
-      toast.success("Respaldo restaurado exitosamente");
-    } catch (error) {
-      toast.error("Error al restaurar el respaldo");
-    } finally {
-      setIsLoading(false);
+  const handleRestoreBackup = async () => {
+    if (selectedBackup) {
+      await restoreBackup(selectedBackup);
+      setOpenRestoreDialog(false);
+      setSelectedBackup(null);
     }
   };
 
   const handleDeleteBackup = async (backupId: string) => {
-    try {
-      setIsLoading(true);
-      await window.Electron.backups.eliminar(backupId);
-      toast.success("Respaldo eliminado exitosamente");
-      await loadBackups();
-    } catch (error) {
-      toast.error("Error al eliminar el respaldo");
-    } finally {
-      setIsLoading(false);
-    }
+    await deleteBackup(backupId);
+  };
+
+  const handleCleanOldBackups = async () => {
+    await cleanOldBackups(daysToKeep);
+    setOpenCleanDialog(false);
+  };
+
+  const formatFileSize = (bytes: number) => {
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    if (bytes === 0) return "0 Byte";
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i)) + " " + sizes[i];
   };
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Gestión de Respaldos</CardTitle>
-          <CardDescription>
-            Crea, restaura y gestiona respaldos de la base de datos
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-end mb-4">
-            <Button
-              onClick={handleCreateBackup}
-              disabled={isLoading}
-              className="flex items-center gap-2"
-            >
-              <BackpackIcon className="h-4 w-4" />
-              Crear Respaldo
-            </Button>
+    <Card>
+      <CardHeader>
+        <CardTitle>Gestión de Backups</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        <div className="flex justify-end gap-2 mb-4">
+          <Button onClick={() => setOpenCreateDialog(true)} disabled={loading}>
+            <Save className="mr-2 h-4 w-4" />
+            Crear Backup
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setOpenCleanDialog(true)}
+            disabled={loading}
+          >
+            <Trash className="mr-2 h-4 w-4" />
+            Limpiar Antiguos
+          </Button>
+        </div>
+        <ScrollArea className="h-[400px]">
+          <div className="space-y-4">
+            {backups.map((backup) => (
+              <div
+                key={backup.id}
+                className="flex items-center justify-between p-4 border rounded-lg"
+              >
+                <div>
+                  <p className="font-medium">{backup.fileName}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Creado: {new Date(backup.createdAt).toLocaleString()}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Tamaño: {formatFileSize(backup.fileSize)}
+                  </p>
+                  {backup.note && (
+                    <p className="text-sm text-muted-foreground">
+                      Nota: {backup.note}
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => {
+                      setSelectedBackup(backup.id);
+                      setOpenRestoreDialog(true);
+                    }}
+                    disabled={loading}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleDeleteBackup(backup.id)}
+                    disabled={loading}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
+        </ScrollArea>
+      </CardContent>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Tamaño</TableHead>
-                <TableHead>Fecha</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {backups.map((backup) => (
-                <TableRow key={backup.id}>
-                  <TableCell>{backup.name}</TableCell>
-                  <TableCell>{formatFileSize(backup.size)}</TableCell>
-                  <TableCell>{formatDate(backup.createdAt)}</TableCell>
-                  <TableCell>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        backup.status === "completed"
-                          ? "bg-green-100 text-green-800"
-                          : backup.status === "failed"
-                          ? "bg-red-100 text-red-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {backup.status === "completed"
-                        ? "Completado"
-                        : backup.status === "failed"
-                        ? "Fallido"
-                        : "En progreso"}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRestoreBackup(backup.id)}
-                        disabled={backup.status !== "completed"}
-                      >
-                        <DownloadIcon className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive"
-                        onClick={() => handleDeleteBackup(backup.id)}
-                      >
-                        <TrashIcon className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {backups.length === 0 && !isLoading && (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center">
-                    No hay respaldos disponibles
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+      <Dialog open={openCreateDialog} onOpenChange={setOpenCreateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Crear Nuevo Backup</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Input
+              placeholder="Descripción (opcional)"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              disabled={loading}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setOpenCreateDialog(false)}
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleCreateBackup} disabled={loading}>
+              Crear
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openRestoreDialog} onOpenChange={setOpenRestoreDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Restaurar Backup</DialogTitle>
+            <DialogDescription>
+              ¿Está seguro que desea restaurar el backup {selectedBackup}? Esta
+              acción sobrescribirá los datos actuales.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setOpenRestoreDialog(false)}
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleRestoreBackup} disabled={loading}>
+              Restaurar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={openCleanDialog} onOpenChange={setOpenCleanDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Limpiar Backups Antiguos</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Input
+              type="number"
+              placeholder="Días a mantener"
+              value={daysToKeep}
+              onChange={(e) => setDaysToKeep(Number(e.target.value))}
+              disabled={loading}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setOpenCleanDialog(false)}
+              disabled={loading}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleCleanOldBackups} disabled={loading}>
+              Limpiar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 };

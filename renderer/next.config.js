@@ -1,29 +1,40 @@
 /** @type {import('next').NextConfig} */
 module.exports = {
-  // En desarrollo no usaremos export para evitar problemas de recarga
-  output: process.env.NODE_ENV === 'production' ? 'export' : undefined,
   distDir: process.env.NODE_ENV === 'production' ? '../app' : '.next',
   trailingSlash: true,
   images: {
     unoptimized: true,
   },
   webpack: (config, { isServer }) => {
-    // Si no estamos en el servidor, proporcionamos polyfills vacíos para módulos de Node
     if (!isServer) {
       config.resolve.fallback = {
-        ...config.resolve.fallback,
         fs: false,
         path: false,
         os: false,
         crypto: false,
         stream: false,
+        util: false,
+        buffer: false,
+        querystring: false,
+        url: false,
+        zlib: false,
         http: false,
         https: false,
-        zlib: false,
-        child_process: false,
         net: false,
         tls: false,
-        electron: false,
+        child_process: false,
+        dns: false,
+        dgram: false,
+        module: false,
+        assert: false,
+        constants: false,
+        events: false,
+        punycode: false,
+        string_decoder: false,
+        sys: false,
+        timers: false,
+        tty: false,
+        vm: false,
       };
     }
     return config;
