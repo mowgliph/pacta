@@ -50,14 +50,6 @@ EMAIL_USER="user@example.com"
 EMAIL_PASS="your_password"
 EMAIL_FROM="noreply@pacta-app.com"
 
-# Configuración SMTP
-SMTP_HOST="smtp.example.com"
-SMTP_PORT="587"
-SMTP_SECURE="false"
-SMTP_USER="user@example.com"
-SMTP_PASSWORD="your_password"
-SMTP_FROM="PACTA <noreply@pacta.com>"
-
 # URL de la aplicación (para enlaces en correos)
 APP_URL="http://localhost:3000"
 
