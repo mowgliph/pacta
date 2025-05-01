@@ -42,16 +42,17 @@ const useAuthStore = create<AuthState>()(
           const deviceId = get().deviceId || generateDeviceId();
 
           // Invocar el método IPC para autenticar con identificación de dispositivo
-          const response = await window.Electron.auth.login({
+          const response = await window.Electron.ipcRenderer.invoke("auth:login", {
             usuario: email,
+            email,
             password,
             rememberMe,
             deviceId,
-            isSpecialUser, // Pasar flag para usuarios especiales
+            isSpecialUser,
           });
 
-          if (!response.token) {
-            set({ error: "No se recibió token de autenticación" });
+          if (!response || !response.token) {
+            set({ error: response?.error || "No se recibió token de autenticación" });
             return false;
           }
 
@@ -68,7 +69,7 @@ const useAuthStore = create<AuthState>()(
 
           return true;
         } catch (error: any) {
-          const errorMessage = error.message || "Error de autenticación";
+          const errorMessage = error.message || (error?.error) || "Error de autenticación";
           set({ error: errorMessage });
 
           // Ayuda para debug
@@ -286,9 +287,9 @@ export function useAuth() {
   // Función de logout con redirección
   const handleLogout = useCallback(() => {
     logout();
-    router.push("/auth");
+    // No redirigir automáticamente al login
     toast.success("Sesión cerrada correctamente");
-  }, [logout, router]);
+  }, [logout]);
 
   // Función para verificar roles (memoizada)
   const hasRole = useCallback(

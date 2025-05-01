@@ -14,6 +14,7 @@ declare global {
       auth: {
         login: (credentials: {
           usuario: string;
+          email: string;
           password: string;
           rememberMe?: boolean;
           deviceId?: string;

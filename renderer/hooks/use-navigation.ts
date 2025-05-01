@@ -11,7 +11,17 @@ export function useNavigation() {
 
   const navigate = useCallback(
     async (path: string) => {
-      if (!isAuthenticated && !path.startsWith("/auth")) {
+      // Solo redirigir al login para rutas específicas que requieren autenticación
+      const requiresAuth = [
+        '/contracts/create',
+        '/contracts/:id/supplements/create',
+        '/settings'
+      ].some(route => {
+        const routePattern = new RegExp('^' + route.replace(/:[^/]+/g, '[^/]+') + '$');
+        return routePattern.test(path);
+      });
+
+      if (!isAuthenticated && requiresAuth) {
         await router.replace(ROUTES.AUTH.LOGIN);
         return;
       }
@@ -33,11 +43,17 @@ export function useNavigation() {
 
   const canAccess = useCallback(
     (path: string, roles?: Role[]) => {
-      if (!isAuthenticated && path.startsWith("/auth")) {
-        return true;
-      }
+      // Solo verificar autenticación para rutas específicas
+      const requiresAuth = [
+        '/contracts/create',
+        '/contracts/:id/supplements/create',
+        '/settings'
+      ].some(route => {
+        const routePattern = new RegExp('^' + route.replace(/:[^/]+/g, '[^/]+') + '$');
+        return routePattern.test(path);
+      });
 
-      if (!isAuthenticated && !path.startsWith("/auth")) {
+      if (!isAuthenticated && requiresAuth) {
         return false;
       }
 

@@ -32,13 +32,13 @@ async function main() {
   });
 
   // Crear usuarios iniciales
-  const adminPassword = await hash('admin123', 10);
-  const raPassword = await hash('ra123', 10);
+  const adminPassword = await hash('pacta', 10);
+  const raPassword = await hash('pacta', 10);
 
   const adminUser = await prisma.user.create({
     data: {
       name: 'Administrador',
-      email: 'admin@pacta.com',
+      email: 'admin@pacta.local',
       password: adminPassword,
       roleId: adminRole.id,
       isActive: true,
@@ -48,7 +48,7 @@ async function main() {
   const raUser = await prisma.user.create({
     data: {
       name: 'Responsable',
-      email: 'ra@pacta.com',
+      email: 'ra@pacta.local',
       password: raPassword,
       roleId: raRole.id,
       isActive: true,

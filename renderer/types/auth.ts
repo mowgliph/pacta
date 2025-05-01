@@ -54,7 +54,8 @@ export interface AuthResult {
 
 // Tipo para los datos de login
 export interface LoginCredentials {
-  usuario: string;
+  usuario?: string;
+  email?: string;
   password: string;
   rememberMe?: boolean;
   deviceId?: string;
