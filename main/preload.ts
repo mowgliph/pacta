@@ -1,291 +1,97 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { FilesChannels } from "./channels/files.channels";
+import { IPC_CHANNELS } from "./channels/ipc-channels";
 
-/**
- * Lista de canales IPC permitidos para invocar (del renderer al main)
- */
-const validInvokeChannels = [
-  // Canales de la aplicación
-  "app:relaunch",
-  "app:exit",
-  "app:getVersion",
-  "app:getPath",
-  "app:getInfo",
+// Convertir la estructura de canales en una lista plana para validación
+const flattenChannels = (channels: any): string[] => {
+  return Object.entries(channels).reduce((acc: string[], [key, value]) => {
+    if (typeof value === 'object') {
+      return [...acc, ...flattenChannels(value)];
+    }
+    return [...acc, value as string];
+  }, []);
+};
 
-  // Canales para contratos
-  "contratos:listar",
-  "contratos:crear",
-  "contratos:obtener",
-  "contratos:actualizar",
-  "contratos:archivar",
-  "contracts:updateAccessControl",
-  "contracts:assignUsers",
-
-  // Canales para suplementos
-  "suplementos:listar",
-  "suplementos:crear",
-  "suplementos:obtener",
-
-  // Canales para usuarios y autenticación
-  "usuario:autenticar",
-  "usuario:cerrarSesion",
-  "usuario:cambiarContrasena",
-  "usuario:perfil",
-  "users:list",
-  "users:getAll",
-  "users:getById",
-  "users:create",
-  "users:update",
-  "users:toggleActive",
-  "users:changePassword",
-  "roles:getAll",
-
-  // Canales para gestión de documentos
-  "documents:save",
-  "documents:getAll",
-  "documents:getById",
-  "documents:update",
-  "documents:delete",
-  "documents:download",
-  "documents:getByContract",
-  "documents:getBySupplement",
-  "documents:open",
-
-  // Canales para backups
-  "backups:getAll",
-  "backups:create",
-  "backups:restore",
-  "backups:delete",
-  "backups:cleanOld",
-  "backups:updateSchedule",
-  "backup:getAll",
-  "backup:create",
-  "backup:restore",
-  "backup:delete",
-  "backup:cleanOld",
-
-  // Canales para notificaciones
-  "notificaciones:mostrar",
-  "notificaciones:marcarLeida",
-  "notificaciones:obtenerNoLeidas",
-
-  // Canales para estadísticas
-  "estadisticas:dashboard",
-  "estadisticas:contratos",
-  "estadisticas:exportar",
-
-  // Canales para sistema
-  "sistema:config",
-  "sistema:tema",
-  "sistema:logs",
-
-  // Canales para API
-  "api:request",
-  "auth:login",
-  "auth:logout",
-  "auth:verify",
-  "auth:refresh",
-
-  // Canales de archivos
-  FilesChannels.SAVE_FILE,
-  FilesChannels.READ_FILE,
-  FilesChannels.DELETE_FILE,
-  FilesChannels.LIST_FILES,
-  FilesChannels.CREATE_BACKUP,
-  FilesChannels.RESTORE_BACKUP,
-  FilesChannels.LIST_BACKUPS,
-  FilesChannels.VALIDATE_FILE,
-  FilesChannels.CHECK_FILE_EXISTS,
-];
-
-/**
- * Lista de canales IPC permitidos para recibir (del main al renderer)
- */
-const validReceiveChannels = [
-  "contrato:actualizado",
-  "contrato:eliminado",
-  "auth:sesion-expirada",
-  "notificacion:nueva",
-  "backup:completado",
-  "actualizacion:disponible",
-  "user:updated",
-  "documents:updated",
-  "documents:deleted",
-];
+const validInvokeChannels = flattenChannels(IPC_CHANNELS);
 
 /**
  * Validar si un canal está en la lista de canales permitidos
  * @param {string} channel - Nombre del canal a validar
- * @param {string[]} allowedChannels - Lista de canales permitidos
  * @returns {boolean} - Verdadero si el canal está permitido
  */
-const isValidChannel = (
-  channel: string,
-  allowedChannels: string[]
-): boolean => {
-  return allowedChannels.includes(channel);
+const isValidChannel = (channel: string): boolean => {
+  return validInvokeChannels.includes(channel);
 };
 
 // APIs seguras expuestas al proceso de renderizado a través de contextBridge
 contextBridge.exposeInMainWorld("Electron", {
   // API de la aplicación
   app: {
-    relaunch: () => ipcRenderer.invoke("app:relaunch"),
-    exit: (code: number) => ipcRenderer.invoke("app:exit", code),
-    getVersion: () => ipcRenderer.invoke("app:getVersion"),
-    getPath: (name: string) => ipcRenderer.invoke("app:getPath", name),
-    getInfo: () => ipcRenderer.invoke("app:getInfo"),
+    relaunch: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.OPEN_FILE),
+    exit: (code: number) => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.SAVE_FILE, code),
+    getVersion: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.SETTINGS.GET, 'version'),
+    getPath: (name: string) => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.SETTINGS.GET, name),
+    getInfo: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.SETTINGS.GET, 'info'),
+  },
+
+  // API para autenticación
+  auth: {
+    login: (credentials: any) => ipcRenderer.invoke(IPC_CHANNELS.AUTH.LOGIN, credentials),
+    logout: () => ipcRenderer.invoke(IPC_CHANNELS.AUTH.LOGOUT),
+    verify: () => ipcRenderer.invoke(IPC_CHANNELS.AUTH.VERIFY),
+    refresh: () => ipcRenderer.invoke(IPC_CHANNELS.AUTH.REFRESH),
   },
 
   // API para contratos
-  contratos: {
-    listar: (filtros?: any) => ipcRenderer.invoke("contratos:listar", filtros),
-    crear: (datos: any) => ipcRenderer.invoke("contratos:crear", datos),
-    obtener: (id: string) => ipcRenderer.invoke("contratos:obtener", id),
-    actualizar: (id: string, datos: any) =>
-      ipcRenderer.invoke("contratos:actualizar", id, datos),
-    archivar: (id: string) => ipcRenderer.invoke("contratos:archivar", id),
+  contracts: {
+    list: (filtros?: any) => ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.LIST, filtros),
+    create: (datos: any) => ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.CREATE, datos),
+    update: (id: string, datos: any) => ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.UPDATE, id, datos),
+    delete: (id: string) => ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.DELETE, id),
+    export: (id: string) => ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.EXPORT, id),
   },
 
-  // API para suplementos
-  suplementos: {
-    listar: (contratoId: string) =>
-      ipcRenderer.invoke("suplementos:listar", contratoId),
-    crear: (contratoId: string, datos: any) =>
-      ipcRenderer.invoke("suplementos:crear", contratoId, datos),
-    obtener: (id: string) => ipcRenderer.invoke("suplementos:obtener", id),
-  },
-
-  // API para usuarios y autenticación
-  auth: {
-    login: (credentials: {
-      usuario: string;
-      password: string;
-      rememberMe?: boolean;
-      deviceId?: string;
-      isSpecialUser?: boolean;
-    }) => ipcRenderer.invoke("auth:login", credentials),
-    logout: () => ipcRenderer.invoke("auth:logout"),
-    cambiarContrasena: (datos: { actual: string; nueva: string }) =>
-      ipcRenderer.invoke("usuario:cambiarContrasena", datos),
-    getPerfil: () => ipcRenderer.invoke("usuario:perfil"),
+  // API para documentos
+  documents: {
+    list: (filtros?: any) => ipcRenderer.invoke(IPC_CHANNELS.DATA.DOCUMENTS.LIST, filtros),
+    upload: (file: any) => ipcRenderer.invoke(IPC_CHANNELS.DATA.DOCUMENTS.UPLOAD, file),
+    delete: (id: string) => ipcRenderer.invoke(IPC_CHANNELS.DATA.DOCUMENTS.DELETE, id),
+    download: (id: string) => ipcRenderer.invoke(IPC_CHANNELS.DATA.DOCUMENTS.DOWNLOAD, id),
   },
 
   // API para usuarios
   users: {
-    list: () => ipcRenderer.invoke("users:getAll"),
-    getById: (id: string) => ipcRenderer.invoke("users:getById", id),
-    create: (userData: any) => ipcRenderer.invoke("users:create", userData),
-    update: (userData: any) => ipcRenderer.invoke("users:update", userData),
-    toggleActive: (userId: string) =>
-      ipcRenderer.invoke("users:toggleActive", userId),
-    changePassword: (passwordData: any) =>
-      ipcRenderer.invoke("users:changePassword", passwordData),
+    list: () => ipcRenderer.invoke(IPC_CHANNELS.DATA.USERS.LIST),
+    create: (userData: any) => ipcRenderer.invoke(IPC_CHANNELS.DATA.USERS.CREATE, userData),
+    update: (userData: any) => ipcRenderer.invoke(IPC_CHANNELS.DATA.USERS.UPDATE, userData),
+    delete: (id: string) => ipcRenderer.invoke(IPC_CHANNELS.DATA.USERS.DELETE, id),
   },
 
-  // API para roles
-  roles: {
-    getAll: () => ipcRenderer.invoke("roles:getAll"),
-  },
-
-  // API para documentos
-  documentos: {
-    abrir: (path: string) => ipcRenderer.invoke(FilesChannels.READ_FILE, path),
-    guardar: (path: string, content: any) =>
-      ipcRenderer.invoke(FilesChannels.SAVE_FILE, content, { path }),
-    listar: (contratoId: string) =>
-      ipcRenderer.invoke(FilesChannels.LIST_FILES, contratoId),
-  },
-
-  // API para backups
-  backups: {
-    crear: (descripcion?: string) =>
-      ipcRenderer.invoke(FilesChannels.CREATE_BACKUP),
-    restaurar: (backupId: string) =>
-      ipcRenderer.invoke(FilesChannels.RESTORE_BACKUP, backupId),
-    eliminar: (backupId: string) =>
-      ipcRenderer.invoke(FilesChannels.DELETE_FILE, backupId),
-    listar: () => ipcRenderer.invoke(FilesChannels.LIST_BACKUPS),
-    limpiarAntiguos: () => ipcRenderer.invoke(FilesChannels.DELETE_FILE, "old"),
+  // API para sistema
+  system: {
+    openFile: (path: string) => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.OPEN_FILE, path),
+    saveFile: (path: string, content: any) => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.SAVE_FILE, path, content),
+    backup: () => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.BACKUP),
+    restore: (backupId: string) => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.RESTORE, backupId),
+    settings: {
+      get: (key: string) => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.SETTINGS.GET, key),
+      update: (key: string, value: any) => ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.SETTINGS.UPDATE, key, value),
+    },
   },
 
   // API para notificaciones
-  notificaciones: {
-    mostrar: (opciones: { titulo: string; cuerpo: string }) =>
-      ipcRenderer.invoke("notificaciones:mostrar", opciones),
-    marcarLeida: (id: string) =>
-      ipcRenderer.invoke("notificaciones:marcarLeida", id),
-    obtenerNoLeidas: () => ipcRenderer.invoke("notificaciones:obtenerNoLeidas"),
+  notifications: {
+    show: (options: { title: string; body: string }) => 
+      ipcRenderer.invoke(IPC_CHANNELS.NOTIFICATIONS.SHOW, options),
+    clear: (id: string) => ipcRenderer.invoke(IPC_CHANNELS.NOTIFICATIONS.CLEAR, id),
   },
 
-  // API para estadísticas
-  estadisticas: {
-    dashboard: () => ipcRenderer.invoke("estadisticas:dashboard"),
-    contratos: (filtros?: any) =>
-      ipcRenderer.invoke("estadisticas:contratos", filtros),
-    exportar: (tipo: string, filtros?: any) =>
-      ipcRenderer.invoke("estadisticas:exportar", tipo, filtros),
-  },
-
-  // API para IPC invocaciones generales
+  // API para IPC invocaciones generales con validación
   ipcRenderer: {
     invoke: (channel: string, ...args: any[]) => {
-      if (isValidChannel(channel, validInvokeChannels)) {
+      if (isValidChannel(channel)) {
         return ipcRenderer.invoke(channel, ...args);
       }
       return Promise.reject(new Error(`Canal IPC no permitido: ${channel}`));
     },
-  },
-
-  // API para recibir eventos del proceso principal
-  receive: (channel: string, func: (...args: any[]) => void) => {
-    if (isValidChannel(channel, validReceiveChannels)) {
-      // Limpiar listeners previos para evitar duplicados
-      ipcRenderer.removeAllListeners(channel);
-
-      // Registrar nuevo listener
-      // Usar una función wrapper para omitir el evento en el callback
-      ipcRenderer.on(channel, (_event, ...args) => func(...args));
-
-      return true;
-    }
-    return false;
-  },
-
-  // API para eliminar un listener específico
-  removeListener: (channel: string) => {
-    if (isValidChannel(channel, validReceiveChannels)) {
-      ipcRenderer.removeAllListeners(channel);
-      return true;
-    }
-    return false;
-  },
-
-  // Funciones de manejo de archivos
-  files: {
-    saveFile: (buffer: Buffer, metadata: any) =>
-      ipcRenderer.invoke(FilesChannels.SAVE_FILE, buffer, metadata),
-    readFile: (filePath: string) =>
-      ipcRenderer.invoke(FilesChannels.READ_FILE, filePath),
-    deleteFile: (filePath: string) =>
-      ipcRenderer.invoke(FilesChannels.DELETE_FILE, filePath),
-    listFiles: (directory: string) =>
-      ipcRenderer.invoke(FilesChannels.LIST_FILES, directory),
-    createBackup: () => ipcRenderer.invoke(FilesChannels.CREATE_BACKUP),
-    restoreBackup: (backupPath: string) =>
-      ipcRenderer.invoke(FilesChannels.RESTORE_BACKUP, backupPath),
-    listBackups: () => ipcRenderer.invoke(FilesChannels.LIST_BACKUPS),
-    validateFile: (filePath: string) =>
-      ipcRenderer.invoke(FilesChannels.VALIDATE_FILE, filePath),
-    checkFileExists: (filePath: string) =>
-      ipcRenderer.invoke(FilesChannels.CHECK_FILE_EXISTS, filePath),
-  },
-
-  // Dashboard
-  dashboard: {
-    getStatistics: () => ipcRenderer.invoke("dashboard:getStatistics"),
-    getTrends: () => ipcRenderer.invoke("dashboard:getTrends"),
-    getUpcomingActions: () =>
-      ipcRenderer.invoke("dashboard:getUpcomingActions"),
   },
 });

@@ -10,49 +10,35 @@ Cada manejador sigue una estructura común:
 
 ```typescript
 // 1. Importaciones
-import { withErrorHandling } from '../setup';
-import { logger } from '../../utils/logger';
-import { XxxChannels } from '../channels/xxx.channels';
+import { EventManager } from '../events/event-manager';
+import { IPC_CHANNELS } from '../channels/ipc-channels';
+import { IpcHandlerMap } from '../channels/types';
+import { logger } from '../utils/logger';
 
-// 2. Función de configuración
-export function setupXxxHandlers(): void {
-  // 3. Registrar manejadores para cada canal IPC
-  withErrorHandling(XxxChannels.OPERATION, async (_, data) => {
-    try {
-      // 4. Validación de datos
-      // 5. Lógica de negocio
-      // 6. Retorno de resultados
-      return result;
-    } catch (error) {
-      // 7. Manejo de errores
-      logger.error('Error en operación:', error);
-      throw error;
+// 2. Función de registro
+export function registerXxxHandlers(eventManager: EventManager): void {
+  const handlers: IpcHandlerMap = {
+    [IPC_CHANNELS.CATEGORY.OPERATION]: async (event, data) => {
+      try {
+        // 3. Validación de datos
+        // 4. Lógica de negocio
+        // 5. Retorno de resultados
+        return result;
+      } catch (error) {
+        // 6. Manejo de errores
+        logger.error('Error en operación:', error);
+        throw error;
+      }
     }
-  });
+  };
+
+  eventManager.registerHandlers(handlers);
 }
 ```
 
 ## Manejadores Disponibles
 
-### `app.ts`
-
-**Propósito**: Gestionar operaciones relacionadas con la aplicación Electron y el sistema operativo.
-
-**Funcionalidades principales**:
-- Control de ventana (minimizar, maximizar, cerrar)
-- Diálogos del sistema (abrir/guardar archivos)
-- Información del sistema
-- Enlaces externos seguros
-- Validaciones de seguridad para operaciones del SO
-
-**Canales**: `MINIMIZE`, `MAXIMIZE`, `QUIT`, `VERSION`, etc.
-
-**Ejemplos de uso**:
-- Minimizar/maximizar ventana
-- Mostrar diálogos de confirmación
-- Abrir enlaces externos de forma segura
-
-### `auth.ts`
+### `auth.handlers.ts`
 
 **Propósito**: Implementar el sistema de autenticación y gestión de sesiones.
 
@@ -62,34 +48,10 @@ export function setupXxxHandlers(): void {
 - Manejo de sesiones
 - Cierre de sesión
 - Renovación de tokens
-- Soporte para usuarios predefinidos
 
-**Canales**: `LOGIN`, `LOGOUT`, `VERIFY_TOKEN`, etc.
+**Canales**: `AUTH.LOGIN`, `AUTH.LOGOUT`, `AUTH.VERIFY`, etc.
 
-**Ejemplos de uso**:
-- Autenticar usuario con credenciales
-- Verificar validez de sesión
-- Renovar token próximo a expirar
-
-### `backup.ts`
-
-**Propósito**: Gestionar las copias de seguridad de la base de datos.
-
-**Funcionalidades principales**:
-- Crear respaldos manuales y automáticos
-- Listar respaldos disponibles
-- Restaurar respaldos
-- Eliminar respaldos antiguos
-- Programar respaldos automáticos
-
-**Canales**: `GET_ALL`, `CREATE`, `RESTORE`, `DELETE`, `CLEAN_OLD`
-
-**Ejemplos de uso**:
-- Crear respaldo manual antes de operaciones críticas
-- Restaurar el sistema a un punto anterior
-- Establecer políticas de respaldo automático
-
-### `contracts.ts`
+### `contract.handlers.ts`
 
 **Propósito**: Administrar los contratos, el componente central de PACTA.
 
@@ -100,15 +62,9 @@ export function setupXxxHandlers(): void {
 - Historial de cambios
 - Asignación de usuarios
 
-**Canales**: `GET_ALL`, `GET_BY_ID`, `CREATE`, `UPDATE`, `DELETE`, etc.
+**Canales**: `DATA.CONTRACTS.LIST`, `DATA.CONTRACTS.CREATE`, `DATA.CONTRACTS.UPDATE`, etc.
 
-**Ejemplos de uso**:
-- Crear nuevo contrato
-- Consultar contratos con filtros
-- Actualizar términos de contrato
-- Gestionar acceso a contratos
-
-### `documents.ts`
+### `document.handlers.ts`
 
 **Propósito**: Gestionar los documentos y archivos relacionados con contratos y suplementos.
 
@@ -119,29 +75,9 @@ export function setupXxxHandlers(): void {
 - Eliminación segura
 - Validación de tipos de archivo
 
-**Canales**: `SAVE`, `GET_BY_ID`, `UPDATE`, `DELETE`, `DOWNLOAD`, etc.
+**Canales**: `DATA.DOCUMENTS.LIST`, `DATA.DOCUMENTS.UPLOAD`, `DATA.DOCUMENTS.DELETE`, etc.
 
-**Ejemplos de uso**:
-- Adjuntar documento a un contrato
-- Descargar documento
-- Actualizar metadatos de documento
-
-### `env.ts`
-
-**Propósito**: Proporcionar acceso seguro a variables de entorno desde el proceso de renderizado.
-
-**Funcionalidades principales**:
-- Acceso controlado a variables de entorno
-- Validación de solicitudes
-- Protección de datos sensibles
-
-**Canales**: `GET`
-
-**Ejemplos de uso**:
-- Obtener configuración del entorno
-- Acceder a URLs de API
-
-### `notifications.ts`
+### `notification.handlers.ts`
 
 **Propósito**: Gestionar el sistema de notificaciones de la aplicación.
 
@@ -151,14 +87,33 @@ export function setupXxxHandlers(): void {
 - Marcado de notificaciones como leídas
 - Listado de notificaciones con filtros
 
-**Canales**: `GET_ALL`, `GET_UNREAD`, `CREATE`, `MARK_AS_READ`, etc.
+**Canales**: `NOTIFICATIONS.SHOW`, `NOTIFICATIONS.CLEAR`, `NOTIFICATIONS.MARK_READ`, etc.
 
-**Ejemplos de uso**:
-- Notificar a usuarios sobre cambios en contratos
-- Obtener notificaciones no leídas
-- Marcar notificaciones como leídas
+### `role.handlers.ts`
 
-### `supplements.ts`
+**Propósito**: Gestionar roles y permisos del sistema.
+
+**Funcionalidades principales**:
+- CRUD de roles
+- Asignación de permisos
+- Validación de permisos
+- Gestión de accesos
+
+**Canales**: `DATA.ROLES.LIST`, `DATA.ROLES.CREATE`, `DATA.ROLES.UPDATE`, etc.
+
+### `statistics.handlers.ts`
+
+**Propósito**: Procesar y generar estadísticas del sistema.
+
+**Funcionalidades principales**:
+- Estadísticas del dashboard
+- Estadísticas de contratos
+- Exportación de estadísticas
+- Filtrado y agrupación de datos
+
+**Canales**: `STATISTICS.DASHBOARD`, `STATISTICS.CONTRACTS`, `STATISTICS.EXPORT`
+
+### `supplement.handlers.ts`
 
 **Propósito**: Gestionar los suplementos de contratos (modificaciones, adendas, etc.).
 
@@ -168,62 +123,31 @@ export function setupXxxHandlers(): void {
 - Relación con contratos
 - Historial de modificaciones
 
-**Canales**: `GET_ALL`, `GET_BY_ID`, `CREATE`, `UPDATE`, `DELETE`, `APPROVE`
+**Canales**: `DATA.SUPPLEMENTS.LIST`, `DATA.SUPPLEMENTS.CREATE`, `DATA.SUPPLEMENTS.UPDATE`, etc.
 
-**Ejemplos de uso**:
-- Crear suplemento para un contrato
-- Aprobar cambios en suplemento
-- Consultar historial de suplementos
+### `system.handlers.ts`
 
-### `users.ts`
+**Propósito**: Gestionar operaciones del sistema y configuración.
 
-**Propósito**: Administrar usuarios, roles y permisos de la aplicación.
+**Funcionalidades principales**:
+- Configuración de la aplicación
+- Operaciones del sistema operativo
+- Gestión de archivos
+- Validaciones de seguridad
+
+**Canales**: `SYSTEM.OPEN_FILE`, `SYSTEM.SAVE_FILE`, `SYSTEM.SETTINGS`, etc.
+
+### `user.handlers.ts`
+
+**Propósito**: Administrar usuarios y sus perfiles.
 
 **Funcionalidades principales**:
 - CRUD de usuarios
-- Gestión de roles y permisos
+- Gestión de perfiles
 - Cambio de contraseñas
 - Activación/desactivación de cuentas
-- Asignación de roles
 
-**Canales**: `GET_ALL`, `GET_BY_ID`, `CREATE`, `UPDATE`, `TOGGLE_ACTIVE`, `CHANGE_PASSWORD`, etc.
-
-**Ejemplos de uso**:
-- Crear nuevo usuario
-- Actualizar perfil de usuario
-- Cambiar rol de usuario
-- Desactivar cuenta temporalmente
-
-### `api-request.ts`
-
-**Propósito**: Facilitar las solicitudes a APIs externas o servicios web desde el proceso principal.
-
-**Funcionalidades principales**:
-- Solicitudes HTTP seguras
-- Gestión de autenticación para APIs
-- Manejo de errores de red
-- Validación de respuestas
-- Retransmisión de datos al proceso de renderizado
-
-**Canales**: `REQUEST`
-
-**Ejemplos de uso**:
-- Consultar API externa de datos
-- Enviar información a servicios web
-- Integración con sistemas externos
-
-### `index.ts`
-
-**Propósito**: Punto de entrada centralizado para la configuración de todos los manejadores IPC.
-
-**Funcionalidades principales**:
-- Registrar todos los manejadores
-- Inicializar servicios y configuraciones
-- Centralizar la gestión de IPC
-
-**Ejemplos de uso**:
-- Inicialización de la aplicación
-- Configuración global de manejadores
+**Canales**: `DATA.USERS.LIST`, `DATA.USERS.CREATE`, `DATA.USERS.UPDATE`, etc.
 
 ## Patrones Comunes
 
@@ -270,7 +194,7 @@ if (userRole !== 'Admin' && userId !== resource.ownerId) {
 
 ## Mejores Prácticas
 
-1. **Usar canales constantes**: Siempre usar las constantes de canales definidas en `channels/`
+1. **Usar canales constantes**: Siempre usar las constantes definidas en `ipc-channels.ts`
 2. **Validar toda entrada**: Validar todos los datos de entrada con Zod
 3. **Registrar errores**: Usar logger para registrar errores y actividades importantes
 4. **Separar responsabilidades**: Usar servicios para la lógica de negocio
@@ -281,11 +205,10 @@ if (userRole !== 'Admin' && userId !== resource.ownerId) {
 
 Para agregar un nuevo manejador:
 
-1. Crear archivo `feature.channels.ts` en `channels/`
-2. Definir canales y tipos de solicitud/respuesta
-3. Crear archivo `feature.ts` en `handlers/`
-4. Implementar manejadores para cada canal
-5. Registrar en `index.ts`
+1. Definir canales en `ipc-channels.ts`
+2. Crear archivo `feature.handlers.ts` en `handlers/`
+3. Implementar función `registerFeatureHandlers`
+4. Registrar en `index.ts`
 
 ## Referencias
 

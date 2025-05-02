@@ -1,7 +1,19 @@
-import { app } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import { AppManager } from './app-manager';
 import { logger } from './utils/logger';
-import { registerApiRequestHandler } from './ipc/handlers/api-request';
+import { EventManager } from './events/event-manager';
+import { registerAuthHandlers } from './handlers/auth.handlers';
+import { registerContractHandlers } from './handlers/contract.handlers';
+import { registerDocumentHandlers } from './handlers/document.handlers';
+import { registerUserHandlers } from './handlers/user.handlers';
+import { registerSystemHandlers } from './handlers/system.handlers';
+import { registerNotificationHandlers } from './handlers/notification.handlers';
+import { registerRoleHandlers } from './handlers/role.handlers';
+import { registerSupplementHandlers } from './handlers/supplement.handlers';
+import { registerStatisticsHandlers } from './handlers/statistics.handlers';
+import { registerSecurityHandlers } from './handlers/security.handlers';
+import { registerStoreHandlers } from './handlers/store.handlers';
+import { registerValidationHandlers } from './handlers/validation.handlers';
 
 /**
  * Punto de entrada principal de la aplicación Electron
@@ -63,8 +75,22 @@ async function main() {
     // Crear y obtener la instancia del gestor de la aplicación
     const appManager = AppManager.getInstance();
     
-    // Registro de manejadores IPC
-    registerApiRequestHandler();
+    // Inicializar el gestor de eventos
+    const eventManager = EventManager.getInstance();
+    
+    // Registrar manejadores de eventos
+    registerAuthHandlers(eventManager);
+    registerContractHandlers(eventManager);
+    registerDocumentHandlers(eventManager);
+    registerUserHandlers(eventManager);
+    registerSystemHandlers(eventManager);
+    registerNotificationHandlers(eventManager);
+    registerRoleHandlers(eventManager);
+    registerSupplementHandlers(eventManager);
+    registerStatisticsHandlers(eventManager);
+    registerSecurityHandlers(eventManager);
+    registerStoreHandlers(eventManager);
+    registerValidationHandlers(eventManager);
     
     // Inicializar la aplicación
     await appManager.initialize();

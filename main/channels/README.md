@@ -2,137 +2,144 @@
 
 ## Introducción
 
-Este directorio contiene la definición de todos los canales de comunicación IPC (Inter-Process Communication) utilizados en la aplicación PACTA. La estructura está diseñada para proporcionar un sistema de tipos fuerte y modular que facilita la comunicación entre el proceso principal de Electron y el proceso de renderizado.
+Este directorio contiene la definición de todos los canales de comunicación IPC (Inter-Process Communication) utilizados en la aplicación PACTA. La estructura está diseñada para proporcionar un sistema de tipos fuerte y centralizado que facilita la comunicación entre el proceso principal de Electron y el proceso de renderizado.
 
 ## Estructura de Archivos
 
-La organización de los archivos sigue un patrón modular por dominio:
+La organización de los archivos sigue un patrón centralizado:
 
 ```
 channels/
-├── app.channels.ts         # Canales relacionados con la aplicación
-├── auth.channels.ts        # Canales de autenticación
-├── backup.channels.ts      # Canales de copias de seguridad
-├── channels.ts             # Consolida todos los canales en un tipo unión
-├── contracts.channels.ts   # Canales de contratos
-├── documents.channels.ts   # Canales de documentos
-├── index.ts                # Punto de entrada que exporta todos los canales
-├── notifications.channels.ts # Canales de notificaciones
-├── requests.ts             # Consolida las interfaces de solicitudes
-├── settings.channels.ts    # Canales de configuración
-├── supplements.channels.ts # Canales de suplementos
-├── types.ts                # Tipos genéricos para IPC
-└── users.channels.ts       # Canales de usuarios y roles
+├── ipc-channels.ts    # Definición centralizada de todos los canales IPC
+├── types.ts           # Tipos genéricos para IPC
+└── index.ts           # Punto de entrada que exporta canales y tipos
 ```
 
 ## Descripción de Componentes
 
-### Archivos de Canales por Dominio
+### Archivo Centralizado de Canales (ipc-channels.ts)
 
-Cada archivo `*.channels.ts` define:
-
-1. Un `enum` con los canales específicos del dominio
-2. Una interfaz `*Requests` que especifica:
-   - Tipos de datos esperados para cada solicitud
-   - Tipos de datos retornados para cada respuesta
-
-Por ejemplo, para los canales de autenticación:
+Define todos los canales IPC organizados por categorías:
 
 ```typescript
-// auth.channels.ts
-export enum AuthChannels {
-  LOGIN = "auth:login",
-  LOGOUT = "auth:logout",
-  // ...
-}
-
-export interface AuthRequests {
-  [AuthChannels.LOGIN]: {
-    request: LoginCredentials;
-    response: AuthResult;
-  };
-  // ...
-}
+export const IPC_CHANNELS = {
+  AUTH: {
+    LOGIN: 'auth:login',
+    LOGOUT: 'auth:logout',
+    VERIFY: 'auth:verify'
+  },
+  DATA: {
+    CONTRACTS: {
+      LIST: 'contracts:list',
+      CREATE: 'contracts:create',
+      UPDATE: 'contracts:update'
+    },
+    DOCUMENTS: {
+      LIST: 'documents:list',
+      UPLOAD: 'documents:upload',
+      DELETE: 'documents:delete'
+    }
+    // ... más categorías
+  }
+} as const;
 ```
 
-### Archivos de Consolidación
+### Tipos Genéricos (types.ts)
 
-- **channels.ts**: Consolida todos los enums de canales en un tipo unión `AllChannels`
-- **requests.ts**: Consolida todas las interfaces de solicitudes en un tipo intersección `AllRequests`
-- **types.ts**: Define interfaces genéricas como `IpcRequest` y `IpcResponse`
+Define interfaces y tipos base para la comunicación IPC:
+
+```typescript
+export type IpcHandler = (event: IpcMainEvent, ...args: any[]) => Promise<any>;
+export type IpcHandlerMap = Record<string, IpcHandler>;
+```
 
 ### Archivo Index
 
-El archivo `index.ts` funciona como punto de entrada, reuniendo y exportando todos los canales y tipos para facilitar su importación desde cualquier parte de la aplicación.
+El archivo `index.ts` funciona como punto de entrada, exportando los canales y tipos necesarios:
+
+```typescript
+export { IPC_CHANNELS } from './ipc-channels';
+export type { IpcChannel } from './ipc-channels';
+export type { IpcHandlerMap, IpcHandler } from './types';
+```
 
 ## Cómo Utilizar los Canales
 
 ### En el Proceso Principal (Electron Main)
 
 ```typescript
-import { AppChannels } from 'main/ipc/channels';
-import { withErrorHandling } from '../setup';
+import { IPC_CHANNELS } from '../channels';
+import { EventManager } from '../events/event-manager';
 
-withErrorHandling(AppChannels.VERSION, async () => {
-  return { version: app.getVersion() };
-});
+export function registerAuthHandlers(eventManager: EventManager): void {
+  const handlers = {
+    [IPC_CHANNELS.AUTH.LOGIN]: async (event, credentials) => {
+      // Lógica de autenticación
+      return { success: true };
+    }
+  };
+
+  eventManager.registerHandlers(handlers);
+}
 ```
 
 ### En el Proceso de Renderizado (React/Next.js)
 
 ```typescript
-import { AppChannels } from 'main/ipc/channels';
+import { IPC_CHANNELS } from 'main/channels';
 import { ipcRenderer } from 'electron';
 
-const getVersion = async () => {
+const login = async (credentials) => {
   try {
-    const response = await ipcRenderer.invoke(AppChannels.VERSION);
-    return response.version;
+    const response = await ipcRenderer.invoke(IPC_CHANNELS.AUTH.LOGIN, credentials);
+    return response;
   } catch (error) {
-    console.error("Error al obtener versión:", error);
+    console.error("Error en login:", error);
   }
 };
 ```
 
 ## Cómo Añadir Nuevos Canales
 
-1. **Si pertenece a un dominio existente:**
-   - Añadir la constante al enum correspondiente
-   - Definir la interfaz de solicitud/respuesta
+1. **Añadir a un dominio existente:**
+   - Añadir el nuevo canal en la categoría correspondiente en `ipc-channels.ts`
 
    ```typescript
-   // En auth.channels.ts
-   export enum AuthChannels {
-     // Canales existentes...
-     CHANGE_EMAIL = "auth:changeEmail"
-   }
-
-   export interface AuthRequests {
-     // Interfaces existentes...
-     [AuthChannels.CHANGE_EMAIL]: {
-       request: { id: string; newEmail: string };
-       response: { success: boolean; message?: string };
-     };
-   }
+   export const IPC_CHANNELS = {
+     AUTH: {
+       // Canales existentes...
+       REFRESH_TOKEN: 'auth:refresh-token'
+     }
+   } as const;
    ```
 
-2. **Si es un nuevo dominio:**
-   - Crear un nuevo archivo `nombre-dominio.channels.ts`
-   - Definir el enum de canales y la interfaz de solicitudes
-   - Actualizar `channels.ts` para incluir el nuevo enum
-   - Actualizar `requests.ts` para incluir la nueva interfaz
-   - Actualizar `index.ts` para exportar los nuevos tipos
+2. **Añadir una nueva categoría:**
+   - Crear una nueva sección en `ipc-channels.ts`
+   - Definir los canales necesarios
+
+   ```typescript
+   export const IPC_CHANNELS = {
+     // Categorías existentes...
+     NEW_CATEGORY: {
+       OPERATION1: 'new-category:operation1',
+       OPERATION2: 'new-category:operation2'
+     }
+   } as const;
+   ```
 
 ## Ventajas de Esta Estructura
 
-1. **Tipado fuerte**: Validación en tiempo de compilación de solicitudes y respuestas
-2. **Organización modular**: Separa preocupaciones por dominio
-3. **Mantenibilidad**: Facilita encontrar y modificar canales existentes
-4. **Extensibilidad**: Estructura preparada para crecer con nuevos dominios
-5. **Autocompletado**: IDE puede sugerir canales disponibles y sus tipos
+1. **Centralización**: Todos los canales definidos en un solo lugar
+2. **Tipado fuerte**: Validación en tiempo de compilación
+3. **Mantenibilidad**: Fácil de encontrar y modificar canales
+4. **Extensibilidad**: Simple de añadir nuevos canales o categorías
+5. **Autocompletado**: IDE puede sugerir canales disponibles
+6. **Consistencia**: Nombres de canales estandarizados
+7. **Organización**: Canales agrupados por categorías lógicas
 
 ## Consideraciones Técnicas
 
-- La estructura evita referencias circulares que pueden causar problemas con `isolatedModules` en TypeScript
-- Los tipos genéricos como `IpcRequest` e `IpcResponse` proporcionan una API consistente
-- El uso de `export type` asegura compatibilidad con `isolatedModules` 
+- La estructura utiliza `as const` para asegurar tipos literales
+- Los tipos genéricos proporcionan una API consistente
+- El uso de `export type` asegura compatibilidad con `isolatedModules`
+- La centralización reduce la posibilidad de duplicación de canales 

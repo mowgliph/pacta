@@ -1,0 +1,174 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Guía de Modernización Visual y UX para PACTA
+
+> **Stack visual obligatorio:** Todos los componentes y layouts deben implementarse usando **Shadcn/UI + Tailwind CSS**. Esta combinación garantiza una experiencia moderna, accesible y altamente personalizable, alineada con los estándares actuales de aplicaciones de escritorio construidas con Electron y Next.js.
+>
+> **Integración recomendada:**
+> - Utiliza los componentes de Shadcn/UI como base para botones, tarjetas, formularios, tablas y paneles.
+> - Personaliza los estilos y layouts mediante utilidades de Tailwind CSS, siguiendo la paleta y reglas de branding de PACTA.
+> - Aprovecha la flexibilidad de Tailwind para espaciados, grids, tipografía y responsive design.
+> - Mantén la coherencia visual y funcional en toda la aplicación reutilizando los mismos patrones y componentes.
+
+> **Buenas prácticas para Shadcn + Tailwind CSS:**
+> - No modifiques directamente los componentes base de Shadcn; extiéndelos o personalízalos mediante clases de Tailwind y variantes.
+> - Usa la configuración de Tailwind para definir la paleta de colores y fuentes oficiales de PACTA.
+> - Prioriza la accesibilidad: asegúrate de que todos los componentes tengan estados de focus visibles y cumplan con el contraste mínimo.
+> - Mantén la estructura de carpetas organizada por dominio y tipo de componente.
+> - Documenta cualquier personalización relevante para facilitar el mantenimiento y la escalabilidad.
+
+> **Referencia visual:** Inspirada en `Dashboard-Referencia.jpg`
+> **Colores y estilos:** Basados en `doc-branding.txt`
+
+---
+
+## 1. Principios de Diseño Moderno
+
+- **Claridad y minimalismo:** Priorizar la legibilidad, el espacio en blanco y la jerarquía visual.
+- **Consistencia:** Usar la paleta y tipografía oficial de PACTA en todos los módulos.
+- **Feedback inmediato:** Proveer retroalimentación visual clara para todas las acciones.
+- **Desktop First:** Diseño optimizado para escritorio, con adaptabilidad mínima para pantallas medianas.
+- **Componentización:** Uso de componentes reutilizables y patrones de diseño modernos (React + Tailwind).
+
+---
+
+## 2. Paleta de Colores (PACTA)
+
+| Uso                        | Color principal      | Hex      |
+|----------------------------|---------------------|----------|
+| Fondo barra lateral        | Azul Marino Oscuro  | #001B48  |
+| Elementos interactivos     | Azul Oscuro         | #02457A  |
+| Acentos y datos destacados | Azul Medio          | #018ABE  |
+| Fondos suaves/paneles      | Azul Muy Claro      | #D6E8EE  |
+| Fondos generales           | Gris Muy Claro      | #F5F5F5  |
+| Éxito                      | Verde               | #4CAF50  |
+| Advertencia                | Naranja             | #FF9800  |
+| Error                      | Rojo                | #F44336  |
+| Texto principal            | Gris Oscuro         | #333333  |
+| Texto secundario           | Gris Medio          | #757575  |
+| Tarjetas y paneles         | Blanco              | #FFFFFF  |
+
+> **Tip:** Usar degradados sutiles y fondos claros para separar secciones.
+
+---
+
+## 3. Tipografía y Jerarquía Visual
+
+- **Principal:** Inter (semi-bold para títulos, regular para cuerpo)
+- **Secundaria:** Roboto
+- **Tamaños recomendados:**
+  - h1: 32px / 2rem (600)
+  - h2: 24px / 1.5rem (600)
+  - h3: 20px / 1.25rem (500)
+  - Texto normal: 16px / 1rem (400)
+  - Texto pequeño/captions: 12-14px
+- **Contraste:** Asegurar contraste mínimo 4.5:1 para texto principal.
+
+---
+
+## 4. Componentes Clave y Estilos
+
+### 4.1 Barra Lateral (Sidebar)
+- Fondo: #001B48
+- Iconos y texto: Blanco
+- Botón activo: fondo #D6E8EE, texto #018ABE
+- Espaciado generoso, iconografía Lucide (20-24px)
+
+### 4.2 Encabezado (Header)
+- Fondo: Blanco
+- Sombra sutil para separación
+- Título grande, avatar de usuario, acciones rápidas
+
+### 4.3 Tarjetas de Resumen
+- Fondo: Blanco
+- Bordes redondeados (8px), sombra sutil
+- Icono destacado, valor principal grande, descripción secundaria
+- Colores de acento según tipo de dato (ej: #018ABE para contratos vigentes)
+
+### 4.4 Tablas y Listados
+- Encabezado: fondo #D6E8EE, texto medio
+- Filas alternas: blanco y #F9FBFC
+- Hover: #D6E8EE
+- Bordes ligeros (#EEEEEE), padding 12-16px
+- Acciones rápidas (iconos o botones discretos)
+
+### 4.5 Gráficos y Visualizaciones
+- Colores principales: #018ABE, #97CADB, #D6E8EE
+- Ejes y etiquetas: gris medio
+- Tooltips: fondo blanco, sombra, bordes redondeados
+
+### 4.6 Botones
+- Primario: fondo #018ABE, texto blanco, hover #02457A
+- Secundario: borde #018ABE, texto #018ABE, hover fondo #D6E8EE
+- Destructivo: fondo #F44336, texto blanco
+- Bordes redondeados (6px), altura 40px
+
+### 4.7 Formularios
+- Inputs: altura 40px, borde gris claro, border-radius 6px
+- Foco: borde #018ABE, sombra suave
+- Etiquetas arriba, mensajes de error en rojo (#F44336)
+
+### 4.8 Paneles y Secciones
+- Fondo: #F5F5F5 o #D6E8EE
+- Separación clara entre secciones
+- Títulos de sección destacados
+
+---
+
+## 5. Layout y Organización de Pantalla
+
+- **Estructura general:**
+  - Sidebar fija a la izquierda
+  - Header superior con título y acciones
+  - Área de contenido con tarjetas, tablas y gráficos
+  - Paneles laterales opcionales para detalles o acciones secundarias
+- **Espaciado:** Padding generoso (24px en áreas principales)
+- **Tarjetas:** 16-24px de separación entre tarjetas
+- **Responsive:** Desktop first, mínimo 1024px de ancho
+
+---
+
+## 6. Interacción, Animaciones y Feedback
+
+- **Animaciones suaves:** Transiciones en hover, apertura/cierre de paneles, feedback de acciones
+- **Feedback visual:** Cambios de color, loaders, mensajes de éxito/error
+- **Microinteracciones:** Efectos sutiles en botones, inputs y notificaciones
+
+---
+
+## 7. Accesibilidad y Buenas Prácticas
+
+- Contraste adecuado en todos los textos y botones
+- Estados de focus visibles para navegación por teclado
+- Textos alternativos en iconos e imágenes funcionales
+- Estructura semántica clara (encabezados, landmarks)
+
+---
+
+## 8. Ejemplo de Layout Inspirado en Dashboard-Referencia.jpg
+
+```plaintext
+┌──────────────────────────────────────────────────────────────┐
+│ Sidebar │ Header (título, usuario, acciones)                │
+├─────────┼────────────────────────────────────────────────────┤
+│         │ Tarjetas resumen  │  Gráficos/Paneles             │
+│         │------------------│-------------------------------│
+│         │ Tabla/Listado    │  Paneles secundarios           │
+└─────────┴────────────────────────────────────────────────────┘
+```
+
+---
+
+## 9. Recursos y Referencias
+
+- Paleta y estilos: docs/doc-branding.txt
+- Referencia visual: docs/Dashboard-Referencia.jpg
+- Componentes UI: Shadcn/UI, Tailwind CSS
+- Iconografía: Lucide Icons
+
+---
+
+> **Esta guía debe ser utilizada como referencia para todo rediseño o creación de nuevos módulos en PACTA, asegurando una experiencia moderna, profesional y coherente en toda la aplicación.** 

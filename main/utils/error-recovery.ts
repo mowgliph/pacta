@@ -1,7 +1,7 @@
 import { app, BrowserWindow } from "electron";
-import { logger } from "../lib/logger";
-import { ErrorMonitorService } from "../services/error-monitor.service";
-import { AppError } from "../middleware/error.middleware";
+import { logger } from "./logger";
+import { ErrorMonitorService } from "./error-monitor";
+import { AppError } from "./error-handler";
 
 export class ErrorRecoveryManager {
   private static instance: ErrorRecoveryManager;
