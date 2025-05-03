@@ -4,7 +4,7 @@ const { hash } = require('bcrypt');
 const prisma = new PrismaClient();
 
 async function main() {
-  // Crear roles básicos
+  // Roles
   const adminRole = await prisma.role.findUnique({ where: { name: 'Admin' } })
     || await prisma.role.create({
       data: {
@@ -18,7 +18,6 @@ async function main() {
         isSystem: true,
       },
     });
-
   const raRole = await prisma.role.findUnique({ where: { name: 'RA' } })
     || await prisma.role.create({
       data: {
@@ -33,10 +32,9 @@ async function main() {
       },
     });
 
-  // Crear usuarios iniciales solo si no existen
+  // Usuarios
   const adminPassword = await hash('pacta', 10);
   const raPassword = await hash('pacta', 10);
-
   const adminUser = await prisma.user.findUnique({ where: { email: 'admin@pacta.local' } })
     || await prisma.user.create({
       data: {
@@ -47,7 +45,6 @@ async function main() {
         isActive: true,
       },
     });
-
   const raUser = await prisma.user.findUnique({ where: { email: 'ra@pacta.local' } })
     || await prisma.user.create({
       data: {
@@ -58,183 +55,6 @@ async function main() {
         isActive: true,
       },
     });
-
-  // Crear contratos de ejemplo
-  const contract1 = await prisma.contract.findUnique({ where: { contractNumber: 'CONT-2025-001' } })
-    || await prisma.contract.create({
-      data: {
-        contractNumber: 'CONT-2025-001',
-        signDate: new Date('2024-12-15'),
-        signPlace: 'Ciudad Principal',
-        type: 'Cliente',
-        companyName: 'Empresa A',
-        companyAddress: 'Calle Principal 123',
-        nationality: 'Cubana',
-        commercialAuth: 'MN-2024-001',
-        bankAccount: '1234567890',
-        bankBranch: 'Sucursal Central',
-        bankAgency: 'Agencia Principal',
-        bankHolder: 'Empresa A S.A.',
-        bankCurrency: 'CUP',
-        reeupCode: 'REEUP-001-2024',
-        nit: 'NIT-001-2024',
-        contactPhones: JSON.stringify(['555-0001', '555-0002']),
-        repName: 'Juan Pérez',
-        repPosition: 'Director General',
-        repDocumentType: 'Resolución',
-        repDocumentNumber: 'RES-2024-001',
-        repDocumentDate: new Date('2024-01-01'),
-        description: 'Servicios de mantenimiento de infraestructura',
-        providerObligations: JSON.stringify([
-          'Mantener la infraestructura en óptimas condiciones',
-          'Realizar mantenimientos preventivos mensuales'
-        ]),
-        clientObligations: JSON.stringify([
-          'Permitir acceso al personal autorizado',
-          'Realizar pagos en tiempo y forma'
-        ]),
-        deliveryPlace: 'Sede Principal Cliente',
-        deliveryTerm: '5 días hábiles',
-        acceptanceProcedure: 'Firma de acta de conformidad',
-        value: 50000,
-        currency: 'MN',
-        paymentMethod: 'Transferencia',
-        paymentTerm: '30 días',
-        warrantyTerm: '12 meses',
-        warrantyScope: 'Cobertura total de piezas y mano de obra',
-        technicalStandards: 'ISO 9001:2015',
-        claimProcedure: 'Por escrito dentro de los 5 días hábiles',
-        disputeResolution: 'Mediación y arbitraje según legislación vigente',
-        latePaymentInterest: '1% mensual sobre monto adeudado',
-        breachPenalties: '10% del valor total del contrato',
-        notificationMethods: JSON.stringify(['Correo electrónico', 'Carta certificada']),
-        minimumNoticeTime: '30 días calendario',
-        startDate: new Date('2025-01-01'),
-        endDate: new Date('2025-12-31'),
-        extensionTerms: 'Renovación automática por períodos iguales',
-        earlyTerminationNotice: '60 días previo a terminación',
-        forceMajeure: 'Eventos naturales, guerra, pandemia',
-        status: 'Vigente',
-        isRestricted: false,
-        createdById: adminUser.id,
-        ownerId: raUser.id,
-      },
-    });
-
-  const contract2 = await prisma.contract.findUnique({ where: { contractNumber: 'CONT-2025-002' } })
-    || await prisma.contract.create({
-      data: {
-        contractNumber: 'CONT-2025-002',
-        signDate: new Date('2024-12-20'),
-        signPlace: 'Ciudad Secundaria',
-        type: 'Proveedor',
-        companyName: 'Empresa B',
-        companyAddress: 'Avenida Secundaria 456',
-        nationality: 'Cubana',
-        commercialAuth: 'MN-2024-002',
-        bankAccount: '0987654321',
-        bankBranch: 'Sucursal Norte',
-        bankAgency: 'Agencia Comercial',
-        bankHolder: 'Empresa B S.A.',
-        bankCurrency: 'MLC',
-        reeupCode: 'REEUP-002-2024',
-        nit: 'NIT-002-2024',
-        contactPhones: JSON.stringify(['555-1001', '555-1002']),
-        repName: 'María Rodríguez',
-        repPosition: 'Gerente General',
-        repDocumentType: 'Poder Notarial',
-        repDocumentNumber: 'POD-2024-001',
-        repDocumentDate: new Date('2024-01-15'),
-        description: 'Suministro de materiales de oficina',
-        providerObligations: JSON.stringify([
-          'Entregar materiales según especificaciones',
-          'Mantener stock mínimo disponible'
-        ]),
-        clientObligations: JSON.stringify([
-          'Realizar pedidos con anticipación',
-          'Efectuar pagos según cronograma'
-        ]),
-        deliveryPlace: 'Almacén Central',
-        deliveryTerm: '3 días hábiles',
-        acceptanceProcedure: 'Verificación en recepción',
-        value: 25000,
-        currency: 'MLC',
-        paymentMethod: 'Transferencia',
-        paymentTerm: '15 días',
-        warrantyTerm: '6 meses',
-        warrantyScope: 'Reemplazo de productos defectuosos',
-        technicalStandards: 'Normas de calidad ISO',
-        claimProcedure: 'Notificación inmediata al detectar defectos',
-        disputeResolution: 'Negociación directa y arbitraje',
-        latePaymentInterest: '2% mensual',
-        breachPenalties: '15% del valor del pedido',
-        notificationMethods: JSON.stringify(['Correo electrónico', 'Teléfono']),
-        minimumNoticeTime: '15 días calendario',
-        startDate: new Date('2025-02-01'),
-        endDate: new Date('2025-07-31'),
-        extensionTerms: 'Prórroga por acuerdo mutuo',
-        earlyTerminationNotice: '30 días de anticipación',
-        forceMajeure: 'Desastres naturales, huelgas, restricciones gubernamentales',
-        status: 'Vigente',
-        isRestricted: false,
-        createdById: adminUser.id,
-        ownerId: raUser.id,
-      },
-    });
-
-  const contracts = [contract1, contract2];
-
-  // Crear suplementos de ejemplo
-  await prisma.supplement.create({
-    data: {
-      contractId: contracts[0].id,
-      title: 'Modificación de Monto',
-      description: 'Incremento del monto del contrato',
-      changes: JSON.stringify({
-        field: 'amount',
-        oldValue: 50000,
-        newValue: 60000,
-      }),
-      effectiveDate: new Date('2025-06-01'),
-      isApproved: true,
-      approvedById: adminUser.id,
-      approvedAt: new Date(),
-      createdById: raUser.id,
-    },
-  });
-
-  // Crear preferencias de usuario
-  const adminPref = await prisma.userPreference.findUnique({ where: { userId: adminUser.id } })
-    || await prisma.userPreference.create({
-      data: {
-        userId: adminUser.id,
-        theme: 'light',
-        notificationsEnabled: true,
-        notificationDays: 30,
-      },
-    });
-
-  const raPref = await prisma.userPreference.findUnique({ where: { userId: raUser.id } })
-    || await prisma.userPreference.create({
-      data: {
-        userId: raUser.id,
-        theme: 'light',
-        notificationsEnabled: true,
-        notificationDays: 30,
-      },
-    });
-
-  // Crear configuración del sistema
-  const backupSetting = await prisma.systemSetting.findUnique({ where: { key: 'backup_retention_days' } })
-    || await prisma.systemSetting.create({
-      data: {
-        key: 'backup_retention_days',
-        value: '7',
-        category: 'backup',
-      },
-    });
-
-  // Usuario desactivado
   const inactiveUser = await prisma.user.findUnique({ where: { email: 'inactivo@pacta.local' } })
     || await prisma.user.create({
       data: {
@@ -246,124 +66,136 @@ async function main() {
       },
     });
 
-  // Contrato Vencido
-  const expiredContract = await prisma.contract.findUnique({ where: { contractNumber: 'CONT-2024-003' } })
-    || await prisma.contract.create({
-      data: {
-        contractNumber: 'CONT-2024-003',
-        type: 'Cliente',
-        companyName: 'Empresa C',
-        companyAddress: 'Dirección de Empresa C',
-        startDate: new Date('2023-01-01'),
-        endDate: new Date('2023-12-31'),
-        signDate: new Date('2023-01-01'),
-        signPlace: 'Ciudad Ejemplo',
-        value: 10000,
-        currency: 'USD',
-        paymentMethod: 'Efectivo',
-        status: 'Vencido',
-        createdById: adminUser.id,
-        ownerId: raUser.id,
-        description: 'Contrato vencido de prueba',
-      },
-    });
+  // Contratos de ejemplo (5 contratos)
+  const contratos = [];
+  for (let i = 1; i <= 5; i++) {
+    const contractNumber = `CONT-2025-00${i}`;
+    const contrato = await prisma.contract.findUnique({ where: { contractNumber } })
+      || await prisma.contract.create({
+        data: {
+          contractNumber,
+          signDate: new Date(`2024-12-${10 + i}`),
+          signPlace: `Ciudad ${i}`,
+          type: i % 2 === 0 ? 'Proveedor' : 'Cliente',
+          companyName: `Empresa ${String.fromCharCode(64 + i)}`,
+          companyAddress: `Calle ${i} #${100 + i}`,
+          nationality: 'Cubana',
+          commercialAuth: `MN-2025-00${i}`,
+          bankAccount: `12345678${i}`,
+          bankBranch: `Sucursal ${i}`,
+          bankAgency: `Agencia ${i}`,
+          bankHolder: `Empresa ${String.fromCharCode(64 + i)} S.A.`,
+          bankCurrency: i % 2 === 0 ? 'MLC' : 'CUP',
+          reeupCode: `REEUP-00${i}-2025`,
+          nit: `NIT-00${i}-2025`,
+          contactPhones: JSON.stringify([`555-00${i}1`, `555-00${i}2`]),
+          repName: `Representante ${i}`,
+          repPosition: 'Director',
+          repDocumentType: 'Resolución',
+          repDocumentNumber: `RES-2025-00${i}`,
+          repDocumentDate: new Date(`2024-11-${10 + i}`),
+          description: `Contrato de ejemplo ${i}`,
+          providerObligations: JSON.stringify([
+            `Obligación proveedor ${i}`
+          ]),
+          clientObligations: JSON.stringify([
+            `Obligación cliente ${i}`
+          ]),
+          deliveryPlace: `Lugar entrega ${i}`,
+          deliveryTerm: `${i + 2} días hábiles`,
+          acceptanceProcedure: `Procedimiento ${i}`,
+          value: 10000 * i,
+          currency: i % 2 === 0 ? 'MLC' : 'MN',
+          paymentMethod: 'Transferencia',
+          paymentTerm: `${15 + i} días`,
+          warrantyTerm: `${6 + i} meses`,
+          warrantyScope: `Cobertura ${i}`,
+          technicalStandards: `ISO 900${i}`,
+          claimProcedure: `Reclamo ${i}`,
+          disputeResolution: `Resolución ${i}`,
+          latePaymentInterest: `${i}% mensual`,
+          breachPenalties: `${i * 2}% del valor`,
+          notificationMethods: JSON.stringify(['Correo electrónico', 'Carta certificada']),
+          minimumNoticeTime: `${10 + i} días`,
+          startDate: new Date(`2025-01-0${i}`),
+          endDate: new Date(`2025-12-2${i}`),
+          extensionTerms: `Prórroga ${i}`,
+          earlyTerminationNotice: `${30 + i} días`,
+          forceMajeure: `Fuerza mayor ${i}`,
+          status: i === 1 ? 'Vigente' : i === 2 ? 'Vencido' : i === 3 ? 'Próximo a Vencer' : i === 4 ? 'Archivado' : 'Vigente',
+          isRestricted: false,
+          createdById: adminUser.id,
+          ownerId: i % 2 === 0 ? raUser.id : adminUser.id,
+        },
+      });
+    contratos.push(contrato);
+  }
 
-  // Contrato Próximo a Vencer
-  const soonExpiringContract = await prisma.contract.findUnique({ where: { contractNumber: 'CONT-2024-004' } })
-    || await prisma.contract.create({
+  // Suplementos de ejemplo (5 suplementos, uno por contrato)
+  for (let i = 0; i < 5; i++) {
+    await prisma.supplement.create({
       data: {
-        contractNumber: 'CONT-2024-004',
-        type: 'Proveedor',
-        companyName: 'Empresa D',
-        companyAddress: 'Dirección de Empresa D',
-        startDate: new Date(),
-        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        signDate: new Date(),
-        signPlace: 'Ciudad Ejemplo',
-        value: 20000,
-        currency: 'EUR',
-        paymentMethod: 'Cheque',
-        status: 'Próximo a Vencer',
-        createdById: adminUser.id,
-        ownerId: raUser.id,
-        description: 'Contrato próximo a vencer',
-      },
-    });
-
-  // Contrato Archivado
-  const archivedContract = await prisma.contract.findUnique({ where: { contractNumber: 'CONT-2024-005' } })
-    || await prisma.contract.create({
-      data: {
-        contractNumber: 'CONT-2024-005',
-        type: 'Cliente',
-        companyName: 'Empresa E',
-        companyAddress: 'Dirección de Empresa E',
-        startDate: new Date('2022-01-01'),
-        endDate: new Date('2022-12-31'),
-        signDate: new Date('2022-01-01'),
-        signPlace: 'Ciudad Ejemplo',
-        value: 15000,
-        currency: 'USD',
-        paymentMethod: 'Transferencia',
-        status: 'Archivado',
-        createdById: adminUser.id,
-        ownerId: inactiveUser.id,
-        description: 'Contrato archivado de prueba',
-      },
-    });
-
-  // Más suplementos con diferentes campos
-  await prisma.supplement.createMany({
-    data: [
-      {
-        contractId: expiredContract.id,
-        title: 'Cambio de Fecha Fin',
-        description: 'Se extendió la fecha de fin',
-        changes: JSON.stringify({ field: 'endDate', oldValue: '2023-12-31', newValue: '2024-06-30' }),
-        effectiveDate: new Date('2024-01-01'),
-        isApproved: true,
-        approvedById: adminUser.id,
-        approvedAt: new Date(),
+        contractId: contratos[i].id,
+        title: `Suplemento ${i + 1}`,
+        description: `Descripción del suplemento ${i + 1}`,
+        changes: JSON.stringify({ field: 'value', oldValue: 10000 * (i + 1), newValue: 12000 * (i + 1) }),
+        effectiveDate: new Date(`2025-06-0${i + 1}`),
+        isApproved: i % 2 === 0,
+        approvedById: i % 2 === 0 ? adminUser.id : null,
+        approvedAt: i % 2 === 0 ? new Date() : null,
         createdById: raUser.id,
-      },
-      {
-        contractId: soonExpiringContract.id,
-        title: 'Cambio de Descripción',
-        description: 'Actualización de objeto del contrato',
-        changes: JSON.stringify({ field: 'description', oldValue: 'Contrato próximo a vencer', newValue: 'Contrato actualizado' }),
-        effectiveDate: new Date(),
-        isApproved: false,
-        createdById: raUser.id,
-      },
-      {
-        contractId: archivedContract.id,
-        title: 'Cambio de Monto',
-        description: 'Reducción del monto',
-        changes: JSON.stringify({ field: 'value', oldValue: 15000, newValue: 12000 }),
-        effectiveDate: new Date('2022-06-01'),
-        isApproved: true,
-        approvedById: adminUser.id,
-        approvedAt: new Date(),
-        createdById: inactiveUser.id,
-      },
-    ],
-  });
-
-  // Documento adjunto de ejemplo (si el modelo lo permite)
-  if (prisma.document) {
-    await prisma.document.create({
-      data: {
-        contractId: contracts[0].id,
-        fileName: 'contrato-2025-001.pdf',
-        filePath: '/data/documents/contrato-2025-001.pdf',
-        mimeType: 'application/pdf',
-        uploadedById: adminUser.id,
-        uploadedAt: new Date(),
       },
     });
   }
 
-  console.log('Datos de prueba extendidos creados exitosamente');
+  // Documentos de ejemplo (5 documentos, uno por contrato)
+  for (let i = 0; i < 5; i++) {
+    await prisma.document.create({
+      data: {
+        filename: `contrato-2025-00${i + 1}.pdf`,
+        originalName: `Contrato Original ${i + 1}.pdf`,
+        mimeType: 'application/pdf',
+        size: 102400 + i * 1000,
+        path: `/data/documents/contrato-2025-00${i + 1}.pdf`,
+        contractId: contratos[i].id,
+        uploadedById: adminUser.id,
+        uploadedAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+  }
+
+  // Preferencias de usuario
+  const adminPref = await prisma.userPreference.findUnique({ where: { userId: adminUser.id } })
+    || await prisma.userPreference.create({
+      data: {
+        userId: adminUser.id,
+        theme: 'light',
+        notificationsEnabled: true,
+        notificationDays: 30,
+      },
+    });
+  const raPref = await prisma.userPreference.findUnique({ where: { userId: raUser.id } })
+    || await prisma.userPreference.create({
+      data: {
+        userId: raUser.id,
+        theme: 'light',
+        notificationsEnabled: true,
+        notificationDays: 30,
+      },
+    });
+
+  // Configuración del sistema
+  const backupSetting = await prisma.systemSetting.findUnique({ where: { key: 'backup_retention_days' } })
+    || await prisma.systemSetting.create({
+      data: {
+        key: 'backup_retention_days',
+        value: '7',
+        category: 'backup',
+      },
+    });
+
+  console.log('Seed de datos mockup ejecutado correctamente.');
 }
 
 main()
