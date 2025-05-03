@@ -57,6 +57,16 @@ declare global {
         dashboard: () => Promise<any>;
         contracts: (filters?: any) => Promise<any>;
         export: (type: string, filters?: any) => Promise<any>;
+        contractsByStatus: () => Promise<any>;
+        contractsByType: () => Promise<any>;
+        contractsByCurrency: () => Promise<any>;
+        contractsByUser: () => Promise<any>;
+        contractsCreatedByMonth: () => Promise<any>;
+        contractsExpiredByMonth: () => Promise<any>;
+        supplementsCountByContract: () => Promise<any>;
+        contractsExpiringSoon: () => Promise<any>;
+        contractsWithoutDocuments: () => Promise<any>;
+        usersActivity: () => Promise<any>;
       };
       system: {
         openFile: (path: string) => Promise<any>;

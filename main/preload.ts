@@ -85,6 +85,16 @@ contextBridge.exposeInMainWorld("Electron", {
     dashboard: () => ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.DASHBOARD),
     contracts: (filters?: any) => ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.CONTRACTS, filters),
     export: (type: string, filters?: any) => ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.EXPORT, type, filters),
+    contractsByStatus: () => ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.CONTRACTS_BY_STATUS),
+    contractsByType: () => ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.CONTRACTS_BY_TYPE),
+    contractsByCurrency: () => ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.CONTRACTS_BY_CURRENCY),
+    contractsByUser: () => ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.CONTRACTS_BY_USER),
+    contractsCreatedByMonth: () => ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.CONTRACTS_CREATED_BY_MONTH),
+    contractsExpiredByMonth: () => ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.CONTRACTS_EXPIRED_BY_MONTH),
+    supplementsCountByContract: () => ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.SUPPLEMENTS_COUNT_BY_CONTRACT),
+    contractsExpiringSoon: () => ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.CONTRACTS_EXPIRING_SOON),
+    contractsWithoutDocuments: () => ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.CONTRACTS_WITHOUT_DOCUMENTS),
+    usersActivity: () => ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.USERS_ACTIVITY),
   },
   // Sistema
   system: {

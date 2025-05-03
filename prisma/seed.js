@@ -300,6 +300,7 @@ async function main() {
       companyName: 'Empresa C',
       startDate: new Date('2023-01-01'),
       endDate: new Date('2023-12-31'),
+      signDate: new Date('2023-01-01'),
       value: 10000,
       currency: 'USD',
       paymentMethod: 'Efectivo',
@@ -318,6 +319,7 @@ async function main() {
       companyName: 'Empresa D',
       startDate: new Date(),
       endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días después
+      signDate: new Date(),
       value: 20000,
       currency: 'EUR',
       paymentMethod: 'Cheque',
@@ -336,6 +338,7 @@ async function main() {
       companyName: 'Empresa E',
       startDate: new Date('2022-01-01'),
       endDate: new Date('2022-12-31'),
+      signDate: new Date('2022-01-01'),
       value: 15000,
       currency: 'USD',
       paymentMethod: 'Transferencia',
