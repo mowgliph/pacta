@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Button } from '../ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { useThemeStore } from '../../store/theme';
@@ -16,12 +16,14 @@ export function ThemeToggle() {
     theme: state.theme,
     setTheme: state.setTheme,
   }));
+  const initialized = useRef(false);
 
   useEffect(() => {
-    if (theme === 'system' && window.Electron?.theme?.getSystemTheme) {
+    if (!initialized.current && theme === 'system' && window.Electron?.theme?.getSystemTheme) {
       window.Electron.theme.getSystemTheme().then((systemTheme) => {
         setTheme(systemTheme);
       });
+      initialized.current = true;
     }
     // eslint-disable-next-line
   }, []);
