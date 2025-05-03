@@ -5,55 +5,59 @@ const prisma = new PrismaClient();
 
 async function main() {
   // Crear roles básicos
-  const adminRole = await prisma.role.create({
-    data: {
-      name: 'Admin',
-      description: 'Administrador del sistema',
-      permissions: JSON.stringify({
-        contracts: ['create', 'read', 'update', 'delete', 'approve'],
-        users: ['create', 'read', 'update', 'delete'],
-        system: ['configure', 'backup']
-      }),
-      isSystem: true,
-    },
-  });
+  const adminRole = await prisma.role.findUnique({ where: { name: 'Admin' } })
+    || await prisma.role.create({
+      data: {
+        name: 'Admin',
+        description: 'Administrador del sistema',
+        permissions: JSON.stringify({
+          contracts: ['create', 'read', 'update', 'delete', 'approve'],
+          users: ['create', 'read', 'update', 'delete'],
+          system: ['configure', 'backup']
+        }),
+        isSystem: true,
+      },
+    });
 
-  const raRole = await prisma.role.create({
-    data: {
-      name: 'RA',
-      description: 'Responsable de Área',
-      permissions: JSON.stringify({
-        contracts: ['create', 'read', 'update'],
-        users: ['read'],
-        system: ['read']
-      }),
-      isSystem: true,
-    },
-  });
+  const raRole = await prisma.role.findUnique({ where: { name: 'RA' } })
+    || await prisma.role.create({
+      data: {
+        name: 'RA',
+        description: 'Responsable de Área',
+        permissions: JSON.stringify({
+          contracts: ['create', 'read', 'update'],
+          users: ['read'],
+          system: ['read']
+        }),
+        isSystem: true,
+      },
+    });
 
-  // Crear usuarios iniciales
+  // Crear usuarios iniciales solo si no existen
   const adminPassword = await hash('pacta', 10);
   const raPassword = await hash('pacta', 10);
 
-  const adminUser = await prisma.user.create({
-    data: {
-      name: 'Administrador',
-      email: 'admin@pacta.local',
-      password: adminPassword,
-      roleId: adminRole.id,
-      isActive: true,
-    },
-  });
+  const adminUser = await prisma.user.findUnique({ where: { email: 'admin@pacta.local' } })
+    || await prisma.user.create({
+      data: {
+        name: 'Administrador',
+        email: 'admin@pacta.local',
+        password: adminPassword,
+        roleId: adminRole.id,
+        isActive: true,
+      },
+    });
 
-  const raUser = await prisma.user.create({
-    data: {
-      name: 'Responsable',
-      email: 'ra@pacta.local',
-      password: raPassword,
-      roleId: raRole.id,
-      isActive: true,
-    },
-  });
+  const raUser = await prisma.user.findUnique({ where: { email: 'ra@pacta.local' } })
+    || await prisma.user.create({
+      data: {
+        name: 'Responsable',
+        email: 'ra@pacta.local',
+        password: raPassword,
+        roleId: raRole.id,
+        isActive: true,
+      },
+    });
 
   // Crear contratos de ejemplo
   const contracts = await Promise.all([
