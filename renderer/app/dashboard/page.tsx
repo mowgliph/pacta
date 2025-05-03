@@ -1,3 +1,4 @@
+"use client";
 import React from "react"
 import { BarChart2, FilePlus, PlusCircle, Search, TrendingUp } from "lucide-react"
 import { useDashboardStats } from "../../lib/useDashboardStats"
