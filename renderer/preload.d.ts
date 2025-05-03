@@ -3,110 +3,82 @@ import { IpcHandler } from "../main/preload";
 declare global {
   interface Window {
     Electron: {
-      app: {
-        relaunch: () => void;
-        exit: (code: number) => void;
-        getVersion: () => Promise<string>;
-        getPath: (name: string) => Promise<string>;
-        getInfo: () => Promise<any>;
+      contracts: {
+        list: (filters?: any) => Promise<any>;
+        create: (data: any) => Promise<any>;
+        update: (id: string, data: any) => Promise<any>;
+        delete: (id: string) => Promise<any>;
+        export: (id: string) => Promise<any>;
+        upload: (file: any) => Promise<any>;
+        archive: (id: string) => Promise<any>;
+        updateAccessControl: (id: string, data: any) => Promise<any>;
+        assignUsers: (id: string, users: any) => Promise<any>;
+        getById: (id: string) => Promise<any>;
       };
-
-      auth: {
-        login: (credentials: {
-          usuario: string;
-          email: string;
-          password: string;
-          rememberMe?: boolean;
-          deviceId?: string;
-          isSpecialUser?: boolean;
-        }) => Promise<any>;
-        logout: () => Promise<any>;
-        getPerfil: () => Promise<any>;
-        cambiarContrasena: (datos: {
-          currentPassword: string;
-          newPassword: string;
-        }) => Promise<any>;
+      supplements: {
+        list: (contractId: string) => Promise<any>;
+        create: (contractId: string, data: any) => Promise<any>;
+        update: (id: string, data: any) => Promise<any>;
+        delete: (id: string) => Promise<any>;
+        export: (id: string) => Promise<any>;
+        upload: (file: any) => Promise<any>;
       };
-
+      documents: {
+        list: (filters?: any) => Promise<any>;
+        upload: (file: any) => Promise<any>;
+        delete: (id: string) => Promise<any>;
+        download: (id: string) => Promise<any>;
+        getByContract: (contractId: string) => Promise<any>;
+        getBySupplement: (supplementId: string) => Promise<any>;
+        open: (id: string) => Promise<any>;
+      };
+      users: {
+        list: () => Promise<any>;
+        create: (userData: any) => Promise<any>;
+        update: (userData: any) => Promise<any>;
+        delete: (id: string) => Promise<any>;
+        toggleActive: (id: string) => Promise<any>;
+        changePassword: (data: any) => Promise<any>;
+        getById: (id: string) => Promise<any>;
+      };
+      roles: {
+        list: () => Promise<any>;
+        create: (data: any) => Promise<any>;
+        update: (data: any) => Promise<any>;
+        delete: (id: string) => Promise<any>;
+      };
+      statistics: {
+        dashboard: () => Promise<any>;
+        contracts: (filters?: any) => Promise<any>;
+        export: (type: string, filters?: any) => Promise<any>;
+      };
+      system: {
+        openFile: (path: string) => Promise<any>;
+        saveFile: (path: string, content: any) => Promise<any>;
+        backup: () => Promise<any>;
+        restore: (backupId: string) => Promise<any>;
+        settings: {
+          get: (key: string) => Promise<any>;
+          update: (key: string, value: any) => Promise<any>;
+        };
+      };
+      notifications: {
+        show: (options: { title: string; body: string }) => Promise<any>;
+        clear: (id: string) => Promise<any>;
+        markRead: (id: string) => Promise<any>;
+        getUnread: () => Promise<any>;
+      };
+      backups: {
+        create: (description?: string) => Promise<any>;
+        restore: (id: string) => Promise<any>;
+        delete: (id: string) => Promise<any>;
+        list: () => Promise<any>;
+        cleanOld: () => Promise<any>;
+      };
       theme: {
         getSystemTheme: () => Promise<"light" | "dark">;
         setAppTheme: (theme: "light" | "dark" | "system") => Promise<void>;
       };
-
-      users: {
-        list: () => Promise<any[]>;
-        getById: (id: string) => Promise<any>;
-        create: (userData: any) => Promise<any>;
-        update: (userData: any) => Promise<any>;
-        toggleActive: (userId: string) => Promise<any>;
-        changePassword: (passwordData: any) => Promise<any>;
-      };
-
-      roles: {
-        getAll: () => Promise<any[]>;
-      };
-
-      contratos: {
-        listar: (filtros?: any) => Promise<any[]>;
-        crear: (datos: any) => Promise<any>;
-        obtener: (id: string) => Promise<any>;
-        actualizar: (id: string, datos: any) => Promise<any>;
-        archivar: (id: string) => Promise<any>;
-      };
-
-      suplementos: {
-        listar: (contratoId: string) => Promise<any[]>;
-        crear: (contratoId: string, datos: any) => Promise<any>;
-        obtener: (id: string) => Promise<any>;
-      };
-
-      documentos: {
-        abrir: (path: string) => Promise<any>;
-        guardar: (path: string, content: any) => Promise<any>;
-        listar: (contratoId: string) => Promise<any[]>;
-      };
-
-      backups: {
-        crear: (descripcion?: string) => Promise<any>;
-        restaurar: (
-          id: string
-        ) => Promise<{ success: boolean; message?: string }>;
-        eliminar: (
-          id: string
-        ) => Promise<{ success: boolean; message?: string }>;
-        listar: () => Promise<
-          Array<{
-            id: string;
-            fileName: string;
-            filePath: string;
-            fileSize: string | number;
-            createdAt: string;
-            createdById: string;
-            note?: string;
-            isAutomatic: boolean;
-            createdBy?: {
-              name: string;
-              email: string;
-            };
-            formattedDate?: string;
-            canDelete?: boolean;
-          }>
-        >;
-        limpiarAntiguos: () => Promise<{ success: boolean; message: string }>;
-      };
-
-      notificaciones: {
-        mostrar: (opciones: { titulo: string; cuerpo: string }) => Promise<any>;
-        marcarLeida: (id: string) => Promise<any>;
-        obtenerNoLeidas: () => Promise<any[]>;
-      };
-
-      estadisticas: {
-        dashboard: () => Promise<any>;
-        contratos: (filtros?: any) => Promise<any>;
-        exportar: (tipo: string, filtros?: any) => Promise<any>;
-      };
-
       api: {
         request: (req: {
           method: string;
@@ -115,7 +87,6 @@ declare global {
           params?: any;
         }) => Promise<any>;
       };
-
       ipcRenderer: {
         invoke: (channel: string, ...args: any[]) => Promise<any>;
         on: (channel: string, listener: (...args: any[]) => void) => void;
@@ -124,11 +95,6 @@ declare global {
           listener: (...args: any[]) => void
         ) => void;
       };
-
-      receive: (channel: string, callback: (...args: any[]) => void) => boolean;
-      removeListener: (channel: string) => boolean;
-
-      dashboard: DashboardAPI;
     };
   }
 }
