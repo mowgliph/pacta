@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation"
 import { useContractDetail } from "../../../lib/useContractDetail"
 import { useParams } from "next/navigation"
 import { FileText, PlusCircle, Archive, ArrowLeft } from "lucide-react"
+import { useAuth } from "../../../store/auth"
 
 function StatusBadge({ status }: { status: string }) {
   const color =
@@ -23,6 +24,7 @@ export default function ContractDetailPage() {
   const id = params.id
   const { contract, supplements, loading, error } = useContractDetail(id)
   const router = useRouter()
+  const { user } = useAuth()
 
   const handleArchive = async () => {
     if (!contract) return
@@ -37,6 +39,10 @@ export default function ContractDetailPage() {
 
   const handleExport = async () => {
     if (!contract) return
+    if (!user) {
+      router.push("/login")
+      return
+    }
     try {
       await window.Electron.contracts.export(contract.id)
       await window.Electron.notifications.show({ title: "Contrato exportado", body: "El contrato fue exportado como PDF." })

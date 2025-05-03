@@ -24,6 +24,13 @@ const isValidChannel = (channel: string): boolean => {
 
 // APIs seguras expuestas al proceso de renderizado a través de contextBridge
 contextBridge.exposeInMainWorld("Electron", {
+  // Autenticación
+  auth: {
+    login: (credentials: any) => ipcRenderer.invoke(IPC_CHANNELS.AUTH.LOGIN, credentials),
+    logout: () => ipcRenderer.invoke(IPC_CHANNELS.AUTH.LOGOUT),
+    verify: () => ipcRenderer.invoke(IPC_CHANNELS.AUTH.VERIFY),
+    refresh: () => ipcRenderer.invoke(IPC_CHANNELS.AUTH.REFRESH),
+  },
   // Contratos
   contracts: {
     list: (filtros?: any) => ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.LIST, filtros),

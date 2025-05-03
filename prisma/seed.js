@@ -281,7 +281,123 @@ async function main() {
     },
   });
 
-  console.log('Datos de prueba creados exitosamente');
+  // Usuario desactivado
+  const inactiveUser = await prisma.user.create({
+    data: {
+      name: 'Usuario Inactivo',
+      email: 'inactivo@pacta.local',
+      password: await hash('pacta', 10),
+      roleId: raRole.id,
+      isActive: false,
+    },
+  });
+
+  // Contrato Vencido
+  const expiredContract = await prisma.contract.create({
+    data: {
+      contractNumber: 'CONT-2024-003',
+      type: 'Cliente',
+      companyName: 'Empresa C',
+      startDate: new Date('2023-01-01'),
+      endDate: new Date('2023-12-31'),
+      value: 10000,
+      currency: 'USD',
+      paymentMethod: 'Efectivo',
+      status: 'Vencido',
+      createdById: adminUser.id,
+      ownerId: raUser.id,
+      description: 'Contrato vencido de prueba',
+    },
+  });
+
+  // Contrato Próximo a Vencer
+  const soonExpiringContract = await prisma.contract.create({
+    data: {
+      contractNumber: 'CONT-2024-004',
+      type: 'Proveedor',
+      companyName: 'Empresa D',
+      startDate: new Date(),
+      endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días después
+      value: 20000,
+      currency: 'EUR',
+      paymentMethod: 'Cheque',
+      status: 'Próximo a Vencer',
+      createdById: adminUser.id,
+      ownerId: raUser.id,
+      description: 'Contrato próximo a vencer',
+    },
+  });
+
+  // Contrato Archivado
+  const archivedContract = await prisma.contract.create({
+    data: {
+      contractNumber: 'CONT-2024-005',
+      type: 'Cliente',
+      companyName: 'Empresa E',
+      startDate: new Date('2022-01-01'),
+      endDate: new Date('2022-12-31'),
+      value: 15000,
+      currency: 'USD',
+      paymentMethod: 'Transferencia',
+      status: 'Archivado',
+      createdById: adminUser.id,
+      ownerId: inactiveUser.id,
+      description: 'Contrato archivado de prueba',
+    },
+  });
+
+  // Más suplementos con diferentes campos
+  await prisma.supplement.createMany({
+    data: [
+      {
+        contractId: expiredContract.id,
+        title: 'Cambio de Fecha Fin',
+        description: 'Se extendió la fecha de fin',
+        changes: JSON.stringify({ field: 'endDate', oldValue: '2023-12-31', newValue: '2024-06-30' }),
+        effectiveDate: new Date('2024-01-01'),
+        isApproved: true,
+        approvedById: adminUser.id,
+        approvedAt: new Date(),
+        createdById: raUser.id,
+      },
+      {
+        contractId: soonExpiringContract.id,
+        title: 'Cambio de Descripción',
+        description: 'Actualización de objeto del contrato',
+        changes: JSON.stringify({ field: 'description', oldValue: 'Contrato próximo a vencer', newValue: 'Contrato actualizado' }),
+        effectiveDate: new Date(),
+        isApproved: false,
+        createdById: raUser.id,
+      },
+      {
+        contractId: archivedContract.id,
+        title: 'Cambio de Monto',
+        description: 'Reducción del monto',
+        changes: JSON.stringify({ field: 'value', oldValue: 15000, newValue: 12000 }),
+        effectiveDate: new Date('2022-06-01'),
+        isApproved: true,
+        approvedById: adminUser.id,
+        approvedAt: new Date(),
+        createdById: inactiveUser.id,
+      },
+    ],
+  });
+
+  // Documento adjunto de ejemplo (si el modelo lo permite)
+  if (prisma.document) {
+    await prisma.document.create({
+      data: {
+        contractId: contracts[0].id,
+        fileName: 'contrato-2025-001.pdf',
+        filePath: '/data/documents/contrato-2025-001.pdf',
+        mimeType: 'application/pdf',
+        uploadedById: adminUser.id,
+        uploadedAt: new Date(),
+      },
+    });
+  }
+
+  console.log('Datos de prueba extendidos creados exitosamente');
 }
 
 main()
