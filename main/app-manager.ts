@@ -2,9 +2,8 @@ import { app, BrowserWindow, dialog } from 'electron';
 import { WindowManager } from './window/window-manager';
 import { SecurityManager } from './security/security-manager';
 import { logger } from './utils/logger';
-import { ErrorHandler } from './ipc/error-handler';
-import { BackupManager } from './lib/backup-manager';
-import { setupIpcHandlers } from './ipc/setup';
+import { ErrorHandler } from './utils/error-handler';
+import { backupService } from './utils/backup-service';
 
 /**
  * Clase para gestionar el ciclo de vida de la aplicación Electron
@@ -15,13 +14,11 @@ export class AppManager {
   private windowManager: WindowManager;
   private securityManager: SecurityManager;
   private errorHandler: ErrorHandler | null = null;
-  private backupManager: BackupManager;
   private mainWindow: BrowserWindow | null = null;
 
   private constructor() {
     this.windowManager = WindowManager.getInstance();
     this.securityManager = SecurityManager.getInstance();
-    this.backupManager = BackupManager.getInstance();
     
     // Configurar opciones y eventos de la aplicación
     this.setupAppOptions();
@@ -57,14 +54,9 @@ export class AppManager {
       this.mainWindow = await this.windowManager.createMainWindow();
       
       // Configurar manejador de errores
-      this.errorHandler = new ErrorHandler(this.mainWindow);
-      this.errorHandler.setupErrorHandling();
-
-      // Configurar IPC
-      setupIpcHandlers(this.mainWindow);
-
+      this.setupErrorHandler();
       // Configurar backup automático
-      this.backupManager.setupScheduledBackup();
+      this.setupAutoBackup();
 
       logger.info('Aplicación PACTA inicializada correctamente');
 
@@ -125,17 +117,6 @@ export class AppManager {
     // Evento before-quit
     app.on('before-quit', () => {
       logger.info('Cerrando aplicación PACTA...');
-    });
-
-    // Manejar errores no capturados
-    process.on('uncaughtException', (error) => {
-      logger.error('Error no capturado:', error);
-      dialog.showErrorBox(
-        'Error inesperado',
-        'Ha ocurrido un error inesperado. La aplicación se reiniciará.'
-      );
-      app.relaunch();
-      app.exit(1);
     });
   }
 
@@ -205,5 +186,37 @@ export class AppManager {
     
     // Implementar la lógica específica para procesar argumentos
     // Por ejemplo, abrir un archivo específico o activar una funcionalidad
+  }
+
+  /**
+   * Configura el manejador global de errores
+   */
+  private setupErrorHandler(): void {
+    // Registrar el manejador global de errores
+    process.on('uncaughtException', (error) => {
+      ErrorHandler.handle(error);
+      dialog.showErrorBox(
+        'Error inesperado',
+        'Ha ocurrido un error inesperado. La aplicación se reiniciará.'
+      );
+      app.relaunch();
+      app.exit(1);
+    });
+    process.on('unhandledRejection', (reason: any) => {
+      ErrorHandler.handle(reason);
+      dialog.showErrorBox(
+        'Error de promesa no manejada',
+        'Se detectó un error no manejado. La aplicación se reiniciará.'
+      );
+      app.relaunch();
+      app.exit(1);
+    });
+  }
+
+  /**
+   * Configura el sistema de backup automático diario
+   */
+  private setupAutoBackup(): void {
+    backupService.scheduleDailyBackup();
   }
 } 
