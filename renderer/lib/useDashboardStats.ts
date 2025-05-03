@@ -31,22 +31,27 @@ export function useDashboardStats() {
     let mounted = true
     setLoading(true)
     setError(null)
-    window.Electron.estadisticas.dashboard()
-      .then((res: any) => {
-        if (mounted) {
-          if (res.success && res.data) {
-            setData(res.data)
-          } else {
-            setError(res.error || "Error al obtener estadísticas")
+    if (window.Electron?.statistics?.dashboard) {
+      window.Electron.statistics.dashboard()
+        .then((res: any) => {
+          if (mounted) {
+            if (res.success && res.data) {
+              setData(res.data)
+            } else {
+              setError(res.error || "Error al obtener estadísticas")
+            }
           }
-        }
-      })
-      .catch((err: any) => {
-        if (mounted) setError(err?.message || "Error de conexión")
-      })
-      .finally(() => {
-        if (mounted) setLoading(false)
-      })
+        })
+        .catch((err: any) => {
+          if (mounted) setError(err?.message || "Error de conexión")
+        })
+        .finally(() => {
+          if (mounted) setLoading(false)
+        })
+    } else {
+      setError("API de estadísticas no disponible")
+      setLoading(false)
+    }
     return () => {
       mounted = false
     }
