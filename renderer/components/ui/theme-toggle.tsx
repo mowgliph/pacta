@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { useThemeStore, Theme } from '../../store/theme-store';
+import { useThemeStore } from '../../store/theme';
+
+type Theme = 'light' | 'dark' | 'system';
 
 interface ThemeOption {
   value: Theme;
@@ -10,12 +12,19 @@ interface ThemeOption {
 }
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useThemeStore(
-    (state) => ({
-      theme: state.theme,
-      setTheme: state.setTheme,
-    })
-  );
+  const { theme, setTheme } = useThemeStore((state: { theme: Theme; setTheme: (theme: Theme) => void }) => ({
+    theme: state.theme,
+    setTheme: state.setTheme,
+  }));
+
+  useEffect(() => {
+    if (theme === 'system' && window.Electron?.theme?.getSystemTheme) {
+      window.Electron.theme.getSystemTheme().then((systemTheme) => {
+        setTheme(systemTheme);
+      });
+    }
+    // eslint-disable-next-line
+  }, []);
 
   const themes: ThemeOption[] = [
     {
