@@ -1,4 +1,5 @@
 module.exports = {
+  output: 'export',
   // specify an alternate main src directory, defaults to 'main'
   mainSrcDir: "main",
   // specify an alternate renderer src directory, defaults to 'renderer'
@@ -15,6 +16,4 @@ module.exports = {
     }
     return config;
   },
-
-  output: 'export',
 };
