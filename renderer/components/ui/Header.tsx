@@ -42,11 +42,6 @@ function useNotifications() {
     fetchNotifications()
   }
 
-  useEffect(() => {
-    fetchNotifications()
-    // Opcional: suscribirse a eventos push de nuevas notificaciones
-  }, [])
-
   return { notifications, loading, fetchNotifications, markAllAsRead }
 }
 
@@ -58,6 +53,12 @@ export default function Header() {
 
   const unreadCount = notifications.filter(n => !n.read).length
 
+  useEffect(() => {
+    if (open) {
+      fetchNotifications()
+    }
+  }, [open])
+
   return (
     <header className="w-full h-16 bg-white flex items-center justify-between px-8 shadow-sm">
       <div>
@@ -67,7 +68,7 @@ export default function Header() {
       <div className="flex items-center gap-6">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <button className="relative" onClick={fetchNotifications}>
+            <button className="relative">
               <Bell size={22} className="text-[#018ABE]" />
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-[#F44336] text-white text-xs rounded-full px-1.5 py-0.5">{unreadCount}</span>

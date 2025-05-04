@@ -12,21 +12,23 @@ interface ThemeOption {
 }
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useThemeStore((state: { theme: Theme; setTheme: (theme: Theme) => void }) => ({
-    theme: state.theme,
-    setTheme: state.setTheme,
-  }));
+  const theme = useThemeStore((state) => state.theme as Theme);
+  const setTheme = useThemeStore((state) => state.setTheme as (theme: Theme) => void);
   const initialized = useRef(false);
 
   useEffect(() => {
-    if (!initialized.current && theme === 'system' && window.Electron?.theme?.getSystemTheme) {
-      window.Electron.theme.getSystemTheme().then((systemTheme) => {
+    if (
+      !initialized.current &&
+      theme === 'system' &&
+      window.Electron?.theme?.getSystemTheme
+    ) {
+      window.Electron.theme.getSystemTheme().then((systemTheme: 'light' | 'dark') => {
         setTheme(systemTheme);
       });
       initialized.current = true;
     }
     // eslint-disable-next-line
-  }, []);
+  }, [theme]);
 
   const themes: ThemeOption[] = [
     {

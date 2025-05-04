@@ -21,22 +21,27 @@ export function useContracts(tipo?: "Cliente" | "Proveedor") {
     let mounted = true
     setLoading(true)
     setError(null)
-    window.Electron.contracts.list(tipo ? { tipo } : {})
-      .then((res: any) => {
-        if (mounted) {
-          if (res.success && Array.isArray(res.data)) {
-            setContracts(res.data)
-          } else {
-            setError(res.error || "Error al obtener contratos")
+    if (window.Electron?.contracts?.list) {
+      window.Electron.contracts.list(tipo ? { tipo } : {})
+        .then((res: any) => {
+          if (mounted) {
+            if (res.success && Array.isArray(res.data)) {
+              setContracts(res.data)
+            } else {
+              setError(res.error || "Error al obtener contratos")
+            }
           }
-        }
-      })
-      .catch((err: any) => {
-        if (mounted) setError(err?.message || "Error de conexión")
-      })
-      .finally(() => {
-        if (mounted) setLoading(false)
-      })
+        })
+        .catch((err: any) => {
+          if (mounted) setError(err?.message || "Error de conexión")
+        })
+        .finally(() => {
+          if (mounted) setLoading(false)
+        })
+    } else {
+      setError("API de contratos no disponible")
+      setLoading(false)
+    }
     return () => {
       mounted = false
     }

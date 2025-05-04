@@ -1,5 +1,5 @@
 "use client";
-import React from "react"
+import React, { useEffect } from "react"
 import { BarChart2, FilePlus, PlusCircle, Search, TrendingUp } from "lucide-react"
 import { useDashboardStats } from "../../lib/useDashboardStats"
 import { useRouter } from "next/navigation"
@@ -60,6 +60,7 @@ export default function DashboardPage() {
     cb()
   }
 
+  // El dashboard se muestra siempre, con o sin usuario
   return (
     <div className="flex flex-col gap-8">
       {/* Sección 1: Estadísticas generales */}
@@ -122,7 +123,7 @@ export default function DashboardPage() {
           label="Ver Estadísticas Avanzadas"
           icon={<BarChart2 size={20} className="text-[#018ABE]" />}
           color=""
-          onClick={() => requireAuth(() => router.push("/statistics"))}
+          onClick={() => router.push("/statistics")}
         />
       </section>
 

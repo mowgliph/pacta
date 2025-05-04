@@ -31,34 +31,39 @@ export default function StatisticsPage() {
   useEffect(() => {
     setLoading(true)
     setError(null)
-    Promise.all([
-      window.Electron.statistics.contracts(),
-      window.Electron.statistics.contractsByCurrency(),
-      window.Electron.statistics.contractsByUser(),
-      window.Electron.statistics.contractsCreatedByMonth(),
-      window.Electron.statistics.contractsExpiredByMonth(),
-      window.Electron.statistics.supplementsCountByContract(),
-      window.Electron.statistics.usersActivity(),
-    ])
-      .then(([
-        statsRes,
-        byCurrencyRes,
-        byUserRes,
-        contractsCreatedRes,
-        contractsExpiredRes,
-        supplementsByContractRes,
-        usersActivityRes,
-      ]) => {
-        setStats(statsRes)
-        setByCurrency(byCurrencyRes)
-        setByUser(byUserRes)
-        setContractsCreated(contractsCreatedRes)
-        setContractsExpired(contractsExpiredRes)
-        setSupplementsByContract(supplementsByContractRes)
-        setUsersActivity(usersActivityRes)
-      })
-      .catch((err: any) => setError(err?.message || "Error de conexión"))
-      .finally(() => setLoading(false))
+    if (window.Electron?.statistics?.contracts) {
+      Promise.all([
+        window.Electron.statistics.contracts(),
+        window.Electron.statistics.contractsByCurrency(),
+        window.Electron.statistics.contractsByUser(),
+        window.Electron.statistics.contractsCreatedByMonth(),
+        window.Electron.statistics.contractsExpiredByMonth(),
+        window.Electron.statistics.supplementsCountByContract(),
+        window.Electron.statistics.usersActivity(),
+      ])
+        .then(([
+          statsRes,
+          byCurrencyRes,
+          byUserRes,
+          contractsCreatedRes,
+          contractsExpiredRes,
+          supplementsByContractRes,
+          usersActivityRes,
+        ]) => {
+          setStats(statsRes)
+          setByCurrency(byCurrencyRes)
+          setByUser(byUserRes)
+          setContractsCreated(contractsCreatedRes)
+          setContractsExpired(contractsExpiredRes)
+          setSupplementsByContract(supplementsByContractRes)
+          setUsersActivity(usersActivityRes)
+        })
+        .catch((err: any) => setError(err?.message || "Error de conexión"))
+        .finally(() => setLoading(false))
+    } else {
+      setError("API de estadísticas no disponible")
+      setLoading(false)
+    }
   }, [])
 
   // Mapeo seguro de datos

@@ -19,7 +19,7 @@ export default function Sidebar() {
     <aside className="h-screen w-64 bg-[#001B48] flex flex-col justify-between py-6 px-4">
       <div>
         <div className="mb-8 flex items-center gap-2 px-2">
-          <img src="/images/logo.png" alt="Logo PACTA" className="w-8 h-8" />
+          <img src="/images/logo.png" alt="Logo PACTA" className="w-8 h-8" style={{ filter: 'brightness(0) invert(1)' }} />
           <span className="text-2xl font-bold text-white tracking-wide">PACTA</span>
         </div>
         <nav className="flex flex-col gap-1">

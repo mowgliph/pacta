@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Header />
             <main className="flex-1 p-6 bg-[#F5F5F5]">{children}</main>
             <Footer />
-          </div>
+          </div> 
         </div>
       </body>
     </html>

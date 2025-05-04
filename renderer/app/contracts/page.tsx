@@ -1,3 +1,4 @@
+"use client"
 import React, { useState } from "react"
 import { useContracts, Contract } from "../../lib/useContracts"
 import { FilePlus, Search, Filter } from "lucide-react"

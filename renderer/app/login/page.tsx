@@ -27,10 +27,9 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#F5F5F5] flex-col">
-      <img src="/images/logo.png" alt="Logo PACTA" className="w-16 h-16 mb-6" />
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Iniciar sesión</CardTitle>
+          <CardTitle className="text-center">Iniciar sesión</CardTitle>
         </CardHeader>
         <CardContent>
           <Form onSubmit={handleSubmit}>
@@ -56,9 +55,6 @@ export default function LoginPage() {
             </Button>
           </Form>
         </CardContent>
-        <CardFooter>
-          <span className="text-xs text-muted-foreground">PACTA &copy; {new Date().getFullYear()}</span>
-        </CardFooter>
       </Card>
     </div>
   )
