@@ -33,10 +33,13 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false)
   const { toast, showSuccess, showError, hide } = useToast()
 
-  if (!user) {
-    router.replace("/login")
-    return null
-  }
+  useEffect(() => {
+    if (!user) {
+      router.replace("/login")
+    }
+  }, [user, router])
+
+  if (!user) return null
 
   const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault()
