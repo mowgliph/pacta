@@ -1,5 +1,5 @@
 import { BrowserWindow, app, screen, shell } from 'electron';
-import { join } from 'path';
+import { join, resolve } from 'path';
 import Store from 'electron-store';
 import { MAIN_WINDOW_CONFIG, isDevelopment } from '../utils/constants';
 import { logger } from '../utils/logger';
@@ -82,7 +82,7 @@ export class WindowManager {
         ...windowState,
         webPreferences: {
           ...MAIN_WINDOW_CONFIG.webPreferences,
-          preload: join(__dirname, '..', 'preload.js'),
+          preload: resolve(__dirname, '../../app/preload.js'),
           devTools: isDevelopment,
           contextIsolation: true,
           nodeIntegration: false,
@@ -90,12 +90,9 @@ export class WindowManager {
         }
       });
 
-      // Aplicar seguridad a la ventana
-      this.securityManager.secureWindow(window);
-
       // Cargar la aplicación
       if (isDevelopment) {
-        await window.loadURL('http://localhost:3000');
+        await window.loadURL('http://localhost:8888');
         window.webContents.openDevTools();
       } else {
         await window.loadFile(join(app.getAppPath(), 'build', 'index.html'));
@@ -157,15 +154,12 @@ export class WindowManager {
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
-        preload: join(__dirname, '..', 'preload.js'),
+        preload: resolve(__dirname, '../../app/preload.js'),
         spellcheck: true,
         sandbox: true,
       }
     });
 
-    // Aplicar seguridad a la ventana
-    this.securityManager.secureWindow(modalWindow);
-    
     const modalId = `modal-${modalWindow.id}`;
     this.windows.set(modalId, modalWindow);
 
@@ -179,8 +173,8 @@ export class WindowManager {
 
   private setupWindowEvents(window: BrowserWindow): void {
     // Guardar estado de la ventana
-    ['resize', 'move'].forEach(event => {
-      window.on(event, () => {
+    (['resize', 'move'] as Array<'resize' | 'move'>).forEach(event => {
+      (window.on as any)(event, () => {
         if (!window.isMaximized()) {
           const bounds = window.getBounds();
           this.saveWindowState({
