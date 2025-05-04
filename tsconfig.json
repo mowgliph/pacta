@@ -16,11 +16,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./renderer/*"],
-      "@api/*": ["./renderer/api/*"],
+      "@app/*": ["./renderer/app/*"],
       "@components/*": ["./renderer/components/*"],
-      "@hooks/*": ["./renderer/hooks/*"],
+      "@lib/*": ["./renderer/lib/*"],
       "@store/*": ["./renderer/store/*"],
-      "@types/*": ["./renderer/types/*"],
       "@styles/*": ["./renderer/styles/*"],
       "@assets/*": ["./assets/*"]
     },
