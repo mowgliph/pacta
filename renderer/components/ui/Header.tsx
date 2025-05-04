@@ -61,10 +61,7 @@ export default function Header() {
 
   return (
     <header className="w-full h-16 bg-white flex items-center justify-between px-8 shadow-sm">
-      <div>
-        <h1 className="text-2xl font-semibold text-[#001B48] font-inter">Dashboard</h1>
-        <span className="text-xs text-[#757575]">Gestión de contratos empresariales</span>
-      </div>
+      <div className="flex-1" />
       <div className="flex items-center gap-6">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>

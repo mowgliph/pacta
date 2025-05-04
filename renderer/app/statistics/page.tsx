@@ -1,8 +1,8 @@
 "use client"
-import { useEffect, useState } from "react"
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card"
 import { BarChart2, TrendingUp, FileText } from "lucide-react"
 import { BarChart, PieChart, LineChart } from "../../components/charts/charts"
+import { useStatistics } from "../../lib/useStatistics"
 
 // Placeholder para gráfico (puedes reemplazar por Recharts u otro)
 function ChartPlaceholder({ title }: { title: string }) {
@@ -18,60 +18,14 @@ function ChartPlaceholder({ title }: { title: string }) {
 }
 
 export default function StatisticsPage() {
-  const [stats, setStats] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [byCurrency, setByCurrency] = useState<any[]>([])
-  const [byUser, setByUser] = useState<any[]>([])
-  const [contractsCreated, setContractsCreated] = useState<any[]>([])
-  const [contractsExpired, setContractsExpired] = useState<any[]>([])
-  const [supplementsByContract, setSupplementsByContract] = useState<any[]>([])
-  const [usersActivity, setUsersActivity] = useState<any[]>([])
-
-  useEffect(() => {
-    setLoading(true)
-    setError(null)
-    if (window.Electron?.statistics?.contracts) {
-      Promise.all([
-        window.Electron.statistics.contracts(),
-        window.Electron.statistics.contractsByCurrency(),
-        window.Electron.statistics.contractsByUser(),
-        window.Electron.statistics.contractsCreatedByMonth(),
-        window.Electron.statistics.contractsExpiredByMonth(),
-        window.Electron.statistics.supplementsCountByContract(),
-        window.Electron.statistics.usersActivity(),
-      ])
-        .then(([
-          statsRes,
-          byCurrencyRes,
-          byUserRes,
-          contractsCreatedRes,
-          contractsExpiredRes,
-          supplementsByContractRes,
-          usersActivityRes,
-        ]) => {
-          setStats(statsRes)
-          setByCurrency(byCurrencyRes)
-          setByUser(byUserRes)
-          setContractsCreated(contractsCreatedRes)
-          setContractsExpired(contractsExpiredRes)
-          setSupplementsByContract(supplementsByContractRes)
-          setUsersActivity(usersActivityRes)
-        })
-        .catch((err: any) => setError(err?.message || "Error de conexión"))
-        .finally(() => setLoading(false))
-    } else {
-      setError("API de estadísticas no disponible")
-      setLoading(false)
-    }
-  }, [])
+  const { data, loading, error } = useStatistics();
 
   // Mapeo seguro de datos
-  const total = stats?.byStatus?.reduce((acc: number, s: any) => acc + (s._count?._all || 0), 0) || 0
-  const active = stats?.byStatus?.find((s: any) => s.status === "Vigente")?._count?._all || 0
-  const expiring = stats?.byStatus?.find((s: any) => s.status === "Próximo a Vencer")?._count?._all || 0
-  const expired = stats?.byStatus?.find((s: any) => s.status === "Vencido")?._count?._all || 0
-  const byType = stats?.byType?.reduce((acc: any, t: any) => ({ ...acc, [t.type]: t._count._all }), {}) || {}
+  const total = data?.stats?.byStatus?.reduce((acc: number, s: any) => acc + (s._count?._all || 0), 0) || 0
+  const active = data?.stats?.byStatus?.find((s: any) => s.status === "Vigente")?._count?._all || 0
+  const expiring = data?.stats?.byStatus?.find((s: any) => s.status === "Próximo a Vencer")?._count?._all || 0
+  const expired = data?.stats?.byStatus?.find((s: any) => s.status === "Vencido")?._count?._all || 0
+  const byType = data?.stats?.byType?.reduce((acc: any, t: any) => ({ ...acc, [t.type]: t._count._all }), {}) || {}
 
   return (
     <div className="max-w-6xl mx-auto py-10 px-4 flex flex-col gap-8">
@@ -128,7 +82,7 @@ export default function StatisticsPage() {
           {/* Gráficos y métricas avanzadas */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Distribución por tipo de contrato (Bar) */}
-            {stats?.byType && Object.keys(byType).length > 0 ? (
+            {data?.stats?.byType && Object.keys(byType).length > 0 ? (
               <BarChart
                 data={{
                   labels: Object.keys(byType),
@@ -158,14 +112,14 @@ export default function StatisticsPage() {
               <ChartPlaceholder title="Distribución por tipo de contrato" />
             )}
             {/* Distribución por moneda (Pie) */}
-            {byCurrency && byCurrency.length > 0 ? (
+            {data?.byCurrency && data.byCurrency.length > 0 ? (
               <PieChart
                 data={{
-                  labels: byCurrency.map((c: any) => c.currency || "Sin especificar"),
+                  labels: data.byCurrency.map((c: any) => c.currency || "Sin especificar"),
                   datasets: [
                     {
                       label: "Contratos por moneda",
-                      data: byCurrency.map((c: any) => c._count._all),
+                      data: data.byCurrency.map((c: any) => c._count._all),
                       backgroundColor: ["#018ABE", "#97CADB", "#D6E8EE", "#FF9800"],
                     },
                   ],
@@ -183,14 +137,14 @@ export default function StatisticsPage() {
               <ChartPlaceholder title="Distribución por moneda" />
             )}
             {/* Evolución mensual de contratos creados (Line) */}
-            {contractsCreated && contractsCreated.length > 0 ? (
+            {data?.contractsCreated && data.contractsCreated.length > 0 ? (
               <LineChart
                 data={{
-                  labels: contractsCreated.map((m: any) => m.month),
+                  labels: data.contractsCreated.map((m: any) => m.month),
                   datasets: [
                     {
                       label: "Contratos creados",
-                      data: contractsCreated.map((m: any) => m.count),
+                      data: data.contractsCreated.map((m: any) => m.count),
                       borderColor: "#018ABE",
                       backgroundColor: "#97CADB",
                       tension: 0.3,
@@ -215,14 +169,14 @@ export default function StatisticsPage() {
               <ChartPlaceholder title="Evolución mensual de contratos" />
             )}
             {/* Contratos vencidos por mes (Line) */}
-            {contractsExpired && contractsExpired.length > 0 ? (
+            {data?.contractsExpired && data.contractsExpired.length > 0 ? (
               <LineChart
                 data={{
-                  labels: contractsExpired.map((m: any) => m.month),
+                  labels: data.contractsExpired.map((m: any) => m.month),
                   datasets: [
                     {
                       label: "Contratos vencidos",
-                      data: contractsExpired.map((m: any) => m.count),
+                      data: data.contractsExpired.map((m: any) => m.count),
                       borderColor: "#F44336",
                       backgroundColor: "#F4433622",
                       tension: 0.3,
@@ -264,7 +218,7 @@ export default function StatisticsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {byUser?.map((u: any) => (
+                      {data?.byUser?.map((u: any) => (
                         <tr key={u.ownerId} className="even:bg-[#F9FBFC] hover:bg-[#D6E8EE] transition-colors">
                           <td className="px-4 py-2">{u.ownerId || "Sin asignar"}</td>
                           <td className="px-4 py-2">{u._count._all}</td>
@@ -290,7 +244,7 @@ export default function StatisticsPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {supplementsByContract?.map((s: any) => (
+                      {data?.supplementsByContract?.map((s: any) => (
                         <tr key={s.contractId} className="even:bg-[#F9FBFC] hover:bg-[#D6E8EE] transition-colors">
                           <td className="px-4 py-2">{s.contractId}</td>
                           <td className="px-4 py-2">{s._count._all}</td>
