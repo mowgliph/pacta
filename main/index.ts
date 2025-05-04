@@ -14,6 +14,7 @@ import { registerStatisticsHandlers } from './handlers/statistics.handlers';
 import { registerSecurityHandlers } from './handlers/security.handlers';
 import { registerStoreHandlers } from './handlers/store.handlers';
 import { registerValidationHandlers } from './handlers/validation.handlers';
+import { initPrisma } from './utils/prisma';
 
 /**
  * Punto de entrada principal de la aplicación Electron
@@ -77,6 +78,14 @@ async function main() {
     
     // Inicializar el gestor de eventos
     const eventManager = EventManager.getInstance();
+    
+    // Inicializar conexión a la base de datos
+    const dbOk = await initPrisma();
+    if (!dbOk) {
+      logger.error('No se pudo conectar a la base de datos. Abortando.');
+      app.quit();
+      return;
+    }
     
     // Registrar manejadores de eventos
     registerAuthHandlers(eventManager);
