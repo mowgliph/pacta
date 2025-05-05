@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, nativeTheme, ipcMain } from 'electron';
 import { AppManager } from './app-manager';
 import { logger } from './utils/logger';
 import { EventManager } from './events/event-manager';
@@ -100,6 +100,18 @@ async function main() {
     registerSecurityHandlers(eventManager);
     registerStoreHandlers(eventManager);
     registerValidationHandlers(eventManager);
+    
+    // Handlers para tema claro/oscuro/sistema
+    ipcMain.handle('theme:get-system', () => {
+      return nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
+    });
+    ipcMain.handle('theme:set-app', (event, theme) => {
+      if (['light', 'dark', 'system'].includes(theme)) {
+        nativeTheme.themeSource = theme;
+        return { success: true };
+      }
+      return { success: false, error: 'Tema no válido' };
+    });
     
     // Inicializar la aplicación
     await appManager.initialize();
