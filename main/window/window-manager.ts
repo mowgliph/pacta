@@ -95,7 +95,7 @@ export class WindowManager {
         await window.loadURL('http://localhost:8888');
         window.webContents.openDevTools();
       } else {
-        await window.loadFile(join(app.getAppPath(), 'build', 'index.html'));
+        await window.loadFile(join(app.getAppPath(), 'app', 'index.html'));
       }
 
       // Configurar eventos de ventana
