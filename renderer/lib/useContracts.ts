@@ -21,7 +21,9 @@ export function useContracts(tipo?: "Cliente" | "Proveedor") {
     let mounted = true
     setLoading(true)
     setError(null)
+    // @ts-ignore
     if (window.Electron?.contracts?.list) {
+      // @ts-ignore
       window.Electron.contracts.list(tipo ? { tipo } : {})
         .then((res: any) => {
           if (mounted) {

@@ -22,7 +22,9 @@ export function useContractDetail(id: string) {
     setLoading(true)
     setError(null)
     Promise.all([
+      // @ts-ignore
       window.Electron.contracts.getById(id),
+      // @ts-ignore
       window.Electron.supplements.list(id)
     ])
       .then(([cRes, sRes]: any[]) => {

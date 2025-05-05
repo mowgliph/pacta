@@ -31,7 +31,9 @@ export function useDashboardStats() {
     let mounted = true
     setLoading(true)
     setError(null)
+    // @ts-ignore
     if (window.Electron?.statistics?.dashboard) {
+      // @ts-ignore
       window.Electron.statistics.dashboard()
         .then((res: any) => {
           if (mounted) {

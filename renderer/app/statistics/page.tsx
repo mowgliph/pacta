@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/ca
 import { BarChart2, TrendingUp, FileText } from "lucide-react"
 import { BarChart, PieChart, LineChart } from "../../components/charts/charts"
 import { useStatistics } from "../../lib/useStatistics"
+import { Alert, AlertTitle, AlertDescription } from "../../components/ui/alert"
 
 // Placeholder para gráfico (puedes reemplazar por Recharts u otro)
 function ChartPlaceholder({ title }: { title: string }) {
@@ -33,7 +34,10 @@ export default function StatisticsPage() {
       {loading ? (
         <div className="text-[#757575]">Cargando estadísticas...</div>
       ) : error ? (
-        <div className="text-[#F44336]">{error}</div>
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Error al cargar estadísticas</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       ) : (
         <>
           {/* Cards resumen */}

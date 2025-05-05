@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/ca
 import { Input } from "../../components/ui/input"
 import { Button } from "../../components/ui/button"
 import { ThemeToggle } from "../../components/ui/theme-toggle"
+import { Alert, AlertTitle, AlertDescription } from "../../components/ui/alert"
 
 function useToast() {
   const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null)
@@ -45,6 +46,7 @@ export default function SettingsPage() {
     e.preventDefault()
     setLoading(true)
     try {
+      // @ts-ignore
       const res = await window.Electron.users.update({ id: user.id, name, email })
       if (res.success) {
         showSuccess("Perfil actualizado correctamente.")
@@ -67,6 +69,7 @@ export default function SettingsPage() {
       return
     }
     try {
+      // @ts-ignore
       const res = await window.Electron.users.changePassword({ id: user.id, password, newPassword })
       if (res.success) {
         showSuccess("Contraseña actualizada correctamente.")
@@ -83,14 +86,11 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto py-10 px-4 flex flex-col gap-8">
-      {toast && (
-        <div
-          className={`fixed top-6 left-1/2 z-50 -translate-x-1/2 px-6 py-3 rounded-lg shadow-lg text-white text-sm font-medium transition-all duration-300
-            ${toast.type === "success" ? "bg-[#4CAF50]" : "bg-[#F44336]"}`}
-          onClick={hide}
-        >
-          {toast.message}
-        </div>
+      {toast && toast.type === "error" && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{toast.message}</AlertDescription>
+        </Alert>
       )}
       <h1 className="text-2xl font-semibold text-[#001B48] font-inter mb-2">Ajustes</h1>
       {/* Perfil */}

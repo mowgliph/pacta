@@ -18,14 +18,23 @@ export function useStatistics() {
   useEffect(() => {
     setLoading(true);
     setError(null);
+    // @ts-ignore
     if (window.Electron?.statistics?.contracts) {
+      // @ts-ignore
       Promise.all([
+        // @ts-ignore
         window.Electron.statistics.contracts(),
+        // @ts-ignore
         window.Electron.statistics.contractsByCurrency(),
+        // @ts-ignore
         window.Electron.statistics.contractsByUser(),
+        // @ts-ignore
         window.Electron.statistics.contractsCreatedByMonth(),
+        // @ts-ignore
         window.Electron.statistics.contractsExpiredByMonth(),
+        // @ts-ignore
         window.Electron.statistics.supplementsCountByContract(),
+        // @ts-ignore
         window.Electron.statistics.usersActivity(),
       ])
         .then(([

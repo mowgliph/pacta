@@ -19,7 +19,9 @@ export function useUsers() {
     let mounted = true;
     setLoading(true);
     setError(null);
+    // @ts-ignore
     if (window.Electron?.users?.list) {
+      // @ts-ignore
       window.Electron.users.list()
         .then((res: any) => {
           if (mounted) {

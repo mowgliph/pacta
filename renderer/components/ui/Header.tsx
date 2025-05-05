@@ -28,6 +28,7 @@ function useNotifications() {
   const fetchNotifications = async () => {
     setLoading(true)
     try {
+      // @ts-ignore
       const result = await window.Electron.notifications.getUnread()
       setNotifications(result || [])
     } finally {
@@ -37,6 +38,7 @@ function useNotifications() {
 
   const markAllAsRead = async () => {
     for (const id of notifications.map(n => n.id)) {
+      // @ts-ignore
       await window.Electron.notifications.markRead(id)
     }
     fetchNotifications()

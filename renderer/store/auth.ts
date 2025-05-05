@@ -18,6 +18,7 @@ export const useAuth = create<AuthState>((set) => ({
   login: async (credentials) => {
     set({ loading: true, error: null })
     try {
+      // @ts-ignore
       const res = await window.Electron.auth.login(credentials)
       if (res.success && res.user && res.token) {
         set({ user: res.user, token: res.token, loading: false })
@@ -32,12 +33,14 @@ export const useAuth = create<AuthState>((set) => ({
     }
   },
   logout: () => {
+    // @ts-ignore
     window.Electron.auth.logout()
     set({ user: null, token: null })
   },
   verify: async () => {
     set({ loading: true })
     try {
+      // @ts-ignore
       const res = await window.Electron.auth.verify()
       if (res.success && res.user) {
         set({ user: res.user, token: res.token || null, loading: false })

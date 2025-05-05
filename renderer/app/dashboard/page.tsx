@@ -4,6 +4,7 @@ import { BarChart2, FilePlus, PlusCircle, Search, TrendingUp } from "lucide-reac
 import { useDashboardStats } from "../../lib/useDashboardStats"
 import { useRouter } from "next/navigation"
 import { useAuth } from "../../store/auth"
+import { Alert, AlertTitle, AlertDescription } from "../../components/ui/alert"
 
 function StatCard({ title, value, icon, color }: { title: string; value: string; icon: React.ReactNode; color: string }) {
   return (
@@ -68,7 +69,10 @@ export default function DashboardPage() {
         {loading ? (
           <div className="text-[#757575]">Cargando estadísticas...</div>
         ) : error ? (
-          <div className="text-[#F44336]">{error}</div>
+          <Alert variant="destructive" className="mb-4">
+            <AlertTitle>Error al cargar estadísticas</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         ) : data ? (
           <>
             <StatCard
@@ -133,7 +137,10 @@ export default function DashboardPage() {
         {loading ? (
           <div className="text-[#757575]">Cargando actividades...</div>
         ) : error ? (
-          <div className="text-[#F44336]">{error}</div>
+          <Alert variant="destructive" className="mb-4">
+            <AlertTitle>Error al cargar actividades</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         ) : data && data.recentActivity && data.recentActivity.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {data.recentActivity.map((item) => (

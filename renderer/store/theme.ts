@@ -11,6 +11,7 @@ export const useThemeStore = create<ThemeState>((set) => ({
   theme: 'system',
   setTheme: (theme) => {
     set({ theme });
+    // @ts-ignore
     window.Electron?.theme?.setAppTheme?.(theme);
   },
 })); 

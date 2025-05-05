@@ -20,8 +20,10 @@ export function ThemeToggle() {
     if (
       !initialized.current &&
       theme === 'system' &&
+      // @ts-ignore
       window.Electron?.theme?.getSystemTheme
     ) {
+      // @ts-ignore
       window.Electron.theme.getSystemTheme().then((systemTheme: 'light' | 'dark') => {
         setTheme(systemTheme);
       });

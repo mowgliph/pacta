@@ -6,6 +6,7 @@ import { Form } from "../../components/ui/form"
 import { Input } from "../../components/ui/input"
 import { Button } from "../../components/ui/button"
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "../../components/ui/card"
+import { Alert, AlertTitle, AlertDescription } from "../../components/ui/alert"
 
 export default function LoginPage() {
   const { login, error, loading } = useAuth()
@@ -49,7 +50,12 @@ export default function LoginPage() {
               required
               className="mt-4"
             />
-            {formError && <div className="text-red-500 text-sm mt-2">{formError}</div>}
+            {formError && (
+              <Alert variant="destructive" className="mt-2">
+                <AlertTitle>Error de autenticación</AlertTitle>
+                <AlertDescription>{formError}</AlertDescription>
+              </Alert>
+            )}
             <Button type="submit" className="w-full mt-6" disabled={loading}>
               {loading ? "Ingresando..." : "Ingresar"}
             </Button>
