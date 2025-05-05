@@ -45,8 +45,15 @@ export class RateLimiter {
       await this.loginLimiter.consume(key);
       return true;
     } catch (error) {
-      // Si hay error, significa que excedió el límite
-      const resetTime = new Date(Date.now() + error.msBeforeNext);
+      let resetTime = new Date();
+      if (
+        error &&
+        typeof error === "object" &&
+        "msBeforeNext" in error &&
+        typeof (error as any).msBeforeNext === "number"
+      ) {
+        resetTime = new Date(Date.now() + (error as any).msBeforeNext);
+      }
       logger.warn(
         `Intento de login bloqueado para ${key}. Desbloqueo: ${resetTime.toLocaleString()}`
       );
@@ -79,7 +86,15 @@ export class RateLimiter {
       await this.apiLimiter.consume(key);
       return true;
     } catch (error) {
-      const resetTime = new Date(Date.now() + error.msBeforeNext);
+      let resetTime = new Date();
+      if (
+        error &&
+        typeof error === "object" &&
+        "msBeforeNext" in error &&
+        typeof (error as any).msBeforeNext === "number"
+      ) {
+        resetTime = new Date(Date.now() + (error as any).msBeforeNext);
+      }
       logger.warn(
         `Solicitud API bloqueada para ${key}. Desbloqueo: ${resetTime.toLocaleString()}`
       );

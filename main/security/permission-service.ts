@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma";
+import { prisma } from "../utils/prisma";
 import { logger } from "../utils/logger";
 import { authService } from "./auth-service";
 
@@ -97,7 +97,11 @@ export class PermissionService {
       return Boolean(
         rolePermissions &&
           rolePermissions[resource] &&
-          rolePermissions[resource][action]
+          typeof action === "string" &&
+          action in rolePermissions[resource] &&
+          rolePermissions[resource][
+            action as keyof (typeof rolePermissions)[typeof resource]
+          ]
       );
     } catch (error) {
       logger.error(

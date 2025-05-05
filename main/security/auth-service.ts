@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma";
+import { prisma } from "../utils/prisma";
 import { logger } from "../utils/logger";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -178,7 +178,11 @@ export class AuthService {
         expiresAt: new Date(expiresAt).toISOString(),
       };
     } catch (error) {
-      logger.error(`Error en proceso de login: ${error.message}`);
+      if (error instanceof Error) {
+        logger.error(`Error en proceso de login: ${error.message}`);
+      } else {
+        logger.error(`Error en proceso de login: ${String(error)}`);
+      }
       throw error;
     }
   }

@@ -123,7 +123,10 @@ export function withErrorHandling(channel: string, handler: Function) {
     try {
       return await handler(...args);
     } catch (error) {
-      return ErrorHandler.handle(error);
+      if (error instanceof Error) {
+        return ErrorHandler.handle(error);
+      }
+      return ErrorHandler.handle(new Error(String(error)));
     }
   };
 }
