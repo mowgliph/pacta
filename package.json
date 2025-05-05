@@ -4,7 +4,7 @@
   "description": "Plataforma de Automatización y Control de Contratos Empresariales",
   "version": "1.0.0",
   "author": "Pacta Inc. <contact@pacta.com>",
-  "main": "app/background.js",
+  "main": "main/index.ts",
   "scripts": {
     "dev": "nextron",
     "build": "nextron build",
