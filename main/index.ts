@@ -15,6 +15,7 @@ import { registerSecurityHandlers } from './handlers/security.handlers';
 import { registerStoreHandlers } from './handlers/store.handlers';
 import { registerValidationHandlers } from './handlers/validation.handlers';
 import { initPrisma } from './utils/prisma';
+import Store from 'electron-store';
 
 /**
  * Punto de entrada principal de la aplicación Electron
@@ -101,6 +102,14 @@ async function main() {
     registerStoreHandlers(eventManager);
     registerValidationHandlers(eventManager);
     
+    const themeStore = new Store<{ theme: 'light' | 'dark' | 'system' }>({ name: 'theme-preference' });
+
+    // Al iniciar la app, aplicar el tema guardado si existe
+    const savedTheme = themeStore.get('theme');
+    if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
+      nativeTheme.themeSource = savedTheme;
+    }
+    
     // Handlers para tema claro/oscuro/sistema
     ipcMain.handle('theme:get-system', () => {
       return nativeTheme.shouldUseDarkColors ? 'dark' : 'light';
@@ -108,6 +117,7 @@ async function main() {
     ipcMain.handle('theme:set-app', (event, theme) => {
       if (['light', 'dark', 'system'].includes(theme)) {
         nativeTheme.themeSource = theme;
+        themeStore.set('theme', theme);
         return { success: true };
       }
       return { success: false, error: 'Tema no válido' };
