@@ -1,24 +1,56 @@
 "use client";
-import React, { useEffect } from "react"
-import { BarChart2, FilePlus, PlusCircle, Search, TrendingUp } from "lucide-react"
-import { useDashboardStats } from "../../lib/useDashboardStats"
-import { useRouter } from "next/navigation"
-import { useAuth } from "../../store/auth"
-import { Alert, AlertTitle, AlertDescription } from "../../components/ui/alert"
+import React, { useEffect } from "react";
+import {
+  BarChart2,
+  FilePlus,
+  PlusCircle,
+  Search,
+  TrendingUp,
+} from "lucide-react";
+import { useDashboardStats } from "../../lib/useDashboardStats";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../store/auth";
+import { Alert, AlertTitle, AlertDescription } from "../../components/ui/alert";
 
-function StatCard({ title, value, icon, color }: { title: string; value: string; icon: React.ReactNode; color: string }) {
+function StatCard({
+  title,
+  value,
+  icon,
+  color,
+}: {
+  title: string;
+  value: string;
+  icon: React.ReactNode;
+  color: string;
+}) {
   return (
     <div className="flex items-center gap-4 bg-white rounded-xl shadow-sm p-6 min-w-[220px] transition-transform hover:scale-[1.03] duration-200">
-      <div className={`w-12 h-12 flex items-center justify-center rounded-lg ${color} bg-opacity-10`}>{icon}</div>
+      <div
+        className={`w-12 h-12 flex items-center justify-center rounded-lg ${color} bg-opacity-10`}
+      >
+        {icon}
+      </div>
       <div>
         <div className="text-xs text-[#757575] font-roboto mb-1">{title}</div>
-        <div className="text-2xl font-semibold text-[#001B48] font-inter">{value}</div>
+        <div className="text-2xl font-semibold text-[#001B48] font-inter">
+          {value}
+        </div>
       </div>
     </div>
-  )
+  );
 }
 
-function QuickAction({ label, icon, onClick, color }: { label: string; icon: React.ReactNode; onClick?: () => void; color: string }) {
+function QuickAction({
+  label,
+  icon,
+  onClick,
+  color,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  onClick?: () => void;
+  color: string;
+}) {
   return (
     <button
       onClick={onClick}
@@ -27,10 +59,18 @@ function QuickAction({ label, icon, onClick, color }: { label: string; icon: Rea
       {icon}
       <span>{label}</span>
     </button>
-  )
+  );
 }
 
-function RecentActivityItem({ title, date, description }: { title: string; date: string; description: string }) {
+function RecentActivityItem({
+  title,
+  date,
+  description,
+}: {
+  title: string;
+  date: string;
+  description: string;
+}) {
   return (
     <div className="flex flex-col gap-1 p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
       <div className="flex justify-between items-center">
@@ -39,27 +79,31 @@ function RecentActivityItem({ title, date, description }: { title: string; date:
       </div>
       <span className="text-sm text-[#757575]">{description}</span>
     </div>
-  )
+  );
 }
 
 function formatDate(dateStr: string) {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "2-digit" })
+  const date = new Date(dateStr);
+  return date.toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "short",
+    year: "2-digit",
+  });
 }
 
 export default function DashboardPage() {
-  const { data, loading, error } = useDashboardStats()
-  const router = useRouter()
-  const { user } = useAuth()
+  const { data, loading, error } = useDashboardStats();
+  const router = useRouter();
+  const { user } = useAuth();
 
   // Handler para acciones protegidas
   const requireAuth = (cb: () => void) => {
     if (!user) {
-      router.push("/login")
-      return
+      router.push("/login");
+      return;
     }
-    cb()
-  }
+    cb();
+  };
 
   // El dashboard se muestra siempre, con o sin usuario
   return (
@@ -133,7 +177,9 @@ export default function DashboardPage() {
 
       {/* Sección 3: Actividades recientes */}
       <section className="flex flex-col gap-3 animate-fade-in-up">
-        <h2 className="text-lg font-semibold text-[#001B48] mb-2 font-inter">Actividades recientes</h2>
+        <h2 className="text-lg font-semibold text-[#001B48] mb-2 font-inter">
+          Actividades recientes
+        </h2>
         {loading ? (
           <div className="text-[#757575]">Cargando actividades...</div>
         ) : error ? (
@@ -156,23 +202,6 @@ export default function DashboardPage() {
           <div className="text-[#757575]">No hay actividades recientes.</div>
         )}
       </section>
-
-      <style jsx global>{`
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(16px); }
-          to { opacity: 1; transform: none; }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.7s cubic-bezier(0.4,0,0.2,1);
-        }
-        @keyframes fade-in-up {
-          from { opacity: 0; transform: translateY(32px); }
-          to { opacity: 1; transform: none; }
-        }
-        .animate-fade-in-up {
-          animation: fade-in-up 0.8s cubic-bezier(0.4,0,0.2,1);
-        }
-      `}</style>
     </div>
-  )
-} 
+  );
+}
