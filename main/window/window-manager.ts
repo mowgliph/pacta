@@ -1,9 +1,9 @@
-import { BrowserWindow, app, screen, shell } from 'electron';
-import { join, resolve } from 'path';
-import Store from 'electron-store';
-import { MAIN_WINDOW_CONFIG, isDevelopment } from '../utils/constants';
-import { logger } from '../utils/logger';
-import { SecurityManager } from '../security/security-manager';
+import { BrowserWindow, app, screen, shell } from "electron";
+import { join, resolve } from "path";
+import Store from "electron-store";
+import { MAIN_WINDOW_CONFIG, isDevelopment } from "../utils/constants";
+import { logger } from "../utils/logger";
+import { SecurityManager } from "../security/security-manager";
 
 interface WindowState {
   x?: number;
@@ -39,11 +39,11 @@ export class WindowManager {
   private isQuitting: boolean = false;
 
   private constructor() {
-    this.store = new Store({ name: 'window-state' });
+    this.store = new Store({ name: "window-state" });
     this.securityManager = SecurityManager.getInstance();
 
     // Controlar el evento before-quit para no cerrar aplicación al cerrar ventanas
-    app.on('before-quit', () => {
+    app.on("before-quit", () => {
       this.isQuitting = true;
     });
   }
@@ -62,8 +62,8 @@ export class WindowManager {
    * Crea la ventana principal de la aplicación
    */
   public async createMainWindow(): Promise<BrowserWindow> {
-    const windowId = 'main';
-    
+    const windowId = "main";
+
     // Si ya existe la ventana, mostrarla y devolverla
     if (this.windows.has(windowId)) {
       const existingWindow = this.windows.get(windowId)!;
@@ -75,34 +75,34 @@ export class WindowManager {
     try {
       // Cargar estado guardado o usar valores por defecto
       const windowState = this.getWindowState();
-      
+
       // Crear la nueva ventana
       const window = new BrowserWindow({
         ...MAIN_WINDOW_CONFIG,
         ...windowState,
         webPreferences: {
           ...MAIN_WINDOW_CONFIG.webPreferences,
-          preload: resolve(__dirname, '../../app/preload.js'),
+          preload: resolve(__dirname, "../../app/preload.js"),
           devTools: isDevelopment,
           contextIsolation: true,
           nodeIntegration: false,
-          sandbox: true
-        }
+          sandbox: true,
+        },
       });
 
       // Cargar la aplicación
       if (isDevelopment) {
-        await window.loadURL('http://localhost:8888');
+        await window.loadURL("http://localhost:8888");
         window.webContents.openDevTools();
       } else {
-        await window.loadFile(join(app.getAppPath(), 'app', 'index.html'));
+        await window.loadFile(join(app.getAppPath(), "app", "index.html"));
       }
 
       // Configurar eventos de ventana
       this.setupWindowEvents(window);
 
       // Mostrar la ventana cuando esté lista
-      window.once('ready-to-show', () => {
+      window.once("ready-to-show", () => {
         window.show();
         if (windowState.isMaximized) {
           window.maximize();
@@ -111,20 +111,23 @@ export class WindowManager {
 
       // Abrir enlaces externos en el navegador predeterminado
       window.webContents.setWindowOpenHandler(({ url }) => {
-        if (url.startsWith('http:') || url.startsWith('https:')) {
+        if (url.startsWith("http:") || url.startsWith("https:")) {
           shell.openExternal(url);
         }
-        return { action: 'deny' };
+        return { action: "deny" };
       });
 
       // Almacenar la referencia a la ventana
       this.windows.set(windowId, window);
-      
+
       logger.info(`Ventana principal creada (${window.id})`);
       return window;
-
     } catch (error) {
-      logger.error('Error creating main window:', error);
+      if (error instanceof Error) {
+        logger.error("Error creating main window:", error.message);
+      } else {
+        logger.error("Error creating main window:", String(error));
+      }
       throw error;
     }
   }
@@ -134,9 +137,11 @@ export class WindowManager {
    */
   public createModalWindow(options: WindowOptions = {}): BrowserWindow {
     const parentWindow = options.parent || this.getMainWindow();
-    
+
     if (!parentWindow) {
-      throw new Error('No se pudo crear ventana modal: ventana principal no encontrada');
+      throw new Error(
+        "No se pudo crear ventana modal: ventana principal no encontrada"
+      );
     }
 
     const modalWindow = new BrowserWindow({
@@ -148,22 +153,22 @@ export class WindowManager {
       minHeight: options.minHeight || 300,
       show: options.show ?? false,
       center: options.center ?? true,
-      title: options.title || 'PACTA',
-      backgroundColor: options.backgroundColor || '#151A24',
-      icon: options.icon || join(app.getAppPath(), 'build', 'icon.png'),
+      title: options.title || "PACTA",
+      backgroundColor: options.backgroundColor || "#151A24",
+      icon: options.icon || join(app.getAppPath(), "build", "icon.png"),
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
-        preload: resolve(__dirname, '../../app/preload.js'),
+        preload: resolve(__dirname, "../../app/preload.js"),
         spellcheck: true,
         sandbox: true,
-      }
+      },
     });
 
     const modalId = `modal-${modalWindow.id}`;
     this.windows.set(modalId, modalWindow);
 
-    modalWindow.on('closed', () => {
+    modalWindow.on("closed", () => {
       this.windows.delete(modalId);
     });
 
@@ -173,7 +178,7 @@ export class WindowManager {
 
   private setupWindowEvents(window: BrowserWindow): void {
     // Guardar estado de la ventana
-    (['resize', 'move'] as Array<'resize' | 'move'>).forEach(event => {
+    (["resize", "move"] as Array<"resize" | "move">).forEach((event) => {
       (window.on as any)(event, () => {
         if (!window.isMaximized()) {
           const bounds = window.getBounds();
@@ -182,19 +187,19 @@ export class WindowManager {
             y: bounds.y,
             width: bounds.width,
             height: bounds.height,
-            isMaximized: false
+            isMaximized: false,
           });
         } else {
           this.saveWindowState({
             ...this.getWindowState(),
-            isMaximized: true
+            isMaximized: true,
           });
         }
       });
     });
 
     // Evento de cierre con verificación de salida
-    window.on('close', (e) => {
+    window.on("close", (e) => {
       if (!this.isQuitting) {
         e.preventDefault();
         window.hide();
@@ -208,13 +213,13 @@ export class WindowManager {
         y: bounds.y,
         width: bounds.width,
         height: bounds.height,
-        isMaximized: window.isMaximized()
+        isMaximized: window.isMaximized(),
       });
     });
 
     // Manejar errores de carga
-    window.webContents.on('did-fail-load', (_, errorCode, errorDescription) => {
-      logger.error('Window failed to load:', { errorCode, errorDescription });
+    window.webContents.on("did-fail-load", (_, errorCode, errorDescription) => {
+      logger.error("Window failed to load:", { errorCode, errorDescription });
     });
   }
 
@@ -222,25 +227,35 @@ export class WindowManager {
     const defaultState: WindowState = {
       width: MAIN_WINDOW_CONFIG.width,
       height: MAIN_WINDOW_CONFIG.height,
-      isMaximized: false
+      isMaximized: false,
     };
 
     try {
-      const savedState = this.store.get('mainWindow') as WindowState | undefined;
+      const savedState = this.store.get("mainWindow") as
+        | WindowState
+        | undefined;
       if (!savedState) return defaultState;
 
       return this.ensureVisibleOnScreen(savedState);
     } catch (error) {
-      logger.error('Error getting window state:', error);
+      if (error instanceof Error) {
+        logger.error("Error getting window state:", error.message);
+      } else {
+        logger.error("Error getting window state:", String(error));
+      }
       return defaultState;
     }
   }
 
   private saveWindowState(state: WindowState): void {
     try {
-      this.store.set('mainWindow', state);
+      this.store.set("mainWindow", state);
     } catch (error) {
-      logger.error('Error saving window state:', error);
+      if (error instanceof Error) {
+        logger.error("Error saving window state:", error.message);
+      } else {
+        logger.error("Error saving window state:", String(error));
+      }
     }
   }
 
@@ -251,10 +266,10 @@ export class WindowManager {
     if (state.x !== undefined && state.y !== undefined) {
       // Verificar que la ventana está visible en alguna pantalla
       const displays = screen.getAllDisplays();
-      const isVisibleOnDisplay = displays.some(display => {
+      const isVisibleOnDisplay = displays.some((display) => {
         const displayBounds = display.bounds;
         return (
-          state.x! + state.width > displayBounds.x && 
+          state.x! + state.width > displayBounds.x &&
           state.x! < displayBounds.x + displayBounds.width &&
           state.y! + state.height > displayBounds.y &&
           state.y! < displayBounds.y + displayBounds.height
@@ -279,7 +294,7 @@ export class WindowManager {
    * Obtiene la ventana principal
    */
   public getMainWindow(): BrowserWindow | null {
-    return this.windows.get('main') || null;
+    return this.windows.get("main") || null;
   }
 
   /**
@@ -293,8 +308,8 @@ export class WindowManager {
    * Cierra todas las ventanas
    */
   public closeAllWindows(): void {
-    BrowserWindow.getAllWindows().forEach(window => {
+    BrowserWindow.getAllWindows().forEach((window) => {
       window.close();
     });
   }
-} 
+}
