@@ -5,6 +5,7 @@ import { useAuth } from "../../store/auth";
 import { useUsers } from "../../lib/useUsers";
 import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
+import { Alert, AlertTitle, AlertDescription } from "../../components/ui/alert";
 
 export default function UsersPage() {
   const { user } = useAuth();
@@ -29,7 +30,10 @@ export default function UsersPage() {
           {loading ? (
             <div className="text-[#757575]">Cargando usuarios...</div>
           ) : error ? (
-            <div className="text-[#F44336]">{error}</div>
+            <Alert variant="destructive" className="mb-4">
+              <AlertTitle>Error al cargar usuarios</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm border rounded-lg">

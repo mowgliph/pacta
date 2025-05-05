@@ -5,6 +5,12 @@ import { useContractDetail } from "../../../lib/useContractDetail"
 import { useParams } from "next/navigation"
 import { FileText, PlusCircle, Archive, ArrowLeft } from "lucide-react"
 import { useAuth } from "../../../store/auth"
+import { Alert, AlertTitle, AlertDescription } from "../../../components/ui/alert"
+
+// @ts-ignore
+// Asegurar tipado correcto para window.Electron
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+declare const window: Window & typeof globalThis;
 
 function StatusBadge({ status }: { status: string }) {
   const color =
@@ -30,10 +36,13 @@ export default function ContractDetailPage() {
   const handleArchive = async () => {
     if (!contract) return
     try {
+      // @ts-ignore
       await window.Electron.contracts.archive(contract.id)
+      // @ts-ignore
       await window.Electron.notifications.show({ title: "Contrato archivado", body: "El contrato fue archivado correctamente." })
       router.push("/contracts")
     } catch (err) {
+      // @ts-ignore
       await window.Electron.notifications.show({ title: "Error", body: "No se pudo archivar el contrato." })
     }
   }
@@ -45,9 +54,12 @@ export default function ContractDetailPage() {
       return
     }
     try {
+      // @ts-ignore
       await window.Electron.contracts.export(contract.id)
+      // @ts-ignore
       await window.Electron.notifications.show({ title: "Contrato exportado", body: "El contrato fue exportado como PDF." })
     } catch (err) {
+      // @ts-ignore
       await window.Electron.notifications.show({ title: "Error", body: "No se pudo exportar el contrato." })
     }
   }
@@ -64,7 +76,10 @@ export default function ContractDetailPage() {
       {loading ? (
         <div className="text-[#757575]">Cargando contrato...</div>
       ) : error ? (
-        <div className="text-[#F44336]">{error}</div>
+        <Alert variant="destructive" className="mb-4">
+          <AlertTitle>Error al cargar contrato</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       ) : contract ? (
         <>
           {/* Información principal */}

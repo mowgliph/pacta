@@ -3,6 +3,7 @@ import React, { useState } from "react"
 import { useContracts, Contract } from "../../lib/useContracts"
 import { FilePlus, Search, Filter } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { Alert, AlertTitle, AlertDescription } from "../../components/ui/alert"
 
 const tipos = ["Cliente", "Proveedor"] as const
 
@@ -66,7 +67,10 @@ export default function ContractsPage() {
         {loading ? (
           <div className="text-[#757575]">Cargando contratos...</div>
         ) : error ? (
-          <div className="text-[#F44336]">{error}</div>
+          <Alert variant="destructive" className="mb-4">
+            <AlertTitle>Error al cargar contratos</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         ) : filtered.length === 0 ? (
           <div className="text-[#757575]">No se encontraron contratos.</div>
         ) : (
