@@ -20,6 +20,7 @@ export function registerNotificationHandlers(eventManager: EventManager): void {
             metadata: options.metadata || undefined,
             isRead: false,
             contractId: options.contractId || null,
+            internalLink: options.internalLink || null,
           } as any
         });
         // Enviar al frontend (si hay canal abierto)

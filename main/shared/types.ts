@@ -331,6 +331,7 @@ export interface Notification {
   contractId?: string;
   createdAt: Date;
   readAt?: Date;
+  internalLink?: string;
 }
 
 // Filtros para notificaciones

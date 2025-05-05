@@ -2,6 +2,7 @@ import "../styles/globals.css"
 import Sidebar from "../components/ui/Sidebar"
 import Header from "../components/ui/Header"
 import Footer from "../components/ui/Footer"
+import { ErrorBoundary } from "../components/ui/ErrorBoundary"
 
 export const metadata = {
   title: "PACTA Dashboard",
@@ -16,7 +17,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Sidebar />
           <div className="flex-1 flex flex-col min-h-screen">
             <Header />
-            <main className="flex-1 p-6 bg-[#F5F5F5]">{children}</main>
+            <ErrorBoundary>
+              <main className="flex-1 p-6 bg-[#F5F5F5]">{children}</main>
+            </ErrorBoundary>
             <Footer />
           </div> 
         </div>

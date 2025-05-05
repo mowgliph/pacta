@@ -317,6 +317,7 @@ model UserNotification {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   contractId String?
+  internalLink String?
   user       User      @relation("UserNotifications", fields: [userId], references: [id])
   contract   Contract? @relation("ContractNotifications", fields: [contractId], references: [id])
 

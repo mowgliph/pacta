@@ -16,4 +16,5 @@ export const NotificationSchema = z.object({
   priority: z.enum(["low", "medium", "high"]),
   data: z.record(z.any()).optional(),
   isRead: z.boolean().default(false),
+  internalLink: z.string().optional(),
 });

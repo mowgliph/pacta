@@ -19,6 +19,7 @@ interface Notification {
   body: string
   read: boolean
   createdAt: string
+  internalLink?: string
 }
 
 function useNotifications() {
@@ -85,10 +86,18 @@ export default function Header() {
                 <div className="text-[#757575]">No hay notificaciones nuevas.</div>
               ) : (
                 notifications.map(n => (
-                  <div key={n.id} className={`rounded p-3 border ${n.read ? "bg-[#F5F5F5]" : "bg-[#D6E8EE] border-[#018ABE]"}`}>
+                  <div
+                    key={n.id}
+                    className={`rounded p-3 border transition cursor-${n.internalLink ? "pointer" : "default"} ${n.read ? "bg-[#F5F5F5]" : "bg-[#D6E8EE] border-[#018ABE]"} hover:shadow-md`}
+                    onClick={() => n.internalLink && router.push(n.internalLink)}
+                    title={n.internalLink ? `Ir a ${n.internalLink}` : undefined}
+                  >
                     <div className="font-semibold text-[#001B48]">{n.title}</div>
                     <div className="text-sm text-[#757575]">{n.body}</div>
                     <div className="text-xs text-[#757575] mt-1">{new Date(n.createdAt).toLocaleString()}</div>
+                    {n.internalLink && (
+                      <div className="text-xs text-[#018ABE] mt-1 underline">Ver detalle</div>
+                    )}
                   </div>
                 ))
               )}
