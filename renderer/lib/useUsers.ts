@@ -1,3 +1,4 @@
+"use client";
 import { useEffect, useState } from "react";
 
 export interface User {
@@ -22,7 +23,8 @@ export function useUsers() {
     // @ts-ignore
     if (window.Electron?.users?.list) {
       // @ts-ignore
-      window.Electron.users.list()
+      window.Electron.users
+        .list()
         .then((res: any) => {
           if (mounted) {
             if (Array.isArray(res)) {
@@ -48,4 +50,4 @@ export function useUsers() {
   }, []);
 
   return { users, loading, error };
-} 
+}

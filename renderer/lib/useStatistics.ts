@@ -1,3 +1,4 @@
+"use client";
 import { useEffect, useState } from "react";
 
 export interface Statistics {
@@ -37,25 +38,27 @@ export function useStatistics() {
         // @ts-ignore
         window.Electron.statistics.usersActivity(),
       ])
-        .then(([
-          statsRes,
-          byCurrencyRes,
-          byUserRes,
-          contractsCreatedRes,
-          contractsExpiredRes,
-          supplementsByContractRes,
-          usersActivityRes,
-        ]) => {
-          setData({
-            stats: statsRes,
-            byCurrency: byCurrencyRes,
-            byUser: byUserRes,
-            contractsCreated: contractsCreatedRes,
-            contractsExpired: contractsExpiredRes,
-            supplementsByContract: supplementsByContractRes,
-            usersActivity: usersActivityRes,
-          });
-        })
+        .then(
+          ([
+            statsRes,
+            byCurrencyRes,
+            byUserRes,
+            contractsCreatedRes,
+            contractsExpiredRes,
+            supplementsByContractRes,
+            usersActivityRes,
+          ]) => {
+            setData({
+              stats: statsRes,
+              byCurrency: byCurrencyRes,
+              byUser: byUserRes,
+              contractsCreated: contractsCreatedRes,
+              contractsExpired: contractsExpiredRes,
+              supplementsByContract: supplementsByContractRes,
+              usersActivity: usersActivityRes,
+            });
+          }
+        )
         .catch((err: any) => setError(err?.message || "Error de conexión"))
         .finally(() => setLoading(false));
     } else {
@@ -65,4 +68,4 @@ export function useStatistics() {
   }, []);
 
   return { data, loading, error };
-} 
+}
