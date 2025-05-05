@@ -6,17 +6,20 @@
   "author": "Pacta Inc. <contact@pacta.com>",
   "main": "main/index.ts",
   "scripts": {
-    "dev": "concurrently \"pnpm build:renderer\" \"pnpm build:main\"",
-    "build": "pnpm build:renderer && pnpm build:main",
-    "build:renderer": "tsc -p renderer",
+    "dev:renderer": "next dev renderer",
+    "dev:main": "npm run build:main",
+    "dev": "concurrently \"pnpm dev:renderer\" \"pnpm dev:main\"",
+    "build:renderer": "next build renderer",
     "build:main": "tsc -p main",
+    "build": "pnpm build:renderer && pnpm build:main",
     "start": "electron .",
     "postinstall": "electron-builder install-app-deps",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "node prisma/seed.js",
     "db:setup": "npm run prisma:generate && npm run prisma:migrate && npm run prisma:seed",
-    "build:dist": "electron-builder"
+    "build:dist": "electron-builder",
+    "dist": "pnpm build && pnpm build:dist"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
