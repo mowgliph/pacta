@@ -1,0 +1,68 @@
+Checklist de Pruebas para PACTA (Electron + Next.js SPA)
+1. Instalación y Lanzamiento
+[ ] El instalador se genera correctamente (pnpm build:dist).
+[ ] El instalador se ejecuta sin errores en Windows 10/11 (64 bits).
+[ ] La aplicación se instala en la ubicación seleccionada por el usuario.
+[ ] Se crea acceso directo en el escritorio y/o menú inicio.
+[ ] La aplicación se lanza correctamente desde el acceso directo.
+2. Carga y Navegación
+[ ] La ventana principal se muestra correctamente (tamaño, icono, título).
+[ ] El splash screen (si existe) aparece y desaparece correctamente.
+[ ] La navegación entre rutas funciona (dashboard, contratos, suplementos, usuarios, ajustes, etc.).
+[ ] Las rutas dinámicas (por ejemplo, /contracts/[id]) funcionan correctamente al navegar y al abrir la app directamente en esa ruta.
+[ ] Los assets estáticos (imágenes, íconos, fuentes) se muestran correctamente.
+3. Autenticación y Seguridad
+[ ] El login funciona correctamente (acepta credenciales válidas, rechaza inválidas).
+[ ] El logout cierra la sesión y redirige al login.
+[ ] El token JWT se maneja correctamente y expira según lo esperado.
+[ ] No es posible acceder a rutas protegidas sin autenticación.
+4. Gestión de Contratos
+[ ] Se pueden crear nuevos contratos con todos los campos requeridos.
+[ ] Se pueden adjuntar documentos al crear un contrato.
+[ ] El listado de contratos muestra los datos correctamente.
+[ ] El filtrado y búsqueda de contratos funciona (por tipo, estado, número, empresa, etc.).
+[ ] Se puede acceder al detalle de un contrato y ver su información completa.
+[ ] El estado del contrato se calcula correctamente (Vigente, Próximo a Vencer, Vencido, Archivado).
+5. Suplementos
+[ ] Se pueden agregar suplementos a un contrato existente.
+[ ] El formulario de suplemento valida los campos correctamente.
+[ ] Los suplementos aparecen en el historial del contrato.
+[ ] Se pueden adjuntar documentos a los suplementos.
+6. Notificaciones
+[ ] Se generan notificaciones para contratos próximos a vencer.
+[ ] El panel de notificaciones muestra las alertas no leídas.
+[ ] Se pueden marcar notificaciones como leídas.
+[ ] El indicador de notificaciones desaparece al marcar todas como leídas.
+7. Gestión de Usuarios
+[ ] El admin puede crear, desactivar y reactivar usuarios.
+[ ] Todos los usuarios pueden cambiar su contraseña.
+[ ] El perfil de usuario muestra la información correcta.
+8. Dashboard y Estadísticas
+[ ] El dashboard muestra los resúmenes y gráficos correctamente.
+[ ] Las métricas y gráficos avanzados funcionan y se actualizan según los datos.
+[ ] Los contratos próximos a vencer aparecen en el dashboard.
+9. Backups y Restauración
+[ ] Se genera un backup diario en la carpeta designada.
+[ ] Los backups antiguos (más de 7 días) se eliminan automáticamente.
+[ ] El admin puede restaurar la base de datos desde un backup.
+[ ] Se muestra advertencia antes de restaurar y el proceso es seguro.
+10. Exportación y Documentos
+[ ] Se puede exportar la lista de contratos a CSV/Excel.
+[ ] Se puede exportar el detalle de un contrato (con historial) a PDF.
+[ ] Los documentos adjuntos se pueden descargar y abrir correctamente.
+11. Experiencia de Usuario y Branding
+[ ] La interfaz respeta la paleta de colores y tipografía definida.
+[ ] Los botones, inputs, tablas y tarjetas siguen el diseño de branding.
+[ ] El tema claro/oscuro funciona correctamente.
+[ ] La app es responsiva hasta 1024px de ancho.
+[ ] Los mensajes de error y éxito son claros y descriptivos.
+12. Rendimiento y Estabilidad
+[ ] La app carga en menos de 3 segundos en hardware promedio.
+[ ] No hay errores críticos ni bloqueos durante el uso normal.
+[ ] El consumo de memoria y CPU es razonable.
+[ ] La app funciona correctamente sin conexión a internet.
+13. Pruebas Técnicas Adicionales
+[ ] Los canales IPC funcionan y no hay errores de comunicación main-renderer.
+[ ] No hay acceso no autorizado a APIs sensibles desde el renderer.
+[ ] Los logs de errores se registran correctamente (si aplica).
+[ ] El empaquetado no incluye archivos innecesarios (node_modules, tests, etc.).

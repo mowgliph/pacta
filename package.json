@@ -6,13 +6,17 @@
   "author": "Pacta Inc. <contact@pacta.com>",
   "main": "main/index.ts",
   "scripts": {
-    "dev": "nextron",
-    "build": "nextron build",
+    "build:renderer": "cd renderer && pnpm build",
+    "build:main": "tsc -p main",
+    "build": "pnpm build:renderer && pnpm build:main",
+    "start": "electron .",
+    "dev": "concurrently \"pnpm --filter renderer dev\" \"pnpm --filter main dev\"",
     "postinstall": "electron-builder install-app-deps",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "node prisma/seed.js",
-    "db:setup": "npm run prisma:generate && npm run prisma:migrate && npm run prisma:seed"
+    "db:setup": "npm run prisma:generate && npm run prisma:migrate && npm run prisma:seed",
+    "build:dist": "electron-builder"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -90,7 +94,6 @@
     "electron-builder": "^24.13.3",
     "eslint-config-next": "^15.3.1",
     "next": "^14.2.28",
-    "nextron": "^9.5.0",
     "postcss": "^8.5.3",
     "prisma": "^6.7.0",
     "react": "^18.3.1",
