@@ -12,6 +12,7 @@ export interface Contract {
   amount: number;
   status: string;
   description: string;
+  attachment?: string | null;
 }
 
 export function useContracts(tipo?: "Cliente" | "Proveedor") {

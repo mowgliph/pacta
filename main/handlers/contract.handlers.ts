@@ -128,26 +128,46 @@ export function registerContractHandlers(eventManager: EventManager): void {
     [IPC_CHANNELS.DATA.CONTRACTS.EXPORT]: async (
       event,
       id,
-      { format = "pdf" } = {}
+      destPathOrOptions
     ) => {
-      logger.info("Exportación de contrato solicitada", { id, format });
+      logger.info("Exportación de contrato solicitada", {
+        id,
+        destPathOrOptions,
+      });
       try {
+        let destPath =
+          typeof destPathOrOptions === "string" ? destPathOrOptions : undefined;
+        let format =
+          destPathOrOptions && destPathOrOptions.format
+            ? destPathOrOptions.format
+            : "pdf";
+        const documents = await prisma.document.findMany({
+          where: { contractId: id },
+          orderBy: { uploadedAt: "asc" },
+          take: 1,
+        });
+        if (documents.length > 0 && documents[0].path && destPath) {
+          if (!fs.existsSync(documents[0].path)) {
+            throw new Error("El archivo adjunto no existe en el sistema.");
+          }
+          fs.copyFileSync(documents[0].path, destPath);
+          logger.info("Adjunto exportado en:", destPath);
+          return { path: destPath };
+        }
         fs.mkdirSync(EXPORTS_DIR, { recursive: true });
         let exportPath: string;
         if (format === "docx") {
-          exportPath = path.join(
-            EXPORTS_DIR,
-            `contrato_${id}_${Date.now()}.docx`
-          );
+          exportPath =
+            destPath ||
+            path.join(EXPORTS_DIR, `contrato_${id}_${Date.now()}.docx`);
           fs.writeFileSync(
             exportPath,
             Buffer.from("DOCX simulado del contrato")
           );
         } else {
-          exportPath = path.join(
-            EXPORTS_DIR,
-            `contrato_${id}_${Date.now()}.pdf`
-          );
+          exportPath =
+            destPath ||
+            path.join(EXPORTS_DIR, `contrato_${id}_${Date.now()}.pdf`);
           fs.writeFileSync(
             exportPath,
             Buffer.from("PDF simulado del contrato")

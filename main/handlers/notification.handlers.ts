@@ -4,6 +4,7 @@ import { IpcHandlerMap } from "../channels/types";
 import { logger } from "../utils/logger";
 import { prisma } from "../utils/prisma";
 import { withErrorHandling } from "../utils/error-handler";
+import { Notification } from "electron";
 
 export function registerNotificationHandlers(eventManager: EventManager): void {
   const handlers: IpcHandlerMap = {
@@ -26,6 +27,16 @@ export function registerNotificationHandlers(eventManager: EventManager): void {
               internalLink: options.internalLink || null,
             } as any,
           });
+
+          // Mostrar notificación nativa del sistema
+          if (options.title && options.message) {
+            new Notification({
+              title: options.title,
+              body: options.message,
+              silent: options.silent ?? false,
+            }).show();
+          }
+
           // Enviar al frontend (si hay canal abierto)
           event.sender.send(IPC_CHANNELS.NOTIFICATIONS.SHOW, notification);
           return { success: true, data: notification };

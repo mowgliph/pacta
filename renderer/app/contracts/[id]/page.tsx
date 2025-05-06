@@ -1,11 +1,16 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useContractDetail } from "@/lib/useContractDetail";
 import { useParams } from "next/navigation";
 import { FileText, PlusCircle, Archive, ArrowLeft } from "lucide-react";
 import { useAuth } from "@/store/auth";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useNotification } from "@/lib/useNotification";
+import { useFileDialog } from "@/lib/useFileDialog";
+import { DocumentList } from "@/components/ui/document-list";
+import { Dialog } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 // @ts-ignore
 // Asegurar tipado correcto para window.Electron
@@ -31,9 +36,40 @@ function StatusBadge({ status }: { status: string }) {
 export default function ContractDetailPage() {
   const params = useParams<{ id: string }>();
   const id = params.id;
-  const { contract, supplements, loading, error } = useContractDetail(id);
+  const { contract, supplements, documents, loading, error } =
+    useContractDetail(id);
   const router = useRouter();
   const { user } = useAuth();
+  const { notify } = useNotification();
+  const { saveFile } = useFileDialog();
+  const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+  const [deletingDoc, setDeletingDoc] = useState<any | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Notificación de contrato próximo a vencer
+  React.useEffect(() => {
+    if (contract && contract.status === "Próximo a Vencer") {
+      notify({
+        title: "Contrato próximo a vencer",
+        body: `El contrato ${contract.number} está cerca de su fecha de vencimiento.`,
+        variant: "warning",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contract?.id, contract?.status]);
+
+  // Documento principal (el primero)
+  const mainDocument = documents && documents.length > 0 ? documents[0] : null;
+
+  // Documentos ordenados del más reciente al más antiguo
+  const sortedDocuments =
+    documents && documents.length > 0
+      ? [...documents].sort(
+          (a, b) =>
+            new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+        )
+      : [];
 
   const handleArchive = async () => {
     if (!contract) return;
@@ -65,20 +101,117 @@ export default function ContractDetailPage() {
       return;
     }
     try {
+      const fileResult = await saveFile({
+        title: "Guardar contrato como PDF",
+        defaultPath: `Contrato_${contract.number}.pdf`,
+        filters: [{ name: "PDF", extensions: ["pdf"] }],
+      });
+      if (!fileResult || !fileResult.filePath) {
+        notify({
+          title: "Exportación cancelada",
+          body: "No se seleccionó ninguna ruta para guardar.",
+          variant: "warning",
+        });
+        return;
+      }
       // @ts-ignore
-      await window.Electron.ipcRenderer.invoke("contracts:export", contract.id);
-      // @ts-ignore
-      await window.Electron.ipcRenderer.invoke("notifications:show", {
+      await window.Electron.contracts.export(contract.id, fileResult.filePath);
+      notify({
         title: "Contrato exportado",
         body: "El contrato fue exportado como PDF.",
+        variant: "success",
       });
     } catch (err) {
-      // @ts-ignore
-      await window.Electron.ipcRenderer.invoke("notifications:show", {
+      notify({
         title: "Error",
         body: "No se pudo exportar el contrato.",
+        variant: "destructive",
       });
     }
+  };
+
+  const handleDownloadDocument = async (doc: any) => {
+    if (!contract) {
+      notify({
+        title: "Sin contrato",
+        body: "No se encontró el contrato para descargar el documento.",
+        variant: "warning",
+      });
+      return;
+    }
+    const fileResult = await saveFile({
+      title: `Guardar documento: ${doc.originalName || doc.filename}`,
+      defaultPath: doc.originalName || doc.filename || "documento.pdf",
+      filters: [{ name: "Documentos", extensions: ["pdf", "doc", "docx"] }],
+    });
+    if (!fileResult || !fileResult.filePath) {
+      notify({
+        title: "Descarga cancelada",
+        body: "No se seleccionó ninguna ruta para guardar.",
+        variant: "warning",
+      });
+      return;
+    }
+    // @ts-ignore
+    const res = await window.Electron.contracts.export(
+      contract.id,
+      fileResult.filePath
+    );
+    if (res && res.path) {
+      notify({
+        title: "Documento descargado",
+        body: "El documento fue guardado correctamente.",
+        variant: "success",
+      });
+    } else {
+      notify({
+        title: "Error",
+        body: "No se pudo descargar el documento.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteDocument = (doc: any) => {
+    setDeletingDoc(doc);
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDeleteDocument = async () => {
+    if (!deletingDoc) return;
+    try {
+      // @ts-ignore
+      const res = await window.Electron.documents.delete(deletingDoc.id);
+      if (res && res.success) {
+        notify({
+          title: "Documento eliminado",
+          body: "El documento fue eliminado correctamente.",
+          variant: "success",
+        });
+        // Refresca la lista de documentos (puedes usar un refetch o reload)
+        window.location.reload();
+      } else {
+        notify({
+          title: "Error",
+          body: res?.error || "No se pudo eliminar el documento.",
+          variant: "destructive",
+        });
+      }
+    } catch (err: any) {
+      notify({
+        title: "Error",
+        body: err?.message || "No se pudo eliminar el documento.",
+        variant: "destructive",
+      });
+    } finally {
+      setShowDeleteConfirm(false);
+      setDeletingDoc(null);
+    }
+  };
+
+  const handleViewDocumentDetails = (doc: any) => {
+    setSelectedDoc(doc);
+    setShowDetails(true);
   };
 
   if (loading) {
@@ -149,6 +282,26 @@ export default function ContractDetailPage() {
                 >
                   <FileText size={18} /> Exportar PDF
                 </button>
+                {mainDocument && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <button
+                      className="flex items-center gap-1 px-4 py-2 rounded-lg bg-[#018ABE] text-white hover:bg-[#02457A] text-sm font-medium shadow-sm"
+                      onClick={() => handleDownloadDocument(mainDocument)}
+                      tabIndex={0}
+                      aria-label={`Descargar documento adjunto: ${
+                        mainDocument.originalName || mainDocument.filename
+                      }`}
+                    >
+                      <FileText size={18} /> Descargar documento
+                    </button>
+                    <span
+                      className="text-xs text-[#018ABE] font-medium"
+                      title={mainDocument.originalName || mainDocument.filename}
+                    >
+                      {mainDocument.originalName || mainDocument.filename}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -229,8 +382,89 @@ export default function ContractDetailPage() {
               </div>
             )}
           </section>
+
+          {/* Documentos adjuntos */}
+          <DocumentList
+            documents={documents}
+            onDownload={handleDownloadDocument}
+            onDelete={handleDeleteDocument}
+            onViewDetails={handleViewDocumentDetails}
+          />
         </>
       ) : null}
+
+      {/* Modal de detalles */}
+      {showDetails && selectedDoc && (
+        <Dialog open={showDetails} onOpenChange={setShowDetails}>
+          <div className="bg-white rounded-lg p-6 max-w-md mx-auto shadow-lg">
+            <h4 className="text-lg font-semibold mb-2 text-[#001B48]">
+              Detalles del documento
+            </h4>
+            <div className="text-sm text-[#333] flex flex-col gap-1">
+              <span>
+                <b>Nombre original:</b>{" "}
+                {selectedDoc.originalName || selectedDoc.filename}
+              </span>
+              <span>
+                <b>Tipo:</b> {selectedDoc.mimeType}
+              </span>
+              <span>
+                <b>Tamaño:</b> {Math.round((selectedDoc.size || 0) / 1024)} KB
+              </span>
+              <span>
+                <b>Subido el:</b>{" "}
+                {new Date(selectedDoc.uploadedAt).toLocaleString()}
+              </span>
+              {selectedDoc.description && (
+                <span>
+                  <b>Descripción:</b> {selectedDoc.description}
+                </span>
+              )}
+              {selectedDoc.tags && (
+                <span>
+                  <b>Tags:</b> {selectedDoc.tags}
+                </span>
+              )}
+              {selectedDoc.uploadedByName && (
+                <span>
+                  <b>Subido por:</b> {selectedDoc.uploadedByName}
+                </span>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setShowDetails(false)}>
+                Cerrar
+              </Button>
+            </div>
+          </div>
+        </Dialog>
+      )}
+
+      {/* Confirmación de eliminación */}
+      {showDeleteConfirm && deletingDoc && (
+        <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <div className="bg-white rounded-lg p-6 max-w-md mx-auto shadow-lg">
+            <h4 className="text-lg font-semibold mb-2 text-[#F44336]">
+              ¿Eliminar documento?
+            </h4>
+            <p className="text-sm text-[#333] mb-4">
+              Esta acción no se puede deshacer. ¿Deseas eliminar{" "}
+              <b>{deletingDoc.originalName || deletingDoc.filename}</b>?
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                Cancelar
+              </Button>
+              <Button variant="destructive" onClick={confirmDeleteDocument}>
+                Eliminar
+              </Button>
+            </div>
+          </div>
+        </Dialog>
+      )}
 
       {/* Animaciones gestionadas por TailwindCSS, no se requiere <style> */}
     </div>

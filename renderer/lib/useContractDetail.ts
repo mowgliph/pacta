@@ -16,6 +16,7 @@ export interface Supplement {
 export function useContractDetail(id: string) {
   const [contract, setContract] = useState<Contract | null>(null);
   const [supplements, setSupplements] = useState<Supplement[]>([]);
+  const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,15 +29,19 @@ export function useContractDetail(id: string) {
       window.Electron.ipcRenderer.invoke("contracts:getById", id),
       // @ts-ignore
       window.Electron.ipcRenderer.invoke("supplements:list", id),
+      // @ts-ignore
+      window.Electron.documents.getByContract(id),
     ])
-      .then(([cRes, sRes]: any[]) => {
+      .then(([cRes, sRes, dRes]: any[]) => {
         if (!mounted) return;
         try {
           setContract(handleIpcResponse<Contract>(cRes));
           setSupplements(handleIpcResponse<Supplement[]>(sRes));
+          setDocuments(handleIpcResponse<any[]>(dRes));
         } catch (err: any) {
           setError(
-            err?.message || "No se pudo cargar el contrato o suplementos"
+            err?.message ||
+              "No se pudo cargar el contrato, suplementos o documentos"
           );
         }
       })
@@ -51,5 +56,5 @@ export function useContractDetail(id: string) {
     };
   }, [id]);
 
-  return { contract, supplements, loading, error };
+  return { contract, supplements, documents, loading, error };
 }

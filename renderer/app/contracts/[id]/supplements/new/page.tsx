@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { FilePlus, ArrowLeft } from "lucide-react";
 import { useCreateSupplement } from "@/lib/useCreateSupplement";
+import { useNotification } from "@/lib/useNotification";
+import { useFileDialog } from "@/lib/useFileDialog";
 
 const campos = [
   { value: "amount", label: "Monto" },
@@ -25,6 +27,8 @@ export default function NewSupplementPage() {
   const [file, setFile] = useState<File | null>(null);
   const { createSupplement, loading, error, success, setError, setSuccess } =
     useCreateSupplement();
+  const { notify } = useNotification();
+  const { openFile } = useFileDialog();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -48,6 +52,11 @@ export default function NewSupplementPage() {
       file,
     });
     if (result.success) {
+      notify({
+        title: "Suplemento guardado",
+        body: "El suplemento se guardó correctamente.",
+        variant: "success",
+      });
       setTimeout(() => router.push(`/contracts/${contractId}`), 1200);
     }
   };
@@ -124,11 +133,35 @@ export default function NewSupplementPage() {
               <label className="block text-sm font-medium mb-1">
                 Adjuntar documento (opcional)
               </label>
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx"
-                onChange={handleFileChange}
-              />
+              <div className="flex gap-2 items-center">
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleFileChange}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const result = await openFile({
+                      title: "Seleccionar documento",
+                      filters: [
+                        {
+                          name: "Documentos",
+                          extensions: ["pdf", "doc", "docx"],
+                        },
+                      ],
+                    });
+                    if (result && result.filePaths && result.filePaths[0]) {
+                      // Leer el archivo seleccionado y convertirlo a File
+                      // (esto requiere lógica adicional si se desea cargar el archivo al backend)
+                    }
+                  }}
+                >
+                  Seleccionar desde sistema
+                </Button>
+              </div>
             </div>
             <Button type="submit" className="w-fit mt-2" disabled={loading}>
               <FilePlus size={18} className="mr-2" /> Guardar Suplemento

@@ -109,6 +109,10 @@ declare global {
           listener: (...args: any[]) => void
         ) => void;
       };
+      files: {
+        open: (options: any) => Promise<any>;
+        save: (options: any) => Promise<any>;
+      };
     };
   }
 }

@@ -1,9 +1,10 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useContracts, Contract } from "@/lib/useContracts";
 import { FilePlus, Search, Filter } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useNotification } from "@/lib/useNotification";
 
 const tipos = ["Cliente", "Proveedor"] as const;
 
@@ -12,6 +13,7 @@ export default function ContractsPage() {
   const [search, setSearch] = useState("");
   const { contracts, loading, error } = useContracts(tipo);
   const router = useRouter();
+  const { notify } = useNotification();
 
   const filtered = contracts.filter(
     (c) =>
@@ -19,6 +21,20 @@ export default function ContractsPage() {
       c.company.toLowerCase().includes(search.toLowerCase()) ||
       c.description.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Notificación de contratos próximos a vencer (solo una vez por render)
+  useEffect(() => {
+    const proximo = contracts.find((c) => c.status === "Próximo a Vencer");
+    if (proximo) {
+      notify({
+        title: "Contrato próximo a vencer",
+        body: `El contrato ${proximo.number} está cerca de su fecha de vencimiento.`,
+        variant: "warning",
+      });
+    }
+    // Solo al cargar la lista
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contracts.length]);
 
   if (loading) {
     return <div className="text-[#757575]">Cargando contratos...</div>;
