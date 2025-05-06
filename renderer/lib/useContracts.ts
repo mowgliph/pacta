@@ -28,12 +28,13 @@ export function useContracts(tipo?: "Cliente" | "Proveedor") {
       window.Electron.contracts
         .list(tipo ? { tipo } : {})
         .then((res: any) => {
-          if (mounted) {
-            if (res.success && Array.isArray(res.data)) {
-              setContracts(res.data);
-            } else {
-              setError(res.error || "Error al obtener contratos");
-            }
+          if (!mounted) return;
+          if (res.success && Array.isArray(res.data)) {
+            setContracts(res.data);
+          } else if (res?.error) {
+            setError(res.error.message || "Error al obtener contratos");
+          } else {
+            setError("Error al obtener contratos");
           }
         })
         .catch((err: any) => {

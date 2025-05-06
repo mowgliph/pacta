@@ -29,12 +29,12 @@ export function useContractDetail(id: string) {
       window.Electron.supplements.list(id),
     ])
       .then(([cRes, sRes]: any[]) => {
-        if (mounted) {
-          if (cRes.success && cRes.data) setContract(cRes.data);
-          else setError(cRes.error || "No se encontró el contrato");
-          if (sRes.success && Array.isArray(sRes.data))
-            setSupplements(sRes.data);
-        }
+        if (!mounted) return;
+        if (cRes.success && cRes.data) setContract(cRes.data);
+        else setError(cRes?.error?.message || "No se encontró el contrato");
+        if (sRes.success && Array.isArray(sRes.data)) setSupplements(sRes.data);
+        else if (sRes?.error)
+          setError(sRes.error.message || "No se encontraron suplementos");
       })
       .catch((err: any) => {
         if (mounted) setError(err?.message || "Error de conexión");

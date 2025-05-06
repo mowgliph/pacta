@@ -48,14 +48,47 @@ export function useStatistics() {
             supplementsByContractRes,
             usersActivityRes,
           ]) => {
+            // Adaptar a nuevo patrón de respuesta
+            if (!statsRes?.success)
+              return setError(
+                statsRes?.error?.message || "Error al obtener estadísticas"
+              );
+            if (!byCurrencyRes?.success)
+              return setError(
+                byCurrencyRes?.error?.message || "Error al obtener estadísticas"
+              );
+            if (!byUserRes?.success)
+              return setError(
+                byUserRes?.error?.message || "Error al obtener estadísticas"
+              );
+            if (!contractsCreatedRes?.success)
+              return setError(
+                contractsCreatedRes?.error?.message ||
+                  "Error al obtener estadísticas"
+              );
+            if (!contractsExpiredRes?.success)
+              return setError(
+                contractsExpiredRes?.error?.message ||
+                  "Error al obtener estadísticas"
+              );
+            if (!supplementsByContractRes?.success)
+              return setError(
+                supplementsByContractRes?.error?.message ||
+                  "Error al obtener estadísticas"
+              );
+            if (!usersActivityRes?.success)
+              return setError(
+                usersActivityRes?.error?.message ||
+                  "Error al obtener estadísticas"
+              );
             setData({
-              stats: statsRes,
-              byCurrency: byCurrencyRes,
-              byUser: byUserRes,
-              contractsCreated: contractsCreatedRes,
-              contractsExpired: contractsExpiredRes,
-              supplementsByContract: supplementsByContractRes,
-              usersActivity: usersActivityRes,
+              stats: statsRes.data,
+              byCurrency: byCurrencyRes.data,
+              byUser: byUserRes.data,
+              contractsCreated: contractsCreatedRes.data,
+              contractsExpired: contractsExpiredRes.data,
+              supplementsByContract: supplementsByContractRes.data,
+              usersActivity: usersActivityRes.data,
             });
           }
         )

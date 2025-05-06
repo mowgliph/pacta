@@ -38,12 +38,13 @@ export function useDashboardStats() {
       window.Electron.statistics
         .dashboard()
         .then((res: any) => {
-          if (mounted) {
-            if (res) {
-              setData(res);
-            } else {
-              setError("Error al obtener estadísticas");
-            }
+          if (!mounted) return;
+          if (res?.success) {
+            setData(res.data);
+          } else if (res?.error) {
+            setError(res.error.message || "Error al obtener estadísticas");
+          } else {
+            setError("Error al obtener estadísticas");
           }
         })
         .catch((err: any) => {

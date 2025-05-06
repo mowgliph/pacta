@@ -26,12 +26,13 @@ export function useUsers() {
       window.Electron.users
         .list()
         .then((res: any) => {
-          if (mounted) {
-            if (Array.isArray(res)) {
-              setUsers(res);
-            } else {
-              setError("Error al obtener usuarios");
-            }
+          if (!mounted) return;
+          if (res.success && Array.isArray(res.data)) {
+            setUsers(res.data);
+          } else if (res?.error) {
+            setError(res.error.message || "Error al obtener usuarios");
+          } else {
+            setError("Error al obtener usuarios");
           }
         })
         .catch((err: any) => {
