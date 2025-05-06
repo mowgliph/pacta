@@ -1,15 +1,11 @@
 "use client";
 import React from "react";
 import { useRouter } from "next/navigation";
-import { useContractDetail } from "../../../lib/useContractDetail";
+import { useContractDetail } from "@/lib/useContractDetail";
 import { useParams } from "next/navigation";
 import { FileText, PlusCircle, Archive, ArrowLeft } from "lucide-react";
-import { useAuth } from "../../../store/auth";
-import {
-  Alert,
-  AlertTitle,
-  AlertDescription,
-} from "../../../components/ui/alert";
+import { useAuth } from "@/store/auth";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 // @ts-ignore
 // Asegurar tipado correcto para window.Electron
@@ -43,16 +39,19 @@ export default function ContractDetailPage() {
     if (!contract) return;
     try {
       // @ts-ignore
-      await window.Electron.contracts.archive(contract.id);
+      await window.Electron.ipcRenderer.invoke(
+        "contracts:archive",
+        contract.id
+      );
       // @ts-ignore
-      await window.Electron.notifications.show({
+      await window.Electron.ipcRenderer.invoke("notifications:show", {
         title: "Contrato archivado",
         body: "El contrato fue archivado correctamente.",
       });
       router.push("/contracts");
     } catch (err) {
       // @ts-ignore
-      await window.Electron.notifications.show({
+      await window.Electron.ipcRenderer.invoke("notifications:show", {
         title: "Error",
         body: "No se pudo archivar el contrato.",
       });
@@ -67,33 +66,40 @@ export default function ContractDetailPage() {
     }
     try {
       // @ts-ignore
-      await window.Electron.contracts.export(contract.id);
+      await window.Electron.ipcRenderer.invoke("contracts:export", contract.id);
       // @ts-ignore
-      await window.Electron.notifications.show({
+      await window.Electron.ipcRenderer.invoke("notifications:show", {
         title: "Contrato exportado",
         body: "El contrato fue exportado como PDF.",
       });
     } catch (err) {
       // @ts-ignore
-      await window.Electron.notifications.show({
+      await window.Electron.ipcRenderer.invoke("notifications:show", {
         title: "Error",
         body: "No se pudo exportar el contrato.",
       });
     }
   };
 
+  if (loading) {
+    return <div className="text-[#757575]">Cargando contrato...</div>;
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <button
         className="flex items-center gap-2 text-[#018ABE] hover:underline text-sm w-fit"
         onClick={() => router.push("/contracts")}
+        tabIndex={0}
+        aria-label="Volver a contratos"
+        onKeyDown={(e) => {
+          if (e.key === "Enter") router.push("/contracts");
+        }}
       >
         <ArrowLeft size={18} /> Volver a contratos
       </button>
 
-      {loading ? (
-        <div className="text-[#757575]">Cargando contrato...</div>
-      ) : error ? (
+      {error ? (
         <Alert variant="destructive" className="mb-4">
           <AlertTitle>Error al cargar contrato</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
@@ -122,18 +128,24 @@ export default function ContractDetailPage() {
                   onClick={() =>
                     router.push(`/contracts/${contract.id}/supplements/new`)
                   }
+                  tabIndex={0}
+                  aria-label="Agregar suplemento"
                 >
                   <PlusCircle size={18} /> Agregar Suplemento
                 </button>
                 <button
                   className="flex items-center gap-1 px-4 py-2 rounded-lg bg-[#757575] text-white hover:bg-[#333] text-sm font-medium shadow-sm"
                   onClick={handleArchive}
+                  tabIndex={0}
+                  aria-label="Archivar contrato"
                 >
                   <Archive size={18} /> Archivar
                 </button>
                 <button
                   className="flex items-center gap-1 px-4 py-2 rounded-lg bg-[#D6E8EE] text-[#018ABE] hover:bg-[#97CADB] text-sm font-medium shadow-sm"
                   onClick={handleExport}
+                  tabIndex={0}
+                  aria-label="Exportar contrato PDF"
                 >
                   <FileText size={18} /> Exportar PDF
                 </button>

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { Contract } from "./useContracts";
+import { handleIpcResponse } from "./handleIpcResponse";
 
 export interface Supplement {
   id: string;
@@ -24,17 +25,20 @@ export function useContractDetail(id: string) {
     setError(null);
     Promise.all([
       // @ts-ignore
-      window.Electron.contracts.getById(id),
+      window.Electron.ipcRenderer.invoke("contracts:getById", id),
       // @ts-ignore
-      window.Electron.supplements.list(id),
+      window.Electron.ipcRenderer.invoke("supplements:list", id),
     ])
       .then(([cRes, sRes]: any[]) => {
         if (!mounted) return;
-        if (cRes.success && cRes.data) setContract(cRes.data);
-        else setError(cRes?.error?.message || "No se encontró el contrato");
-        if (sRes.success && Array.isArray(sRes.data)) setSupplements(sRes.data);
-        else if (sRes?.error)
-          setError(sRes.error.message || "No se encontraron suplementos");
+        try {
+          setContract(handleIpcResponse<Contract>(cRes));
+          setSupplements(handleIpcResponse<Supplement[]>(sRes));
+        } catch (err: any) {
+          setError(
+            err?.message || "No se pudo cargar el contrato o suplementos"
+          );
+        }
       })
       .catch((err: any) => {
         if (mounted) setError(err?.message || "Error de conexión");

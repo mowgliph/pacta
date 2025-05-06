@@ -1,9 +1,9 @@
 "use client";
 import React, { useState } from "react";
-import { useContracts, Contract } from "../../lib/useContracts";
+import { useContracts, Contract } from "@/lib/useContracts";
 import { FilePlus, Search, Filter } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Alert, AlertTitle, AlertDescription } from "../../components/ui/alert";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const tipos = ["Cliente", "Proveedor"] as const;
 
@@ -20,6 +20,10 @@ export default function ContractsPage() {
       c.description.toLowerCase().includes(search.toLowerCase())
   );
 
+  if (loading) {
+    return <div className="text-[#757575]">Cargando contratos...</div>;
+  }
+
   return (
     <div className="flex flex-col gap-8">
       {/* Filtros y acciones */}
@@ -34,6 +38,11 @@ export default function ContractsPage() {
                   : "text-[#018ABE] hover:bg-[#D6E8EE]"
               }`}
               onClick={() => setTipo(t)}
+              tabIndex={0}
+              aria-label={`Filtrar por tipo ${t}`}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") setTipo(t);
+              }}
             >
               {t}
             </button>
@@ -47,11 +56,14 @@ export default function ContractsPage() {
             className="outline-none border-none bg-transparent text-sm w-64"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            aria-label="Buscar contratos"
           />
         </div>
         <button
           className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-[#018ABE] text-white hover:bg-[#02457A] transition-colors shadow-sm"
           onClick={() => router.push("/contracts/new")}
+          tabIndex={0}
+          aria-label="Nuevo contrato"
         >
           <FilePlus size={18} /> Nuevo Contrato
         </button>
@@ -63,13 +75,15 @@ export default function ContractsPage() {
           <h2 className="text-lg font-semibold text-[#001B48] font-inter">
             Contratos {tipo}
           </h2>
-          <button className="flex items-center gap-1 text-[#018ABE] text-sm hover:underline">
+          <button
+            className="flex items-center gap-1 text-[#018ABE] text-sm hover:underline"
+            tabIndex={0}
+            aria-label="Filtros avanzados"
+          >
             <Filter size={16} /> Filtros avanzados
           </button>
         </div>
-        {loading ? (
-          <div className="text-[#757575]">Cargando contratos...</div>
-        ) : error ? (
+        {error ? (
           <Alert variant="destructive" className="mb-4">
             <AlertTitle>Error al cargar contratos</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
@@ -133,6 +147,12 @@ export default function ContractsPage() {
                       <button
                         className="text-[#018ABE] hover:underline text-xs"
                         onClick={() => router.push(`/contracts/${c.id}`)}
+                        tabIndex={0}
+                        aria-label="Ver detalle del contrato"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter")
+                            router.push(`/contracts/${c.id}`);
+                        }}
                       >
                         Ver Detalle
                       </button>
@@ -141,6 +161,12 @@ export default function ContractsPage() {
                         onClick={() =>
                           router.push(`/contracts/${c.id}/supplements/new`)
                         }
+                        tabIndex={0}
+                        aria-label="Agregar suplemento"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter")
+                            router.push(`/contracts/${c.id}/supplements/new`);
+                        }}
                       >
                         Agregar Suplemento
                       </button>
@@ -149,21 +175,34 @@ export default function ContractsPage() {
                         onClick={async () => {
                           try {
                             // @ts-ignore
-                            await window.Electron.contracts.archive(c.id);
+                            await window.Electron.ipcRenderer.invoke(
+                              "contracts:archive",
+                              c.id
+                            );
                             // @ts-ignore
-                            await window.Electron.notifications.show({
-                              title: "Contrato archivado",
-                              body: "El contrato fue archivado correctamente.",
-                            });
-                            // Opcional: recargar la lista de contratos
+                            await window.Electron.ipcRenderer.invoke(
+                              "notifications:show",
+                              {
+                                title: "Contrato archivado",
+                                body: "El contrato fue archivado correctamente.",
+                              }
+                            );
                             window.location.reload();
                           } catch (err) {
                             // @ts-ignore
-                            await window.Electron.notifications.show({
-                              title: "Error",
-                              body: "No se pudo archivar el contrato.",
-                            });
+                            await window.Electron.ipcRenderer.invoke(
+                              "notifications:show",
+                              {
+                                title: "Error",
+                                body: "No se pudo archivar el contrato.",
+                              }
+                            );
                           }
+                        }}
+                        tabIndex={0}
+                        aria-label="Archivar contrato"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") e.currentTarget.click();
                         }}
                       >
                         Archivar

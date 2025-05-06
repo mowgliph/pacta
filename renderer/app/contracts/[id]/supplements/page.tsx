@@ -1,54 +1,34 @@
-"use client"
-import React, { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
-import { FileDown, Eye, ArrowLeft } from "lucide-react"
-
-interface Supplement {
-  id: string
-  contractId: string
-  field: string
-  oldValue: string
-  newValue: string
-  description: string
-  createdAt: string
-  fileName?: string
-}
+"use client";
+import React, { useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { FileDown, Eye, ArrowLeft } from "lucide-react";
+import { useSupplements } from "@/lib/useSupplements";
 
 export default function SupplementsListPage() {
-  const params = useParams<{ id: string }>()
-  const router = useRouter()
-  const contractId = params.id
-  const [supplements, setSupplements] = useState<Supplement[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const contractId = params.id;
+  const {
+    supplements,
+    isLoading,
+    error,
+    fetchSupplements,
+    downloadSupplement,
+  } = useSupplements(contractId);
 
   useEffect(() => {
-    setLoading(true)
-    setError(null)
-    // @ts-ignore
-    window.Electron.supplements.list(contractId)
-      .then((res: any) => {
-        if (res.success && Array.isArray(res.data)) {
-          // Ordenar por fecha descendente
-          setSupplements(res.data.sort((a: Supplement, b: Supplement) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()))
-        } else {
-          setError(res.error || "No se pudieron obtener los suplementos.")
-        }
-      })
-      .catch((err: any) => setError(err?.message || "Error de conexión"))
-      .finally(() => setLoading(false))
-  }, [contractId])
+    fetchSupplements();
+  }, [fetchSupplements]);
 
-  const handleDownload = async (supplementId: string) => {
-    try {
-      // @ts-ignore
-      await window.Electron.supplements.download(supplementId)
-    } catch (err: any) {
-      alert("No se pudo descargar el suplemento.")
-    }
+  if (isLoading) {
+    return (
+      <div className="max-w-3xl mx-auto py-10 px-4 text-[#757575]">
+        Cargando suplementos...
+      </div>
+    );
   }
 
   return (
@@ -56,6 +36,11 @@ export default function SupplementsListPage() {
       <button
         className="flex items-center gap-2 text-[#018ABE] hover:underline text-sm w-fit mb-2"
         onClick={() => router.push(`/contracts/${contractId}`)}
+        tabIndex={0}
+        aria-label="Volver al contrato"
+        onKeyDown={(e) => {
+          if (e.key === "Enter") router.push(`/contracts/${contractId}`);
+        }}
       >
         <ArrowLeft size={18} /> Volver al contrato
       </button>
@@ -64,15 +49,15 @@ export default function SupplementsListPage() {
           <CardTitle>Suplementos del Contrato</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="text-[#757575]">Cargando suplementos...</div>
-          ) : error ? (
+          {error ? (
             <Alert variant="destructive">
               <AlertTitle>Error</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           ) : supplements.length === 0 ? (
-            <div className="text-[#757575]">No hay suplementos registrados para este contrato.</div>
+            <div className="text-[#757575]">
+              No hay suplementos registrados para este contrato.
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm border rounded-lg">
@@ -80,26 +65,55 @@ export default function SupplementsListPage() {
                   <tr className="bg-[#D6E8EE] text-[#001B48]">
                     <th className="px-4 py-2 text-left font-medium">Fecha</th>
                     <th className="px-4 py-2 text-left font-medium">Campo</th>
-                    <th className="px-4 py-2 text-left font-medium">Valor anterior</th>
-                    <th className="px-4 py-2 text-left font-medium">Nuevo valor</th>
-                    <th className="px-4 py-2 text-left font-medium">Descripción</th>
-                    <th className="px-4 py-2 text-left font-medium">Acciones</th>
+                    <th className="px-4 py-2 text-left font-medium">
+                      Valor anterior
+                    </th>
+                    <th className="px-4 py-2 text-left font-medium">
+                      Nuevo valor
+                    </th>
+                    <th className="px-4 py-2 text-left font-medium">
+                      Descripción
+                    </th>
+                    <th className="px-4 py-2 text-left font-medium">
+                      Acciones
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {supplements.map(s => (
-                    <tr key={s.id} className="even:bg-[#F9FBFC] hover:bg-[#D6E8EE] transition-colors">
-                      <td className="px-4 py-2">{new Date(s.createdAt).toLocaleDateString()}</td>
+                  {supplements.map((s) => (
+                    <tr
+                      key={s.id}
+                      className="even:bg-[#F9FBFC] hover:bg-[#D6E8EE] transition-colors"
+                    >
+                      <td className="px-4 py-2">
+                        {new Date(s.createdAt).toLocaleDateString()}
+                      </td>
                       <td className="px-4 py-2">{s.field}</td>
                       <td className="px-4 py-2">{s.oldValue}</td>
                       <td className="px-4 py-2">{s.newValue}</td>
                       <td className="px-4 py-2">{s.description}</td>
                       <td className="px-4 py-2 flex gap-2">
-                        <Button size="sm" variant="outline" onClick={() => router.push(`/contracts/${contractId}/supplements/${s.id}`)}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            router.push(
+                              `/contracts/${contractId}/supplements/${s.id}`
+                            )
+                          }
+                          tabIndex={0}
+                          aria-label="Ver suplemento"
+                        >
                           <Eye size={16} className="mr-1" /> Ver
                         </Button>
                         {s.fileName && (
-                          <Button size="sm" variant="ghost" onClick={() => handleDownload(s.id)}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => downloadSupplement(s.id)}
+                            tabIndex={0}
+                            aria-label="Descargar suplemento"
+                          >
                             <FileDown size={16} className="mr-1" /> Descargar
                           </Button>
                         )}
@@ -113,5 +127,5 @@ export default function SupplementsListPage() {
         </CardContent>
       </Card>
     </div>
-  )
-} 
+  );
+}

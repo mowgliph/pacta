@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { handleIpcResponse } from "./handleIpcResponse";
 
 export interface Contract {
   id: string;
@@ -23,30 +24,22 @@ export function useContracts(tipo?: "Cliente" | "Proveedor") {
     setLoading(true);
     setError(null);
     // @ts-ignore
-    if (window.Electron?.contracts?.list) {
-      // @ts-ignore
-      window.Electron.contracts
-        .list(tipo ? { tipo } : {})
-        .then((res: any) => {
-          if (!mounted) return;
-          if (res.success && Array.isArray(res.data)) {
-            setContracts(res.data);
-          } else if (res?.error) {
-            setError(res.error.message || "Error al obtener contratos");
-          } else {
-            setError("Error al obtener contratos");
-          }
-        })
-        .catch((err: any) => {
-          if (mounted) setError(err?.message || "Error de conexión");
-        })
-        .finally(() => {
-          if (mounted) setLoading(false);
-        });
-    } else {
-      setError("API de contratos no disponible");
-      setLoading(false);
-    }
+    window.Electron.ipcRenderer
+      .invoke("contracts:list", tipo ? { tipo } : {})
+      .then((res: any) => {
+        if (!mounted) return;
+        try {
+          setContracts(handleIpcResponse<Contract[]>(res));
+        } catch (err: any) {
+          setError(err?.message || "Error al obtener contratos");
+        }
+      })
+      .catch((err: any) => {
+        if (mounted) setError(err?.message || "Error de conexión");
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
     return () => {
       mounted = false;
     };

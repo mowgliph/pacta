@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { handleIpcResponse } from "./handleIpcResponse";
 
 export interface Statistics {
   stats: any;
@@ -19,85 +20,53 @@ export function useStatistics() {
   useEffect(() => {
     setLoading(true);
     setError(null);
-    // @ts-ignore
-    if (window.Electron?.statistics?.contracts) {
+    Promise.all([
       // @ts-ignore
-      Promise.all([
-        // @ts-ignore
-        window.Electron.statistics.contracts(),
-        // @ts-ignore
-        window.Electron.statistics.contractsByCurrency(),
-        // @ts-ignore
-        window.Electron.statistics.contractsByUser(),
-        // @ts-ignore
-        window.Electron.statistics.contractsCreatedByMonth(),
-        // @ts-ignore
-        window.Electron.statistics.contractsExpiredByMonth(),
-        // @ts-ignore
-        window.Electron.statistics.supplementsCountByContract(),
-        // @ts-ignore
-        window.Electron.statistics.usersActivity(),
-      ])
-        .then(
-          ([
-            statsRes,
-            byCurrencyRes,
-            byUserRes,
-            contractsCreatedRes,
-            contractsExpiredRes,
-            supplementsByContractRes,
-            usersActivityRes,
-          ]) => {
-            // Adaptar a nuevo patrón de respuesta
-            if (!statsRes?.success)
-              return setError(
-                statsRes?.error?.message || "Error al obtener estadísticas"
-              );
-            if (!byCurrencyRes?.success)
-              return setError(
-                byCurrencyRes?.error?.message || "Error al obtener estadísticas"
-              );
-            if (!byUserRes?.success)
-              return setError(
-                byUserRes?.error?.message || "Error al obtener estadísticas"
-              );
-            if (!contractsCreatedRes?.success)
-              return setError(
-                contractsCreatedRes?.error?.message ||
-                  "Error al obtener estadísticas"
-              );
-            if (!contractsExpiredRes?.success)
-              return setError(
-                contractsExpiredRes?.error?.message ||
-                  "Error al obtener estadísticas"
-              );
-            if (!supplementsByContractRes?.success)
-              return setError(
-                supplementsByContractRes?.error?.message ||
-                  "Error al obtener estadísticas"
-              );
-            if (!usersActivityRes?.success)
-              return setError(
-                usersActivityRes?.error?.message ||
-                  "Error al obtener estadísticas"
-              );
+      window.Electron.ipcRenderer.invoke("statistics:contracts"),
+      // @ts-ignore
+      window.Electron.ipcRenderer.invoke("statistics:contractsByCurrency"),
+      // @ts-ignore
+      window.Electron.ipcRenderer.invoke("statistics:contractsByUser"),
+      // @ts-ignore
+      window.Electron.ipcRenderer.invoke("statistics:contractsCreatedByMonth"),
+      // @ts-ignore
+      window.Electron.ipcRenderer.invoke("statistics:contractsExpiredByMonth"),
+      // @ts-ignore
+      window.Electron.ipcRenderer.invoke(
+        "statistics:supplementsCountByContract"
+      ),
+      // @ts-ignore
+      window.Electron.ipcRenderer.invoke("statistics:usersActivity"),
+    ])
+      .then(
+        ([
+          statsRes,
+          byCurrencyRes,
+          byUserRes,
+          contractsCreatedRes,
+          contractsExpiredRes,
+          supplementsByContractRes,
+          usersActivityRes,
+        ]) => {
+          try {
             setData({
-              stats: statsRes.data,
-              byCurrency: byCurrencyRes.data,
-              byUser: byUserRes.data,
-              contractsCreated: contractsCreatedRes.data,
-              contractsExpired: contractsExpiredRes.data,
-              supplementsByContract: supplementsByContractRes.data,
-              usersActivity: usersActivityRes.data,
+              stats: handleIpcResponse(statsRes),
+              byCurrency: handleIpcResponse(byCurrencyRes),
+              byUser: handleIpcResponse(byUserRes),
+              contractsCreated: handleIpcResponse(contractsCreatedRes),
+              contractsExpired: handleIpcResponse(contractsExpiredRes),
+              supplementsByContract: handleIpcResponse(
+                supplementsByContractRes
+              ),
+              usersActivity: handleIpcResponse(usersActivityRes),
             });
+          } catch (err: any) {
+            setError(err?.message || "Error al obtener estadísticas");
           }
-        )
-        .catch((err: any) => setError(err?.message || "Error de conexión"))
-        .finally(() => setLoading(false));
-    } else {
-      setError("API de estadísticas no disponible");
-      setLoading(false);
-    }
+        }
+      )
+      .catch((err: any) => setError(err?.message || "Error de conexión"))
+      .finally(() => setLoading(false));
   }, []);
 
   return { data, loading, error };
