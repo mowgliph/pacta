@@ -3,14 +3,26 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../store/auth";
 import { useUsers } from "../../lib/useUsers";
-import { Card, CardHeader, CardTitle, CardContent } from "../../components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "../../components/ui/alert";
+import {
+  useContextMenu,
+  ContextMenuAction,
+} from "@/components/ui/context-menu";
+import { useNotification } from "@/lib/useNotification";
 
 export default function UsersPage() {
   const { user } = useAuth();
   const router = useRouter();
   const { users, loading, error } = useUsers();
+  const { openContextMenu } = useContextMenu();
+  const { notify } = useNotification();
 
   useEffect(() => {
     if (!user) {
@@ -43,28 +55,85 @@ export default function UsersPage() {
                     <th className="px-4 py-2 text-left font-medium">Email</th>
                     <th className="px-4 py-2 text-left font-medium">Rol</th>
                     <th className="px-4 py-2 text-left font-medium">Estado</th>
-                    <th className="px-4 py-2 text-left font-medium">Acciones</th>
+                    <th className="px-4 py-2 text-left font-medium">
+                      Acciones
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {users.map((u) => (
-                    <tr key={u.id} className="even:bg-[#F9FBFC] hover:bg-[#D6E8EE] transition-colors">
-                      <td className="px-4 py-2 font-medium">{u.name}</td>
-                      <td className="px-4 py-2">{u.email}</td>
-                      <td className="px-4 py-2">{u.roleId}</td>
-                      <td className="px-4 py-2">
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${u.isActive ? "bg-[#4CAF50]/10 text-[#4CAF50]" : "bg-[#F44336]/10 text-[#F44336]"}`}>
-                          {u.isActive ? "Activo" : "Inactivo"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2">
-                        {/* Acciones futuras: editar, desactivar, etc. */}
-                        <Button size="sm" variant="outline" disabled>
-                          Editar
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                  {users.map((u) => {
+                    const actions: ContextMenuAction[] = [
+                      {
+                        label: "Editar usuario",
+                        onClick: () => router.push(`/users/${u.id}`),
+                      },
+                      {
+                        label: u.isActive ? "Desactivar" : "Reactivar",
+                        onClick: async () => {
+                          try {
+                            // @ts-ignore
+                            await window.Electron.ipcRenderer.invoke(
+                              "users:update",
+                              {
+                                id: u.id,
+                                isActive: !u.isActive,
+                              }
+                            );
+                            notify({
+                              title: u.isActive
+                                ? "Usuario desactivado"
+                                : "Usuario reactivado",
+                              body: `El usuario ${u.name} ha sido ${
+                                u.isActive ? "desactivado" : "reactivado"
+                              }.`,
+                              variant: "success",
+                            });
+                            window.location.reload();
+                          } catch (err) {
+                            notify({
+                              title: "Error",
+                              body: "No se pudo actualizar el estado del usuario.",
+                              variant: "destructive",
+                            });
+                          }
+                        },
+                      },
+                      {
+                        label: "Copiar email",
+                        onClick: () => navigator.clipboard.writeText(u.email),
+                      },
+                    ];
+                    return (
+                      <tr
+                        key={u.id}
+                        className="even:bg-[#F9FBFC] hover:bg-[#D6E8EE] transition-colors"
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          openContextMenu(actions, e.clientX, e.clientY);
+                        }}
+                      >
+                        <td className="px-4 py-2 font-medium">{u.name}</td>
+                        <td className="px-4 py-2">{u.email}</td>
+                        <td className="px-4 py-2">{u.roleId}</td>
+                        <td className="px-4 py-2">
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-semibold ${
+                              u.isActive
+                                ? "bg-[#4CAF50]/10 text-[#4CAF50]"
+                                : "bg-[#F44336]/10 text-[#F44336]"
+                            }`}
+                          >
+                            {u.isActive ? "Activo" : "Inactivo"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2">
+                          <Button size="sm" variant="outline" disabled>
+                            Editar
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -73,4 +142,4 @@ export default function UsersPage() {
       </Card>
     </div>
   );
-} 
+}

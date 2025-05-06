@@ -14,7 +14,10 @@ import {
 import { useRouter } from "next/navigation";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useNotification } from "@/lib/useNotification";
-import { ContextMenu, ContextMenuAction } from "@/components/ui/context-menu";
+import {
+  useContextMenu,
+  ContextMenuAction,
+} from "@/components/ui/context-menu";
 import { useFileDialog } from "@/lib/useFileDialog";
 
 const tipos = ["Cliente", "Proveedor"] as const;
@@ -26,6 +29,7 @@ export default function ContractsPage() {
   const router = useRouter();
   const { notify } = useNotification();
   const { saveFile } = useFileDialog();
+  const { openContextMenu } = useContextMenu();
 
   const filtered = contracts.filter(
     (c) =>
@@ -218,102 +222,103 @@ export default function ContractsPage() {
                     },
                   ];
                   return (
-                    <ContextMenu key={c.id} actions={actions}>
-                      <tr
-                        className="even:bg-[#F9FBFC] hover:bg-[#D6E8EE] transition-colors cursor-pointer select-none"
-                        tabIndex={0}
-                        aria-label={`Contrato: ${c.number}`}
-                      >
-                        <td className="px-4 py-2">{c.number}</td>
-                        <td className="px-4 py-2">{c.company}</td>
-                        <td className="px-4 py-2">{c.type}</td>
-                        <td className="px-4 py-2">
-                          {new Date(c.startDate).toLocaleDateString()}
-                        </td>
-                        <td className="px-4 py-2">
-                          {new Date(c.endDate).toLocaleDateString()}
-                        </td>
-                        <td className="px-4 py-2">
-                          {c.amount.toLocaleString("es-ES", {
-                            style: "currency",
-                            currency: "USD",
-                          })}
-                        </td>
-                        <td className="px-4 py-2">
-                          <span
-                            className={`px-2 py-1 rounded text-xs font-semibold ${
-                              c.status === "Vigente"
-                                ? "bg-[#D6E8EE] text-[#018ABE]"
-                                : c.status === "Vencido"
-                                ? "bg-[#F44336]/10 text-[#F44336]"
-                                : c.status === "Próximo a Vencer"
-                                ? "bg-[#FF9800]/10 text-[#FF9800]"
-                                : "bg-[#F5F5F5] text-[#757575]"
-                            }`}
-                          >
-                            {c.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-2 flex gap-2">
-                          <button
-                            className="text-[#018ABE] hover:underline text-xs"
-                            onClick={() => router.push(`/contracts/${c.id}`)}
-                            tabIndex={0}
-                            aria-label="Ver detalle del contrato"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter")
-                                router.push(`/contracts/${c.id}`);
-                            }}
-                          >
-                            Ver Detalle
-                          </button>
-                          <button
-                            className="text-[#4CAF50] hover:underline text-xs"
-                            onClick={() =>
-                              router.push(`/contracts/${c.id}/supplements/new`)
+                    <tr
+                      key={c.id}
+                      className="even:bg-[#F9FBFC] hover:bg-[#D6E8EE] transition-colors cursor-pointer select-none"
+                      tabIndex={0}
+                      aria-label={`Contrato: ${c.number}`}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        openContextMenu(actions, e.clientX, e.clientY);
+                      }}
+                    >
+                      <td className="px-4 py-2">{c.number}</td>
+                      <td className="px-4 py-2">{c.company}</td>
+                      <td className="px-4 py-2">{c.type}</td>
+                      <td className="px-4 py-2">
+                        {new Date(c.startDate).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-2">
+                        {new Date(c.endDate).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-2">
+                        {c.amount.toLocaleString("es-ES", {
+                          style: "currency",
+                          currency: "USD",
+                        })}
+                      </td>
+                      <td className="px-4 py-2">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-semibold ${
+                            c.status === "Vigente"
+                              ? "bg-[#D6E8EE] text-[#018ABE]"
+                              : c.status === "Vencido"
+                              ? "bg-[#F44336]/10 text-[#F44336]"
+                              : c.status === "Próximo a Vencer"
+                              ? "bg-[#FF9800]/10 text-[#FF9800]"
+                              : "bg-[#F5F5F5] text-[#757575]"
+                          }`}
+                        >
+                          {c.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 flex gap-2">
+                        <button
+                          className="text-[#018ABE] hover:underline text-xs"
+                          onClick={() => router.push(`/contracts/${c.id}`)}
+                          tabIndex={0}
+                          aria-label="Ver detalle del contrato"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")
+                              router.push(`/contracts/${c.id}`);
+                          }}
+                        >
+                          Ver Detalle
+                        </button>
+                        <button
+                          className="text-[#4CAF50] hover:underline text-xs"
+                          onClick={() =>
+                            router.push(`/contracts/${c.id}/supplements/new`)
+                          }
+                          tabIndex={0}
+                          aria-label="Agregar suplemento"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter")
+                              router.push(`/contracts/${c.id}/supplements/new`);
+                          }}
+                        >
+                          Agregar Suplemento
+                        </button>
+                        <button
+                          className="text-[#757575] hover:underline text-xs"
+                          onClick={async () => {
+                            try {
+                              // @ts-ignore
+                              await window.Electron.ipcRenderer.invoke(
+                                "contracts:archive",
+                                c.id
+                              );
+                              notify({
+                                title: "Contrato archivado",
+                                body: "El contrato fue archivado correctamente.",
+                                variant: "success",
+                              });
+                              window.location.reload();
+                            } catch {
+                              notify({
+                                title: "Error",
+                                body: "No se pudo archivar el contrato.",
+                                variant: "destructive",
+                              });
                             }
-                            tabIndex={0}
-                            aria-label="Agregar suplemento"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter")
-                                router.push(
-                                  `/contracts/${c.id}/supplements/new`
-                                );
-                            }}
-                          >
-                            Agregar Suplemento
-                          </button>
-                          <button
-                            className="text-[#757575] hover:underline text-xs"
-                            onClick={async () => {
-                              try {
-                                // @ts-ignore
-                                await window.Electron.ipcRenderer.invoke(
-                                  "contracts:archive",
-                                  c.id
-                                );
-                                notify({
-                                  title: "Contrato archivado",
-                                  body: "El contrato fue archivado correctamente.",
-                                  variant: "success",
-                                });
-                                window.location.reload();
-                              } catch {
-                                notify({
-                                  title: "Error",
-                                  body: "No se pudo archivar el contrato.",
-                                  variant: "destructive",
-                                });
-                              }
-                            }}
-                            tabIndex={0}
-                            aria-label="Archivar contrato"
-                          >
-                            Archivar
-                          </button>
-                        </td>
-                      </tr>
-                    </ContextMenu>
+                          }}
+                          tabIndex={0}
+                          aria-label="Archivar contrato"
+                        >
+                          Archivar
+                        </button>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>

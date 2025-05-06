@@ -6,7 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { FileDown, Eye, ArrowLeft, Copy, Trash2 } from "lucide-react";
 import { useSupplements } from "@/lib/useSupplements";
-import { ContextMenu, ContextMenuAction } from "@/components/ui/context-menu";
+import {
+  useContextMenu,
+  ContextMenuAction,
+} from "@/components/ui/context-menu";
 
 export default function SupplementsListPage() {
   const params = useParams<{ id: string }>();
@@ -19,6 +22,8 @@ export default function SupplementsListPage() {
     fetchSupplements,
     downloadSupplement,
   } = useSupplements(contractId);
+
+  const { openContextMenu } = useContextMenu();
 
   useEffect(() => {
     fetchSupplements();
@@ -108,51 +113,52 @@ export default function SupplementsListPage() {
                         icon: <Copy size={16} />,
                         onClick: () => handleCopyField(s.field),
                       },
-                      // Puedes agregar eliminar si el flujo lo permite
                     ].filter(Boolean) as ContextMenuAction[];
                     return (
-                      <ContextMenu key={s.id} actions={actions}>
-                        <tr
-                          className="even:bg-[#F9FBFC] hover:bg-[#D6E8EE] transition-colors cursor-pointer select-none"
-                          tabIndex={0}
-                          aria-label={`Suplemento: ${s.id}`}
-                        >
-                          <td className="px-4 py-2">
-                            {new Date(s.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="px-4 py-2">{s.field}</td>
-                          <td className="px-4 py-2">{s.oldValue}</td>
-                          <td className="px-4 py-2">{s.newValue}</td>
-                          <td className="px-4 py-2">{s.description}</td>
-                          <td className="px-4 py-2 flex gap-2">
+                      <tr
+                        key={s.id}
+                        className="even:bg-[#F9FBFC] hover:bg-[#D6E8EE] transition-colors cursor-pointer select-none"
+                        tabIndex={0}
+                        aria-label={`Suplemento: ${s.id}`}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          openContextMenu(actions, e.clientX, e.clientY);
+                        }}
+                      >
+                        <td className="px-4 py-2">
+                          {new Date(s.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-2">{s.field}</td>
+                        <td className="px-4 py-2">{s.oldValue}</td>
+                        <td className="px-4 py-2">{s.newValue}</td>
+                        <td className="px-4 py-2">{s.description}</td>
+                        <td className="px-4 py-2 flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              router.push(
+                                `/contracts/${contractId}/supplements/${s.id}`
+                              )
+                            }
+                            tabIndex={0}
+                            aria-label="Ver suplemento"
+                          >
+                            <Eye size={16} className="mr-1" /> Ver
+                          </Button>
+                          {s.fileName && (
                             <Button
                               size="sm"
-                              variant="outline"
-                              onClick={() =>
-                                router.push(
-                                  `/contracts/${contractId}/supplements/${s.id}`
-                                )
-                              }
+                              variant="ghost"
+                              onClick={() => downloadSupplement(s.id)}
                               tabIndex={0}
-                              aria-label="Ver suplemento"
+                              aria-label="Descargar suplemento"
                             >
-                              <Eye size={16} className="mr-1" /> Ver
+                              <FileDown size={16} className="mr-1" /> Descargar
                             </Button>
-                            {s.fileName && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => downloadSupplement(s.id)}
-                                tabIndex={0}
-                                aria-label="Descargar suplemento"
-                              >
-                                <FileDown size={16} className="mr-1" />{" "}
-                                Descargar
-                              </Button>
-                            )}
-                          </td>
-                        </tr>
-                      </ContextMenu>
+                          )}
+                        </td>
+                      </tr>
                     );
                   })}
                 </tbody>

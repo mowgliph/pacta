@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, ReactNode } from "react";
 
 export interface ContextMenuAction {
   label: string;
@@ -7,76 +7,93 @@ export interface ContextMenuAction {
   disabled?: boolean;
 }
 
-interface ContextMenuProps {
+interface ContextMenuState {
+  open: boolean;
+  x: number;
+  y: number;
   actions: ContextMenuAction[];
-  children: React.ReactNode;
 }
 
-export const ContextMenu: React.FC<ContextMenuProps> = ({
-  actions,
-  children,
-}) => {
-  const [visible, setVisible] = useState(false);
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  const menuRef = useRef<HTMLDivElement>(null);
+interface ContextMenuContextProps {
+  state: ContextMenuState;
+  openContextMenu: (actions: ContextMenuAction[], x: number, y: number) => void;
+  closeContextMenu: () => void;
+}
 
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setVisible(false);
-      }
-    };
-    const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setVisible(false);
-    };
-    if (visible) {
-      document.addEventListener("mousedown", handleClick);
-      document.addEventListener("keydown", handleEsc);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClick);
-      document.removeEventListener("keydown", handleEsc);
-    };
-  }, [visible]);
+const ContextMenuContext = createContext<ContextMenuContextProps | undefined>(
+  undefined
+);
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setPos({ x: e.clientX, y: e.clientY });
-    setVisible(true);
+export const ContextMenuProvider = ({ children }: { children: ReactNode }) => {
+  const [state, setState] = useState<ContextMenuState>({
+    open: false,
+    x: 0,
+    y: 0,
+    actions: [],
+  });
+
+  const openContextMenu = (
+    actions: ContextMenuAction[],
+    x: number,
+    y: number
+  ) => {
+    setState({ open: true, x, y, actions });
   };
 
+  const closeContextMenu = () => setState((s) => ({ ...s, open: false }));
+
   return (
-    <div style={{ display: "inline-block" }} onContextMenu={handleContextMenu}>
+    <ContextMenuContext.Provider
+      value={{ state, openContextMenu, closeContextMenu }}
+    >
       {children}
-      {visible && (
-        <div
-          ref={menuRef}
-          className="fixed z-50 bg-white border border-[#D6E8EE] rounded shadow-lg min-w-[180px] py-1 animate-fade-in"
-          style={{ left: pos.x, top: pos.y }}
-          role="menu"
+      <GlobalContextMenu />
+    </ContextMenuContext.Provider>
+  );
+};
+
+export function useContextMenu() {
+  const ctx = useContext(ContextMenuContext);
+  if (!ctx)
+    throw new Error("useContextMenu debe usarse dentro de ContextMenuProvider");
+  return ctx;
+}
+
+const GlobalContextMenu = () => {
+  const ctx = useContext(ContextMenuContext);
+  if (!ctx) return null;
+  const { state, closeContextMenu } = ctx;
+  if (!state.open) return null;
+
+  return (
+    <div
+      className="fixed z-50 bg-white border border-[#D6E8EE] rounded shadow-lg min-w-[180px] py-1 animate-fade-in"
+      style={{ top: state.y, left: state.x }}
+      tabIndex={0}
+      role="menu"
+      onBlur={closeContextMenu}
+      onKeyDown={(e) => e.key === "Escape" && closeContextMenu()}
+    >
+      {state.actions.map((action, i) => (
+        <button
+          key={i}
+          className={`flex items-center gap-2 w-full px-4 py-2 text-sm text-left hover:bg-[#D6E8EE] focus:bg-[#D6E8EE] focus:outline-none ${
+            action.disabled ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+          onClick={() => {
+            if (!action.disabled) {
+              action.onClick();
+              closeContextMenu();
+            }
+          }}
+          disabled={action.disabled}
+          tabIndex={0}
+          role="menuitem"
         >
-          {actions.map((action, idx) => (
-            <button
-              key={idx}
-              className={`flex items-center gap-2 w-full px-4 py-2 text-sm text-left hover:bg-[#D6E8EE] focus:bg-[#D6E8EE] focus:outline-none ${
-                action.disabled ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-              onClick={() => {
-                if (!action.disabled) {
-                  action.onClick();
-                  setVisible(false);
-                }
-              }}
-              disabled={action.disabled}
-              tabIndex={0}
-              role="menuitem"
-            >
-              {action.icon}
-              {action.label}
-            </button>
-          ))}
-        </div>
-      )}
+          {action.icon}
+          {action.label}
+        </button>
+      ))}
     </div>
   );
 };
