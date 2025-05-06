@@ -14,6 +14,21 @@ export interface Supplement {
   fileName?: string;
 }
 
+function getIpcRenderer() {
+  if (typeof window !== "undefined" && window.Electron?.ipcRenderer) {
+    // @ts-ignore
+    return window.Electron.ipcRenderer;
+  }
+  return null;
+}
+
+function getSupplementsApi() {
+  if (typeof window !== "undefined" && (window as any).Electron?.supplements) {
+    return (window as any).Electron.supplements;
+  }
+  return null;
+}
+
 export const useSupplements = (contractId: string) => {
   const [supplements, setSupplements] = useState<Supplement[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,16 +39,17 @@ export const useSupplements = (contractId: string) => {
   const fetchSupplements = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    const ipc = getIpcRenderer();
+    if (!ipc) {
+      setError("API de suplementos no disponible");
+      setIsLoading(false);
+      return;
+    }
     try {
-      // @ts-ignore
-      const res = await window.Electron.ipcRenderer.invoke(
-        "supplements:list",
-        contractId
-      );
+      const res = await ipc.invoke("supplements:list", contractId);
       setSupplements(handleIpcResponse<Supplement[]>(res));
     } catch (err: any) {
       setError(err?.message || "Error al obtener suplementos");
-      // Lanzar evento global para manejo de error 500
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("api-error"));
       }
@@ -46,6 +62,12 @@ export const useSupplements = (contractId: string) => {
     async (supplementId: string) => {
       setIsLoading(true);
       setError(null);
+      const supplementsApi = getSupplementsApi();
+      if (!supplementsApi) {
+        setError("API de suplementos no disponible");
+        setIsLoading(false);
+        return;
+      }
       try {
         const supplement = supplements.find((s) => s.id === supplementId);
         const fileResult = await saveFile({
@@ -61,8 +83,7 @@ export const useSupplements = (contractId: string) => {
           });
           return;
         }
-        // @ts-ignore
-        const res = await window.Electron.supplements.export(
+        const res = await supplementsApi.export(
           supplementId,
           fileResult.filePath
         );

@@ -12,6 +12,14 @@ export interface Statistics {
   usersActivity: any[];
 }
 
+function getIpcRenderer() {
+  if (typeof window !== "undefined" && window.Electron?.ipcRenderer) {
+    // @ts-ignore
+    return window.Electron.ipcRenderer;
+  }
+  return null;
+}
+
 export function useStatistics() {
   const [data, setData] = useState<Statistics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -20,23 +28,20 @@ export function useStatistics() {
   useEffect(() => {
     setLoading(true);
     setError(null);
+    const ipc = getIpcRenderer();
+    if (!ipc) {
+      setError("Estadísticas solo disponibles en entorno Electron");
+      setLoading(false);
+      return;
+    }
     Promise.all([
-      // @ts-ignore
-      window.Electron.ipcRenderer.invoke("statistics:contracts"),
-      // @ts-ignore
-      window.Electron.ipcRenderer.invoke("statistics:contractsByCurrency"),
-      // @ts-ignore
-      window.Electron.ipcRenderer.invoke("statistics:contractsByUser"),
-      // @ts-ignore
-      window.Electron.ipcRenderer.invoke("statistics:contractsCreatedByMonth"),
-      // @ts-ignore
-      window.Electron.ipcRenderer.invoke("statistics:contractsExpiredByMonth"),
-      // @ts-ignore
-      window.Electron.ipcRenderer.invoke(
-        "statistics:supplementsCountByContract"
-      ),
-      // @ts-ignore
-      window.Electron.ipcRenderer.invoke("statistics:usersActivity"),
+      ipc.invoke("statistics:contracts"),
+      ipc.invoke("statistics:contractsByCurrency"),
+      ipc.invoke("statistics:contractsByUser"),
+      ipc.invoke("statistics:contractsCreatedByMonth"),
+      ipc.invoke("statistics:contractsExpiredByMonth"),
+      ipc.invoke("statistics:supplementsCountByContract"),
+      ipc.invoke("statistics:usersActivity"),
     ])
       .then(
         ([

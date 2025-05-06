@@ -23,6 +23,16 @@ interface DashboardStats {
   }>;
 }
 
+function getDashboardApi() {
+  if (
+    typeof window !== "undefined" &&
+    (window as any).Electron?.statistics?.dashboard
+  ) {
+    return (window as any).Electron.statistics.dashboard;
+  }
+  return null;
+}
+
 export function useDashboardStats() {
   const [data, setData] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -32,42 +42,40 @@ export function useDashboardStats() {
     let mounted = true;
     setLoading(true);
     setError(null);
-    // @ts-ignore
-    if (window.Electron?.statistics?.dashboard) {
-      // @ts-ignore
-      window.Electron.statistics
-        .dashboard()
-        .then((res: any) => {
-          if (!mounted) return;
-          if (res?.success) {
-            setData(res.data);
-          } else if (res?.error) {
-            setError(res.error.message || "Error al obtener estadísticas");
-            if (typeof window !== "undefined") {
-              window.dispatchEvent(new CustomEvent("api-error"));
-            }
-          } else {
-            setError("Error al obtener estadísticas");
-            if (typeof window !== "undefined") {
-              window.dispatchEvent(new CustomEvent("api-error"));
-            }
-          }
-        })
-        .catch((err: any) => {
-          if (mounted) {
-            setError(err?.message || "Error de conexión");
-            if (typeof window !== "undefined") {
-              window.dispatchEvent(new CustomEvent("api-error"));
-            }
-          }
-        })
-        .finally(() => {
-          if (mounted) setLoading(false);
-        });
-    } else {
+    const dashboardApi = getDashboardApi();
+    if (!dashboardApi) {
       setError("API de estadísticas no disponible");
       setLoading(false);
+      return;
     }
+    dashboardApi()
+      .then((res: any) => {
+        if (!mounted) return;
+        if (res?.success) {
+          setData(res.data);
+        } else if (res?.error) {
+          setError(res.error.message || "Error al obtener estadísticas");
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("api-error"));
+          }
+        } else {
+          setError("Error al obtener estadísticas");
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("api-error"));
+          }
+        }
+      })
+      .catch((err: any) => {
+        if (mounted) {
+          setError(err?.message || "Error de conexión");
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("api-error"));
+          }
+        }
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
     return () => {
       mounted = false;
     };

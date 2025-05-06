@@ -12,6 +12,14 @@ export interface User {
   updatedAt: string;
 }
 
+export function getIpcRenderer() {
+  if (typeof window !== "undefined" && window.Electron?.ipcRenderer) {
+    // @ts-ignore
+    return window.Electron.ipcRenderer;
+  }
+  return null;
+}
+
 export function useUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -21,8 +29,13 @@ export function useUsers() {
     let mounted = true;
     setLoading(true);
     setError(null);
-    // @ts-ignore
-    window.Electron.ipcRenderer
+    const ipc = getIpcRenderer();
+    if (!ipc) {
+      setError("API de usuarios no disponible");
+      setLoading(false);
+      return;
+    }
+    ipc
       .invoke("users:list")
       .then((res: any) => {
         if (!mounted) return;

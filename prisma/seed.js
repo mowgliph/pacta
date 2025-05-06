@@ -35,8 +35,8 @@ async function main() {
     }));
 
   // Usuarios
-  const adminPassword = await hash("pacta", 10);
-  const raPassword = await hash("pacta", 10);
+  const adminPassword = await hash("pacta2024", 10);
+  const raPassword = await hash("pacta2024", 10);
   const adminUser =
     (await prisma.user.findUnique({ where: { email: "admin@pacta.local" } })) ||
     (await prisma.user.create({
@@ -67,7 +67,7 @@ async function main() {
       data: {
         name: "Usuario Inactivo",
         email: "inactivo@pacta.local",
-        password: await hash("pacta", 10),
+        password: await hash("pacta2024", 10),
         roleId: raRole.id,
         isActive: false,
       },

@@ -15,6 +15,14 @@ export interface Contract {
   attachment?: string | null;
 }
 
+export function getIpcRenderer() {
+  if (typeof window !== "undefined" && window.Electron?.ipcRenderer) {
+    // @ts-ignore
+    return window.Electron.ipcRenderer;
+  }
+  return null;
+}
+
 export function useContracts(tipo?: "Cliente" | "Proveedor") {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,8 +32,13 @@ export function useContracts(tipo?: "Cliente" | "Proveedor") {
     let mounted = true;
     setLoading(true);
     setError(null);
-    // @ts-ignore
-    window.Electron.ipcRenderer
+    const ipc = getIpcRenderer();
+    if (!ipc) {
+      setError("API de contratos no disponible");
+      setLoading(false);
+      return;
+    }
+    ipc
       .invoke("contracts:list", tipo ? { tipo } : {})
       .then((res: any) => {
         if (!mounted) return;
@@ -37,7 +50,6 @@ export function useContracts(tipo?: "Cliente" | "Proveedor") {
       })
       .catch((err: any) => {
         if (mounted) setError(err?.message || "Error de conexión");
-        // Lanzar evento global para manejo de error 500
         if (typeof window !== "undefined") {
           window.dispatchEvent(new CustomEvent("api-error"));
         }
