@@ -17,8 +17,32 @@ export function useCreateSupplement() {
     setSuccess(null);
     setLoading(true);
     try {
+      let documentId = null;
+      if (params.file) {
+        const arrayBuffer = await params.file.arrayBuffer();
+        // @ts-ignore
+        const uploadRes = await window.Electron.ipcRenderer.invoke(
+          "documents:upload",
+          {
+            contractId: params.contractId,
+            supplementId: undefined, // Se asociará después
+            uploadedById: undefined, // Rellenar con el usuario actual si está disponible
+          },
+          {
+            name: params.file.name,
+            type: params.file.type || "application/pdf",
+            data: Array.from(new Uint8Array(arrayBuffer)),
+          }
+        );
+        if (uploadRes?.success && uploadRes.data?.id) {
+          documentId = uploadRes.data.id;
+        }
+      }
       // @ts-ignore
-      const res = await window.Electron.supplements.create(params);
+      const res = await window.Electron.supplements.create({
+        ...params,
+        documentId,
+      });
       if (res.success) {
         setSuccess("Suplemento creado correctamente.");
         return { success: true, data: res.data };

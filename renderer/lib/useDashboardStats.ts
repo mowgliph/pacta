@@ -43,12 +43,23 @@ export function useDashboardStats() {
             setData(res.data);
           } else if (res?.error) {
             setError(res.error.message || "Error al obtener estadísticas");
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("api-error"));
+            }
           } else {
             setError("Error al obtener estadísticas");
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("api-error"));
+            }
           }
         })
         .catch((err: any) => {
-          if (mounted) setError(err?.message || "Error de conexión");
+          if (mounted) {
+            setError(err?.message || "Error de conexión");
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("api-error"));
+            }
+          }
         })
         .finally(() => {
           if (mounted) setLoading(false);

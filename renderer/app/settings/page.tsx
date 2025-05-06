@@ -59,7 +59,10 @@ export default function SettingsPage() {
       handleIpcResponse(res);
       showSuccess("Perfil actualizado correctamente.");
     } catch (err: any) {
-      showError(err?.message || "No se pudo actualizar el perfil.");
+      showError(err?.message || "Error al actualizar usuario");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("api-error"));
+      }
     } finally {
       setLoading(false);
     }

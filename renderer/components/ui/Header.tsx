@@ -1,9 +1,9 @@
-"use client"
-import { useState, useEffect } from "react"
-import { Bell, LogOut, LogIn, Settings } from "lucide-react"
-import { useAuth } from "../../store/auth"
-import { useRouter } from "next/navigation"
-import { ThemeToggle } from "./theme-toggle"
+"use client";
+import { useState, useEffect } from "react";
+import { Bell, LogOut, LogIn, Settings } from "lucide-react";
+import { useAuth } from "../../store/auth";
+import { useRouter } from "next/navigation";
+import { ThemeToggle } from "./theme-toggle";
 import {
   Dialog,
   DialogTrigger,
@@ -11,56 +11,61 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
-} from "./dialog"
+} from "./dialog";
 
 interface Notification {
-  id: string
-  title: string
-  body: string
-  read: boolean
-  createdAt: string
-  internalLink?: string
+  id: string;
+  title: string;
+  body: string;
+  read: boolean;
+  createdAt: string;
+  internalLink?: string;
 }
 
 function useNotifications() {
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [loading, setLoading] = useState(false)
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const fetchNotifications = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
       // @ts-ignore
-      const result = await window.Electron.notifications.getUnread()
-      setNotifications(result || [])
+      const result = await window.Electron.notifications.getUnread();
+      setNotifications(result || []);
+    } catch (err: any) {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("api-error"));
+      }
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const markAllAsRead = async () => {
-    for (const id of notifications.map(n => n.id)) {
+    for (const id of notifications.map((n) => n.id)) {
       // @ts-ignore
-      await window.Electron.notifications.markRead(id)
+      await window.Electron.notifications.markRead(id);
     }
-    fetchNotifications()
-  }
+    fetchNotifications();
+  };
 
-  return { notifications, loading, fetchNotifications, markAllAsRead }
+  return { notifications, loading, fetchNotifications, markAllAsRead };
 }
 
 export default function Header() {
-  const { user, logout } = useAuth()
-  const router = useRouter()
-  const [open, setOpen] = useState(false)
-  const { notifications, loading, markAllAsRead, fetchNotifications } = useNotifications()
+  const { user, logout } = useAuth();
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const { notifications, loading, markAllAsRead, fetchNotifications } =
+    useNotifications();
 
-  const unreadCount = notifications.filter(n => !n.read).length
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
     if (open) {
-      fetchNotifications()
+      fetchNotifications();
     }
-  }, [open])
+  }, [open]);
 
   return (
     <header className="w-full h-16 bg-white flex items-center justify-between px-8 shadow-sm">
@@ -71,7 +76,9 @@ export default function Header() {
             <button className="relative">
               <Bell size={22} className="text-[#018ABE]" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#F44336] text-white text-xs rounded-full px-1.5 py-0.5">{unreadCount}</span>
+                <span className="absolute -top-1 -right-1 bg-[#F44336] text-white text-xs rounded-full px-1.5 py-0.5">
+                  {unreadCount}
+                </span>
               )}
             </button>
           </DialogTrigger>
@@ -83,20 +90,36 @@ export default function Header() {
               {loading ? (
                 <div className="text-[#757575]">Cargando...</div>
               ) : notifications.length === 0 ? (
-                <div className="text-[#757575]">No hay notificaciones nuevas.</div>
+                <div className="text-[#757575]">
+                  No hay notificaciones nuevas.
+                </div>
               ) : (
-                notifications.map(n => (
+                notifications.map((n) => (
                   <div
                     key={n.id}
-                    className={`rounded p-3 border transition cursor-${n.internalLink ? "pointer" : "default"} ${n.read ? "bg-[#F5F5F5]" : "bg-[#D6E8EE] border-[#018ABE]"} hover:shadow-md`}
-                    onClick={() => n.internalLink && router.push(n.internalLink)}
-                    title={n.internalLink ? `Ir a ${n.internalLink}` : undefined}
+                    className={`rounded p-3 border transition cursor-${
+                      n.internalLink ? "pointer" : "default"
+                    } ${
+                      n.read ? "bg-[#F5F5F5]" : "bg-[#D6E8EE] border-[#018ABE]"
+                    } hover:shadow-md`}
+                    onClick={() =>
+                      n.internalLink && router.push(n.internalLink)
+                    }
+                    title={
+                      n.internalLink ? `Ir a ${n.internalLink}` : undefined
+                    }
                   >
-                    <div className="font-semibold text-[#001B48]">{n.title}</div>
+                    <div className="font-semibold text-[#001B48]">
+                      {n.title}
+                    </div>
                     <div className="text-sm text-[#757575]">{n.body}</div>
-                    <div className="text-xs text-[#757575] mt-1">{new Date(n.createdAt).toLocaleString()}</div>
+                    <div className="text-xs text-[#757575] mt-1">
+                      {new Date(n.createdAt).toLocaleString()}
+                    </div>
                     {n.internalLink && (
-                      <div className="text-xs text-[#018ABE] mt-1 underline">Ver detalle</div>
+                      <div className="text-xs text-[#018ABE] mt-1 underline">
+                        Ver detalle
+                      </div>
                     )}
                   </div>
                 ))
@@ -111,7 +134,9 @@ export default function Header() {
                 Marcar todas como leídas
               </button>
               <DialogClose asChild>
-                <button className="text-xs text-[#757575] hover:underline">Cerrar</button>
+                <button className="text-xs text-[#757575] hover:underline">
+                  Cerrar
+                </button>
               </DialogClose>
             </div>
           </DialogContent>
@@ -123,7 +148,9 @@ export default function Header() {
           </div>
           <div className="text-[#333] text-sm">
             <div className="font-semibold">{user ? user.name : "Invitado"}</div>
-            <div className="text-xs text-[#757575]">{user ? user.role : "Sin sesión"}</div>
+            <div className="text-xs text-[#757575]">
+              {user ? user.role : "Sin sesión"}
+            </div>
           </div>
           {user && (
             <button
@@ -151,5 +178,5 @@ export default function Header() {
         </div>
       </div>
     </header>
-  )
-} 
+  );
+}

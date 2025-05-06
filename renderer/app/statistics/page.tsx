@@ -1,9 +1,20 @@
 "use client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { BarChart2, TrendingUp, FileText } from "lucide-react";
-import { BarChart, PieChart, LineChart } from "@/components/charts/charts";
+import React, { Suspense, lazy } from "react";
 import { useStatistics } from "@/lib/useStatistics";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Spinner } from "@/components/ui/spinner";
+
+const BarChart = lazy(() =>
+  import("@/components/charts/charts").then((m) => ({ default: m.BarChart }))
+);
+const PieChart = lazy(() =>
+  import("@/components/charts/charts").then((m) => ({ default: m.PieChart }))
+);
+const LineChart = lazy(() =>
+  import("@/components/charts/charts").then((m) => ({ default: m.LineChart }))
+);
 
 // Placeholder para gráfico (puedes reemplazar por Recharts u otro)
 function ChartPlaceholder({ title }: { title: string }) {
@@ -107,165 +118,173 @@ export default function StatisticsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Distribución por tipo de contrato (Bar) */}
             {data?.stats?.byType && Object.keys(byType).length > 0 ? (
-              <BarChart
-                data={{
-                  labels: Object.keys(byType),
-                  datasets: [
-                    {
-                      label: "Contratos por tipo",
-                      data: Object.values(byType),
-                      backgroundColor: ["#018ABE", "#97CADB"],
-                      borderRadius: 6,
+              <Suspense fallback={<Spinner size="lg" />}>
+                <BarChart
+                  data={{
+                    labels: Object.keys(byType),
+                    datasets: [
+                      {
+                        label: "Contratos por tipo",
+                        data: Object.values(byType),
+                        backgroundColor: ["#018ABE", "#97CADB"],
+                        borderRadius: 6,
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: { display: false },
+                      title: {
+                        display: true,
+                        text: "Distribución por tipo de contrato",
+                        color: "#001B48",
+                        font: { size: 18, weight: "bold" },
+                      },
                     },
-                  ],
-                }}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: { display: false },
-                    title: {
-                      display: true,
-                      text: "Distribución por tipo de contrato",
-                      color: "#001B48",
-                      font: { size: 18, weight: "bold" },
+                    scales: {
+                      x: {
+                        ticks: { color: "#001B48", font: { family: "Inter" } },
+                      },
+                      y: {
+                        beginAtZero: true,
+                        ticks: { color: "#001B48", font: { family: "Inter" } },
+                      },
                     },
-                  },
-                  scales: {
-                    x: {
-                      ticks: { color: "#001B48", font: { family: "Inter" } },
-                    },
-                    y: {
-                      beginAtZero: true,
-                      ticks: { color: "#001B48", font: { family: "Inter" } },
-                    },
-                  },
-                }}
-                className="h-64"
-              />
+                  }}
+                  className="h-64"
+                />
+              </Suspense>
             ) : (
               <ChartPlaceholder title="Distribución por tipo de contrato" />
             )}
             {/* Distribución por moneda (Pie) */}
             {data?.byCurrency && data.byCurrency.length > 0 ? (
-              <PieChart
-                data={{
-                  labels: data.byCurrency.map(
-                    (c: any) => c.currency || "Sin especificar"
-                  ),
-                  datasets: [
-                    {
-                      label: "Contratos por moneda",
-                      data: data.byCurrency.map((c: any) => c._count._all),
-                      backgroundColor: [
-                        "#018ABE",
-                        "#97CADB",
-                        "#D6E8EE",
-                        "#FF9800",
-                      ],
+              <Suspense fallback={<Spinner size="lg" />}>
+                <PieChart
+                  data={{
+                    labels: data.byCurrency.map(
+                      (c: any) => c.currency || "Sin especificar"
+                    ),
+                    datasets: [
+                      {
+                        label: "Contratos por moneda",
+                        data: data.byCurrency.map((c: any) => c._count._all),
+                        backgroundColor: [
+                          "#018ABE",
+                          "#97CADB",
+                          "#D6E8EE",
+                          "#FF9800",
+                        ],
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: {
+                        position: "bottom",
+                        labels: { color: "#001B48", font: { family: "Inter" } },
+                      },
+                      title: {
+                        display: true,
+                        text: "Distribución por moneda",
+                        color: "#001B48",
+                        font: { size: 18, weight: "bold" },
+                      },
                     },
-                  ],
-                }}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: {
-                      position: "bottom",
-                      labels: { color: "#001B48", font: { family: "Inter" } },
-                    },
-                    title: {
-                      display: true,
-                      text: "Distribución por moneda",
-                      color: "#001B48",
-                      font: { size: 18, weight: "bold" },
-                    },
-                  },
-                }}
-                className="h-64"
-              />
+                  }}
+                  className="h-64"
+                />
+              </Suspense>
             ) : (
               <ChartPlaceholder title="Distribución por moneda" />
             )}
             {/* Evolución mensual de contratos creados (Line) */}
             {data?.contractsCreated && data.contractsCreated.length > 0 ? (
-              <LineChart
-                data={{
-                  labels: data.contractsCreated.map((m: any) => m.month),
-                  datasets: [
-                    {
-                      label: "Contratos creados",
-                      data: data.contractsCreated.map((m: any) => m.count),
-                      borderColor: "#018ABE",
-                      backgroundColor: "#97CADB",
-                      tension: 0.3,
-                      fill: true,
+              <Suspense fallback={<Spinner size="lg" />}>
+                <LineChart
+                  data={{
+                    labels: data.contractsCreated.map((m: any) => m.month),
+                    datasets: [
+                      {
+                        label: "Contratos creados",
+                        data: data.contractsCreated.map((m: any) => m.count),
+                        borderColor: "#018ABE",
+                        backgroundColor: "#97CADB",
+                        tension: 0.3,
+                        fill: true,
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: { display: false },
+                      title: {
+                        display: true,
+                        text: "Evolución mensual de contratos",
+                        color: "#001B48",
+                        font: { size: 18, weight: "bold" },
+                      },
                     },
-                  ],
-                }}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: { display: false },
-                    title: {
-                      display: true,
-                      text: "Evolución mensual de contratos",
-                      color: "#001B48",
-                      font: { size: 18, weight: "bold" },
+                    scales: {
+                      x: {
+                        ticks: { color: "#001B48", font: { family: "Inter" } },
+                      },
+                      y: {
+                        beginAtZero: true,
+                        ticks: { color: "#001B48", font: { family: "Inter" } },
+                      },
                     },
-                  },
-                  scales: {
-                    x: {
-                      ticks: { color: "#001B48", font: { family: "Inter" } },
-                    },
-                    y: {
-                      beginAtZero: true,
-                      ticks: { color: "#001B48", font: { family: "Inter" } },
-                    },
-                  },
-                }}
-                className="h-64"
-              />
+                  }}
+                  className="h-64"
+                />
+              </Suspense>
             ) : (
               <ChartPlaceholder title="Evolución mensual de contratos" />
             )}
             {/* Contratos vencidos por mes (Line) */}
             {data?.contractsExpired && data.contractsExpired.length > 0 ? (
-              <LineChart
-                data={{
-                  labels: data.contractsExpired.map((m: any) => m.month),
-                  datasets: [
-                    {
-                      label: "Contratos vencidos",
-                      data: data.contractsExpired.map((m: any) => m.count),
-                      borderColor: "#F44336",
-                      backgroundColor: "#F4433622",
-                      tension: 0.3,
-                      fill: true,
+              <Suspense fallback={<Spinner size="lg" />}>
+                <LineChart
+                  data={{
+                    labels: data.contractsExpired.map((m: any) => m.month),
+                    datasets: [
+                      {
+                        label: "Contratos vencidos",
+                        data: data.contractsExpired.map((m: any) => m.count),
+                        borderColor: "#F44336",
+                        backgroundColor: "#F4433622",
+                        tension: 0.3,
+                        fill: true,
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: { display: false },
+                      title: {
+                        display: true,
+                        text: "Contratos vencidos por mes",
+                        color: "#001B48",
+                        font: { size: 18, weight: "bold" },
+                      },
                     },
-                  ],
-                }}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: { display: false },
-                    title: {
-                      display: true,
-                      text: "Contratos vencidos por mes",
-                      color: "#001B48",
-                      font: { size: 18, weight: "bold" },
+                    scales: {
+                      x: {
+                        ticks: { color: "#001B48", font: { family: "Inter" } },
+                      },
+                      y: {
+                        beginAtZero: true,
+                        ticks: { color: "#001B48", font: { family: "Inter" } },
+                      },
                     },
-                  },
-                  scales: {
-                    x: {
-                      ticks: { color: "#001B48", font: { family: "Inter" } },
-                    },
-                    y: {
-                      beginAtZero: true,
-                      ticks: { color: "#001B48", font: { family: "Inter" } },
-                    },
-                  },
-                }}
-                className="h-64"
-              />
+                  }}
+                  className="h-64"
+                />
+              </Suspense>
             ) : (
               <ChartPlaceholder title="Contratos vencidos por mes" />
             )}

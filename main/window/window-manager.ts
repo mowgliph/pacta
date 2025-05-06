@@ -80,6 +80,14 @@ export class WindowManager {
       const window = new BrowserWindow({
         ...MAIN_WINDOW_CONFIG,
         ...windowState,
+        icon: join(
+          app.getAppPath(),
+          "renderer",
+          "public",
+          "images",
+          "icon.ico"
+        ),
+        backgroundColor: "#F5F5F5",
         webPreferences: {
           ...MAIN_WINDOW_CONFIG.webPreferences,
           preload: resolve(__dirname, "../../app/preload.js"),

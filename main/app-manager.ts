@@ -1,9 +1,9 @@
-import { app, BrowserWindow, dialog } from 'electron';
-import { WindowManager } from './window/window-manager';
-import { SecurityManager } from './security/security-manager';
-import { logger } from './utils/logger';
-import { ErrorHandler } from './utils/error-handler';
-import { backupService } from './utils/backup-service';
+import { app, BrowserWindow, dialog } from "electron";
+import { WindowManager } from "./window/window-manager";
+import { SecurityManager } from "./security/security-manager";
+import { logger } from "./utils/logger";
+import { ErrorHandler } from "./utils/error-handler";
+import { backupService } from "./utils/backup-service";
 
 /**
  * Clase para gestionar el ciclo de vida de la aplicación Electron
@@ -19,7 +19,7 @@ export class AppManager {
   private constructor() {
     this.windowManager = WindowManager.getInstance();
     this.securityManager = SecurityManager.getInstance();
-    
+
     // Configurar opciones y eventos de la aplicación
     this.setupAppOptions();
     this.setupAppEvents();
@@ -36,11 +36,11 @@ export class AppManager {
   }
 
   /**
-   * Inicializa la aplicación 
+   * Inicializa la aplicación
    */
   public async initialize(): Promise<void> {
     try {
-      logger.info('Iniciando aplicación PACTA...');
+      logger.info("Iniciando aplicación PACTA...");
 
       // Esperar a que la aplicación esté lista
       if (!app.isReady()) {
@@ -52,19 +52,18 @@ export class AppManager {
 
       // Crear ventana principal
       this.mainWindow = await this.windowManager.createMainWindow();
-      
+
       // Configurar manejador de errores
       this.setupErrorHandler();
       // Configurar backup automático
       this.setupAutoBackup();
 
-      logger.info('Aplicación PACTA inicializada correctamente');
-
+      logger.info("Aplicación PACTA inicializada correctamente");
     } catch (error) {
-      logger.error('Error al inicializar la aplicación:', error);
+      logger.error("Error al inicializar la aplicación:", error);
       dialog.showErrorBox(
-        'Error de inicialización', 
-        'Ha ocurrido un error al iniciar la aplicación. Por favor, inténtelo de nuevo.'
+        "Error de inicialización",
+        "Ha ocurrido un error al iniciar la aplicación. Por favor, inténtelo de nuevo."
       );
       app.exit(1);
     }
@@ -82,7 +81,7 @@ export class AppManager {
     }
 
     // Manejar segunda instancia (enfocar la ventana existente)
-    app.on('second-instance', () => {
+    app.on("second-instance", () => {
       const mainWindow = this.windowManager.getMainWindow();
       if (mainWindow) {
         if (mainWindow.isMinimized()) mainWindow.restore();
@@ -91,7 +90,7 @@ export class AppManager {
     });
 
     // Establece entorno
-    app.setAppUserModelId('com.pacta.app');
+    app.setAppUserModelId("com.pacta.app");
   }
 
   /**
@@ -99,15 +98,15 @@ export class AppManager {
    */
   private setupAppEvents(): void {
     // Evento window-all-closed
-    app.on('window-all-closed', () => {
+    app.on("window-all-closed", () => {
       // En macOS es común que las aplicaciones se mantengan activas hasta que el usuario salga explícitamente
-      if (process.platform !== 'darwin') {
+      if (process.platform !== "darwin") {
         app.quit();
       }
     });
 
     // Evento activate (macOS)
-    app.on('activate', async () => {
+    app.on("activate", async () => {
       // En macOS es común volver a crear una ventana cuando se hace clic en el icono del dock
       if (this.windowManager.getWindowCount() === 0) {
         this.mainWindow = await this.windowManager.createMainWindow();
@@ -115,8 +114,8 @@ export class AppManager {
     });
 
     // Evento before-quit
-    app.on('before-quit', () => {
-      logger.info('Cerrando aplicación PACTA...');
+    app.on("before-quit", () => {
+      logger.info("Cerrando aplicación PACTA...");
     });
   }
 
@@ -128,7 +127,7 @@ export class AppManager {
       if (app.isReady()) {
         resolve();
       } else {
-        app.once('ready', () => {
+        app.once("ready", () => {
           resolve();
         });
       }
@@ -182,8 +181,8 @@ export class AppManager {
       return;
     }
 
-    logger.info('Procesando argumentos de línea de comandos:', args);
-    
+    logger.info("Procesando argumentos de línea de comandos:", args);
+
     // Implementar la lógica específica para procesar argumentos
     // Por ejemplo, abrir un archivo específico o activar una funcionalidad
   }
@@ -193,20 +192,20 @@ export class AppManager {
    */
   private setupErrorHandler(): void {
     // Registrar el manejador global de errores
-    process.on('uncaughtException', (error) => {
+    process.on("uncaughtException", (error) => {
       ErrorHandler.handle(error);
       dialog.showErrorBox(
-        'Error inesperado',
-        'Ha ocurrido un error inesperado. La aplicación se reiniciará.'
+        "Error inesperado",
+        "Ha ocurrido un error inesperado. La aplicación se reiniciará."
       );
       app.relaunch();
       app.exit(1);
     });
-    process.on('unhandledRejection', (reason: any) => {
+    process.on("unhandledRejection", (reason: any) => {
       ErrorHandler.handle(reason);
       dialog.showErrorBox(
-        'Error de promesa no manejada',
-        'Se detectó un error no manejado. La aplicación se reiniciará.'
+        "Error de promesa no manejada",
+        "Se detectó un error no manejado. La aplicación se reiniciará."
       );
       app.relaunch();
       app.exit(1);
@@ -219,4 +218,14 @@ export class AppManager {
   private setupAutoBackup(): void {
     backupService.scheduleDailyBackup();
   }
-} 
+
+  /**
+   * Notifica al renderer que hay una actualización disponible
+   */
+  public notifyUpdateAvailable(): void {
+    const mainWindow = this.getMainWindow();
+    if (mainWindow && mainWindow.webContents) {
+      mainWindow.webContents.send("app:update-available");
+    }
+  }
+}

@@ -62,10 +62,18 @@ export function useStatistics() {
             });
           } catch (err: any) {
             setError(err?.message || "Error al obtener estadísticas");
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("api-error"));
+            }
           }
         }
       )
-      .catch((err: any) => setError(err?.message || "Error de conexión"))
+      .catch((err: any) => {
+        setError(err?.message || "Error de conexión");
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("api-error"));
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 

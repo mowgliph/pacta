@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useNotification } from "@/lib/useNotification";
 import { useFileDialog } from "@/lib/useFileDialog";
+import { DropZone } from "@/components/ui/DropZone";
 
 const initialState = {
   number: "",
@@ -62,24 +63,31 @@ export default function NewContractPage() {
     setError(null);
     setLoading(true);
     try {
-      let attachmentPath = null;
+      let documentId = null;
       if (file) {
-        // Leer el archivo como buffer y enviarlo por IPC
-        const arrayBuffer = await file.arrayBuffer?.();
-        const buffer = arrayBuffer ? Buffer.from(arrayBuffer) : undefined;
+        const arrayBuffer = await file.arrayBuffer();
         // @ts-ignore
-        const uploadRes = await window.Electron.contracts.upload({
-          name: file.name,
-          data: buffer,
-          type: file.type || "application/pdf",
-        });
-        attachmentPath = uploadRes?.path;
+        const uploadRes = await window.Electron.ipcRenderer.invoke(
+          "documents:upload",
+          {
+            contractId: undefined, // Se asociará después
+            uploadedById: undefined, // Rellenar con el usuario actual si está disponible
+          },
+          {
+            name: file.name,
+            type: file.type || "application/pdf",
+            data: Array.from(new Uint8Array(arrayBuffer)),
+          }
+        );
+        if (uploadRes?.success && uploadRes.data?.id) {
+          documentId = uploadRes.data.id;
+        }
       }
       // @ts-ignore
       const res = await window.Electron.contracts.create({
         ...form,
         amount: parseFloat(form.amount),
-        attachment: attachmentPath,
+        documentId, // Asociar el documento al contrato
       });
       if (res.success) {
         notify({
@@ -193,25 +201,21 @@ export default function NewContractPage() {
           <label className="block text-sm font-medium mb-1">
             Adjuntar documento (opcional)
           </label>
-          <div className="flex gap-2 items-center">
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx"
-              onChange={handleFileChange}
-              aria-label="Seleccionar archivo adjunto"
-              tabIndex={0}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleSelectFromSystem}
-              aria-label="Seleccionar desde sistema"
-              tabIndex={0}
-            >
-              Seleccionar desde sistema
-            </Button>
-            {file && <span className="text-xs ml-2">{file.name}</span>}
+          <div className="flex flex-col gap-2">
+            <DropZone onFileDrop={setFile} />
+            <div className="flex gap-2 items-center">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleSelectFromSystem}
+                aria-label="Seleccionar desde sistema"
+                tabIndex={0}
+              >
+                Seleccionar desde sistema
+              </Button>
+              {file && <span className="text-xs ml-2">{file.name}</span>}
+            </div>
           </div>
         </div>
         <Button type="submit" className="w-fit mt-2" disabled={loading}>

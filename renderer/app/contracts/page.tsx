@@ -19,8 +19,12 @@ import {
   ContextMenuAction,
 } from "@/components/ui/context-menu";
 import { useFileDialog } from "@/lib/useFileDialog";
+import { Spinner } from "@/components/ui/spinner";
+import { useCleanup } from "@/lib/useCleanup";
 
 const tipos = ["Cliente", "Proveedor"] as const;
+
+const PAGE_SIZE = 10;
 
 export default function ContractsPage() {
   const [tipo, setTipo] = useState<"Cliente" | "Proveedor">("Cliente");
@@ -38,6 +42,10 @@ export default function ContractsPage() {
       c.description.toLowerCase().includes(search.toLowerCase())
   );
 
+  const [page, setPage] = useState(1);
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   // Notificación de contratos próximos a vencer (solo una vez por render)
   useEffect(() => {
     const proximo = contracts.find((c) => c.status === "Próximo a Vencer");
@@ -51,6 +59,13 @@ export default function ContractsPage() {
     // Solo al cargar la lista
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contracts.length]);
+
+  // Limpieza de datos temporales/listeners
+  useCleanup(() => {
+    setSearch("");
+    setPage(1);
+    // window.removeEventListener("resize", ...);
+  });
 
   const handleCopyNumber = (number: string) => {
     navigator.clipboard.writeText(number);
@@ -85,7 +100,11 @@ export default function ContractsPage() {
   };
 
   if (loading) {
-    return <div className="text-[#757575]">Cargando contratos...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Spinner size="lg" />
+      </div>
+    );
   }
 
   return (
@@ -172,7 +191,7 @@ export default function ContractsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((c) => {
+                {paginated.map((c) => {
                   const actions: ContextMenuAction[] = [
                     {
                       label: "Ver detalle",
@@ -326,6 +345,31 @@ export default function ContractsPage() {
           </div>
         )}
       </section>
+
+      {/* Paginación */}
+      {totalPages > 1 && (
+        <div className="flex justify-end gap-2 mt-4">
+          <button
+            className="px-3 py-1 rounded bg-[#D6E8EE] text-[#001B48] disabled:opacity-50"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            aria-label="Página anterior"
+          >
+            Anterior
+          </button>
+          <span className="px-2 text-sm text-[#757575]">
+            Página {page} de {totalPages}
+          </span>
+          <button
+            className="px-3 py-1 rounded bg-[#D6E8EE] text-[#001B48] disabled:opacity-50"
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            aria-label="Página siguiente"
+          >
+            Siguiente
+          </button>
+        </div>
+      )}
 
       {/* Animaciones gestionadas por TailwindCSS, no se requiere <style> */}
     </div>

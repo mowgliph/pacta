@@ -32,7 +32,11 @@ export const useSupplements = (contractId: string) => {
       );
       setSupplements(handleIpcResponse<Supplement[]>(res));
     } catch (err: any) {
-      setError(err?.message || "No se pudieron obtener los suplementos.");
+      setError(err?.message || "Error al obtener suplementos");
+      // Lanzar evento global para manejo de error 500
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("api-error"));
+      }
     } finally {
       setIsLoading(false);
     }

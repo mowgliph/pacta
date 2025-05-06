@@ -39,14 +39,19 @@ export function useContractDetail(id: string) {
           setSupplements(handleIpcResponse<Supplement[]>(sRes));
           setDocuments(handleIpcResponse<any[]>(dRes));
         } catch (err: any) {
-          setError(
-            err?.message ||
-              "No se pudo cargar el contrato, suplementos o documentos"
-          );
+          setError(err?.message || "Error al obtener detalles del contrato");
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("api-error"));
+          }
         }
       })
       .catch((err: any) => {
-        if (mounted) setError(err?.message || "Error de conexión");
+        if (mounted) {
+          setError(err?.message || "Error de conexión");
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("api-error"));
+          }
+        }
       })
       .finally(() => {
         if (mounted) setLoading(false);

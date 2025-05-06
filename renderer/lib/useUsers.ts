@@ -30,10 +30,18 @@ export function useUsers() {
           setUsers(handleIpcResponse<User[]>(res));
         } catch (err: any) {
           setError(err?.message || "Error al obtener usuarios");
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("api-error"));
+          }
         }
       })
       .catch((err: any) => {
-        if (mounted) setError(err?.message || "Error de conexión");
+        if (mounted) {
+          setError(err?.message || "Error de conexión");
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("api-error"));
+          }
+        }
       })
       .finally(() => {
         if (mounted) setLoading(false);

@@ -9,6 +9,7 @@ import { FilePlus, ArrowLeft } from "lucide-react";
 import { useCreateSupplement } from "@/lib/useCreateSupplement";
 import { useNotification } from "@/lib/useNotification";
 import { useFileDialog } from "@/lib/useFileDialog";
+import { DropZone } from "@/components/ui/DropZone";
 
 const campos = [
   { value: "amount", label: "Monto" },
@@ -133,34 +134,33 @@ export default function NewSupplementPage() {
               <label className="block text-sm font-medium mb-1">
                 Adjuntar documento (opcional)
               </label>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="file"
-                  accept=".pdf,.doc,.docx"
-                  onChange={handleFileChange}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    const result = await openFile({
-                      title: "Seleccionar documento",
-                      filters: [
-                        {
-                          name: "Documentos",
-                          extensions: ["pdf", "doc", "docx"],
-                        },
-                      ],
-                    });
-                    if (result && result.filePaths && result.filePaths[0]) {
-                      // Leer el archivo seleccionado y convertirlo a File
-                      // (esto requiere lógica adicional si se desea cargar el archivo al backend)
-                    }
-                  }}
-                >
-                  Seleccionar desde sistema
-                </Button>
+              <div className="flex flex-col gap-2">
+                <DropZone onFileDrop={setFile} />
+                <div className="flex gap-2 items-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const result = await openFile({
+                        title: "Seleccionar documento",
+                        filters: [
+                          {
+                            name: "Documentos",
+                            extensions: ["pdf", "doc", "docx"],
+                          },
+                        ],
+                      });
+                      if (result && result.filePaths && result.filePaths[0]) {
+                        // Leer el archivo seleccionado y convertirlo a File si es necesario
+                        // (esto requiere lógica adicional si se desea cargar el archivo al backend)
+                      }
+                    }}
+                  >
+                    Seleccionar desde sistema
+                  </Button>
+                  {file && <span className="text-xs ml-2">{file.name}</span>}
+                </div>
               </div>
             </div>
             <Button type="submit" className="w-fit mt-2" disabled={loading}>

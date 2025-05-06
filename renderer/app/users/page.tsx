@@ -95,6 +95,11 @@ export default function UsersPage() {
                               body: "No se pudo actualizar el estado del usuario.",
                               variant: "destructive",
                             });
+                            if (typeof window !== "undefined") {
+                              window.dispatchEvent(
+                                new CustomEvent("api-error")
+                              );
+                            }
                           }
                         },
                       },

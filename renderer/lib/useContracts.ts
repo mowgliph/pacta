@@ -37,6 +37,10 @@ export function useContracts(tipo?: "Cliente" | "Proveedor") {
       })
       .catch((err: any) => {
         if (mounted) setError(err?.message || "Error de conexión");
+        // Lanzar evento global para manejo de error 500
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("api-error"));
+        }
       })
       .finally(() => {
         if (mounted) setLoading(false);

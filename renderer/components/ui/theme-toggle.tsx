@@ -1,10 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Button } from '../ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { useThemeStore } from '../../store/theme';
-import { Toast, ToastProvider, ToastViewport, ToastTitle, ToastDescription } from './toast';
+import React, { useEffect, useRef, useState } from "react";
+import { Button } from "../ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { useThemeStore } from "../../store/theme";
+import {
+  Toast,
+  ToastProvider,
+  ToastViewport,
+  ToastTitle,
+  ToastDescription,
+} from "./toast";
 
-type Theme = 'light' | 'dark' | 'system';
+type Theme = "light" | "dark" | "system";
 
 interface ThemeOption {
   value: Theme;
@@ -14,7 +20,9 @@ interface ThemeOption {
 
 export function ThemeToggle() {
   const theme = useThemeStore((state) => state.theme as Theme);
-  const setTheme = useThemeStore((state) => state.setTheme as (theme: Theme) => void);
+  const setTheme = useThemeStore(
+    (state) => state.setTheme as (theme: Theme) => void
+  );
   const initialized = useRef(false);
   const [saving, setSaving] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -23,14 +31,16 @@ export function ThemeToggle() {
   useEffect(() => {
     if (
       !initialized.current &&
-      theme === 'system' &&
+      theme === "system" &&
       // @ts-ignore
       window.Electron?.theme?.getSystemTheme
     ) {
       // @ts-ignore
-      window.Electron.theme.getSystemTheme().then((systemTheme: 'light' | 'dark') => {
-        setTheme(systemTheme);
-      });
+      window.Electron.theme
+        .getSystemTheme()
+        .then((systemTheme: "light" | "dark") => {
+          setTheme(systemTheme);
+        });
       initialized.current = true;
     }
     // eslint-disable-next-line
@@ -43,12 +53,26 @@ export function ThemeToggle() {
       // @ts-ignore
       const res = await window.Electron?.theme?.setAppTheme?.(value);
       if (res?.success) {
-        setToastMsg(`Tema "${value === 'light' ? 'Claro' : value === 'dark' ? 'Oscuro' : 'Sistema'}" guardado en preferencias.`);
+        setToastMsg(
+          `Tema "${
+            value === "light"
+              ? "Claro"
+              : value === "dark"
+              ? "Oscuro"
+              : "Sistema"
+          }" guardado en preferencias.`
+        );
       } else {
-        setToastError('No se pudo guardar la preferencia de tema.');
+        setToastError("No se pudo guardar la preferencia de tema.");
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("api-error"));
+        }
       }
     } catch {
-      setToastError('No se pudo guardar la preferencia de tema.');
+      setToastError("No se pudo guardar la preferencia de tema.");
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("api-error"));
+      }
     } finally {
       setSaving(false);
     }
@@ -56,8 +80,8 @@ export function ThemeToggle() {
 
   const themes: ThemeOption[] = [
     {
-      value: 'light',
-      label: 'Claro',
+      value: "light",
+      label: "Claro",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -84,8 +108,8 @@ export function ThemeToggle() {
       ),
     },
     {
-      value: 'dark',
-      label: 'Oscuro',
+      value: "dark",
+      label: "Oscuro",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -104,8 +128,8 @@ export function ThemeToggle() {
       ),
     },
     {
-      value: 'system',
-      label: 'Sistema',
+      value: "system",
+      label: "Sistema",
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -132,8 +156,12 @@ export function ThemeToggle() {
       <ToastProvider>
         <Popover>
           <PopoverTrigger asChild>
-            <Button variant="ghost" size="icon" className="transition duration-200 focus-visible:ring-2">
-              {theme === 'light' && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="transition duration-200 focus-visible:ring-2"
+            >
+              {theme === "light" && (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="20"
@@ -156,7 +184,7 @@ export function ThemeToggle() {
                   <path d="M19.07 4.93l-1.41 1.41" />
                 </svg>
               )}
-              {theme === 'dark' && (
+              {theme === "dark" && (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="20"
@@ -171,7 +199,7 @@ export function ThemeToggle() {
                   <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z" />
                 </svg>
               )}
-              {theme === 'system' && (
+              {theme === "system" && (
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   width="20"
@@ -235,7 +263,11 @@ export function ThemeToggle() {
           </Toast>
         )}
         {toastError && (
-          <Toast open variant="destructive" onOpenChange={() => setToastError(null)}>
+          <Toast
+            open
+            variant="destructive"
+            onOpenChange={() => setToastError(null)}
+          >
             <ToastTitle>Error</ToastTitle>
             <ToastDescription>{toastError}</ToastDescription>
           </Toast>
@@ -243,4 +275,4 @@ export function ThemeToggle() {
       </ToastProvider>
     </>
   );
-} 
+}
