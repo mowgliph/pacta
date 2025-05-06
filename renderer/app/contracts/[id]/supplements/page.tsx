@@ -4,8 +4,9 @@ import { useParams, useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { FileDown, Eye, ArrowLeft } from "lucide-react";
+import { FileDown, Eye, ArrowLeft, Copy, Trash2 } from "lucide-react";
 import { useSupplements } from "@/lib/useSupplements";
+import { ContextMenu, ContextMenuAction } from "@/components/ui/context-menu";
 
 export default function SupplementsListPage() {
   const params = useParams<{ id: string }>();
@@ -22,6 +23,11 @@ export default function SupplementsListPage() {
   useEffect(() => {
     fetchSupplements();
   }, [fetchSupplements]);
+
+  const handleCopyField = (field: string) => {
+    navigator.clipboard.writeText(field);
+    // Puedes usar un toast/notify si lo deseas
+  };
 
   if (isLoading) {
     return (
@@ -80,46 +86,75 @@ export default function SupplementsListPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {supplements.map((s) => (
-                    <tr
-                      key={s.id}
-                      className="even:bg-[#F9FBFC] hover:bg-[#D6E8EE] transition-colors"
-                    >
-                      <td className="px-4 py-2">
-                        {new Date(s.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-4 py-2">{s.field}</td>
-                      <td className="px-4 py-2">{s.oldValue}</td>
-                      <td className="px-4 py-2">{s.newValue}</td>
-                      <td className="px-4 py-2">{s.description}</td>
-                      <td className="px-4 py-2 flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() =>
-                            router.push(
-                              `/contracts/${contractId}/supplements/${s.id}`
-                            )
+                  {supplements.map((s) => {
+                    const actions = [
+                      {
+                        label: "Ver detalle",
+                        icon: <Eye size={16} />,
+                        onClick: () =>
+                          router.push(
+                            `/contracts/${contractId}/supplements/${s.id}`
+                          ),
+                      },
+                      s.fileName
+                        ? {
+                            label: "Descargar",
+                            icon: <FileDown size={16} />,
+                            onClick: () => downloadSupplement(s.id),
                           }
+                        : undefined,
+                      {
+                        label: "Copiar campo",
+                        icon: <Copy size={16} />,
+                        onClick: () => handleCopyField(s.field),
+                      },
+                      // Puedes agregar eliminar si el flujo lo permite
+                    ].filter(Boolean) as ContextMenuAction[];
+                    return (
+                      <ContextMenu key={s.id} actions={actions}>
+                        <tr
+                          className="even:bg-[#F9FBFC] hover:bg-[#D6E8EE] transition-colors cursor-pointer select-none"
                           tabIndex={0}
-                          aria-label="Ver suplemento"
+                          aria-label={`Suplemento: ${s.id}`}
                         >
-                          <Eye size={16} className="mr-1" /> Ver
-                        </Button>
-                        {s.fileName && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => downloadSupplement(s.id)}
-                            tabIndex={0}
-                            aria-label="Descargar suplemento"
-                          >
-                            <FileDown size={16} className="mr-1" /> Descargar
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                          <td className="px-4 py-2">
+                            {new Date(s.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="px-4 py-2">{s.field}</td>
+                          <td className="px-4 py-2">{s.oldValue}</td>
+                          <td className="px-4 py-2">{s.newValue}</td>
+                          <td className="px-4 py-2">{s.description}</td>
+                          <td className="px-4 py-2 flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                router.push(
+                                  `/contracts/${contractId}/supplements/${s.id}`
+                                )
+                              }
+                              tabIndex={0}
+                              aria-label="Ver suplemento"
+                            >
+                              <Eye size={16} className="mr-1" /> Ver
+                            </Button>
+                            {s.fileName && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => downloadSupplement(s.id)}
+                                tabIndex={0}
+                                aria-label="Descargar suplemento"
+                              >
+                                <FileDown size={16} className="mr-1" />{" "}
+                                Descargar
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      </ContextMenu>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
