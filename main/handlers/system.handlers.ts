@@ -7,6 +7,7 @@ import { shell } from "electron";
 import { config } from "../utils/config";
 import fs from "fs";
 import path from "path";
+import { withErrorHandling } from "../utils/error-handler";
 
 const CONFIG_PATH = path.join(
   require("electron").app.getPath("userData"),
@@ -46,38 +47,29 @@ function persistConfig(): void {
 
 export function registerSystemHandlers(eventManager: EventManager): void {
   const handlers: IpcHandlerMap = {
-    [IPC_CHANNELS.SYSTEM.OPEN_FILE]: async (event, filePath) => {
-      logger.info("Apertura de archivo solicitada", { filePath });
-      try {
+    [IPC_CHANNELS.SYSTEM.OPEN_FILE]: withErrorHandling(
+      IPC_CHANNELS.SYSTEM.OPEN_FILE,
+      async (event: Electron.IpcMainInvokeEvent, filePath: string) => {
         const result = await shell.openPath(filePath);
-        if (result) {
-          logger.error("Error al abrir archivo:", result);
-          throw new Error(result);
-        }
-        logger.info("Archivo abierto correctamente:", filePath);
-        return true;
-      } catch (error) {
-        logger.error("Error al abrir archivo:", error);
-        throw error;
+        if (result) throw new Error(result);
+        return { success: true, data: true };
       }
-    },
-
-    [IPC_CHANNELS.SYSTEM.SAVE_FILE]: async (event, filePath, content) => {
-      logger.info("Guardado de archivo solicitado", { filePath });
-      try {
+    ),
+    [IPC_CHANNELS.SYSTEM.SAVE_FILE]: withErrorHandling(
+      IPC_CHANNELS.SYSTEM.SAVE_FILE,
+      async (
+        event: Electron.IpcMainInvokeEvent,
+        filePath: string,
+        content: any
+      ) => {
         fs.mkdirSync(path.dirname(filePath), { recursive: true });
         fs.writeFileSync(filePath, content);
-        logger.info("Archivo guardado correctamente:", filePath);
-        return true;
-      } catch (error) {
-        logger.error("Error al guardar archivo:", error);
-        throw error;
+        return { success: true, data: true };
       }
-    },
-
-    [IPC_CHANNELS.SYSTEM.BACKUP]: async (event) => {
-      logger.info("Creación de backup solicitada");
-      try {
+    ),
+    [IPC_CHANNELS.SYSTEM.BACKUP]: withErrorHandling(
+      IPC_CHANNELS.SYSTEM.BACKUP,
+      async (event: Electron.IpcMainInvokeEvent) => {
         backupService.runBackup();
         const files = require("fs").readdirSync(
           require("path").resolve(__dirname, "../../data/backups")
@@ -86,47 +78,31 @@ export function registerSystemHandlers(eventManager: EventManager): void {
           (f: string) => f.startsWith("backup_") && f.endsWith(".sqlite")
         );
         const lastBackup = backups.sort().reverse()[0];
-        return { path: lastBackup };
-      } catch (error) {
-        logger.error("Error al crear backup manual:", error);
-        throw error;
+        return { success: true, data: { path: lastBackup } };
       }
-    },
-
-    [IPC_CHANNELS.SYSTEM.RESTORE]: async (event, backupId) => {
-      logger.info("Restauración de backup solicitada", { backupId });
-      try {
+    ),
+    [IPC_CHANNELS.SYSTEM.RESTORE]: withErrorHandling(
+      IPC_CHANNELS.SYSTEM.RESTORE,
+      async (event: Electron.IpcMainInvokeEvent, backupId: string) => {
         backupService.restoreBackup(backupId);
-        return true;
-      } catch (error) {
-        logger.error("Error al restaurar backup:", error);
-        throw error;
+        return { success: true, data: true };
       }
-    },
-
-    [IPC_CHANNELS.SYSTEM.SETTINGS.GET]: async (event, key) => {
-      logger.info("Obtención de configuración solicitada", { key });
-      try {
+    ),
+    [IPC_CHANNELS.SYSTEM.SETTINGS.GET]: withErrorHandling(
+      IPC_CHANNELS.SYSTEM.SETTINGS.GET,
+      async (event: Electron.IpcMainInvokeEvent, key: string) => {
         const value = getConfigValue(key);
-        return { value };
-      } catch (error) {
-        logger.error("Error al obtener configuración:", error);
-        throw error;
+        return { success: true, data: value };
       }
-    },
-
-    [IPC_CHANNELS.SYSTEM.SETTINGS.UPDATE]: async (event, key, value) => {
-      logger.info("Actualización de configuración solicitada", { key, value });
-      try {
+    ),
+    [IPC_CHANNELS.SYSTEM.SETTINGS.UPDATE]: withErrorHandling(
+      IPC_CHANNELS.SYSTEM.SETTINGS.UPDATE,
+      async (event: Electron.IpcMainInvokeEvent, key: string, value: any) => {
         setConfigValue(key, value);
         persistConfig();
-        return true;
-      } catch (error) {
-        logger.error("Error al actualizar configuración:", error);
-        throw error;
+        return { success: true, data: true };
       }
-    },
+    ),
   };
-
   eventManager.registerHandlers(handlers);
 }

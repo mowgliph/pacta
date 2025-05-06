@@ -7,6 +7,7 @@ import { prisma } from "../utils/prisma";
 import fs from "fs";
 import path from "path";
 import { shell } from "electron";
+import { withErrorHandling } from "../utils/error-handler";
 
 const DOCUMENTS_DIR = path.resolve(__dirname, "../../data/documents");
 const EXPORTS_DIR = path.resolve(__dirname, "../../data/documents/exports");
@@ -57,56 +58,43 @@ function buildDocumentWhere(filters: any = {}) {
 
 export function registerDocumentHandlers(eventManager: EventManager): void {
   const handlers: IpcHandlerMap = {
-    [IPC_CHANNELS.DATA.DOCUMENTS.LIST]: async (event, filters) => {
-      logger.info("Listado de documentos solicitado", { filters });
-      try {
+    [IPC_CHANNELS.DATA.DOCUMENTS.LIST]: withErrorHandling(
+      IPC_CHANNELS.DATA.DOCUMENTS.LIST,
+      async (event: Electron.IpcMainInvokeEvent, filters: any) => {
         const where = buildDocumentWhere(filters);
         const documents = await prisma.document.findMany({ where });
-        return documents;
-      } catch (error) {
-        logger.error("Error al listar documentos:", error);
-        throw error;
+        return { success: true, data: documents };
       }
-    },
-
-    [IPC_CHANNELS.DATA.DOCUMENTS.GET_BY_CONTRACT]: async (
-      event,
-      contractId
-    ) => {
-      logger.info("Documentos por contrato solicitado", { contractId });
-      try {
+    ),
+    [IPC_CHANNELS.DATA.DOCUMENTS.GET_BY_CONTRACT]: withErrorHandling(
+      IPC_CHANNELS.DATA.DOCUMENTS.GET_BY_CONTRACT,
+      async (event: Electron.IpcMainInvokeEvent, contractId: string) => {
         const documents = await prisma.document.findMany({
           where: { contractId },
         });
-        return documents;
-      } catch (error) {
-        logger.error("Error al obtener documentos por contrato:", error);
-        throw error;
+        return { success: true, data: documents };
       }
-    },
-
-    [IPC_CHANNELS.DATA.DOCUMENTS.GET_BY_SUPPLEMENT]: async (
-      event,
-      supplementId
-    ) => {
-      logger.info("Documentos por suplemento solicitado", { supplementId });
-      try {
+    ),
+    [IPC_CHANNELS.DATA.DOCUMENTS.GET_BY_SUPPLEMENT]: withErrorHandling(
+      IPC_CHANNELS.DATA.DOCUMENTS.GET_BY_SUPPLEMENT,
+      async (event: Electron.IpcMainInvokeEvent, supplementId: string) => {
         const documents = await prisma.document.findMany({
           where: { supplementId },
         });
-        return documents;
-      } catch (error) {
-        logger.error("Error al obtener documentos por suplemento:", error);
-        throw error;
+        return { success: true, data: documents };
       }
-    },
-
-    [IPC_CHANNELS.DATA.DOCUMENTS.UPLOAD]: async (event, meta, attachment) => {
-      logger.info("Subida de documento solicitada", {
-        meta,
-        fileName: attachment?.name,
-      });
-      try {
+    ),
+    [IPC_CHANNELS.DATA.DOCUMENTS.UPLOAD]: withErrorHandling(
+      IPC_CHANNELS.DATA.DOCUMENTS.UPLOAD,
+      async (
+        event: Electron.IpcMainInvokeEvent,
+        meta: any,
+        attachment: any
+      ) => {
+        logger.info("Subida de documento solicitada", {
+          meta,
+          fileName: attachment?.name,
+        });
         if (
           !attachment ||
           !attachment.name ||
@@ -144,16 +132,12 @@ export function registerDocumentHandlers(eventManager: EventManager): void {
           },
         });
         logger.info("Documento guardado en:", filePath);
-        return document;
-      } catch (error) {
-        logger.error("Error al subir documento:", error);
-        throw error;
+        return { success: true, data: document };
       }
-    },
-
-    [IPC_CHANNELS.DATA.DOCUMENTS.DOWNLOAD]: async (event, id) => {
-      logger.info("Descarga de documento solicitada", { id });
-      try {
+    ),
+    [IPC_CHANNELS.DATA.DOCUMENTS.DOWNLOAD]: withErrorHandling(
+      IPC_CHANNELS.DATA.DOCUMENTS.DOWNLOAD,
+      async (event: Electron.IpcMainInvokeEvent, id: string) => {
         const doc = await prisma.document.findUnique({
           where: { id },
           select: { path: true },
@@ -166,16 +150,12 @@ export function registerDocumentHandlers(eventManager: EventManager): void {
           where: { id },
           data: { downloads: { increment: 1 } },
         });
-        return { path: absPath };
-      } catch (error) {
-        logger.error("Error al descargar documento:", error);
-        throw error;
+        return { success: true, data: { path: absPath } };
       }
-    },
-
-    [IPC_CHANNELS.DATA.DOCUMENTS.OPEN]: async (event, id) => {
-      logger.info("Apertura de documento solicitada", { id });
-      try {
+    ),
+    [IPC_CHANNELS.DATA.DOCUMENTS.OPEN]: withErrorHandling(
+      IPC_CHANNELS.DATA.DOCUMENTS.OPEN,
+      async (event: Electron.IpcMainInvokeEvent, id: string) => {
         const doc = await prisma.document.findUnique({
           where: { id },
           select: { path: true },
@@ -185,16 +165,12 @@ export function registerDocumentHandlers(eventManager: EventManager): void {
         if (!fs.existsSync(absPath))
           throw new Error("Archivo no encontrado en disco");
         await shell.openPath(absPath);
-        return true;
-      } catch (error) {
-        logger.error("Error al abrir documento:", error);
-        throw error;
+        return { success: true, data: true };
       }
-    },
-
-    [IPC_CHANNELS.DATA.DOCUMENTS.DELETE]: async (event, id) => {
-      logger.info("Eliminación de documento solicitada", { id });
-      try {
+    ),
+    [IPC_CHANNELS.DATA.DOCUMENTS.DELETE]: withErrorHandling(
+      IPC_CHANNELS.DATA.DOCUMENTS.DELETE,
+      async (event: Electron.IpcMainInvokeEvent, id: string) => {
         const doc = await prisma.document.findUnique({
           where: { id },
           select: { path: true },
@@ -206,13 +182,9 @@ export function registerDocumentHandlers(eventManager: EventManager): void {
           }
         }
         await prisma.document.delete({ where: { id } });
-        return true;
-      } catch (error) {
-        logger.error("Error al eliminar documento:", error);
-        throw error;
+        return { success: true, data: true };
       }
-    },
+    ),
   };
-
   eventManager.registerHandlers(handlers);
 }

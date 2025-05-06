@@ -1,26 +1,24 @@
-import { EventManager } from '../events/event-manager';
-import { IPC_CHANNELS } from '../channels/ipc-channels';
-import { IpcHandlerMap } from '../channels/types';
-import { logger } from '../utils/logger';
-import { prisma } from '../utils/prisma';
+import { EventManager } from "../events/event-manager";
+import { IPC_CHANNELS } from "../channels/ipc-channels";
+import { IpcHandlerMap } from "../channels/types";
+import { logger } from "../utils/logger";
+import { prisma } from "../utils/prisma";
+import { withErrorHandling } from "../utils/error-handler";
 
 export function registerRoleHandlers(eventManager: EventManager): void {
   const handlers: IpcHandlerMap = {
-    [IPC_CHANNELS.DATA.ROLES.LIST]: async () => {
-      logger.info('Listado de roles solicitado');
-      try {
-        return await prisma.role.findMany();
-      } catch (error) {
-        logger.error('Error al listar roles:', error);
-        throw error;
+    [IPC_CHANNELS.DATA.ROLES.LIST]: withErrorHandling(
+      IPC_CHANNELS.DATA.ROLES.LIST,
+      async () => {
+        const roles = await prisma.role.findMany();
+        return { success: true, data: roles };
       }
-    },
-
-    [IPC_CHANNELS.DATA.ROLES.CREATE]: async (event, roleData) => {
-      logger.info('Creación de rol solicitada', { roleData });
-      try {
+    ),
+    [IPC_CHANNELS.DATA.ROLES.CREATE]: withErrorHandling(
+      IPC_CHANNELS.DATA.ROLES.CREATE,
+      async (event: Electron.IpcMainInvokeEvent, roleData: any) => {
         if (!roleData.name || !roleData.description || !roleData.permissions) {
-          throw new Error('Faltan campos obligatorios');
+          throw new Error("Faltan campos obligatorios");
         }
         const role = await prisma.role.create({
           data: {
@@ -28,19 +26,15 @@ export function registerRoleHandlers(eventManager: EventManager): void {
             description: roleData.description,
             permissions: roleData.permissions,
             isSystem: !!roleData.isSystem,
-          }
+          },
         });
-        return role;
-      } catch (error) {
-        logger.error('Error al crear rol:', error);
-        throw error;
+        return { success: true, data: role };
       }
-    },
-
-    [IPC_CHANNELS.DATA.ROLES.UPDATE]: async (event, roleData) => {
-      logger.info('Actualización de rol solicitada', { roleData });
-      try {
-        if (!roleData.id) throw new Error('ID requerido');
+    ),
+    [IPC_CHANNELS.DATA.ROLES.UPDATE]: withErrorHandling(
+      IPC_CHANNELS.DATA.ROLES.UPDATE,
+      async (event: Electron.IpcMainInvokeEvent, roleData: any) => {
+        if (!roleData.id) throw new Error("ID requerido");
         const role = await prisma.role.update({
           where: { id: roleData.id },
           data: {
@@ -48,26 +42,18 @@ export function registerRoleHandlers(eventManager: EventManager): void {
             description: roleData.description,
             permissions: roleData.permissions,
             isSystem: roleData.isSystem,
-          }
+          },
         });
-        return role;
-      } catch (error) {
-        logger.error('Error al actualizar rol:', error);
-        throw error;
+        return { success: true, data: role };
       }
-    },
-
-    [IPC_CHANNELS.DATA.ROLES.DELETE]: async (event, id) => {
-      logger.info('Eliminación de rol solicitada', { id });
-      try {
+    ),
+    [IPC_CHANNELS.DATA.ROLES.DELETE]: withErrorHandling(
+      IPC_CHANNELS.DATA.ROLES.DELETE,
+      async (event: Electron.IpcMainInvokeEvent, id: string) => {
         await prisma.role.delete({ where: { id } });
-        return true;
-      } catch (error) {
-        logger.error('Error al eliminar rol:', error);
-        throw error;
+        return { success: true, data: true };
       }
-    }
+    ),
   };
-
   eventManager.registerHandlers(handlers);
-} 
+}
