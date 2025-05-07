@@ -3,7 +3,7 @@
   "name": "pacta",
   "description": "Plataforma de Automatización y Control de Contratos Empresariales",
   "version": "1.0.0",
-  "author": "Pacta Inc. <contact@pacta.com>",
+  "author": "Pacta Inc. <contact@pacta.local>",
   "main": "main/index.ts",
   "scripts": {
     "dev:renderer": "next dev renderer",
@@ -107,6 +107,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "wait-on": "^8.0.3"
   }
 }
