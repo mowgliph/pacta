@@ -3,6 +3,7 @@
   "compilerOptions": {
     "target": "esnext",
     "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "forceConsistentCasingInFileNames": true,
@@ -15,13 +16,13 @@
     "jsx": "preserve",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./renderer/*"],
-      "@app/*": ["./renderer/app/*"],
-      "@components/*": ["./renderer/components/*"],
-      "@lib/*": ["./renderer/lib/*"],
-      "@store/*": ["./renderer/store/*"],
-      "@styles/*": ["./renderer/styles/*"],
-      "@assets/*": ["./assets/*"]
+      "@/*": ["./*"],
+      "@app/*": ["./app/*"],
+      "@components/*": ["./components/*"],
+      "@lib/*": ["./lib/*"],
+      "@store/*": ["./store/*"],
+      "@styles/*": ["./styles/*"],
+      "@assets/*": ["../assets/*"]
     },
     "incremental": true,
     "plugins": [

@@ -1,4 +1,3 @@
-"use client";
 import "../styles/globals.css";
 import { ReactNode } from "react";
 import { ClientRootLayout } from "../components/ui/ClientRootLayout";
