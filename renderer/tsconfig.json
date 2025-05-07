@@ -1,12 +1,31 @@
 {
-  "extends": "../tsconfig.json",
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    "**/*.d.ts",
-    ".next/types/**/*.ts",
-    "../app/types/**/*.ts"
-  ],
-  "exclude": ["node_modules"]
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "target": "es5",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./renderer/*"],
+      "@app/*": ["./renderer/app/*"],
+      "@components/*": ["./renderer/components/*"],
+      "@lib/*": ["./renderer/lib/*"],
+      "@store/*": ["./renderer/store/*"],
+      "@styles/*": ["./renderer/styles/*"],
+      "@assets/*": ["./assets/*"]
+    },
+    "incremental": true
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.d.ts"],
+  "exclude": ["node_modules", "main", "resources", "app", ".next", "dist"]
 }

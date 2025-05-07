@@ -100,7 +100,7 @@ export class WindowManager {
 
       // Cargar la aplicación
       if (isDevelopment) {
-        await window.loadURL("http://localhost:8888");
+        await window.loadURL("http://localhost:3000");
         window.webContents.openDevTools();
       } else {
         await window.loadFile(join(app.getAppPath(), "app", "index.html"));

@@ -7,19 +7,22 @@
   "main": "main/index.ts",
   "scripts": {
     "dev:renderer": "next dev renderer",
-    "dev:main": "npm run build:main",
+    "dev:main": "ts-node MAIN/index.ts",
     "dev": "concurrently \"pnpm dev:renderer\" \"pnpm dev:main\"",
     "build:renderer": "next build renderer",
-    "build:main": "tsc -p main",
+    "build:main": "tsc -p MAIN",
     "build": "pnpm build:renderer && pnpm build:main",
     "start": "electron .",
+    "dev:start": "electron .",
     "postinstall": "electron-builder install-app-deps",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "node prisma/seed.js",
-    "db:setup": "npm run prisma:generate && npm run prisma:migrate && npm run prisma:seed",
+    "db:setup": "pnpm prisma:generate && pnpm prisma:migrate && pnpm prisma:seed",
     "build:dist": "electron-builder",
-    "dist": "pnpm build && pnpm build:dist"
+    "dist": "pnpm build && pnpm build:dist",
+    "electron:dev": "concurrently \"pnpm dev:renderer\" \"wait-on http://localhost:3000 && pnpm dev:main\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron:build": "pnpm build && electron ."
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
