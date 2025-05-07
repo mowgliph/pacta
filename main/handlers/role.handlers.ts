@@ -1,7 +1,6 @@
 import { EventManager } from "../events/event-manager";
 import { IPC_CHANNELS } from "../channels/ipc-channels";
 import { IpcHandlerMap } from "../channels/types";
-import { logger } from "../utils/logger";
 import { prisma } from "../utils/prisma";
 import { withErrorHandling } from "../utils/error-handler";
 

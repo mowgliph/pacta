@@ -1,4 +1,3 @@
-import { dialog } from "electron";
 import * as XLSX from "xlsx";
 import { app } from "electron";
 import path from "path";

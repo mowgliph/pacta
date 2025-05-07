@@ -3,7 +3,7 @@ import { IPC_CHANNELS } from "../channels/ipc-channels";
 import { IpcHandlerMap } from "../channels/types";
 import { logger } from "../utils/logger";
 import { prisma } from "../utils/prisma";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { withErrorHandling } from "../utils/error-handler";

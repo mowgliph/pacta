@@ -1,6 +1,6 @@
 import { prisma } from "../utils/prisma";
 import { logger } from "../utils/logger";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { setAuthToken, clearAuth } from "../store/store-manager";
 import { rateLimiter } from "./rate-limiter";
