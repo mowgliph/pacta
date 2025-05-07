@@ -7,10 +7,10 @@
   "main": "main/index.ts",
   "scripts": {
     "dev:renderer": "next dev renderer",
-    "dev:main": "ts-node MAIN/index.ts",
+    "dev:main": "ts-node main/index.ts",
     "dev": "concurrently \"pnpm dev:renderer\" \"pnpm dev:main\"",
     "build:renderer": "next build renderer",
-    "build:main": "tsc -p MAIN",
+    "build:main": "tsc -p main",
     "build": "pnpm build:renderer && pnpm build:main",
     "start": "electron .",
     "dev:start": "electron .",

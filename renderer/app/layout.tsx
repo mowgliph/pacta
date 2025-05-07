@@ -1,6 +1,7 @@
+"use client";
 import "../styles/globals.css";
 import { ReactNode } from "react";
-import { ClientRootLayout } from "@/components/ui/ClientRootLayout";
+import { ClientRootLayout } from "../components/ui/ClientRootLayout";
 
 export const metadata = {
   title: "PACTA Dashboard",

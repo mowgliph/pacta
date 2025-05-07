@@ -10,7 +10,8 @@
     "moduleResolution": "node",
     "sourceMap": true,
     "noEmitOnError": true,
-    "types": ["node"]
+    "types": ["node"],
+    "strict": true
   },
   "include": ["./**/*.ts"],
   "exclude": ["./dist", "../renderer", "../node_modules"]
