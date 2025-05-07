@@ -106,9 +106,10 @@ async function main() {
     registerStoreHandlers(eventManager);
     registerValidationHandlers(eventManager);
 
+    // Instancia correctamente tipada de electron-store
     const themeStore = new Store<{ theme: "light" | "dark" | "system" }>({
       name: "theme-preference",
-    });
+    }) as any;
 
     // Al iniciar la app, aplicar el tema guardado si existe
     const savedTheme = themeStore.get("theme");
