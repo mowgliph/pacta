@@ -1,9 +1,16 @@
 {
   "compilerOptions": {
+    "target": "ESNext",
+    "module": "commonjs",
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "jsx": "preserve",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "outDir": "dist",
+    "resolveJsonModule": true
   }
 }

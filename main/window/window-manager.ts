@@ -1,3 +1,8 @@
+// @ts-expect-error: Referencias globales de Electron Forge y Node.js
+// eslint-disable-next-line
+import type {} from 'electron';
+// eslint-disable-next-line
+import type {} from 'node';
 import { BrowserWindow, app, screen, shell } from "electron";
 import { join, resolve } from "path";
 import Store from "electron-store";
@@ -64,7 +69,6 @@ export class WindowManager {
   public async createMainWindow(): Promise<BrowserWindow> {
     const windowId = "main";
 
-    // Si ya existe la ventana, mostrarla y devolverla
     if (this.windows.has(windowId)) {
       const existingWindow = this.windows.get(windowId)!;
       if (existingWindow.isMinimized()) existingWindow.restore();
@@ -73,10 +77,8 @@ export class WindowManager {
     }
 
     try {
-      // Cargar estado guardado o usar valores por defecto
       const windowState = this.getWindowState();
 
-      // Crear la nueva ventana
       const window = new BrowserWindow({
         ...MAIN_WINDOW_CONFIG,
         ...windowState,
@@ -90,7 +92,8 @@ export class WindowManager {
         backgroundColor: "#F5F5F5",
         webPreferences: {
           ...MAIN_WINDOW_CONFIG.webPreferences,
-          preload: resolve(__dirname, "../../app/preload.js"),
+          // Adaptar ruta del preload para Vite/Electron Forge
+          preload: process.env.MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY || resolve(__dirname, "../../preload.js"),
           devTools: isDevelopment,
           contextIsolation: true,
           nodeIntegration: false,
@@ -98,18 +101,23 @@ export class WindowManager {
         },
       });
 
-      // Cargar la aplicación
-      if (isDevelopment) {
-        await window.loadURL("http://localhost:3000");
+      // Cargar la aplicación según entorno Vite/Electron Forge
+      if (process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+        await window.loadURL(process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL);
         window.webContents.openDevTools();
       } else {
-        await window.loadFile(join(app.getAppPath(), "app", "index.html"));
+        await window.loadFile(
+          join(
+            app.getAppPath(),
+            "renderer",
+            process.env.MAIN_WINDOW_VITE_NAME || "index.html",
+            "index.html"
+          )
+        );
       }
 
-      // Configurar eventos de ventana
       this.setupWindowEvents(window);
 
-      // Mostrar la ventana cuando esté lista
       window.once("ready-to-show", () => {
         window.show();
         if (windowState.isMaximized) {
@@ -117,17 +125,14 @@ export class WindowManager {
         }
       });
 
-      // Abrir enlaces externos en el navegador predeterminado
-      window.webContents.setWindowOpenHandler(({ url }) => {
+      window.webContents.setWindowOpenHandler(({ url }: { url: string }) => {
         if (url.startsWith("http:") || url.startsWith("https:")) {
           shell.openExternal(url);
         }
         return { action: "deny" };
       });
 
-      // Almacenar la referencia a la ventana
       this.windows.set(windowId, window);
-
       logger.info(`Ventana principal creada (${window.id})`);
       return window;
     } catch (error) {

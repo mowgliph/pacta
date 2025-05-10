@@ -8,7 +8,7 @@ export const isProduction = process.env.NODE_ENV === 'production';
 // Paths
 export const APP_PATH = app.getAppPath();
 export const USER_DATA_PATH = app.getPath('userData');
-export const PRELOAD_PATH = path.join(__dirname, '../preload/preload.js');
+export const PRELOAD_PATH = process.env.MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY || path.join(__dirname, '../preload/preload.js');
 
 // Window configuration
 export const MAIN_WINDOW_CONFIG = {
