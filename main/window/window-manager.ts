@@ -1,6 +1,6 @@
 import { BrowserWindow, app, screen, shell } from "electron";
 import { join, resolve } from "path";
-import Store from "electron-store";
+import ElectronStore from "electron-store";
 import { MAIN_WINDOW_CONFIG, isDevelopment } from "../utils/constants";
 import { logger } from "../utils/logger";
 import { SecurityManager } from "../security/security-manager";
@@ -34,14 +34,14 @@ interface WindowOptions {
 export class WindowManager {
   private static instance: WindowManager;
   private windows: Map<string, BrowserWindow> = new Map();
-  private store: Store<{ mainWindow?: WindowState }>;
+  private store: any;
   private securityManager: SecurityManager;
   private isQuitting: boolean = false;
 
   private constructor() {
-    this.store = new Store<{ mainWindow?: WindowState }>({
+    this.store = new ElectronStore<{ mainWindow?: WindowState }>({
       name: "window-state",
-    });
+    }) as any;
     this.securityManager = SecurityManager.getInstance();
 
     // Controlar el evento before-quit para no cerrar aplicación al cerrar ventanas

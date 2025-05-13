@@ -15,7 +15,7 @@ import { registerSecurityHandlers } from "./handlers/security.handlers";
 import { registerStoreHandlers } from "./handlers/store.handlers";
 import { registerValidationHandlers } from "./handlers/validation.handlers";
 import { initPrisma } from "./utils/prisma";
-import Store from "electron-store";
+import ElectronStore from "electron-store";
 import { autoUpdater } from "electron-updater";
 
 /**
@@ -107,7 +107,9 @@ async function main() {
     registerValidationHandlers(eventManager);
 
     // Instancia correctamente tipada de electron-store
-    const themeStore = new Store<{ theme: "light" | "dark" | "system" }>({
+    const themeStore = new ElectronStore<{
+      theme: "light" | "dark" | "system";
+    }>({
       name: "theme-preference",
     }) as any;
 

@@ -12,7 +12,7 @@ export default defineConfig({
     rollupOptions: {
       external: ["electron", "electron-store", "electron-updater"],
       output: {
-        entryFileNames: "[name].js",
+        entryFileNames: "[name].cjs",
       },
     },
     target: "node16",

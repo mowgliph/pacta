@@ -1,4 +1,4 @@
-import Store from "electron-store";
+import ElectronStore from "electron-store";
 import { logger } from "../utils/logger";
 import jwt from "jsonwebtoken";
 
@@ -16,12 +16,12 @@ interface StoreSchema {
 }
 
 // Store principal para la aplicación
-const appStore = new Store<StoreSchema>({
+const appStore = new ElectronStore<StoreSchema>({
   name: "app-store",
   // Opciones adicionales de seguridad
   encryptionKey: process.env.STORE_ENCRYPTION_KEY || "pacta-secure-key",
   clearInvalidConfig: true,
-});
+}) as any;
 
 // Inicializar valores por defecto si no existen
 if (!appStore.has("settings")) {
