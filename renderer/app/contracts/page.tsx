@@ -1,4 +1,3 @@
-"use client";
 import React, { useState, useEffect } from "react";
 import { useContracts, Contract } from "@/lib/useContracts";
 import {
@@ -11,7 +10,7 @@ import {
   PlusCircle,
   Eye,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useNotification } from "@/lib/useNotification";
 import {
@@ -30,7 +29,7 @@ export default function ContractsPage() {
   const [tipo, setTipo] = useState<"Cliente" | "Proveedor">("Cliente");
   const [search, setSearch] = useState("");
   const { contracts, loading, error } = useContracts(tipo);
-  const router = useRouter();
+  const navigate = useNavigate();
   const { notify } = useNotification();
   const { saveFile } = useFileDialog();
   const { openContextMenu } = useContextMenu();
@@ -144,7 +143,7 @@ export default function ContractsPage() {
         </div>
         <button
           className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium bg-[#018ABE] text-white hover:bg-[#02457A] transition-colors shadow-sm"
-          onClick={() => router.push("/contracts/new")}
+          onClick={() => navigate("/contracts/new")}
           tabIndex={0}
           aria-label="Nuevo contrato"
         >
@@ -196,13 +195,13 @@ export default function ContractsPage() {
                     {
                       label: "Ver detalle",
                       icon: <Eye size={16} />,
-                      onClick: () => router.push(`/contracts/${c.id}`),
+                      onClick: () => navigate(`/contracts/${c.id}`),
                     },
                     {
                       label: "Agregar suplemento",
                       icon: <PlusCircle size={16} />,
                       onClick: () =>
-                        router.push(`/contracts/${c.id}/supplements/new`),
+                        navigate(`/contracts/${c.id}/supplements/new`),
                     },
                     {
                       label: "Archivar",
@@ -284,12 +283,14 @@ export default function ContractsPage() {
                       <td className="px-4 py-2 flex gap-2">
                         <button
                           className="text-[#018ABE] hover:underline text-xs"
-                          onClick={() => router.push(`/contracts/${c.id}`)}
+                          onClick={() => navigate(`/contracts/${c.id}`)}
                           tabIndex={0}
                           aria-label="Ver detalle del contrato"
-                          onKeyDown={(e) => {
+                          onKeyDown={(
+                            e: React.KeyboardEvent<HTMLButtonElement>
+                          ) => {
                             if (e.key === "Enter")
-                              router.push(`/contracts/${c.id}`);
+                              navigate(`/contracts/${c.id}`);
                           }}
                         >
                           Ver Detalle
@@ -297,13 +298,15 @@ export default function ContractsPage() {
                         <button
                           className="text-[#4CAF50] hover:underline text-xs"
                           onClick={() =>
-                            router.push(`/contracts/${c.id}/supplements/new`)
+                            navigate(`/contracts/${c.id}/supplements/new`)
                           }
                           tabIndex={0}
                           aria-label="Agregar suplemento"
-                          onKeyDown={(e) => {
+                          onKeyDown={(
+                            e: React.KeyboardEvent<HTMLButtonElement>
+                          ) => {
                             if (e.key === "Enter")
-                              router.push(`/contracts/${c.id}/supplements/new`);
+                              navigate(`/contracts/${c.id}/supplements/new`);
                           }}
                         >
                           Agregar Suplemento

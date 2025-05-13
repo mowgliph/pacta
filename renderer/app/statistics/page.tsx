@@ -1,4 +1,3 @@
-"use client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { BarChart2, TrendingUp, FileText } from "lucide-react";
 import React, { Suspense, lazy } from "react";

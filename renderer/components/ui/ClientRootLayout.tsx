@@ -1,4 +1,3 @@
-"use client";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import Footer from "./Footer";
@@ -7,7 +6,7 @@ import { ToastProviderCustom } from "./use-toast";
 import { ContextMenuProvider } from "./context-menu";
 import { ReactNode, useEffect, useState } from "react";
 import { UpdateBanner } from "./UpdateBanner";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   children: ReactNode;
@@ -15,7 +14,7 @@ interface Props {
 
 export const ClientRootLayout = ({ children }: Props) => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // @ts-ignore
@@ -32,13 +31,13 @@ export const ClientRootLayout = ({ children }: Props) => {
 
   useEffect(() => {
     const handleApiError = () => {
-      router.push("/_error");
+      navigate("/_error");
     };
     window.addEventListener("api-error", handleApiError);
     return () => {
       window.removeEventListener("api-error", handleApiError);
     };
-  }, [router]);
+  }, [navigate]);
 
   const handleRestartApp = () => {
     // @ts-ignore

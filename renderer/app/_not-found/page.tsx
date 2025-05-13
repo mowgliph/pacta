@@ -1,11 +1,9 @@
-"use client";
-
 import { Button } from "../../components/ui/button";
 import { AlertTriangle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 
 export default function NotFound() {
-  const router = useRouter();
+  const navigate = useNavigate();
 
   return (
     <main className="flex flex-col items-center justify-center min-h-screen bg-[#F5F5F5] px-4">
@@ -26,7 +24,7 @@ export default function NotFound() {
         </p>
         <Button
           className="bg-[#018ABE] hover:bg-[#02457A] text-white w-full"
-          onClick={() => router.push("/dashboard")}
+          onClick={() => navigate("/dashboard")}
         >
           Ir al Dashboard
         </Button>

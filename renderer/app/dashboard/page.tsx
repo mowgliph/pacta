@@ -1,4 +1,3 @@
-"use client";
 import React, { useEffect } from "react";
 import {
   BarChart2,
@@ -8,7 +7,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useDashboardStats } from "../../lib/useDashboardStats";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../store/auth";
 import { Alert, AlertTitle, AlertDescription } from "../../components/ui/alert";
 
@@ -93,13 +92,13 @@ function formatDate(dateStr: string) {
 
 export default function DashboardPage() {
   const { data, loading, error } = useDashboardStats();
-  const router = useRouter();
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   // Handler para acciones protegidas
   const requireAuth = (cb: () => void) => {
     if (!user) {
-      router.push("/login");
+      navigate("/login");
       return;
     }
     cb();
@@ -153,25 +152,25 @@ export default function DashboardPage() {
           label="Nuevo Contrato"
           icon={<FilePlus size={20} className="text-[#018ABE]" />}
           color=""
-          onClick={() => requireAuth(() => router.push("/contracts/new"))}
+          onClick={() => requireAuth(() => navigate("/contracts/new"))}
         />
         <QuickAction
           label="Nuevo Suplemento"
           icon={<PlusCircle size={20} className="text-[#02457A]" />}
           color=""
-          onClick={() => requireAuth(() => router.push("/contracts"))}
+          onClick={() => requireAuth(() => navigate("/contracts"))}
         />
         <QuickAction
           label="Buscar Contrato"
           icon={<Search size={20} className="text-[#001B48]" />}
           color=""
-          onClick={() => router.push("/contracts")}
+          onClick={() => navigate("/contracts")}
         />
         <QuickAction
           label="Ver Estadísticas Avanzadas"
           icon={<BarChart2 size={20} className="text-[#018ABE]" />}
           color=""
-          onClick={() => router.push("/statistics")}
+          onClick={() => navigate("/statistics")}
         />
       </section>
 

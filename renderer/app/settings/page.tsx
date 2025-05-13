@@ -1,7 +1,6 @@
-"use client";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/store/auth";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,7 +29,7 @@ function useToast() {
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
   const [password, setPassword] = useState("");
@@ -40,9 +39,9 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!user) {
-      router.replace("/login");
+      navigate("/login", { replace: true });
     }
-  }, [user, router]);
+  }, [user, navigate]);
 
   if (!user) return null;
 

@@ -58,6 +58,7 @@ pnpm install
 ```
 
 Asegúrate de tener:
+
 - `electron`
 - `@electron-forge/cli`
 - `@electron-forge/plugin-vite`
@@ -191,4 +192,4 @@ pnpm start
 
 ---
 
-**¡Listo! Sigue esta guía paso a paso para migrar PACTA a Vite + Electron Forge de forma segura y ordenada.** 
+**¡Listo! Sigue esta guía paso a paso para migrar PACTA a Vite + Electron Forge de forma segura y ordenada.**

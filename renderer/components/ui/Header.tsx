@@ -1,8 +1,7 @@
-"use client";
 import { useState, useEffect } from "react";
 import { Bell, LogOut, LogIn, Settings } from "lucide-react";
 import { useAuth } from "../../store/auth";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "./theme-toggle";
 import {
   Dialog,
@@ -54,7 +53,7 @@ function useNotifications() {
 
 export default function Header() {
   const { user, logout } = useAuth();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const { notifications, loading, markAllAsRead, fetchNotifications } =
     useNotifications();
@@ -102,9 +101,7 @@ export default function Header() {
                     } ${
                       n.read ? "bg-[#F5F5F5]" : "bg-[#D6E8EE] border-[#018ABE]"
                     } hover:shadow-md`}
-                    onClick={() =>
-                      n.internalLink && router.push(n.internalLink)
-                    }
+                    onClick={() => n.internalLink && navigate(n.internalLink)}
                     title={
                       n.internalLink ? `Ir a ${n.internalLink}` : undefined
                     }
@@ -155,7 +152,7 @@ export default function Header() {
           {user && (
             <button
               className="flex items-center gap-1 text-[#018ABE] text-xs ml-2"
-              onClick={() => router.push("/settings")}
+              onClick={() => navigate("/settings")}
             >
               <Settings size={16} /> Configuración
             </button>
@@ -170,7 +167,7 @@ export default function Header() {
           ) : (
             <button
               className="flex items-center gap-1 text-[#018ABE] text-xs ml-2"
-              onClick={() => router.push("/login")}
+              onClick={() => navigate("/login")}
             >
               <LogIn size={16} /> Iniciar sesión
             </button>

@@ -1,6 +1,5 @@
-"use client";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../store/auth";
 import { useUsers } from "../../lib/useUsers";
 import {
@@ -19,16 +18,16 @@ import { useNotification } from "@/lib/useNotification";
 
 export default function UsersPage() {
   const { user } = useAuth();
-  const router = useRouter();
+  const navigate = useNavigate();
   const { users, loading, error } = useUsers();
   const { openContextMenu } = useContextMenu();
   const { notify } = useNotification();
 
   useEffect(() => {
     if (!user) {
-      router.replace("/login");
+      navigate("/login", { replace: true });
     }
-  }, [user, router]);
+  }, [user, navigate]);
 
   if (!user) return null;
 
@@ -65,7 +64,7 @@ export default function UsersPage() {
                     const actions: ContextMenuAction[] = [
                       {
                         label: "Editar usuario",
-                        onClick: () => router.push(`/users/${u.id}`),
+                        onClick: () => navigate(`/users/${u.id}`),
                       },
                       {
                         label: u.isActive ? "Desactivar" : "Reactivar",
