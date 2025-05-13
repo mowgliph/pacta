@@ -1,8 +1,3 @@
-// @ts-expect-error: Referencias globales de Electron Forge y Node.js
-// eslint-disable-next-line
-import type {} from 'electron';
-// eslint-disable-next-line
-import type {} from 'node';
 import { BrowserWindow, app, screen, shell } from "electron";
 import { join, resolve } from "path";
 import Store from "electron-store";
@@ -39,12 +34,14 @@ interface WindowOptions {
 export class WindowManager {
   private static instance: WindowManager;
   private windows: Map<string, BrowserWindow> = new Map();
-  private store: Store;
+  private store: Store<{ mainWindow?: WindowState }>;
   private securityManager: SecurityManager;
   private isQuitting: boolean = false;
 
   private constructor() {
-    this.store = new Store({ name: "window-state" });
+    this.store = new Store<{ mainWindow?: WindowState }>({
+      name: "window-state",
+    });
     this.securityManager = SecurityManager.getInstance();
 
     // Controlar el evento before-quit para no cerrar aplicación al cerrar ventanas
@@ -93,7 +90,9 @@ export class WindowManager {
         webPreferences: {
           ...MAIN_WINDOW_CONFIG.webPreferences,
           // Adaptar ruta del preload para Vite/Electron Forge
-          preload: process.env.MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY || resolve(__dirname, "../../preload.js"),
+          preload:
+            process.env.MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY ||
+            resolve(__dirname, "../../dist/preload/preload.js"),
           devTools: isDevelopment,
           contextIsolation: true,
           nodeIntegration: false,
@@ -172,7 +171,7 @@ export class WindowManager {
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,
-        preload: resolve(__dirname, "../../app/preload.js"),
+        preload: resolve(__dirname, "../../dist/preload/preload.js"),
         spellcheck: true,
         sandbox: true,
       },
@@ -262,6 +261,16 @@ export class WindowManager {
 
   private saveWindowState(state: WindowState): void {
     try {
+      // Validación adicional: asegurar que el estado tiene width y height válidos
+      if (
+        !state.width ||
+        !state.height ||
+        state.width < 200 ||
+        state.height < 200
+      ) {
+        logger.error("Intento de guardar un estado de ventana inválido", state);
+        return;
+      }
       this.store.set("mainWindow", state);
     } catch (error) {
       if (error instanceof Error) {
