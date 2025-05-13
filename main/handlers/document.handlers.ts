@@ -101,23 +101,37 @@ export function registerDocumentHandlers(eventManager: EventManager): void {
           !attachment.data ||
           !attachment.type
         ) {
+          logger.error("Archivo adjunto inválido", { attachment });
           throw new Error("Archivo adjunto inválido");
         }
-        const ext = path.extname(attachment.name).toLowerCase();
+        // Validar nombre de archivo (sin rutas)
+        const baseName = path.basename(attachment.name);
+        const ext = path.extname(baseName).toLowerCase();
         if (
           !ALLOWED_EXTENSIONS.includes(ext) ||
           !ALLOWED_MIME_TYPES.includes(attachment.type)
         ) {
+          logger.error("Tipo de archivo no permitido", {
+            ext,
+            mime: attachment.type,
+          });
           throw new Error("Tipo de archivo no permitido. Solo PDF o Word.");
         }
         fs.mkdirSync(DOCUMENTS_DIR, { recursive: true });
-        const safeName = `${Date.now()}_${attachment.name}`;
-        const filePath = path.join(DOCUMENTS_DIR, safeName);
+        // Evitar sobrescritura accidental
+        let safeName = `${Date.now()}_${baseName}`;
+        let filePath = path.join(DOCUMENTS_DIR, safeName);
+        let counter = 1;
+        while (fs.existsSync(filePath)) {
+          safeName = `${Date.now()}_${counter}_${baseName}`;
+          filePath = path.join(DOCUMENTS_DIR, safeName);
+          counter++;
+        }
         fs.writeFileSync(filePath, Buffer.from(attachment.data));
         // Registrar en base de datos
         const parsed = DocumentSchema.parse({
           ...meta,
-          name: attachment.name,
+          name: baseName,
           type: attachment.type,
         });
         const prismaData = documentZodToPrisma(parsed);
@@ -125,7 +139,7 @@ export function registerDocumentHandlers(eventManager: EventManager): void {
           data: {
             ...prismaData,
             filename: safeName,
-            originalName: attachment.name,
+            originalName: baseName,
             mimeType: attachment.type,
             size: attachment.data.length,
             path: safeName,
@@ -138,19 +152,37 @@ export function registerDocumentHandlers(eventManager: EventManager): void {
     [IPC_CHANNELS.DATA.DOCUMENTS.DOWNLOAD]: withErrorHandling(
       IPC_CHANNELS.DATA.DOCUMENTS.DOWNLOAD,
       async (event: Electron.IpcMainInvokeEvent, id: string) => {
+        // Buscar documento en base de datos
         const doc = await prisma.document.findUnique({
           where: { id },
-          select: { path: true },
+          select: { path: true, originalName: true },
         });
-        if (!doc || !doc.path) throw new Error("Documento no encontrado");
+        if (!doc || !doc.path) {
+          logger.error(`Documento no encontrado en base de datos: ${id}`);
+          throw new Error("Documento no encontrado");
+        }
+        // Normalizar y validar ruta absoluta
         const absPath = path.resolve(DOCUMENTS_DIR, doc.path);
-        if (!fs.existsSync(absPath))
+        if (!absPath.startsWith(DOCUMENTS_DIR)) {
+          logger.error(
+            `Intento de acceso a ruta fuera de documentos: ${absPath}`
+          );
+          throw new Error("Acceso no permitido");
+        }
+        if (!fs.existsSync(absPath)) {
+          logger.error(`Archivo no encontrado en disco: ${absPath}`);
           throw new Error("Archivo no encontrado en disco");
+        }
+        // Incrementar contador de descargas
         await prisma.document.update({
           where: { id },
           data: { downloads: { increment: 1 } },
         });
-        return { success: true, data: { path: absPath } };
+        logger.info(`Documento descargado: ${doc.originalName} (${absPath})`);
+        return {
+          success: true,
+          data: { path: absPath, name: doc.originalName },
+        };
       }
     ),
     [IPC_CHANNELS.DATA.DOCUMENTS.OPEN]: withErrorHandling(
@@ -177,11 +209,21 @@ export function registerDocumentHandlers(eventManager: EventManager): void {
         });
         if (doc && doc.path) {
           const absPath = path.resolve(DOCUMENTS_DIR, doc.path);
+          if (!absPath.startsWith(DOCUMENTS_DIR)) {
+            logger.error(
+              `Intento de eliminar archivo fuera de documentos: ${absPath}`
+            );
+            throw new Error("Acceso no permitido");
+          }
           if (fs.existsSync(absPath)) {
             fs.unlinkSync(absPath);
+            logger.info(`Archivo eliminado: ${absPath}`);
+          } else {
+            logger.warn(`Intento de eliminar archivo inexistente: ${absPath}`);
           }
         }
         await prisma.document.delete({ where: { id } });
+        logger.info(`Registro de documento eliminado: ${id}`);
         return { success: true, data: true };
       }
     ),
