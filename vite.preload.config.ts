@@ -6,7 +6,7 @@ export default defineConfig({
   build: {
     outDir: "dist/preload",
     lib: {
-      entry: path.resolve(__dirname, "main/preload.ts"),
+      entry: path.resolve(__dirname, "main/preload.cjs"),
       formats: ["cjs"],
     },
     rollupOptions: {

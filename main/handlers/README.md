@@ -6,18 +6,17 @@ Esta carpeta contiene los manejadores de comunicación entre procesos (IPC) que 
 
 ## Estructura General
 
-Cada manejador sigue una estructura común:
+Cada manejador sigue una estructura común en JavaScript puro (CommonJS):
 
-```typescript
+```js
 // 1. Importaciones
-import { EventManager } from '../events/event-manager';
-import { IPC_CHANNELS } from '../channels/ipc-channels';
-import { IpcHandlerMap } from '../channels/types';
-import { logger } from '../utils/logger';
+const { EventManager } = require("../events/event-manager.cjs");
+const { IPC_CHANNELS } = require("../channels/ipc-channels.cjs");
+const logger = require("../utils/logger.cjs");
 
 // 2. Función de registro
-export function registerXxxHandlers(eventManager: EventManager): void {
-  const handlers: IpcHandlerMap = {
+function registerXxxHandlers(eventManager) {
+  const handlers = {
     [IPC_CHANNELS.CATEGORY.OPERATION]: async (event, data) => {
       try {
         // 3. Validación de datos
@@ -26,23 +25,26 @@ export function registerXxxHandlers(eventManager: EventManager): void {
         return result;
       } catch (error) {
         // 6. Manejo de errores
-        logger.error('Error en operación:', error);
+        logger.error("Error en operación:", error);
         throw error;
       }
-    }
+    },
   };
 
   eventManager.registerHandlers(handlers);
 }
+
+module.exports = { registerXxxHandlers };
 ```
 
 ## Manejadores Disponibles
 
-### `auth.handlers.ts`
+### `auth.handlers.cjs`
 
 **Propósito**: Implementar el sistema de autenticación y gestión de sesiones.
 
 **Funcionalidades principales**:
+
 - Login y verificación de credenciales
 - Generación y validación de tokens JWT
 - Manejo de sesiones
@@ -51,11 +53,12 @@ export function registerXxxHandlers(eventManager: EventManager): void {
 
 **Canales**: `AUTH.LOGIN`, `AUTH.LOGOUT`, `AUTH.VERIFY`, etc.
 
-### `contract.handlers.ts`
+### `contract.handlers.cjs`
 
 **Propósito**: Administrar los contratos, el componente central de PACTA.
 
 **Funcionalidades principales**:
+
 - CRUD completo de contratos
 - Búsqueda y filtrado avanzado
 - Control de acceso por usuario/rol
@@ -64,11 +67,12 @@ export function registerXxxHandlers(eventManager: EventManager): void {
 
 **Canales**: `DATA.CONTRACTS.LIST`, `DATA.CONTRACTS.CREATE`, `DATA.CONTRACTS.UPDATE`, etc.
 
-### `document.handlers.ts`
+### `document.handlers.cjs`
 
 **Propósito**: Gestionar los documentos y archivos relacionados con contratos y suplementos.
 
 **Funcionalidades principales**:
+
 - Subida segura de archivos
 - Metadatos y categorización
 - Descarga de documentos
@@ -77,11 +81,12 @@ export function registerXxxHandlers(eventManager: EventManager): void {
 
 **Canales**: `DATA.DOCUMENTS.LIST`, `DATA.DOCUMENTS.UPLOAD`, `DATA.DOCUMENTS.DELETE`, etc.
 
-### `notification.handlers.ts`
+### `notification.handlers.cjs`
 
 **Propósito**: Gestionar el sistema de notificaciones de la aplicación.
 
 **Funcionalidades principales**:
+
 - Creación de notificaciones
 - Entrega de notificaciones a usuarios
 - Marcado de notificaciones como leídas
@@ -89,11 +94,12 @@ export function registerXxxHandlers(eventManager: EventManager): void {
 
 **Canales**: `NOTIFICATIONS.SHOW`, `NOTIFICATIONS.CLEAR`, `NOTIFICATIONS.MARK_READ`, etc.
 
-### `role.handlers.ts`
+### `role.handlers.cjs`
 
 **Propósito**: Gestionar roles y permisos del sistema.
 
 **Funcionalidades principales**:
+
 - CRUD de roles
 - Asignación de permisos
 - Validación de permisos
@@ -101,11 +107,12 @@ export function registerXxxHandlers(eventManager: EventManager): void {
 
 **Canales**: `DATA.ROLES.LIST`, `DATA.ROLES.CREATE`, `DATA.ROLES.UPDATE`, etc.
 
-### `statistics.handlers.ts`
+### `statistics.handlers.cjs`
 
 **Propósito**: Procesar y generar estadísticas del sistema.
 
 **Funcionalidades principales**:
+
 - Estadísticas del dashboard
 - Estadísticas de contratos
 - Exportación de estadísticas
@@ -113,11 +120,12 @@ export function registerXxxHandlers(eventManager: EventManager): void {
 
 **Canales**: `STATISTICS.DASHBOARD`, `STATISTICS.CONTRACTS`, `STATISTICS.EXPORT`
 
-### `supplement.handlers.ts`
+### `supplement.handlers.cjs`
 
 **Propósito**: Gestionar los suplementos de contratos (modificaciones, adendas, etc.).
 
 **Funcionalidades principales**:
+
 - CRUD completo de suplementos
 - Aprobación de suplementos
 - Relación con contratos
@@ -125,11 +133,12 @@ export function registerXxxHandlers(eventManager: EventManager): void {
 
 **Canales**: `DATA.SUPPLEMENTS.LIST`, `DATA.SUPPLEMENTS.CREATE`, `DATA.SUPPLEMENTS.UPDATE`, etc.
 
-### `system.handlers.ts`
+### `system.handlers.cjs`
 
 **Propósito**: Gestionar operaciones del sistema y configuración.
 
 **Funcionalidades principales**:
+
 - Configuración de la aplicación
 - Operaciones del sistema operativo
 - Gestión de archivos
@@ -137,11 +146,12 @@ export function registerXxxHandlers(eventManager: EventManager): void {
 
 **Canales**: `SYSTEM.OPEN_FILE`, `SYSTEM.SAVE_FILE`, `SYSTEM.SETTINGS`, etc.
 
-### `user.handlers.ts`
+### `user.handlers.cjs`
 
 **Propósito**: Administrar usuarios y sus perfiles.
 
 **Funcionalidades principales**:
+
 - CRUD de usuarios
 - Gestión de perfiles
 - Cambio de contraseñas
@@ -155,10 +165,10 @@ export function registerXxxHandlers(eventManager: EventManager): void {
 
 Todos los manejadores utilizan esquemas Zod para validar datos de entrada:
 
-```typescript
+```js
 const dataSchema = z.object({
   field1: z.string(),
-  field2: z.number().min(1)
+  field2: z.number().min(1),
 });
 
 // En el manejador
@@ -169,14 +179,14 @@ const validatedData = dataSchema.parse(inputData);
 
 Los errores se gestionan de forma centralizada:
 
-```typescript
+```js
 try {
   // Operación
 } catch (error) {
   if (error instanceof z.ZodError) {
-    throw ErrorHandler.createError('ValidationError', 'Datos inválidos');
+    throw new Error("Datos inválidos");
   }
-  logger.error('Error en operación:', error);
+  logger.error("Error en operación:", error);
   throw error;
 }
 ```
@@ -185,16 +195,16 @@ try {
 
 Verificación de permisos antes de operaciones sensibles:
 
-```typescript
+```js
 // Verificar si el usuario tiene permisos
-if (userRole !== 'Admin' && userId !== resource.ownerId) {
-  throw ErrorHandler.createError('AuthorizationError', 'Sin permisos');
+if (userRole !== "Admin" && userId !== resource.ownerId) {
+  throw new Error("Sin permisos");
 }
 ```
 
 ## Mejores Prácticas
 
-1. **Usar canales constantes**: Siempre usar las constantes definidas en `ipc-channels.ts`
+1. **Usar canales constantes**: Siempre usar las constantes definidas en `ipc-channels.cjs`
 2. **Validar toda entrada**: Validar todos los datos de entrada con Zod
 3. **Registrar errores**: Usar logger para registrar errores y actividades importantes
 4. **Separar responsabilidades**: Usar servicios para la lógica de negocio
@@ -205,13 +215,13 @@ if (userRole !== 'Admin' && userId !== resource.ownerId) {
 
 Para agregar un nuevo manejador:
 
-1. Definir canales en `ipc-channels.ts`
-2. Crear archivo `feature.handlers.ts` en `handlers/`
+1. Definir canales en `ipc-channels.cjs`
+2. Crear archivo `feature.handlers.cjs` en `handlers/`
 3. Implementar función `registerFeatureHandlers`
-4. Registrar en `index.ts`
+4. Registrar en el index correspondiente
 
 ## Referencias
 
 - [Documentación de Electron IPC](https://www.electronjs.org/docs/latest/api/ipc-main)
 - [Patrón Mediador](https://refactoring.guru/design-patterns/mediator)
-- [Documentación de Zod](https://zod.dev/) 
+- [Documentación de Zod](https://zod.dev/)

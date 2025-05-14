@@ -12,5 +12,18 @@
     "plugin:import/electron",
     "plugin:import/typescript"
   ],
-  "parser": "@typescript-eslint/parser"
+  "parser": "@typescript-eslint/parser",
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "off",
+    "import/no-commonjs": "off",
+    "import/no-extraneous-dependencies": "off",
+    "@typescript-eslint/no-var-requires": "off"
+  },
+  "overrides": [
+    {
+      "files": ["*.js", "*.cjs"],
+      "env": { "node": true },
+      "parserOptions": { "sourceType": "script" }
+    }
+  ]
 }

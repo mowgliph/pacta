@@ -6,7 +6,7 @@ export default defineConfig({
   build: {
     outDir: "dist/main",
     lib: {
-      entry: path.resolve(__dirname, "main/index.ts"),
+      entry: path.resolve(__dirname, "main/index.cjs"),
       formats: ["cjs"],
     },
     rollupOptions: {

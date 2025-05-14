@@ -2,7 +2,7 @@
 
 ## Introducción
 
-Este directorio contiene la definición de todos los canales de comunicación IPC (Inter-Process Communication) utilizados en la aplicación PACTA. La estructura está diseñada para proporcionar un sistema de tipos fuerte y centralizado que facilita la comunicación entre el proceso principal de Electron y el proceso de renderizado.
+Este directorio contiene la definición de todos los canales de comunicación IPC (Inter-Process Communication) utilizados en la aplicación PACTA. La estructura está diseñada para proporcionar un sistema centralizado y consistente que facilita la comunicación entre el proceso principal de Electron y el proceso de renderizado.
 
 ## Estructura de Archivos
 
@@ -10,88 +10,84 @@ La organización de los archivos sigue un patrón centralizado:
 
 ```
 channels/
-├── ipc-channels.ts    # Definición centralizada de todos los canales IPC
-├── types.ts           # Tipos genéricos para IPC
-└── index.ts           # Punto de entrada que exporta canales y tipos
+├── ipc-channels.cjs    # Definición centralizada de todos los canales IPC
+└── index.cjs           # Punto de entrada que exporta canales
 ```
 
 ## Descripción de Componentes
 
-### Archivo Centralizado de Canales (ipc-channels.ts)
+### Archivo Centralizado de Canales (ipc-channels.cjs)
 
 Define todos los canales IPC organizados por categorías:
 
-```typescript
-export const IPC_CHANNELS = {
+```js
+const IPC_CHANNELS = {
   AUTH: {
-    LOGIN: 'auth:login',
-    LOGOUT: 'auth:logout',
-    VERIFY: 'auth:verify'
+    LOGIN: "auth:login",
+    LOGOUT: "auth:logout",
+    VERIFY: "auth:verify",
   },
   DATA: {
     CONTRACTS: {
-      LIST: 'contracts:list',
-      CREATE: 'contracts:create',
-      UPDATE: 'contracts:update'
+      LIST: "contracts:list",
+      CREATE: "contracts:create",
+      UPDATE: "contracts:update",
     },
     DOCUMENTS: {
-      LIST: 'documents:list',
-      UPLOAD: 'documents:upload',
-      DELETE: 'documents:delete'
-    }
+      LIST: "documents:list",
+      UPLOAD: "documents:upload",
+      DELETE: "documents:delete",
+    },
     // ... más categorías
-  }
-} as const;
-```
+  },
+};
 
-### Tipos Genéricos (types.ts)
-
-Define interfaces y tipos base para la comunicación IPC:
-
-```typescript
-export type IpcHandler = (event: IpcMainEvent, ...args: any[]) => Promise<any>;
-export type IpcHandlerMap = Record<string, IpcHandler>;
+module.exports = { IPC_CHANNELS };
 ```
 
 ### Archivo Index
 
-El archivo `index.ts` funciona como punto de entrada, exportando los canales y tipos necesarios:
+El archivo `index.cjs` funciona como punto de entrada, exportando los canales necesarios:
 
-```typescript
-export { IPC_CHANNELS } from './ipc-channels';
-export type { IpcChannel } from './ipc-channels';
-export type { IpcHandlerMap, IpcHandler } from './types';
+```js
+const { IPC_CHANNELS } = require("./ipc-channels.cjs");
+module.exports = { IPC_CHANNELS };
 ```
 
 ## Cómo Utilizar los Canales
 
 ### En el Proceso Principal (Electron Main)
 
-```typescript
-import { IPC_CHANNELS } from '../channels';
-import { EventManager } from '../events/event-manager';
+```js
+const { IPC_CHANNELS } = require("../channels");
+const { EventManager } = require("../events/event-manager.cjs");
 
-export function registerAuthHandlers(eventManager: EventManager): void {
+function registerAuthHandlers(eventManager) {
   const handlers = {
     [IPC_CHANNELS.AUTH.LOGIN]: async (event, credentials) => {
       // Lógica de autenticación
       return { success: true };
-    }
+    },
   };
 
   eventManager.registerHandlers(handlers);
 }
+
+module.exports = { registerAuthHandlers };
 ```
 
 ### En el Proceso de Renderizado (React/Next.js)
 
-```typescript
-import { IPC_CHANNELS } from 'main/channels';
-import { ipcRenderer } from 'electron';
+```js
+const { IPC_CHANNELS } = require("main/channels");
+const { ipcRenderer } = require("electron");
 
 const login = async (credentials) => {
   try {
-    const response = await ipcRenderer.invoke(IPC_CHANNELS.AUTH.LOGIN, credentials);
+    const response = await ipcRenderer.invoke(
+      IPC_CHANNELS.AUTH.LOGIN,
+      credentials
+    );
     return response;
   } catch (error) {
     console.error("Error en login:", error);
@@ -102,44 +98,51 @@ const login = async (credentials) => {
 ## Cómo Añadir Nuevos Canales
 
 1. **Añadir a un dominio existente:**
-   - Añadir el nuevo canal en la categoría correspondiente en `ipc-channels.ts`
 
-   ```typescript
-   export const IPC_CHANNELS = {
+   - Añadir el nuevo canal en la categoría correspondiente en `ipc-channels.cjs`
+
+   ```js
+   const IPC_CHANNELS = {
      AUTH: {
        // Canales existentes...
-       REFRESH_TOKEN: 'auth:refresh-token'
-     }
-   } as const;
+       REFRESH_TOKEN: "auth:refresh-token",
+     },
+     // ...
+   };
+   module.exports = { IPC_CHANNELS };
    ```
 
 2. **Añadir una nueva categoría:**
-   - Crear una nueva sección en `ipc-channels.ts`
+
+   - Crear una nueva sección en `ipc-channels.cjs`
    - Definir los canales necesarios
 
-   ```typescript
-   export const IPC_CHANNELS = {
+   ```js
+   const IPC_CHANNELS = {
      // Categorías existentes...
      NEW_CATEGORY: {
-       OPERATION1: 'new-category:operation1',
-       OPERATION2: 'new-category:operation2'
-     }
-   } as const;
+       OPERATION1: "new-category:operation1",
+       OPERATION2: "new-category:operation2",
+     },
+   };
+   module.exports = { IPC_CHANNELS };
    ```
 
 ## Ventajas de Esta Estructura
 
 1. **Centralización**: Todos los canales definidos en un solo lugar
-2. **Tipado fuerte**: Validación en tiempo de compilación
+2. **Consistencia**: Nombres de canales estandarizados
 3. **Mantenibilidad**: Fácil de encontrar y modificar canales
 4. **Extensibilidad**: Simple de añadir nuevos canales o categorías
 5. **Autocompletado**: IDE puede sugerir canales disponibles
-6. **Consistencia**: Nombres de canales estandarizados
-7. **Organización**: Canales agrupados por categorías lógicas
+6. **Organización**: Canales agrupados por categorías lógicas
 
 ## Consideraciones Técnicas
 
-- La estructura utiliza `as const` para asegurar tipos literales
-- Los tipos genéricos proporcionan una API consistente
-- El uso de `export type` asegura compatibilidad con `isolatedModules`
-- La centralización reduce la posibilidad de duplicación de canales 
+- La estructura utiliza objetos literales para asegurar consistencia
+- La centralización reduce la posibilidad de duplicación de canales
+- Se recomienda mantener la nomenclatura y agrupación lógica
+
+---
+
+> **Nota:** En PACTA, los canales IPC deben ser únicos, descriptivos y estar documentados en este archivo para facilitar el mantenimiento y la colaboración.

@@ -13,6 +13,6 @@
     "types": ["node"],
     "strict": true
   },
-  "include": ["./**/*.ts"],
+  "include": ["./**/*.cjs"],
   "exclude": ["./dist", "../renderer", "../node_modules"]
 }
