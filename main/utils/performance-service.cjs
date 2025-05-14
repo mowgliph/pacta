@@ -1,4 +1,3 @@
-const { logger } = require("./logger.cjs");
 const { prisma } = require("./prisma.cjs");
 
 /**
@@ -27,10 +26,10 @@ exports.PerformanceService = class PerformanceService {
     const cached = this.queryCache.get(key);
     const now = Date.now();
     if (cached && now - cached.timestamp < this.CACHE_EXPIRY_MS) {
-      logger.debug(`Cache hit for key: ${key}`);
+      console.debug(`Cache hit for key: ${key}`);
       return cached.data;
     }
-    logger.debug(`Cache miss for key: ${key}`);
+    console.debug(`Cache miss for key: ${key}`);
     const data = await queryFn();
     this.queryCache.set(key, { data, timestamp: now });
     return data;
@@ -46,11 +45,11 @@ exports.PerformanceService = class PerformanceService {
       const duration = Date.now() - startTime;
       if (duration > 1000) {
         // Si la consulta tarda más de 1 segundo
-        logger.warn(`Consulta lenta detectada (${duration}ms)`);
+        console.warn(`Consulta lenta detectada (${duration}ms)`);
       }
       return result;
     } catch (error) {
-      logger.error("Error en consulta optimizada:", error);
+      console.error("[ERROR] Error en consulta optimizada:", error);
       throw error;
     }
   }
@@ -60,7 +59,7 @@ exports.PerformanceService = class PerformanceService {
    */
   invalidateCache(key) {
     this.queryCache.delete(key);
-    logger.debug(`Cache invalidated for key: ${key}`);
+    console.debug(`Cache invalidated for key: ${key}`);
   }
 
   /**
@@ -68,7 +67,7 @@ exports.PerformanceService = class PerformanceService {
    */
   clearCache() {
     this.queryCache.clear();
-    logger.info("Cache cleared");
+    console.info("Cache cleared");
   }
 
   /**
@@ -85,7 +84,7 @@ exports.PerformanceService = class PerformanceService {
         }
       }
       if (expiredCount > 0) {
-        logger.debug(`Cleaned up ${expiredCount} expired cache entries`);
+        console.debug(`Cleaned up ${expiredCount} expired cache entries`);
       }
     }, this.CACHE_EXPIRY_MS);
   }
@@ -95,7 +94,7 @@ exports.PerformanceService = class PerformanceService {
    */
   monitorResources() {
     const memoryUsage = process.memoryUsage();
-    logger.info("Uso de memoria:", {
+    console.info("[INFO] Uso de memoria:", {
       heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
       heapTotal: `${Math.round(memoryUsage.heapTotal / 1024 / 1024)}MB`,
       rss: `${Math.round(memoryUsage.rss / 1024 / 1024)}MB`,

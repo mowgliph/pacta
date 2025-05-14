@@ -1,6 +1,8 @@
 const { app, dialog } = require("electron");
-const { WindowManager } = require("./window/window-manager.cjs");
-const { SecurityManager } = require("./security/security-manager.cjs");
+const windowManagerModule = require("./window/window-manager.cjs");
+console.log("[DEBUG] windowManagerModule:", windowManagerModule);
+const WindowManager = windowManagerModule.WindowManager;
+const { securityManager } = require("./security/security-manager.cjs");
 const { logger } = require("./utils/logger.cjs");
 const { ErrorHandler } = require("./utils/error-handler.cjs");
 const { backupService } = require("./utils/backup-service.cjs");
@@ -10,7 +12,7 @@ const { backupService } = require("./utils/backup-service.cjs");
 function AppManager() {
   if (!(this instanceof AppManager)) return new AppManager();
   this.windowManager = WindowManager.getInstance();
-  this.securityManager = SecurityManager.getInstance();
+  this.securityManager = securityManager;
   this.errorHandler = null;
   this.mainWindow = null;
 
@@ -40,10 +42,16 @@ AppManager.prototype.initialize = async function () {
     this.setupAutoBackup();
     logger.info("Aplicación PACTA inicializada correctamente");
   } catch (error) {
-    logger.error("Error al inicializar la aplicación:", error);
+    logger.error(
+      "Error al inicializar la aplicación:",
+      error,
+      error && error.stack
+    );
     dialog.showErrorBox(
       "Error de inicialización",
-      "Ha ocurrido un error al iniciar la aplicación. Por favor, inténtelo de nuevo."
+      `Ha ocurrido un error al iniciar la aplicación.\n${
+        error && error.message ? error.message : String(error)
+      }`
     );
     app.exit(1);
   }

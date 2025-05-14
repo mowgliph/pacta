@@ -1,4 +1,3 @@
-const { logger } = require("./logger.cjs");
 const { performanceService } = require("./performance-service.cjs");
 
 /**
@@ -24,7 +23,7 @@ exports.PerformanceMonitor = class PerformanceMonitor {
       return;
     }
 
-    logger.info("Iniciando monitoreo de rendimiento");
+    console.info("Iniciando monitoreo de rendimiento");
 
     this.monitoringInterval = setInterval(() => {
       this.checkPerformanceMetrics();
@@ -41,7 +40,7 @@ exports.PerformanceMonitor = class PerformanceMonitor {
     if (this.monitoringInterval) {
       clearInterval(this.monitoringInterval);
       this.monitoringInterval = null;
-      logger.info("Monitoreo de rendimiento detenido");
+      console.info("Monitoreo de rendimiento detenido");
     }
   }
 
@@ -59,9 +58,12 @@ exports.PerformanceMonitor = class PerformanceMonitor {
       // Monitorear conexiones de base de datos
       this.checkDatabaseConnections();
 
-      logger.info("Métricas de rendimiento verificadas");
+      console.info("Métricas de rendimiento verificadas");
     } catch (error) {
-      logger.error("Error al verificar métricas de rendimiento:", error);
+      console.error(
+        "[ERROR] Error al verificar métricas de rendimiento:",
+        error
+      );
     }
   }
 
@@ -74,7 +76,9 @@ exports.PerformanceMonitor = class PerformanceMonitor {
 
     if (heapUsedMB > 512) {
       // Si el uso de memoria supera 512MB
-      logger.warn(`Alto uso de memoria detectado: ${heapUsedMB}MB`);
+      console.warn(
+        "[WARN] Alto uso de memoria detectado: " + heapUsedMB + "MB"
+      );
       performanceService.clearCache(); // Limpiar caché para liberar memoria
     }
   }
@@ -86,9 +90,12 @@ exports.PerformanceMonitor = class PerformanceMonitor {
     try {
       // Aquí podrías agregar lógica para verificar el estado de las conexiones
       // y optimizar según sea necesario
-      logger.debug("Verificando conexiones de base de datos");
+      console.debug("[DEBUG] Verificando conexiones de base de datos");
     } catch (error) {
-      logger.error("Error al verificar conexiones de base de datos:", error);
+      console.error(
+        "[ERROR] Error al verificar conexiones de base de datos:",
+        error
+      );
     }
   }
 };

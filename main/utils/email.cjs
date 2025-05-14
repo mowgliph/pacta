@@ -34,7 +34,9 @@ exports.EmailService = class EmailService {
             pass: correoConfig.password,
           },
         });
-        this.logger.info("Transporte de email configurado desde base de datos");
+        this.logger?.info(
+          "Transporte de email configurado desde base de datos"
+        );
       } else {
         // Fallback a variables de entorno si no hay config en BD
         if (process.env.SMTP_HOST) {
@@ -47,17 +49,17 @@ exports.EmailService = class EmailService {
               pass: process.env.SMTP_PASSWORD,
             },
           });
-          this.logger.info(
+          this.logger?.info(
             "Transporte de email configurado desde variables de entorno"
           );
         } else {
-          this.logger.warn(
+          this.logger?.warn(
             "No se encontró configuración de email. La funcionalidad de envío estará desactivada."
           );
         }
       }
     } catch (error) {
-      this.logger.error("Error inicializando transporter de email:", error);
+      this.logger?.error("Error inicializando transporter de email:", error);
     }
   }
 
@@ -106,7 +108,7 @@ exports.EmailService = class EmailService {
         attachments: options.attachments,
       });
 
-      this.logger.info("Email enviado correctamente", {
+      this.logger?.info("Email enviado correctamente", {
         messageId: info.messageId,
       });
 
@@ -120,7 +122,7 @@ exports.EmailService = class EmailService {
 
       return true;
     } catch (error) {
-      this.logger.error("Error al enviar email:", error);
+      this.logger?.error("Error al enviar email:", error);
 
       // Registrar error
       const errorMessage =
@@ -168,7 +170,7 @@ exports.EmailService = class EmailService {
         html: body,
       });
     } catch (error) {
-      this.logger.error(
+      this.logger?.error(
         `Error al enviar email con plantilla "${templateName}":`,
         error
       );

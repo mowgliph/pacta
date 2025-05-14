@@ -2,7 +2,6 @@ const { authService } = require("./auth-service.cjs");
 const { permissionService } = require("./permission-service.cjs");
 const { rateLimiter } = require("./rate-limiter.cjs");
 const { securityManager } = require("./security-manager.cjs");
-const { logger } = require("../utils/logger.cjs");
 
 /**
  * Servicio integrado de seguridad que unifica los diferentes
@@ -17,13 +16,13 @@ function SecurityService() {
 }
 
 SecurityService.prototype.initialize = function () {
-  logger.info("Inicializando servicios de seguridad...");
+  console.info("Inicializando servicios de seguridad...");
   // Asegurar que todas las instancias singleton estén inicializadas
   authService;
   permissionService;
   rateLimiter;
   securityManager;
-  logger.info("Servicios de seguridad inicializados correctamente");
+  console.info("Servicios de seguridad inicializados correctamente");
 };
 
 SecurityService.prototype.login = async function (params) {
@@ -31,7 +30,7 @@ SecurityService.prototype.login = async function (params) {
   const rateLimitKey = `login:${email}:${ipAddress || "unknown"}`;
   const allowed = await rateLimiter.checkLoginAttempt(rateLimitKey);
   if (!allowed) {
-    logger.warn(`Intento de login bloqueado por rate limiting: ${email}`);
+    console.warn(`Intento de login bloqueado por rate limiting: ${email}`);
     throw new Error(
       "Demasiados intentos de inicio de sesión. Por favor, inténtelo más tarde."
     );
@@ -52,7 +51,7 @@ SecurityService.prototype.checkPermission = async function (params) {
     return permissionService.hasPermission(userId, resource, action);
   }
   // Si no se proporciona ni token ni userId, denegar acceso
-  logger.warn("Intento de verificar permisos sin token ni userId");
+  console.warn("Intento de verificar permisos sin token ni userId");
   return false;
 };
 

@@ -1,5 +1,4 @@
 const { IPC_CHANNELS } = require("../channels/ipc-channels.cjs");
-const logger = require("../utils/logger.cjs");
 const store = require("../store/store-manager.cjs");
 const { withErrorHandling } = require("../utils/error-handler.cjs");
 
@@ -8,7 +7,7 @@ function registerStoreHandlers(eventManager) {
     [IPC_CHANNELS.STORE.GET]: withErrorHandling(
       IPC_CHANNELS.STORE.GET,
       async (event, key) => {
-        logger.info("Obteniendo valor del store:", key);
+        console.info("Obteniendo valor del store:", key);
         let value = null;
         switch (key) {
           case "theme":
@@ -33,7 +32,7 @@ function registerStoreHandlers(eventManager) {
     [IPC_CHANNELS.STORE.SET]: withErrorHandling(
       IPC_CHANNELS.STORE.SET,
       async (event, { key, value }) => {
-        logger.info("Guardando valor en store:", { key, value });
+        console.info("Guardando valor en store:", { key, value });
         switch (key) {
           case "theme":
             store.setTheme(value);
@@ -54,7 +53,7 @@ function registerStoreHandlers(eventManager) {
     [IPC_CHANNELS.STORE.DELETE]: withErrorHandling(
       IPC_CHANNELS.STORE.DELETE,
       async (event, key) => {
-        logger.info("Eliminando valor del store:", key);
+        console.info("Eliminando valor del store:", key);
         if (key === "auth") {
           store.clearAuth();
         }
@@ -64,7 +63,7 @@ function registerStoreHandlers(eventManager) {
     [IPC_CHANNELS.STORE.CLEAR]: withErrorHandling(
       IPC_CHANNELS.STORE.CLEAR,
       async () => {
-        logger.info("Limpiando store");
+        console.info("Limpiando store");
         store.clearStore();
         return { success: true, data: true };
       }
@@ -72,14 +71,14 @@ function registerStoreHandlers(eventManager) {
     [IPC_CHANNELS.STORE.BACKUP]: withErrorHandling(
       IPC_CHANNELS.STORE.BACKUP,
       async () => {
-        logger.info("Backup no implementado");
+        console.info("Backup no implementado");
         return { success: true, data: false };
       }
     ),
     [IPC_CHANNELS.STORE.RESTORE]: withErrorHandling(
       IPC_CHANNELS.STORE.RESTORE,
       async (event, backupPath) => {
-        logger.info("Restore no implementado");
+        console.info("Restore no implementado");
         return { success: true, data: false };
       }
     ),

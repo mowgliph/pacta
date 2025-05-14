@@ -1,5 +1,4 @@
 const { RateLimiterMemory } = require("rate-limiter-flexible");
-const { logger } = require("../utils/logger.cjs");
 
 /**
  * Servicio de limitación de tasa para prevenir ataques de fuerza bruta
@@ -54,7 +53,7 @@ class RateLimiter {
       ) {
         resetTime = new Date(Date.now() + error.msBeforeNext);
       }
-      logger.warn(
+      console.warn(
         `Intento de login bloqueado para ${key}. Desbloqueo: ${resetTime.toLocaleString()}`
       );
       return false;
@@ -68,11 +67,11 @@ class RateLimiter {
   async loginSuccessful(key) {
     try {
       await this.loginLimiter.delete(key);
-      logger.info(
+      console.info(
         `Contador de intentos reseteado para ${key} tras login exitoso`
       );
     } catch (error) {
-      logger.error(`Error al resetear contador para ${key}:`, error);
+      console.error(`Error al resetear contador para ${key}:`, error);
     }
   }
 
@@ -95,7 +94,7 @@ class RateLimiter {
       ) {
         resetTime = new Date(Date.now() + error.msBeforeNext);
       }
-      logger.warn(
+      console.warn(
         `Solicitud API bloqueada para ${key}. Desbloqueo: ${resetTime.toLocaleString()}`
       );
       return false;

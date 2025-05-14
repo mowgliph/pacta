@@ -1,5 +1,4 @@
 const { IPC_CHANNELS } = require("../channels/ipc-channels.cjs");
-const logger = require("../utils/logger.cjs");
 const { prisma } = require("../utils/prisma.cjs");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -19,7 +18,7 @@ function registerAuthHandlers(eventManager) {
     [IPC_CHANNELS.AUTH.LOGIN]: withErrorHandling(
       IPC_CHANNELS.AUTH.LOGIN,
       async (event, credentials) => {
-        logger.info("Intento de inicio de sesión", {
+        console.info("Intento de inicio de sesión", {
           email: credentials?.email,
         });
         const { email, password } = LoginSchema.parse(credentials);
@@ -37,7 +36,7 @@ function registerAuthHandlers(eventManager) {
           where: { id: user.id },
           data: { lastLogin: new Date() },
         });
-        logger.info("Login exitoso", { userId: user.id });
+        console.info("Login exitoso", { userId: user.id });
         return {
           success: true,
           data: {
@@ -56,7 +55,7 @@ function registerAuthHandlers(eventManager) {
     [IPC_CHANNELS.AUTH.LOGOUT]: withErrorHandling(
       IPC_CHANNELS.AUTH.LOGOUT,
       async (event, userId) => {
-        logger.info("Cierre de sesión solicitado", { userId });
+        console.info("Cierre de sesión solicitado", { userId });
         await prisma.historyRecord.create({
           data: {
             entityType: "user",
@@ -74,12 +73,12 @@ function registerAuthHandlers(eventManager) {
     [IPC_CHANNELS.AUTH.VERIFY]: withErrorHandling(
       IPC_CHANNELS.AUTH.VERIFY,
       async (event, token) => {
-        logger.info("Verificación de token solicitada");
+        console.info("Verificación de token solicitada");
         try {
           const payload = jwt.verify(token, JWT_SECRET);
           return { success: true, data: { valid: true, payload } };
         } catch (error) {
-          logger.warn("Token inválido:", error);
+          console.warn("Token inválido:", error);
           return { success: true, data: { valid: false } };
         }
       }
@@ -88,7 +87,7 @@ function registerAuthHandlers(eventManager) {
     [IPC_CHANNELS.AUTH.REFRESH]: withErrorHandling(
       IPC_CHANNELS.AUTH.REFRESH,
       async (event, refreshToken) => {
-        logger.info("Refresco de token solicitado");
+        console.info("Refresco de token solicitado");
         const payload = jwt.verify(refreshToken, JWT_SECRET);
         if (
           typeof payload !== "object" ||

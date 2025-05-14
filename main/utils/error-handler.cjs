@@ -1,5 +1,3 @@
-const { logger } = require("./logger.cjs");
-
 /**
  * Clase para representar errores de la aplicación
  */
@@ -16,7 +14,7 @@ exports.AppError = class AppError extends Error {
     this.code = code;
     this.data = data;
     Object.setPrototypeOf(this, exports.AppError.prototype);
-    logger.error(`[${type}] ${message}`, { code, data });
+    console.error(`[${type}] ${message}`, { code, data });
   }
 
   /**

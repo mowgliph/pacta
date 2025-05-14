@@ -1,5 +1,4 @@
 const { IPC_CHANNELS } = require("../channels/ipc-channels.cjs");
-const logger = require("../utils/logger.cjs");
 const {
   DocumentSchema,
 } = require("../validations/schemas/document.schema.cjs");
@@ -85,7 +84,7 @@ function registerDocumentHandlers(eventManager) {
     [IPC_CHANNELS.DATA.DOCUMENTS.UPLOAD]: withErrorHandling(
       IPC_CHANNELS.DATA.DOCUMENTS.UPLOAD,
       async (event, meta, attachment) => {
-        logger.info("Subida de documento solicitada", {
+        console.info("Subida de documento solicitada", {
           meta,
           fileName: attachment?.name,
         });
@@ -95,7 +94,7 @@ function registerDocumentHandlers(eventManager) {
           !attachment.data ||
           !attachment.type
         ) {
-          logger.error("Archivo adjunto inválido", { attachment });
+          console.error("Archivo adjunto inválido", { attachment });
           throw new Error("Archivo adjunto inválido");
         }
         const baseName = path.basename(attachment.name);
@@ -104,7 +103,7 @@ function registerDocumentHandlers(eventManager) {
           !ALLOWED_EXTENSIONS.includes(ext) ||
           !ALLOWED_MIME_TYPES.includes(attachment.type)
         ) {
-          logger.error("Tipo de archivo no permitido", {
+          console.error("Tipo de archivo no permitido", {
             ext,
             mime: attachment.type,
           });
@@ -136,7 +135,7 @@ function registerDocumentHandlers(eventManager) {
             path: safeName,
           },
         });
-        logger.info("Documento guardado en:", filePath);
+        console.info("Documento guardado en:", filePath);
         return { success: true, data: document };
       }
     ),
@@ -148,25 +147,25 @@ function registerDocumentHandlers(eventManager) {
           select: { path: true, originalName: true },
         });
         if (!doc || !doc.path) {
-          logger.error(`Documento no encontrado en base de datos: ${id}`);
+          console.error(`Documento no encontrado en base de datos: ${id}`);
           throw new Error("Documento no encontrado");
         }
         const absPath = path.resolve(DOCUMENTS_DIR, doc.path);
         if (!absPath.startsWith(DOCUMENTS_DIR)) {
-          logger.error(
+          console.error(
             `Intento de acceso a ruta fuera de documentos: ${absPath}`
           );
           throw new Error("Acceso no permitido");
         }
         if (!fs.existsSync(absPath)) {
-          logger.error(`Archivo no encontrado en disco: ${absPath}`);
+          console.error(`Archivo no encontrado en disco: ${absPath}`);
           throw new Error("Archivo no encontrado en disco");
         }
         await prisma.document.update({
           where: { id },
           data: { downloads: { increment: 1 } },
         });
-        logger.info(`Documento descargado: ${doc.originalName} (${absPath})`);
+        console.info(`Documento descargado: ${doc.originalName} (${absPath})`);
         return {
           success: true,
           data: { path: absPath, name: doc.originalName },
@@ -198,20 +197,20 @@ function registerDocumentHandlers(eventManager) {
         if (doc && doc.path) {
           const absPath = path.resolve(DOCUMENTS_DIR, doc.path);
           if (!absPath.startsWith(DOCUMENTS_DIR)) {
-            logger.error(
+            console.error(
               `Intento de eliminar archivo fuera de documentos: ${absPath}`
             );
             throw new Error("Acceso no permitido");
           }
           if (fs.existsSync(absPath)) {
             fs.unlinkSync(absPath);
-            logger.info(`Archivo eliminado: ${absPath}`);
+            console.info(`Archivo eliminado: ${absPath}`);
           } else {
-            logger.warn(`Intento de eliminar archivo inexistente: ${absPath}`);
+            console.warn(`Intento de eliminar archivo inexistente: ${absPath}`);
           }
         }
         await prisma.document.delete({ where: { id } });
-        logger.info(`Registro de documento eliminado: ${id}`);
+        console.info(`Registro de documento eliminado: ${id}`);
         return { success: true, data: true };
       }
     ),

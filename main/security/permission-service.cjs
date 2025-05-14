@@ -1,5 +1,4 @@
 const { prisma } = require("../utils/prisma.cjs");
-const logger = require("../utils/logger.cjs");
 const { authService } = require("./auth-service.cjs");
 
 // Función constructora para PermissionService (reemplaza clase)
@@ -29,7 +28,7 @@ PermissionService.prototype.hasPermission = async function (
     });
 
     if (!user) {
-      logger.warn(`Usuario no encontrado al verificar permisos: ${userId}`);
+      console.warn(`Usuario no encontrado al verificar permisos: ${userId}`);
       return false;
     }
 
@@ -50,7 +49,7 @@ PermissionService.prototype.hasPermission = async function (
         rolePermissions[resource][action]
     );
   } catch (error) {
-    logger.error(`Error al verificar permisos para usuario ${userId}:`, error);
+    console.error(`Error al verificar permisos para usuario ${userId}:`, error);
     return false;
   }
 };
@@ -79,7 +78,7 @@ PermissionService.prototype.verifyTokenPermission = function (
 
     return false;
   } catch (error) {
-    logger.error("Error al verificar permisos del token:", error);
+    console.error("Error al verificar permisos del token:", error);
     return false;
   }
 };
@@ -103,7 +102,7 @@ PermissionService.prototype.getRolePermissions = async function (roleId) {
     });
 
     if (!role) {
-      logger.warn(`Rol no encontrado al obtener permisos: ${roleId}`);
+      console.warn(`Rol no encontrado al obtener permisos: ${roleId}`);
       return {};
     }
 
@@ -112,7 +111,7 @@ PermissionService.prototype.getRolePermissions = async function (roleId) {
       try {
         permissions = JSON.parse(role.permissions);
       } catch (e) {
-        logger.error(`Permisos mal formateados para el rol ${roleId}:`, e);
+        console.error(`Permisos mal formateados para el rol ${roleId}:`, e);
         permissions = {};
       }
     } else {
@@ -124,7 +123,7 @@ PermissionService.prototype.getRolePermissions = async function (roleId) {
 
     return permissions;
   } catch (error) {
-    logger.error(`Error al obtener permisos del rol ${roleId}:`, error);
+    console.error(`Error al obtener permisos del rol ${roleId}:`, error);
     return {};
   }
 };
@@ -132,13 +131,13 @@ PermissionService.prototype.getRolePermissions = async function (roleId) {
 PermissionService.prototype.invalidateRoleCache = function (roleId) {
   this.rolePermissionsCache.delete(roleId);
   this.cacheTimestamps.delete(roleId);
-  logger.info(`Caché de permisos invalidada para rol: ${roleId}`);
+  console.info(`Caché de permisos invalidada para rol: ${roleId}`);
 };
 
 PermissionService.prototype.invalidateAllCache = function () {
   this.rolePermissionsCache.clear();
   this.cacheTimestamps.clear();
-  logger.info("Caché de permisos completamente invalidada");
+  console.info("Caché de permisos completamente invalidada");
 };
 
 PermissionService.prototype.startCleanupTasks = function () {
@@ -158,7 +157,7 @@ PermissionService.prototype.cleanupExpiredCache = function () {
   }
 
   if (count > 0) {
-    logger.info(`Limpieza de caché: ${count} entradas expiradas eliminadas`);
+    console.info(`Limpieza de caché: ${count} entradas expiradas eliminadas`);
   }
 };
 

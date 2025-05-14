@@ -10,14 +10,20 @@ export default defineConfig({
       formats: ["cjs"],
     },
     rollupOptions: {
-      external: ["electron", "electron-store", "electron-updater"],
+      external: ["electron", "electron-updater"],
       output: {
         entryFileNames: "[name].cjs",
       },
     },
-    target: "node16",
+    target: "node20",
     minify: false,
     sourcemap: true,
+    commonjsOptions: {
+      include: [/electron-store/, /node_modules/],
+    },
+  },
+  optimizeDeps: {
+    include: ["electron-store"],
   },
   resolve: {
     alias: {

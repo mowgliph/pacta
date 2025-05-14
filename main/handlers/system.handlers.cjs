@@ -1,5 +1,4 @@
 const { IPC_CHANNELS } = require("../channels/ipc-channels.cjs");
-const logger = require("../utils/logger.cjs");
 const { backupService } = require("../utils/backup-service.cjs");
 const { shell, app } = require("electron");
 const { config } = require("../utils/config.cjs");
@@ -33,9 +32,9 @@ function persistConfig() {
     fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2), {
       encoding: "utf-8",
     });
-    logger.info("Configuración persistida en disco");
+    console.info("Configuración persistida en disco");
   } catch (error) {
-    logger.error("Error al persistir configuración:", error);
+    console.error("[ERROR] Error al persistir configuración:", error);
   }
 }
 

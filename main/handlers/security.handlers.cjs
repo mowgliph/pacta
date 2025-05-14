@@ -1,14 +1,10 @@
 const { IPC_CHANNELS } = require("../channels/ipc-channels.cjs");
-const { SecurityManager } = require("../security/security-manager.cjs");
-const { PermissionService } = require("../security/permission-service.cjs");
-const { RateLimiter } = require("../security/rate-limiter.cjs");
+const { securityManager } = require("../security/security-manager.cjs");
+const { permissionService } = require("../security/permission-service.cjs");
+const { rateLimiter } = require("../security/rate-limiter.cjs");
 const { withErrorHandling } = require("../utils/error-handler.cjs");
 
 function registerSecurityHandlers(eventManager) {
-  const securityManager = SecurityManager.getInstance();
-  const permissionService = PermissionService.getInstance();
-  const rateLimiter = RateLimiter.getInstance();
-
   const handlers = {
     [IPC_CHANNELS.SECURITY.PERMISSIONS.GET]: withErrorHandling(
       IPC_CHANNELS.SECURITY.PERMISSIONS.GET,

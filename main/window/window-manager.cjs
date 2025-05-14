@@ -2,8 +2,7 @@ const { BrowserWindow, app, screen, shell } = require("electron");
 const { join, resolve } = require("path");
 const ElectronStore = require("electron-store");
 const { MAIN_WINDOW_CONFIG, isDevelopment } = require("../utils/constants.cjs");
-const { logger } = require("../utils/logger.cjs");
-const { SecurityManager } = require("../security/security-manager.cjs");
+const { securityManager } = require("../security/security-manager.cjs");
 
 // Gestor centralizado para la creación y manejo de ventanas de la aplicación
 // Implementa el patrón Singleton para garantizar una única instancia
@@ -11,7 +10,7 @@ function WindowManager() {
   if (!(this instanceof WindowManager)) return new WindowManager();
   this.windows = new Map();
   this.store = new ElectronStore({ name: "window-state" });
-  this.securityManager = SecurityManager.getInstance();
+  this.securityManager = securityManager;
   this.isQuitting = false;
 
   // Controlar el evento before-quit para no cerrar aplicación al cerrar ventanas
@@ -83,10 +82,10 @@ WindowManager.prototype.createMainWindow = async function () {
       return { action: "deny" };
     });
     this.windows.set(windowId, window);
-    logger.info(`Ventana principal creada (${window.id})`);
+    console.info(`Ventana principal creada (${window.id})`);
     return window;
   } catch (error) {
-    logger.error(
+    console.error(
       "Error creating main window:",
       error && error.message ? error.message : String(error)
     );
@@ -127,7 +126,7 @@ WindowManager.prototype.createModalWindow = function (options) {
   modalWindow.on("closed", () => {
     this.windows.delete(modalId);
   });
-  logger.info(`Ventana modal creada (${modalWindow.id})`);
+  console.info(`Ventana modal creada (${modalWindow.id})`);
   return modalWindow;
 };
 
@@ -169,7 +168,7 @@ WindowManager.prototype.setupWindowEvents = function (window) {
   window.webContents.on(
     "did-fail-load",
     function (_, errorCode, errorDescription) {
-      logger.error("Window failed to load:", { errorCode, errorDescription });
+      console.error("Window failed to load:", { errorCode, errorDescription });
     }
   );
 };
@@ -185,7 +184,7 @@ WindowManager.prototype.getWindowState = function () {
     if (!savedState) return defaultState;
     return this.ensureVisibleOnScreen(savedState);
   } catch (error) {
-    logger.error(
+    console.error(
       "Error getting window state:",
       error && error.message ? error.message : String(error)
     );
@@ -201,12 +200,12 @@ WindowManager.prototype.saveWindowState = function (state) {
       state.width < 200 ||
       state.height < 200
     ) {
-      logger.error("Intento de guardar un estado de ventana inválido", state);
+      console.error("Intento de guardar un estado de ventana inválido", state);
       return;
     }
     this.store.set("mainWindow", state);
   } catch (error) {
-    logger.error(
+    console.error(
       "Error saving window state:",
       error && error.message ? error.message : String(error)
     );
@@ -253,4 +252,4 @@ WindowManager.prototype.closeAllWindows = function () {
   });
 };
 
-exports.WindowManager = WindowManager;
+module.exports = { WindowManager };

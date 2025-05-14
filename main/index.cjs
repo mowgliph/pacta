@@ -38,8 +38,10 @@ const { autoUpdater } = require("electron-updater");
  */
 async function main() {
   try {
+    logger.info("[DEBUG] Inicio de main()");
     // Prevenir múltiples instancias de la aplicación
     const gotTheLock = app.requestSingleInstanceLock();
+    logger.info("[DEBUG] requestSingleInstanceLock:", gotTheLock);
 
     if (!gotTheLock) {
       logger.info(
@@ -54,26 +56,16 @@ async function main() {
       logger.info("Se detectó un intento de abrir una segunda instancia", {
         commandLine,
       });
-
-      // Obtener la instancia del AppManager
       const appManager = AppManager.getInstance();
-
-      // Si hay ventanas existentes, restaurar y enfocar la principal
       appManager.focusMainWindow();
-
-      // Procesar argumentos de línea de comandos si es necesario
       if (commandLine.length > 1) {
         appManager.processCommandLineArgs(commandLine);
       }
     });
 
-    // Evitar navegación a URLs externas (protección contra redirecciones)
     app.on("web-contents-created", (_event, contents) => {
       contents.on("will-navigate", (event, navigationUrl) => {
         const parsedUrl = new URL(navigationUrl);
-
-        // Solo permitir navegación dentro de la aplicación
-        // (file:// o http://localhost)
         if (
           parsedUrl.protocol !== "file:" &&
           !(
@@ -84,29 +76,30 @@ async function main() {
           event.preventDefault();
         }
       });
-
-      // Prevenir la creación de nuevas ventanas desde el renderer
       contents.setWindowOpenHandler(({ url }) => {
         logger.warn("Intento de abrir nueva ventana bloqueado:", url);
         return { action: "deny" };
       });
     });
 
-    // Crear y obtener la instancia del gestor de la aplicación
+    logger.info("[DEBUG] Antes de AppManager.getInstance()");
     const appManager = AppManager.getInstance();
+    logger.info("[DEBUG] Después de AppManager.getInstance()");
 
-    // Inicializar el gestor de eventos
+    logger.info("[DEBUG] Antes de EventManager.getInstance()");
     const eventManager = EventManager.getInstance();
+    logger.info("[DEBUG] Después de EventManager.getInstance()");
 
-    // Inicializar conexión a la base de datos
+    logger.info("[DEBUG] Antes de initPrisma()");
     const dbOk = await initPrisma();
+    logger.info("[DEBUG] Después de initPrisma():", dbOk);
     if (!dbOk) {
       logger.error("No se pudo conectar a la base de datos. Abortando.");
       app.quit();
       return;
     }
 
-    // Registrar manejadores de eventos
+    logger.info("[DEBUG] Antes de registrar manejadores de eventos");
     registerAuthHandlers(eventManager);
     registerContractHandlers(eventManager);
     registerDocumentHandlers(eventManager);
@@ -119,19 +112,20 @@ async function main() {
     registerSecurityHandlers(eventManager);
     registerStoreHandlers(eventManager);
     registerValidationHandlers(eventManager);
+    logger.info("[DEBUG] Después de registrar manejadores de eventos");
 
-    // Instancia correctamente tipada de electron-store
+    logger.info("[DEBUG] Antes de instanciar ElectronStore");
+    console.log("ElectronStore:", ElectronStore);
     const themeStore = new ElectronStore({
       name: "theme-preference",
     });
+    logger.info("[DEBUG] Después de instanciar ElectronStore");
 
-    // Al iniciar la app, aplicar el tema guardado si existe
     const savedTheme = themeStore.get("theme");
     if (savedTheme && ["light", "dark", "system"].includes(savedTheme)) {
       nativeTheme.themeSource = savedTheme;
     }
 
-    // Handlers para tema claro/oscuro/sistema
     ipcMain.handle("theme:get-system", () => {
       return nativeTheme.shouldUseDarkColors ? "dark" : "light";
     });
@@ -144,17 +138,20 @@ async function main() {
       return { success: false, error: "Tema no válido" };
     });
 
-    // Inicializar la aplicación
+    logger.info("[DEBUG] Antes de appManager.initialize()");
     await appManager.initialize();
+    logger.info("[DEBUG] Después de appManager.initialize()");
 
-    // Integrar autoUpdater: notificar al renderer cuando haya una actualización
     autoUpdater.on("update-available", () => {
       appManager.notifyUpdateAvailable();
     });
-    // Comprobar actualizaciones automáticamente al iniciar la app
     autoUpdater.checkForUpdatesAndNotify();
   } catch (error) {
-    logger.error("Error crítico al iniciar la aplicación:", error);
+    logger.error(
+      "Error crítico al iniciar la aplicación:",
+      error,
+      error && error.stack
+    );
     process.exit(1);
   }
 }

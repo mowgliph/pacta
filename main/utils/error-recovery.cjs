@@ -1,5 +1,4 @@
 const { app } = require("electron");
-const { logger } = require("./logger.cjs");
 const { ErrorMonitorService } = require("./error-monitor.cjs");
 const { AppError } = require("./error-handler.cjs");
 
@@ -29,11 +28,11 @@ exports.ErrorRecoveryManager = class ErrorRecoveryManager {
    */
   async handleCriticalError(error) {
     if (this.isRecovering) {
-      logger.warn("Proceso de recuperación ya en curso");
+      console.warn("Proceso de recuperación ya en curso");
       return;
     }
     this.isRecovering = true;
-    logger.error("Iniciando manejo de error crítico:", error);
+    console.error("Iniciando manejo de error crítico:", error);
     try {
       this.errorMonitor.monitorError(error);
       await this.attemptRecovery(error);
@@ -42,7 +41,7 @@ exports.ErrorRecoveryManager = class ErrorRecoveryManager {
         "La aplicación se ha recuperado del error."
       );
     } catch (recoveryError) {
-      logger.error("Error durante la recuperación:", recoveryError);
+      console.error("Error durante la recuperación:", recoveryError);
       this.handleRecoveryFailure();
     } finally {
       this.isRecovering = false;
@@ -76,7 +75,7 @@ exports.ErrorRecoveryManager = class ErrorRecoveryManager {
    * Recuperación de errores de base de datos
    */
   async recoverFromDatabaseError() {
-    logger.info("Intentando recuperación de base de datos...");
+    console.info("Intentando recuperación de base de datos...");
     // Implementar reconexión a la base de datos
     // Verificar integridad
     // Restaurar último backup válido si es necesario
@@ -86,7 +85,7 @@ exports.ErrorRecoveryManager = class ErrorRecoveryManager {
    * Recuperación de errores del sistema de archivos
    */
   async recoverFromFileSystemError() {
-    logger.info("Intentando recuperación del sistema de archivos...");
+    console.info("Intentando recuperación del sistema de archivos...");
     // Verificar permisos de escritura/lectura
     // Liberar espacio si es necesario
     // Restaurar archivos desde backup si es necesario
@@ -96,7 +95,7 @@ exports.ErrorRecoveryManager = class ErrorRecoveryManager {
    * Recuperación de errores de autenticación
    */
   async recoverFromAuthError() {
-    logger.info("Intentando recuperación de autenticación...");
+    console.info("Intentando recuperación de autenticación...");
     // Limpiar tokens expirados
     // Reiniciar estado de autenticación
     // Solicitar nueva autenticación si es necesario
@@ -106,7 +105,7 @@ exports.ErrorRecoveryManager = class ErrorRecoveryManager {
    * Recuperación de errores de memoria
    */
   async recoverFromMemoryError() {
-    logger.info("Intentando recuperación de memoria...");
+    console.info("Intentando recuperación de memoria...");
     // Liberar recursos no esenciales
     // Limpiar caché
     // Reiniciar procesos si es necesario
@@ -116,7 +115,7 @@ exports.ErrorRecoveryManager = class ErrorRecoveryManager {
    * Recuperación general para errores no específicos
    */
   async performGeneralRecovery() {
-    logger.info("Realizando recuperación general...");
+    console.info("Realizando recuperación general...");
     // Verificar estado general de la aplicación
     // Reiniciar servicios críticos si es necesario
     // Restaurar estado predeterminado seguro
@@ -126,7 +125,7 @@ exports.ErrorRecoveryManager = class ErrorRecoveryManager {
    * Maneja el caso de fallo en la recuperación
    */
   handleRecoveryFailure() {
-    logger.error("Fallo en la recuperación, preparando cierre seguro...");
+    console.error("Fallo en la recuperación, preparando cierre seguro...");
     this.notifyUser(
       "Error Crítico",
       "No se pudo recuperar la aplicación. Se realizará un cierre seguro."
@@ -151,7 +150,7 @@ exports.ErrorRecoveryManager = class ErrorRecoveryManager {
    * Realiza un cierre seguro de la aplicación
    */
   performSafeShutdown() {
-    logger.info("Iniciando cierre seguro de la aplicación...");
+    console.info("Iniciando cierre seguro de la aplicación...");
     setTimeout(() => {
       app.quit();
     }, 5000);

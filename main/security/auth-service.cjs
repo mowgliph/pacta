@@ -1,5 +1,4 @@
 const { prisma } = require("../utils/prisma.cjs");
-const { logger } = require("../utils/logger.cjs");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { setAuthToken, clearAuth } = require("../store/store-manager.cjs");
@@ -89,7 +88,7 @@ class AuthService {
     const allowed = await rateLimiter.checkLoginAttempt(rateLimitKey);
     if (!allowed) {
       this.#incrementFailedAttempts(email);
-      logger.warn(`Intento de login bloqueado por rate limiting: ${email}`);
+      console.warn(`Intento de login bloqueado por rate limiting: ${email}`);
       throw new Error(
         "Demasiados intentos de inicio de sesión. Por favor, inténtelo más tarde."
       );
@@ -112,7 +111,7 @@ class AuthService {
 
       if (!user) {
         this.#incrementFailedAttempts(email);
-        logger.warn(
+        console.warn(
           `Intento de inicio de sesión con email no encontrado: ${email}`
         );
         throw new Error("Credenciales inválidas");
@@ -120,7 +119,7 @@ class AuthService {
 
       // Verificar si el usuario está activo
       if (!user.isActive) {
-        logger.warn(
+        console.warn(
           `Intento de inicio de sesión con cuenta inactiva: ${email}`
         );
         throw new Error("Cuenta inactiva. Contacte al administrador.");
@@ -130,7 +129,7 @@ class AuthService {
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
         this.#incrementFailedAttempts(email);
-        logger.warn(
+        console.warn(
           `Intento de inicio de sesión con contraseña incorrecta: ${email}`
         );
         throw new Error("Credenciales inválidas");
@@ -172,9 +171,9 @@ class AuthService {
       };
     } catch (error) {
       if (error instanceof Error) {
-        logger.error(`Error en proceso de login: ${error.message}`);
+        console.error(`Error en proceso de login: ${error.message}`);
       } else {
-        logger.error(`Error en proceso de login: ${String(error)}`);
+        console.error(`Error en proceso de login: ${String(error)}`);
       }
       throw error;
     }
@@ -237,13 +236,13 @@ class AuthService {
           this.activeSessions.delete(decoded.deviceId);
         }
       } catch (error) {
-        logger.error("Error al decodificar token durante logout:", error);
+        console.error("Error al decodificar token durante logout:", error);
       }
     }
 
     // Limpiar token almacenado
     clearAuth();
-    logger.info("Usuario cerró sesión");
+    console.info("Usuario cerró sesión");
     return { success: true };
   }
 
@@ -268,7 +267,7 @@ class AuthService {
         const session = this.#activeSessions.get(deviceId);
 
         if (!session) {
-          logger.warn(
+          console.warn(
             `Token válido pero sesión no encontrada para deviceId: ${deviceId}`
           );
           return { valid: false, error: "Sesión no encontrada" };
@@ -283,10 +282,10 @@ class AuthService {
     } catch (error) {
       // Si el error es por expiración, loggear específicamente
       if (error instanceof jwt.TokenExpiredError) {
-        logger.info("Token de autenticación expirado");
+        console.info("Token de autenticación expirado");
         return { valid: false, error: "Token expirado" };
       } else {
-        logger.warn("Error en verificación de token:", error);
+        console.warn("Error en verificación de token:", error);
         return {
           valid: false,
           error: error instanceof Error ? error.message : "Error desconocido",
@@ -326,7 +325,7 @@ class AuthService {
       const oneHourInMs = 60 * 60 * 1000;
 
       if (expiryTime - now < oneHourInMs) {
-        logger.info(
+        console.info(
           `Renovando token para usuario: ${decoded.email} (expira en menos de 1 hora)`
         );
 
@@ -363,10 +362,10 @@ class AuthService {
       };
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {
-        logger.info("Intento de renovar token expirado");
+        console.info("Intento de renovar token expirado");
         return { valid: false, renewed: false, error: "Token expirado" };
       } else {
-        logger.warn("Error al renovar token:", error);
+        console.warn("Error al renovar token:", error);
         return {
           valid: false,
           renewed: false,
@@ -395,7 +394,7 @@ class AuthService {
       // Verificar si el usuario tiene alguno de los roles requeridos
       return requiredRoles.includes(user.role);
     } catch (error) {
-      logger.error("Error al verificar rol:", error);
+      console.error("Error al verificar rol:", error);
       return false;
     }
   }
@@ -408,7 +407,7 @@ class AuthService {
     for (const [deviceId, session] of this.activeSessions.entries()) {
       if (session.userId === userId) {
         this.activeSessions.delete(deviceId);
-        logger.info(
+        console.info(
           `Sesión invalidada para usuario ${userId} en dispositivo ${deviceId}`
         );
       }
@@ -470,7 +469,7 @@ class AuthService {
    * Maneja el login de usuarios predefinidos (admin, ra)
    */
   #handleDefaultUserLogin(email, rememberMe, deviceId) {
-    logger.info(`Inicio de sesión especial: ${email}`);
+    console.info(`Inicio de sesión especial: ${email}`);
 
     // Crear datos de usuario predeterminados
     const isAdmin = email.startsWith("admin@");
@@ -546,7 +545,7 @@ class AuthService {
     }
 
     if (count > 0) {
-      logger.info(
+      console.info(
         `Limpieza de sesiones: ${count} sesiones expiradas eliminadas`
       );
     }

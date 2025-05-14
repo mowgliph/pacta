@@ -1,6 +1,5 @@
 const fs = require("fs");
 const path = require("path");
-const { logger } = require("./logger.cjs");
 
 const DB_PATH = path.resolve(__dirname, "../../prisma/db/pacta.db");
 const BACKUP_DIR = path.resolve(__dirname, "../../data/backups");
@@ -31,7 +30,7 @@ class BackupService {
     this.runBackup();
     if (this.intervalId) clearInterval(this.intervalId);
     this.intervalId = setInterval(() => this.runBackup(), ONE_DAY_MS);
-    logger.info("Backup automático programado cada 24 horas.");
+    console.info("Backup automático programado cada 24 horas.");
   }
 
   /**
@@ -46,10 +45,10 @@ class BackupService {
         `${BACKUP_PREFIX}${timestamp}${BACKUP_EXT}`
       );
       fs.copyFileSync(DB_PATH, backupFile);
-      logger.info(`Backup creado: ${backupFile}`);
+      console.info(`Backup creado: ${backupFile}`);
       this.cleanupOldBackups();
     } catch (error) {
-      logger.error("Error al crear backup:", error);
+      console.error("Error al crear backup:", error);
     }
   }
 
@@ -69,15 +68,15 @@ class BackupService {
           if (ageDays > BACKUP_RETENTION_DAYS) {
             fs.unlinkSync(filePath);
             deleted++;
-            logger.info(`Backup eliminado por antigüedad: ${file}`);
+            console.info(`Backup eliminado por antigüedad: ${file}`);
           }
         }
       }
       if (deleted > 0) {
-        logger.info(`Total de backups eliminados: ${deleted}`);
+        console.info(`Total de backups eliminados: ${deleted}`);
       }
     } catch (error) {
-      logger.error("Error al limpiar backups antiguos:", error);
+      console.error("Error al limpiar backups antiguos:", error);
     }
   }
 
@@ -102,9 +101,9 @@ class BackupService {
         throw new Error(`El archivo de backup no existe: ${backupPath}`);
       }
       fs.copyFileSync(backupPath, DB_PATH);
-      logger.info(`Base de datos restaurada desde backup: ${backupPath}`);
+      console.info(`Base de datos restaurada desde backup: ${backupPath}`);
     } catch (error) {
-      logger.error("Error al restaurar backup:", error);
+      console.error("Error al restaurar backup:", error);
       throw error;
     }
   }

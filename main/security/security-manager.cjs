@@ -1,6 +1,5 @@
 const crypto = require("crypto");
 const { ipcMain, BrowserWindow, app } = require("electron");
-const logger = require("../utils/logger.cjs");
 const { promisify } = require("util");
 const dotenv = require("dotenv");
 const fs = require("fs");
@@ -36,7 +35,7 @@ SecurityManager.prototype.setupSecurityHeaders = function () {
       const parsedUrl = new URL(navigationUrl);
       if (!this.isAllowedOrigin(parsedUrl.origin)) {
         event.preventDefault();
-        logger.warn(
+        console.warn(
           `Navegación bloqueada a origen no permitido: ${parsedUrl.origin}`
         );
       }
@@ -45,7 +44,7 @@ SecurityManager.prototype.setupSecurityHeaders = function () {
     contents.setWindowOpenHandler(({ url }) => {
       const parsedUrl = new URL(url);
       if (!this.isAllowedOrigin(parsedUrl.origin)) {
-        logger.warn(
+        console.warn(
           `Apertura de ventana bloqueada a origen no permitido: ${parsedUrl.origin}`
         );
         return { action: "deny" };
@@ -60,7 +59,7 @@ SecurityManager.prototype.isAllowedOrigin = function (origin) {
 };
 
 SecurityManager.prototype.setupSecurity = function () {
-  logger.info("Configurando opciones de seguridad...");
+  console.info("Configurando opciones de seguridad...");
   app.on("ready", () => {
     const csp = [
       "default-src 'self'",
@@ -127,12 +126,12 @@ SecurityManager.prototype.generateCsrfTokenForSession = function (jwtToken) {
     const csrfToken = crypto.randomBytes(32).toString("hex");
     const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
     this.csrfTokens.set(sessionId, { token: csrfToken, expiresAt });
-    logger.info(
+    console.info(
       `CSRF token generado para sesión: ${sessionId.substring(0, 8)}...`
     );
     return { csrfToken };
   } catch (error) {
-    logger.error("Error al generar CSRF token:", error);
+    console.error("Error al generar CSRF token:", error);
     throw error;
   }
 };
@@ -143,26 +142,26 @@ SecurityManager.prototype.verifyCsrfToken = function (jwtToken, csrfToken) {
     const sessionId = this.createSessionIdFromJwt(jwtToken);
     const storedData = this.csrfTokens.get(sessionId);
     if (!storedData) {
-      logger.warn(
+      console.warn(
         `CSRF token no encontrado para sesión: ${sessionId.substring(0, 8)}...`
       );
       return false;
     }
     if (storedData.expiresAt < Date.now()) {
       this.csrfTokens.delete(sessionId);
-      logger.warn(
+      console.warn(
         `CSRF token expirado para sesión: ${sessionId.substring(0, 8)}...`
       );
       return false;
     }
     const isValid = csrfToken === storedData.token;
     if (!isValid)
-      logger.warn(
+      console.warn(
         `CSRF token inválido para sesión: ${sessionId.substring(0, 8)}...`
       );
     return isValid;
   } catch (error) {
-    logger.error("Error al verificar CSRF token:", error);
+    console.error("Error al verificar CSRF token:", error);
     return false;
   }
 };
@@ -171,7 +170,7 @@ SecurityManager.prototype.registerDevice = function (userId, deviceId) {
   try {
     if (!userId || !deviceId) return { success: false };
     this.knownDevices.set(deviceId, { userId, lastActive: Date.now() });
-    logger.info(
+    console.info(
       `Dispositivo registrado para usuario ${userId}: ${deviceId.substring(
         0,
         8
@@ -179,7 +178,7 @@ SecurityManager.prototype.registerDevice = function (userId, deviceId) {
     );
     return { success: true };
   } catch (error) {
-    logger.error("Error al registrar dispositivo:", error);
+    console.error("Error al registrar dispositivo:", error);
     return { success: false };
   }
 };
@@ -194,7 +193,7 @@ SecurityManager.prototype.verifyDevice = function (userId, deviceId) {
     const isTrusted = device.userId === userId;
     return { valid: true, trusted: isTrusted };
   } catch (error) {
-    logger.error("Error al verificar dispositivo:", error);
+    console.error("Error al verificar dispositivo:", error);
     return { valid: false, trusted: false };
   }
 };
@@ -227,7 +226,7 @@ SecurityManager.prototype.triggerSessionInvalidationForUser = function (
     try {
       callback();
     } catch (error) {
-      logger.error(
+      console.error(
         `Error al ejecutar callback de invalidación para usuario ${userId}:`,
         error
       );
@@ -246,7 +245,7 @@ SecurityManager.prototype.cleanupExpiredCsrfTokens = function () {
     }
   }
   if (count > 0) {
-    logger.info(
+    console.info(
       `Limpieza de tokens CSRF: ${count} tokens expirados eliminados`
     );
   }
@@ -263,7 +262,7 @@ SecurityManager.prototype.cleanupInactiveDevices = function (maxDaysInactive) {
     }
   }
   if (count > 0) {
-    logger.info(
+    console.info(
       `Limpieza de dispositivos: ${count} dispositivos inactivos eliminados`
     );
   }
@@ -398,10 +397,4 @@ function sanitizeFileName(fileName) {
 }
 
 // Exportaciones
-module.exports = {
-  securityManager,
-  SecurityService,
-  securityService: new SecurityService(),
-  sanitizeInput,
-  sanitizeFileName,
-};
+module.exports = { SecurityManager, securityManager };

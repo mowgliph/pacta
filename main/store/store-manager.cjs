@@ -1,5 +1,4 @@
 const ElectronStore = require("electron-store");
-const { logger } = require("../utils/logger.cjs");
 const jwt = require("jsonwebtoken");
 
 // Store principal para la aplicación
@@ -16,7 +15,7 @@ if (!appStore.has("settings")) {
     notificationsEnabled: true,
     notificationDays: 7,
   });
-  logger.info("Configuración por defecto inicializada");
+  console.info("Configuración por defecto inicializada");
 }
 
 exports.getTheme = function () {
@@ -25,7 +24,7 @@ exports.getTheme = function () {
 
 exports.setTheme = function (theme) {
   appStore.set("settings.theme", theme);
-  logger.info(`Tema cambiado a: ${theme}`);
+  console.info(`Tema cambiado a: ${theme}`);
 };
 
 exports.getNotificationsEnabled = function () {
@@ -54,12 +53,12 @@ exports.getAuthToken = function () {
     try {
       const expiryDate = new Date(expiresAt);
       if (expiryDate < new Date()) {
-        logger.info("Token expirado según fecha almacenada, limpiando");
+        console.info("Token expirado según fecha almacenada, limpiando");
         exports.clearAuth();
         return null;
       }
     } catch (error) {
-      logger.error("Error al parsear fecha de expiración del token:", error);
+      console.error("Error al parsear fecha de expiración del token:", error);
       return token;
     }
   }
@@ -74,7 +73,7 @@ exports.setAuthToken = function (token) {
       try {
         expiresAt = new Date(decoded.exp * 1000).toISOString();
       } catch (error) {
-        logger.error("Error al convertir exp a fecha:", error);
+        console.error("Error al convertir exp a fecha:", error);
       }
     }
     const userId =
@@ -84,22 +83,22 @@ exports.setAuthToken = function (token) {
       userId,
       expiresAt,
     });
-    logger.info("Token de autenticación almacenado correctamente");
+    console.info("Token de autenticación almacenado correctamente");
     if (expiresAt && typeof expiresAt === "string") {
       try {
         const expiryTime = new Date(expiresAt);
         const timeToExpiry = expiryTime.getTime() - Date.now();
         const hoursToExpiry = Math.round(timeToExpiry / (1000 * 60 * 60));
-        logger.info(`Token válido por aproximadamente ${hoursToExpiry} horas`);
+        console.info(`Token válido por aproximadamente ${hoursToExpiry} horas`);
       } catch (error) {
-        logger.error(
+        console.error(
           "Error al calcular tiempo de expiración del token:",
           error
         );
       }
     }
   } catch (error) {
-    logger.error("Error al almacenar token de autenticación:", error);
+    console.error("Error al almacenar token de autenticación:", error);
   }
 };
 
@@ -110,10 +109,10 @@ exports.getAuthUserId = function () {
 
 exports.clearAuth = function () {
   appStore.delete("auth");
-  logger.info("Información de autenticación eliminada");
+  console.info("Información de autenticación eliminada");
 };
 
 exports.clearStore = function () {
   appStore.clear();
-  logger.info("Configuración completa eliminada");
+  console.info("Configuración completa eliminada");
 };

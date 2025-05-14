@@ -1,5 +1,4 @@
 const { IPC_CHANNELS } = require("../channels/ipc-channels.cjs");
-const logger = require("../utils/logger.cjs");
 const { prisma } = require("../utils/prisma.cjs");
 const fs = require("fs");
 const path = require("path");
@@ -85,7 +84,7 @@ function registerContractHandlers(eventManager) {
       }
     ),
     [IPC_CHANNELS.DATA.CONTRACTS.UPLOAD]: async (event, id, attachment) => {
-      logger.info("Subida de archivo de contrato solicitada", {
+      console.info("Subida de archivo de contrato solicitada", {
         id,
         attachment,
       });
@@ -111,10 +110,10 @@ function registerContractHandlers(eventManager) {
           `${id}_${Date.now()}_${attachment.name}`
         );
         fs.writeFileSync(filePath, Buffer.from(attachment.data));
-        logger.info("Archivo de contrato guardado en:", filePath);
+        console.info("Archivo de contrato guardado en:", filePath);
         return { path: filePath };
       } catch (error) {
-        logger.error("Error al subir archivo de contrato:", error);
+        console.error("Error al subir archivo de contrato:", error);
         throw error;
       }
     },
@@ -123,7 +122,7 @@ function registerContractHandlers(eventManager) {
       id,
       destPathOrOptions
     ) => {
-      logger.info("Exportación de contrato solicitada", {
+      console.info("Exportación de contrato solicitada", {
         id,
         destPathOrOptions,
       });
@@ -144,7 +143,7 @@ function registerContractHandlers(eventManager) {
             throw new Error("El archivo adjunto no existe en el sistema.");
           }
           fs.copyFileSync(documents[0].path, destPath);
-          logger.info("Adjunto exportado en:", destPath);
+          console.info("Adjunto exportado en:", destPath);
           return { path: destPath };
         }
         fs.mkdirSync(EXPORTS_DIR, { recursive: true });
@@ -166,10 +165,10 @@ function registerContractHandlers(eventManager) {
             Buffer.from("PDF simulado del contrato")
           );
         }
-        logger.info("Contrato exportado en:", exportPath);
+        console.info("Contrato exportado en:", exportPath);
         return { path: exportPath };
       } catch (error) {
-        logger.error("Error al exportar contrato:", error);
+        console.error("Error al exportar contrato:", error);
         throw error;
       }
     },

@@ -1,5 +1,4 @@
 const { PrismaClient } = require("@prisma/client");
-const { logger } = require("./logger.cjs");
 
 // Crear una única instancia de PrismaClient para toda la aplicación
 exports.prisma = new PrismaClient({
@@ -13,29 +12,29 @@ exports.prisma = new PrismaClient({
 
 // Registrar eventos de Prisma para diagnóstico
 exports.prisma.$on("query", (e) => {
-  logger.debug(`Prisma Query: ${e.query} (${e.duration}ms)`);
+  console.debug(`Prisma Query: ${e.query} (${e.duration}ms)`);
 });
 
 exports.prisma.$on("error", (e) => {
-  logger.error(`Prisma Error: ${e.message}`);
+  console.error(`Prisma Error: ${e.message}`);
 });
 
 exports.prisma.$on("info", (e) => {
-  logger.info(`Prisma Info: ${e.message}`);
+  console.info(`Prisma Info: ${e.message}`);
 });
 
 exports.prisma.$on("warn", (e) => {
-  logger.warn(`Prisma Warning: ${e.message}`);
+  console.warn(`Prisma Warning: ${e.message}`);
 });
 
 // Inicializar conexión (puedes llamar a esta función desde main/index.ts)
 exports.initPrisma = async function () {
   try {
     await exports.prisma.$connect();
-    logger.info("Connected to database successfully");
+    console.info("Connected to database successfully");
     return true;
   } catch (error) {
-    logger.error("Failed to connect to database:", error);
+    console.error("Failed to connect to database:", error);
     return false;
   }
 };

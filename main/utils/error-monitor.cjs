@@ -1,4 +1,3 @@
-const { logger } = require("./logger.cjs");
 const { AppError } = require("./error-handler.cjs");
 
 exports.ErrorMonitorService = class ErrorMonitorService {
@@ -72,7 +71,7 @@ exports.ErrorMonitorService = class ErrorMonitorService {
    * Maneja errores críticos detectados
    */
   handleCriticalError(errorType, count) {
-    logger.error(
+    console.error(
       `Detectado patrón de error crítico: ${errorType} (${count} ocurrencias en 5 minutos)`
     );
     if (this.mainWindow && !this.mainWindow.isDestroyed()) {
@@ -105,18 +104,18 @@ exports.ErrorMonitorService = class ErrorMonitorService {
   }
 
   handleDatabaseRecovery() {
-    logger.info("Iniciando recuperación de base de datos...");
+    console.info("Iniciando recuperación de base de datos...");
   }
 
   handleFileSystemRecovery() {
-    logger.info("Iniciando recuperación del sistema de archivos...");
+    console.info("Iniciando recuperación del sistema de archivos...");
   }
 
   handleAuthRecovery() {
-    logger.info("Iniciando recuperación de autenticación...");
+    console.info("Iniciando recuperación de autenticación...");
   }
 
   handleGenericRecovery() {
-    logger.info("Iniciando recuperación genérica...");
+    console.info("Iniciando recuperación genérica...");
   }
 };
