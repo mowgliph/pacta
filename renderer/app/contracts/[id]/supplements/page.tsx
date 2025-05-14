@@ -1,19 +1,27 @@
-"use client";
 import React, { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "../../../../components/ui/card";
+import { Button } from "../../../../components/ui/button";
+import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+} from "../../../../components/ui/alert";
 import { FileDown, Eye, ArrowLeft, Copy, Trash2 } from "lucide-react";
-import { useSupplements } from "@/lib/useSupplements";
+import { useSupplements } from "../../../../lib/useSupplements";
 import {
   useContextMenu,
   ContextMenuAction,
-} from "@/components/ui/context-menu";
+} from "../../../../components/ui/context-menu";
 
 export default function SupplementsListPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
+  const navigate = useNavigate();
   const contractId = params.id;
   const {
     supplements,
@@ -21,7 +29,7 @@ export default function SupplementsListPage() {
     error,
     fetchSupplements,
     downloadSupplement,
-  } = useSupplements(contractId);
+  } = useSupplements(contractId || "");
 
   const { openContextMenu } = useContextMenu();
 
@@ -46,11 +54,11 @@ export default function SupplementsListPage() {
     <div className="max-w-3xl mx-auto py-10 px-4 flex flex-col gap-8">
       <button
         className="flex items-center gap-2 text-[#018ABE] hover:underline text-sm w-fit mb-2"
-        onClick={() => router.push(`/contracts/${contractId}`)}
+        onClick={() => navigate(`/contracts/${contractId}`)}
         tabIndex={0}
         aria-label="Volver al contrato"
-        onKeyDown={(e) => {
-          if (e.key === "Enter") router.push(`/contracts/${contractId}`);
+        onKeyDown={(e: React.KeyboardEvent<HTMLButtonElement>) => {
+          if (e.key === "Enter") navigate(`/contracts/${contractId}`);
         }}
       >
         <ArrowLeft size={18} /> Volver al contrato
@@ -97,7 +105,7 @@ export default function SupplementsListPage() {
                         label: "Ver detalle",
                         icon: <Eye size={16} />,
                         onClick: () =>
-                          router.push(
+                          navigate(
                             `/contracts/${contractId}/supplements/${s.id}`
                           ),
                       },
@@ -137,7 +145,7 @@ export default function SupplementsListPage() {
                             size="sm"
                             variant="outline"
                             onClick={() =>
-                              router.push(
+                              navigate(
                                 `/contracts/${contractId}/supplements/${s.id}`
                               )
                             }

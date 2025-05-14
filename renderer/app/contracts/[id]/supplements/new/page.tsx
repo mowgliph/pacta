@@ -1,15 +1,23 @@
-"use client";
 import React, { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "../../../../../components/ui/card";
+import { Input } from "../../../../../components/ui/input";
+import { Button } from "../../../../../components/ui/button";
+import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+} from "../../../../../components/ui/alert";
 import { FilePlus, ArrowLeft } from "lucide-react";
-import { useCreateSupplement } from "@/lib/useCreateSupplement";
-import { useNotification } from "@/lib/useNotification";
-import { useFileDialog } from "@/lib/useFileDialog";
-import { DropZone } from "@/components/ui/DropZone";
+import { useCreateSupplement } from "../../../../../lib/useCreateSupplement";
+import { useNotification } from "../../../../../lib/useNotification";
+import { useFileDialog } from "../../../../../lib/useFileDialog";
+import { DropZone } from "../../../../../components/ui/DropZone";
 
 const campos = [
   { value: "amount", label: "Monto" },
@@ -20,7 +28,7 @@ const campos = [
 
 export default function NewSupplementPage() {
   const params = useParams<{ id: string }>();
-  const router = useRouter();
+  const navigate = useNavigate();
   const contractId = params.id;
   const [field, setField] = useState("");
   const [newValue, setNewValue] = useState("");
@@ -46,7 +54,7 @@ export default function NewSupplementPage() {
       return;
     }
     const result = await createSupplement({
-      contractId,
+      contractId: contractId || "",
       field,
       newValue,
       description,
@@ -58,7 +66,7 @@ export default function NewSupplementPage() {
         body: "El suplemento se guardó correctamente.",
         variant: "success",
       });
-      setTimeout(() => router.push(`/contracts/${contractId}`), 1200);
+      setTimeout(() => navigate(`/contracts/${contractId}`), 1200);
     }
   };
 
@@ -66,7 +74,7 @@ export default function NewSupplementPage() {
     <div className="max-w-xl mx-auto py-10 px-4 flex flex-col gap-8">
       <button
         className="flex items-center gap-2 text-[#018ABE] hover:underline text-sm w-fit mb-2"
-        onClick={() => router.push(`/contracts/${contractId}`)}
+        onClick={() => navigate(`/contracts/${contractId}`)}
       >
         <ArrowLeft size={18} /> Volver al contrato
       </button>

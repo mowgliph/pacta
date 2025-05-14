@@ -1,14 +1,22 @@
-"use client";
 import React, { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "../../../../../components/ui/card";
+import { Button } from "../../../../../components/ui/button";
+import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+} from "../../../../../components/ui/alert";
 import { FileDown, ArrowLeft } from "lucide-react";
-import { useNotification } from "@/lib/useNotification";
-import { useFileDialog } from "@/lib/useFileDialog";
-import { DocumentList } from "@/components/ui/document-list";
-import { Dialog } from "@/components/ui/dialog";
+import { useNotification } from "../../../../../lib/useNotification";
+import { useFileDialog } from "../../../../../lib/useFileDialog";
+import { DocumentList } from "../../../../../components/ui/document-list";
+import { Dialog } from "../../../../../components/ui/dialog";
 
 interface Supplement {
   id: string;
@@ -23,7 +31,7 @@ interface Supplement {
 
 export default function SupplementDetailPage() {
   const params = useParams<{ id: string; supplementId: string }>();
-  const router = useRouter();
+  const navigate = useNavigate();
   const contractId = params.id;
   const supplementId = params.supplementId;
   const [supplement, setSupplement] = useState<Supplement | null>(null);
@@ -157,7 +165,7 @@ export default function SupplementDetailPage() {
     <div className="max-w-xl mx-auto py-10 px-4 flex flex-col gap-8">
       <button
         className="flex items-center gap-2 text-[#018ABE] hover:underline text-sm w-fit mb-2"
-        onClick={() => router.push(`/contracts/${contractId}/supplements`)}
+        onClick={() => navigate(`/contracts/${contractId}/supplements`)}
       >
         <ArrowLeft size={18} /> Volver a suplementos
       </button>

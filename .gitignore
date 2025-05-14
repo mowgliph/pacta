@@ -28,6 +28,7 @@
 *.db
 *.db*
 /prisma/migrations
+*.log
 
 # debug
 npm-debug.log*

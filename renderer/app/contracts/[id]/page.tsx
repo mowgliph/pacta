@@ -1,16 +1,18 @@
-"use client";
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useContractDetail } from "@/lib/useContractDetail";
-import { useParams } from "next/navigation";
+import { useNavigate, useParams } from "react-router-dom";
+import { useContractDetail } from "../../../lib/useContractDetail";
 import { FileText, PlusCircle, Archive, ArrowLeft } from "lucide-react";
-import { useAuth } from "@/store/auth";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { useNotification } from "@/lib/useNotification";
-import { useFileDialog } from "@/lib/useFileDialog";
-import { DocumentList } from "@/components/ui/document-list";
-import { Dialog } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { useAuth } from "../../../store/auth";
+import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+} from "../../../components/ui/alert";
+import { useNotification } from "../../../lib/useNotification";
+import { useFileDialog } from "../../../lib/useFileDialog";
+import { DocumentList } from "../../../components/ui/document-list";
+import { Dialog } from "../../../components/ui/dialog";
+import { Button } from "../../../components/ui/button";
 
 // @ts-ignore
 // Asegurar tipado correcto para window.Electron
@@ -38,7 +40,7 @@ export default function ContractDetailPage() {
   const id = params.id;
   const { contract, supplements, documents, loading, error } =
     useContractDetail(id);
-  const router = useRouter();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { notify } = useNotification();
   const { saveFile } = useFileDialog();
@@ -84,7 +86,7 @@ export default function ContractDetailPage() {
         title: "Contrato archivado",
         body: "El contrato fue archivado correctamente.",
       });
-      router.push("/contracts");
+      navigate("/contracts");
     } catch (err) {
       // @ts-ignore
       await window.Electron.ipcRenderer.invoke("notifications:show", {
@@ -97,7 +99,7 @@ export default function ContractDetailPage() {
   const handleExport = async () => {
     if (!contract) return;
     if (!user) {
-      router.push("/login");
+      navigate("/login");
       return;
     }
     try {
@@ -222,11 +224,11 @@ export default function ContractDetailPage() {
     <div className="flex flex-col gap-8">
       <button
         className="flex items-center gap-2 text-[#018ABE] hover:underline text-sm w-fit"
-        onClick={() => router.push("/contracts")}
+        onClick={() => navigate("/contracts")}
         tabIndex={0}
         aria-label="Volver a contratos"
-        onKeyDown={(e) => {
-          if (e.key === "Enter") router.push("/contracts");
+        onKeyDown={(e: React.KeyboardEvent<HTMLButtonElement>) => {
+          if (e.key === "Enter") navigate("/contracts");
         }}
       >
         <ArrowLeft size={18} /> Volver a contratos
@@ -259,7 +261,7 @@ export default function ContractDetailPage() {
                 <button
                   className="flex items-center gap-1 px-4 py-2 rounded-lg bg-[#018ABE] text-white hover:bg-[#02457A] text-sm font-medium shadow-sm"
                   onClick={() =>
-                    router.push(`/contracts/${contract.id}/supplements/new`)
+                    navigate(`/contracts/${contract.id}/supplements/new`)
                   }
                   tabIndex={0}
                   aria-label="Agregar suplemento"

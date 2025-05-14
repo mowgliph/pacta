@@ -1,9 +1,15 @@
 {
   "compilerOptions": {
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
+    "target": "ESNext",
+    "module": "nodenext",
+    "allowJs": true,
     "skipLibCheck": true,
-    "jsx": "preserve",
-    "moduleResolution": "node"
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "sourceMap": true,
+    "baseUrl": ".",
+    "outDir": "dist",
+    "moduleResolution": "nodenext",
+    "resolveJsonModule": true
   }
 }
