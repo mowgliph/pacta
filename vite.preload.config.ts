@@ -15,7 +15,7 @@ export default defineConfig({
         entryFileNames: "[name].cjs",
       },
     },
-    target: "node16",
+    target: "node20",
     minify: false,
     sourcemap: true,
   },

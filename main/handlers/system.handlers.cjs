@@ -8,9 +8,28 @@ const { withErrorHandling } = require("../utils/error-handler.cjs");
 
 const CONFIG_PATH = path.join(app.getPath("userData"), "config.json");
 
+function isValidKey(key) {
+  return (
+    key !== "__proto__" &&
+    key !== "constructor" &&
+    key !== "prototype" &&
+    typeof key === "string" &&
+    key.length > 0
+  );
+}
+
 function getConfigValue(key) {
-  return key.split(".").reduce((obj, k) => {
-    if (obj && typeof obj === "object" && k in obj) {
+  if (typeof key !== "string") return undefined;
+
+  const keys = key.split(".");
+  if (!keys.every(isValidKey)) return undefined;
+
+  return keys.reduce((obj, k) => {
+    if (
+      obj &&
+      typeof obj === "object" &&
+      Object.prototype.hasOwnProperty.call(obj, k)
+    ) {
       return obj[k];
     }
     return undefined;
@@ -18,13 +37,40 @@ function getConfigValue(key) {
 }
 
 function setConfigValue(key, value) {
+  if (typeof key !== "string") return false;
+
   const keys = key.split(".");
+  if (!keys.every(isValidKey)) return false;
+
   let obj = config;
   for (let i = 0; i < keys.length - 1; i++) {
-    if (!obj[keys[i]]) obj[keys[i]] = {};
-    obj = obj[keys[i]];
+    const k = keys[i];
+
+    // Solo crear nuevo objeto si la propiedad no existe
+    if (!Object.prototype.hasOwnProperty.call(obj, k)) {
+      Object.defineProperty(obj, k, {
+        value: {},
+        writable: true,
+        enumerable: true,
+        configurable: true,
+      });
+    } else if (typeof obj[k] !== "object" || obj[k] === null) {
+      // Si existe pero no es un objeto, no permitir la operación
+      return false;
+    }
+
+    obj = obj[k];
   }
-  obj[keys[keys.length - 1]] = value;
+
+  const lastKey = keys[keys.length - 1];
+  Object.defineProperty(obj, lastKey, {
+    value: value,
+    writable: true,
+    enumerable: true,
+    configurable: true,
+  });
+
+  return true;
 }
 
 function persistConfig() {
@@ -87,7 +133,10 @@ function registerSystemHandlers(eventManager) {
     [IPC_CHANNELS.SYSTEM.SETTINGS.UPDATE]: withErrorHandling(
       IPC_CHANNELS.SYSTEM.SETTINGS.UPDATE,
       async (event, key, value) => {
-        setConfigValue(key, value);
+        const success = setConfigValue(key, value);
+        if (!success) {
+          throw new Error("Clave de configuración inválida o no permitida");
+        }
         persistConfig();
         return { success: true, data: true };
       }

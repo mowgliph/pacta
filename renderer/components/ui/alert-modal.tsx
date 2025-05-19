@@ -1,7 +1,7 @@
-import React from "react"
-import { useRouter } from "next/router"
-import { AlertCircle, LogIn } from "lucide-react"
-import { Button } from "./button"
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { AlertCircle, LogIn } from "lucide-react";
+import { Button } from "./button";
 import {
   Dialog,
   DialogContent,
@@ -9,17 +9,17 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "./dialog"
+} from "./dialog";
 
 interface AlertModalProps {
-  title?: string
-  description?: string
-  isOpen: boolean
-  onClose: () => void
-  onAction?: () => void
-  actionLabel?: string
-  cancelLabel?: string
-  type?: "warning" | "error" | "info" | "success" | "auth"
+  title?: string;
+  description?: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onAction?: () => void;
+  actionLabel?: string;
+  cancelLabel?: string;
+  type?: "warning" | "error" | "info" | "success" | "auth";
 }
 
 export function AlertModal({
@@ -32,12 +32,12 @@ export function AlertModal({
   cancelLabel = "Cancelar",
   type = "info",
 }: AlertModalProps) {
-  const router = useRouter()
+  const navigate = useNavigate();
 
   const navigateToLogin = () => {
-    router.push("/auth")
-    onClose()
-  }
+    navigate("/login");
+    onClose();
+  };
 
   // Determinar contenido y apariencia según el tipo
   const getModalContent = () => {
@@ -45,11 +45,13 @@ export function AlertModal({
       case "auth":
         return {
           title: title || "Inicio de sesión requerido",
-          description: description || "Debes iniciar sesión para acceder a esta funcionalidad",
+          description:
+            description ||
+            "Debes iniciar sesión para acceder a esta funcionalidad",
           icon: <LogIn className="h-6 w-6 text-blue-500" />,
           actionLabel: "Iniciar sesión",
           onAction: navigateToLogin,
-        }
+        };
       case "warning":
         return {
           title: title || "Advertencia",
@@ -57,15 +59,15 @@ export function AlertModal({
           icon: <AlertCircle className="h-6 w-6 text-amber-500" />,
           actionLabel,
           onAction,
-        }
+        };
       case "error":
         return {
           title: title || "Error",
           description: description || "Ha ocurrido un error.",
-          icon: <AlertCircle className="h-6 w-6 text-destructive" />,
+          icon: <AlertCircle className="h-6 w-6 text-red-500" />,
           actionLabel,
           onAction,
-        }
+        };
       case "success":
         return {
           title: title || "Éxito",
@@ -73,7 +75,7 @@ export function AlertModal({
           icon: <AlertCircle className="h-6 w-6 text-success" />,
           actionLabel,
           onAction,
-        }
+        };
       case "info":
       default:
         return {
@@ -82,11 +84,11 @@ export function AlertModal({
           icon: <AlertCircle className="h-6 w-6 text-accent" />,
           actionLabel,
           onAction,
-        }
+        };
     }
-  }
+  };
 
-  const modalContent = getModalContent()
+  const modalContent = getModalContent();
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -110,5 +112,5 @@ export function AlertModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-} 
+  );
+}

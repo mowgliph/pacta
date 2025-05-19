@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 const { z } = require("zod");
 const { withErrorHandling } = require("../utils/error-handler.cjs");
 
-const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
+const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = "8h";
 
 const LoginSchema = z.object({

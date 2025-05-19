@@ -41,13 +41,11 @@ WindowManager.prototype.createMainWindow = async function () {
     const window = new BrowserWindow({
       ...MAIN_WINDOW_CONFIG,
       ...windowState,
-      icon: join(app.getAppPath(), "renderer", "public", "images", "icon.ico"),
+      icon: join(app.getAppPath(), "renderer", "favicon.ico"),
       backgroundColor: "#F5F5F5",
       webPreferences: {
         ...MAIN_WINDOW_CONFIG.webPreferences,
-        preload:
-          process.env.MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY ||
-          resolve(__dirname, "../../dist/preload/preload.js"),
+        preload: resolve(__dirname, "../../dist/preload/preload.cjs"),
         devTools: isDevelopment,
         contextIsolation: true,
         nodeIntegration: false,
@@ -59,12 +57,7 @@ WindowManager.prototype.createMainWindow = async function () {
       window.webContents.openDevTools();
     } else {
       await window.loadFile(
-        join(
-          app.getAppPath(),
-          "renderer",
-          process.env.MAIN_WINDOW_VITE_NAME || "index.html",
-          "index.html"
-        )
+        join(app.getAppPath(), "renderer", process.env.MAIN_WINDOW_VITE_NAME)
       );
     }
     this.setupWindowEvents(window);
@@ -112,11 +105,11 @@ WindowManager.prototype.createModalWindow = function (options) {
     center: options.center !== undefined ? options.center : true,
     title: options.title || "PACTA",
     backgroundColor: options.backgroundColor || "#151A24",
-    icon: options.icon || join(app.getAppPath(), "build", "icon.png"),
+    icon: options.icon || join(app.getAppPath(), "renderer", "favicon.ico"),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: resolve(__dirname, "../../dist/preload/preload.js"),
+      preload: resolve(__dirname, "../../dist/preload/preload.cjs"),
       spellcheck: true,
       sandbox: true,
     },

@@ -29,29 +29,35 @@ export function ThemeToggle() {
   const [toastError, setToastError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (
-      !initialized.current &&
-      theme === "system" &&
-      // @ts-ignore
-      window.Electron?.theme?.getSystemTheme
-    ) {
-      // @ts-ignore
-      window.Electron.theme
-        .getSystemTheme()
-        .then((systemTheme: "light" | "dark") => {
-          setTheme(systemTheme);
-        });
-      initialized.current = true;
-    }
-    // eslint-disable-next-line
-  }, [theme]);
+    const initializeTheme = async () => {
+      if (!initialized.current && theme === "system") {
+        try {
+          const systemTheme = await window.Electron.ipcRenderer.invoke(
+            "theme:get-system-theme"
+          );
+          if (systemTheme) {
+            setTheme(systemTheme);
+          }
+          initialized.current = true;
+        } catch (error) {
+          console.error("Error al obtener el tema del sistema:", error);
+          // Fallback a tema claro si hay error
+          setTheme("light");
+        }
+      }
+    };
+
+    initializeTheme();
+  }, [theme, setTheme]);
 
   const handleSetTheme = async (value: Theme) => {
     setSaving(true);
     setTheme(value);
     try {
-      // @ts-ignore
-      const res = await window.Electron?.theme?.setAppTheme?.(value);
+      const res = await window.Electron.ipcRenderer.invoke(
+        "theme:set-app-theme",
+        value
+      );
       if (res?.success) {
         setToastMsg(
           `Tema "${

@@ -63,14 +63,16 @@ SecurityManager.prototype.setupSecurity = function () {
   app.on("ready", () => {
     const csp = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-      "style-src 'self' 'unsafe-inline'",
+      "script-src 'self'",
+      "style-src 'self' 'unsafe-inline'", // Mantenemos unsafe-inline solo para estilos
       "img-src 'self' data: blob:",
       "font-src 'self'",
       "connect-src 'self'",
       "frame-src 'none'",
       "worker-src 'self' blob:",
       "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
     ].join("; ");
 
     BrowserWindow.getAllWindows().forEach((window) => {
@@ -381,10 +383,12 @@ SecurityService.prototype.clearSecretCache = function () {
 function sanitizeInput(input) {
   if (typeof input !== "string") return "";
   return input
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, '"')
-    .replace(/'/g, "'")
+    .replace(/&/g, "&amp;") // Escapar & primero para no interferir con otros reemplazos
+    .replace(/</g, "&lt;") // Convertir < a entidad HTML
+    .replace(/>/g, "&gt;") // Convertir > a entidad HTML
+    .replace(/"/g, "&quot;") // Convertir " a entidad HTML
+    .replace(/'/g, "&#39;") // Convertir ' a entidad HTML
+    .replace(/`/g, "&#96;") // Escapar backticks para prevenir template strings
     .trim();
 }
 

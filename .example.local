@@ -58,3 +58,21 @@ BACKUP_PATH="data/backups"
 BACKUP_RETENTION_DAYS=7
 BACKUP_SCHEDULE="0 3 * * *"
 
+# Configuración de la ventana principal
+MAIN_WINDOW_WIDTH=1200
+MAIN_WINDOW_HEIGHT=800
+MAIN_WINDOW_MIN_WIDTH=800
+MAIN_WINDOW_MIN_HEIGHT=600
+
+# Configuración de ventanas modales
+MODAL_WINDOW_DEFAULT_WIDTH=600
+MODAL_WINDOW_DEFAULT_HEIGHT=400
+MODAL_WINDOW_MIN_WIDTH=400
+MODAL_WINDOW_MIN_HEIGHT=300
+
+# Configuración de desarrollo Vite
+MAIN_WINDOW_VITE_NAME="index.html"
+MAIN_WINDOW_VITE_DEV_SERVER_URL="http://localhost:5173"
+
+# Rutas de recursos de ventana
+ICON_PATH="renderer/favicon.ico"
