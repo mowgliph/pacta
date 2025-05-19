@@ -3,6 +3,12 @@ import path from "path";
 
 // https://vitejs.dev/config
 export default defineConfig({
+  root: path.resolve(__dirname, "renderer"),
+  publicDir: path.resolve(__dirname, "renderer/public"),
+  base: "./",
+  server: {
+    port: 5173,
+  },
   resolve: {
     alias: {
       "@components": path.resolve(__dirname, "renderer/components"),

@@ -3,7 +3,6 @@ const windowManagerModule = require("./window/window-manager.cjs");
 console.log("[DEBUG] windowManagerModule:", windowManagerModule);
 const WindowManager = windowManagerModule.WindowManager;
 const { securityManager } = require("./security/security-manager.cjs");
-const { logger } = require("./utils/logger.cjs");
 const { ErrorHandler } = require("./utils/error-handler.cjs");
 const { backupService } = require("./utils/backup-service.cjs");
 
@@ -32,7 +31,7 @@ AppManager.getInstance = function () {
 
 AppManager.prototype.initialize = async function () {
   try {
-    logger.info("Iniciando aplicación PACTA...");
+    console.info("Iniciando aplicación PACTA...");
     if (!app.isReady()) {
       await this.waitForAppReady();
     }
@@ -40,9 +39,9 @@ AppManager.prototype.initialize = async function () {
     this.mainWindow = await this.windowManager.createMainWindow();
     this.setupErrorHandler();
     this.setupAutoBackup();
-    logger.info("Aplicación PACTA inicializada correctamente");
+    console.info("Aplicación PACTA inicializada correctamente");
   } catch (error) {
-    logger.error(
+    console.error(
       "Error al inicializar la aplicación:",
       error,
       error && error.stack
@@ -85,7 +84,7 @@ AppManager.prototype.setupAppEvents = function () {
     }
   });
   app.on("before-quit", () => {
-    logger.info("Cerrando aplicación PACTA...");
+    console.info("Cerrando aplicación PACTA...");
   });
 };
 
@@ -128,7 +127,7 @@ AppManager.prototype.processCommandLineArgs = function (args) {
   if (!Array.isArray(args) || args.length <= 1) {
     return;
   }
-  logger.info("Procesando argumentos de línea de comandos:", args);
+  console.info("Procesando argumentos de línea de comandos:", args);
   // Implementar la lógica específica para procesar argumentos
 };
 

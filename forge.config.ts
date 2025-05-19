@@ -25,12 +25,12 @@ const config: ForgeConfig = {
       build: [
         {
           // `entry` is just an alias for `build.lib.entry` in the corresponding file of `config`.
-          entry: "main/index.ts",
+          entry: "main/index.cjs",
           config: "vite.main.config.ts",
           target: "main",
         },
         {
-          entry: "main/preload.ts",
+          entry: "main/preload.cjs",
           config: "vite.preload.config.ts",
           target: "preload",
         },
