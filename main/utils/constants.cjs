@@ -25,6 +25,13 @@ exports.MAIN_WINDOW_CONFIG = {
     contextIsolation: true,
     sandbox: true,
     preload: exports.PRELOAD_PATH,
+    spellcheck: false, // Deshabilitar corrector ortográfico
+    enableWebSQL: false, // Deshabilitar WebSQL
+    autoplayPolicy: "document-user-activation-required",
+    disableDialogs: true, // Deshabilitar diálogos nativos
+    enablePreferredSizeMode: false,
+    webgl: false, // Deshabilitar WebGL si no se necesita
+    images: true,
   },
 };
 

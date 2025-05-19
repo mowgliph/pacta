@@ -9,12 +9,22 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"],
+      "@components/*": ["./components/*"],
+      "@lib/*": ["./lib/*"],
+      "@store/*": ["./store/*"],
+      "@styles/*": ["./styles/*"],
+      "@app/*": ["./app/*"]
+    },
+    "typeRoots": ["./node_modules/@types", "./types"]
   },
-  "include": ["./"],
-  "exclude": ["node_modules", "main", "resources", "app", "dist"]
+  "include": ["./", "types/**/*.d.ts"],
+  "exclude": ["node_modules", "main", "resources", "dist"]
 }

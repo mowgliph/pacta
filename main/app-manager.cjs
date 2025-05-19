@@ -127,8 +127,117 @@ AppManager.prototype.processCommandLineArgs = function (args) {
   if (!Array.isArray(args) || args.length <= 1) {
     return;
   }
-  console.info("Procesando argumentos de línea de comandos:", args);
-  // Implementar la lógica específica para procesar argumentos
+
+  // Eliminar los dos primeros argumentos (electron y script path)
+  const actualArgs = args.slice(2);
+
+  for (let i = 0; i < actualArgs.length; i++) {
+    const arg = actualArgs[i];
+
+    try {
+      switch (arg) {
+        case "--backup": {
+          // Crear backup manual
+          console.info("Iniciando backup manual...");
+          backupService.runBackup();
+          break;
+        }
+
+        case "--cleanup-backups": {
+          // Limpiar backups antiguos
+          console.info("Limpiando backups antiguos...");
+          backupService.cleanupOldBackups();
+          break;
+        }
+
+        case "--restore": {
+          // Restaurar desde backup
+          const backupFile = actualArgs[i + 1];
+          if (!backupFile) {
+            throw new Error("Se requiere especificar el archivo de backup");
+          }
+          console.info("Restaurando desde backup:", backupFile);
+          backupService.restoreBackup(backupFile);
+          i++; // Saltar el siguiente argumento
+          break;
+        }
+
+        case "--export-contracts": {
+          // Exportar contratos
+          const exportPath = actualArgs[i + 1];
+          if (!exportPath) {
+            throw new Error("Se requiere especificar la ruta de exportación");
+          }
+          console.info("Exportando contratos a:", exportPath);
+          this.windowManager
+            .getMainWindow()
+            ?.webContents.send("contracts:export", exportPath);
+          i++;
+          break;
+        }
+
+        case "--check-updates": {
+          // Verificar actualizaciones manualmente
+          console.info("Verificando actualizaciones...");
+          this.windowManager
+            .getMainWindow()
+            ?.webContents.send("app:check-updates");
+          break;
+        }
+
+        case "--reset-settings": {
+          // Resetear configuración
+          console.info("Reseteando configuración de la aplicación...");
+          this.windowManager
+            .getMainWindow()
+            ?.webContents.send("app:reset-settings");
+          break;
+        }
+
+        case "--debug": {
+          // Activar modo debug
+          console.info("Modo debug activado");
+          process.env.DEBUG = "true";
+          break;
+        }
+
+        case "--help": {
+          console.info(`
+PACTA - Plataforma de Gestión de Contratos Empresariales
+
+Argumentos disponibles:
+  --backup              Realizar backup manual de la base de datos
+  --cleanup-backups     Eliminar backups antiguos (>7 días)
+  --restore <archivo>   Restaurar desde archivo de backup específico
+  --export-contracts <ruta>  Exportar contratos a la ruta especificada
+  --check-updates      Verificar actualizaciones manualmente
+  --reset-settings     Resetear configuración a valores por defecto
+  --debug             Activar modo debug
+  --help              Mostrar esta ayuda
+
+Ejemplos:
+  electron . --backup
+  electron . --restore data/backups/backup_2025-05-19.sqlite
+  electron . --export-contracts ./contratos.xlsx
+          `);
+          break;
+        }
+
+        default: {
+          if (arg.startsWith("--")) {
+            console.warn("Argumento no reconocido:", arg);
+          }
+          break;
+        }
+      }
+    } catch (error) {
+      console.error(`Error procesando argumento ${arg}:`, error.message);
+      dialog.showErrorBox(
+        "Error en argumento de línea de comandos",
+        `Error procesando ${arg}: ${error.message}`
+      );
+    }
+  }
 };
 
 AppManager.prototype.setupErrorHandler = function () {

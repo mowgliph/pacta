@@ -1,11 +1,20 @@
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { useNotification } from "@/lib/useNotification";
-import { useFileDialog } from "@/lib/useFileDialog";
-import { DropZone } from "@/components/ui/DropZone";
+import { useNavigate } from "react-router-dom";
+import { Input } from "../../../components/ui/input";
+import { Button } from "../../../components/ui/button";
+import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+} from "../../../components/ui/alert";
+import { useNotification } from "../../../lib/useNotification";
+import { useFileDialog } from "../../../lib/useFileDialog";
+import { DropZone } from "../../../components/ui/DropZone";
+
+interface ApiError {
+  message: string;
+  code?: string;
+}
 
 const initialState = {
   number: "",
@@ -21,7 +30,7 @@ export default function NewContractPage() {
   const [form, setForm] = useState(initialState);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const navigate = useNavigate();
   const { notify } = useNotification();
   const [file, setFile] = useState<File | null>(null);
   const { openFile } = useFileDialog();
@@ -34,10 +43,8 @@ export default function NewContractPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-    }
+  const handleFileDrop = (file: File) => {
+    setFile(file);
   };
 
   const handleSelectFromSystem = async () => {
@@ -45,181 +52,151 @@ export default function NewContractPage() {
       title: "Seleccionar documento de contrato",
       filters: [{ name: "Documentos", extensions: ["pdf", "doc", "docx"] }],
     });
-    if (result && result.filePaths && result.filePaths[0]) {
-      // Leer el archivo y convertirlo a File si es necesario
-      // (esto requiere lógica adicional si se desea cargar el archivo al backend)
-      // Por simplicidad, solo guardamos la ruta temporalmente
-      setFile({
-        name: result.filePaths[0].split("/").pop() || "documento.pdf",
-        path: result.filePaths[0],
-        // No hay buffer, solo ruta
-      } as any);
+    if (result?.filePath) {
+      const fileFromPath = new File(
+        [result.filePath],
+        result.name || "contrato.pdf",
+        {
+          type: "application/pdf",
+        }
+      );
+      setFile(fileFromPath);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    if (
+      !form.number ||
+      !form.company ||
+      !form.type ||
+      !form.startDate ||
+      !form.endDate
+    ) {
+      setError("Todos los campos son obligatorios");
+      return;
+    }
     setLoading(true);
+    setError(null);
+
     try {
-      let documentId = null;
-      if (file) {
-        const arrayBuffer = await file.arrayBuffer();
-        // @ts-ignore
-        const uploadRes = await window.Electron.ipcRenderer.invoke(
-          "documents:upload",
-          {
-            contractId: undefined, // Se asociará después
-            uploadedById: undefined, // Rellenar con el usuario actual si está disponible
-          },
-          {
-            name: file.name,
-            type: file.type || "application/pdf",
-            data: Array.from(new Uint8Array(arrayBuffer)),
-          }
-        );
-        if (uploadRes?.success && uploadRes.data?.id) {
-          documentId = uploadRes.data.id;
-        }
+      if (!window.Electron?.ipcRenderer) {
+        throw new Error("API de contratos no disponible");
       }
-      // @ts-ignore
-      const res = await window.Electron.contracts.create({
-        ...form,
-        amount: parseFloat(form.amount),
-        documentId, // Asociar el documento al contrato
-      });
-      if (res.success) {
+
+      const result = await window.Electron.ipcRenderer.invoke(
+        "contracts:create",
+        {
+          ...form,
+          file: file || undefined,
+        }
+      );
+
+      if (result.success) {
         notify({
-          title: "Contrato guardado",
-          body: "El contrato se guardó correctamente.",
+          title: "Contrato creado",
+          body: "El contrato se ha creado correctamente",
           variant: "success",
         });
-        setTimeout(() => router.push(`/contracts/${res.data.id}`), 1200);
+        navigate("/contracts");
       } else {
-        setError(res.error?.message || "No se pudo crear el contrato.");
+        throw new Error(result.error || "Error al crear el contrato");
       }
-    } catch (err: any) {
-      setError(err?.message || "Error de conexión");
+    } catch (err) {
+      const error = err as ApiError;
+      setError(error.message || "Error al crear el contrato");
+      notify({
+        title: "Error",
+        body: error.message || "Error al crear el contrato",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-xl mx-auto py-10 px-4 flex flex-col gap-8">
-      <h1 className="text-2xl font-semibold text-[#001B48] font-inter mb-4">
-        Nuevo Contrato
-      </h1>
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col gap-4 bg-white rounded-xl shadow p-6"
-      >
+    <div className="max-w-4xl mx-auto py-10 px-4">
+      <h1 className="text-2xl font-bold mb-6">Nuevo Contrato</h1>
+      <form onSubmit={handleSubmit} className="space-y-6">
         {error && (
           <Alert variant="destructive">
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Número de contrato
-          </label>
+
+        <div className="space-y-4">
           <Input
             name="number"
+            placeholder="Número de contrato"
             value={form.number}
             onChange={handleChange}
             required
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Empresa</label>
           <Input
             name="company"
+            placeholder="Empresa"
             value={form.company}
             onChange={handleChange}
             required
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Tipo</label>
           <select
             name="type"
             value={form.type}
             onChange={handleChange}
-            className="w-full border rounded px-3 py-2 text-sm"
+            className="w-full px-3 py-2 border rounded-md"
+            required
           >
             <option value="Cliente">Cliente</option>
             <option value="Proveedor">Proveedor</option>
           </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Fecha de inicio
-          </label>
           <Input
-            name="startDate"
             type="date"
+            name="startDate"
             value={form.startDate}
             onChange={handleChange}
             required
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Fecha de fin</label>
           <Input
-            name="endDate"
             type="date"
+            name="endDate"
             value={form.endDate}
             onChange={handleChange}
             required
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Monto</label>
           <Input
-            name="amount"
             type="number"
-            min="0"
-            step="0.01"
+            name="amount"
+            placeholder="Monto"
             value={form.amount}
             onChange={handleChange}
             required
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Descripción</label>
           <textarea
             name="description"
+            placeholder="Descripción"
             value={form.description}
             onChange={handleChange}
-            className="w-full border rounded px-3 py-2 text-sm"
-            required
+            className="w-full px-3 py-2 border rounded-md"
+            rows={4}
           />
+
+          <DropZone onFileDrop={handleFileDrop} />
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Adjuntar documento (opcional)
-          </label>
-          <div className="flex flex-col gap-2">
-            <DropZone onFileDrop={setFile} />
-            <div className="flex gap-2 items-center">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleSelectFromSystem}
-                aria-label="Seleccionar desde sistema"
-                tabIndex={0}
-              >
-                Seleccionar desde sistema
-              </Button>
-              {file && <span className="text-xs ml-2">{file.name}</span>}
-            </div>
-          </div>
+
+        <div className="flex justify-end gap-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate("/contracts")}
+          >
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? "Creando..." : "Crear Contrato"}
+          </Button>
         </div>
-        <Button type="submit" className="w-fit mt-2" disabled={loading}>
-          Guardar Contrato
-        </Button>
       </form>
     </div>
   );

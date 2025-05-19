@@ -1,7 +1,5 @@
-"use client"
-
-import * as React from "react"
-import { cn } from "../../lib/utils"
+import * as React from "react";
+import { cn } from "../../lib/utils";
 
 // Componente Table principal
 const Table = React.forwardRef<
@@ -15,8 +13,8 @@ const Table = React.forwardRef<
       {...props}
     />
   </div>
-))
-Table.displayName = "Table"
+));
+Table.displayName = "Table";
 
 // Componente TableHeader
 const TableHeader = React.forwardRef<
@@ -24,8 +22,8 @@ const TableHeader = React.forwardRef<
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
   <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
-))
-TableHeader.displayName = "TableHeader"
+));
+TableHeader.displayName = "TableHeader";
 
 // Componente TableBody
 const TableBody = React.forwardRef<
@@ -37,8 +35,8 @@ const TableBody = React.forwardRef<
     className={cn("[&_tr:last-child]:border-0", className)}
     {...props}
   />
-))
-TableBody.displayName = "TableBody"
+));
+TableBody.displayName = "TableBody";
 
 // Componente TableFooter
 const TableFooter = React.forwardRef<
@@ -47,11 +45,14 @@ const TableFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tfoot
     ref={ref}
-    className={cn("bg-background font-medium text-primary-foreground", className)}
+    className={cn(
+      "bg-background font-medium text-primary-foreground",
+      className
+    )}
     {...props}
   />
-))
-TableFooter.displayName = "TableFooter"
+));
+TableFooter.displayName = "TableFooter";
 
 // Componente TableRow
 const TableRow = React.forwardRef<
@@ -66,8 +67,8 @@ const TableRow = React.forwardRef<
     )}
     {...props}
   />
-))
-TableRow.displayName = "TableRow"
+));
+TableRow.displayName = "TableRow";
 
 // Componente TableHead
 const TableHead = React.forwardRef<
@@ -82,8 +83,8 @@ const TableHead = React.forwardRef<
     )}
     {...props}
   />
-))
-TableHead.displayName = "TableHead"
+));
+TableHead.displayName = "TableHead";
 
 // Componente TableCell
 const TableCell = React.forwardRef<
@@ -98,8 +99,8 @@ const TableCell = React.forwardRef<
     )}
     {...props}
   />
-))
-TableCell.displayName = "TableCell"
+));
+TableCell.displayName = "TableCell";
 
 // Componente TableCaption
 const TableCaption = React.forwardRef<
@@ -111,8 +112,8 @@ const TableCaption = React.forwardRef<
     className={cn("mt-4 text-sm text-muted-foreground", className)}
     {...props}
   />
-))
-TableCaption.displayName = "TableCaption"
+));
+TableCaption.displayName = "TableCaption";
 
 export {
   Table,
@@ -123,4 +124,4 @@ export {
   TableRow,
   TableCell,
   TableCaption,
-} 
+};

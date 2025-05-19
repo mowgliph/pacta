@@ -37,7 +37,7 @@ const { autoUpdater } = require("electron-updater");
  */
 async function main() {
   try {
-    console.info("[DEBUG] Inicio de main()");
+    // console.info("[DEBUG] Inicio de main()");
     // Prevenir múltiples instancias de la aplicación
     const gotTheLock = app.requestSingleInstanceLock();
     console.info("[DEBUG] requestSingleInstanceLock:", gotTheLock);
@@ -81,17 +81,17 @@ async function main() {
       });
     });
 
-    console.info("[DEBUG] Antes de AppManager.getInstance()");
+    // console.info("[DEBUG] Antes de AppManager.getInstance()");
     const appManager = AppManager.getInstance();
-    console.info("[DEBUG] Después de AppManager.getInstance()");
+    // console.info("[DEBUG] Después de AppManager.getInstance()");
 
-    console.info("[DEBUG] Antes de EventManager.getInstance()");
+    // console.info("[DEBUG] Antes de EventManager.getInstance()");
     const eventManager = EventManager.getInstance();
-    console.info("[DEBUG] Después de EventManager.getInstance()");
+    // console.info("[DEBUG] Después de EventManager.getInstance()");
 
-    console.info("[DEBUG] Antes de initPrisma()");
+    // console.info("[DEBUG] Antes de initPrisma()");
     const dbOk = await initPrisma();
-    console.info("[DEBUG] Después de initPrisma():", dbOk);
+    // console.info("[DEBUG] Después de initPrisma():", dbOk);
     if (!dbOk) {
       console.error("No se pudo conectar a la base de datos. Abortando.");
       app.quit();
@@ -111,14 +111,14 @@ async function main() {
     registerSecurityHandlers(eventManager);
     registerStoreHandlers(eventManager);
     registerValidationHandlers(eventManager);
-    console.info("[DEBUG] Después de registrar manejadores de eventos");
+    // console.info("[DEBUG] Después de registrar manejadores de eventos");
 
-    console.info("[DEBUG] Antes de instanciar ElectronStore");
+    // console.info("[DEBUG] Antes de instanciar ElectronStore");
     console.log("ElectronStore:", ElectronStore);
     const themeStore = new ElectronStore({
       name: "theme-preference",
     });
-    console.info("[DEBUG] Después de instanciar ElectronStore");
+    // console.info("[DEBUG] Después de instanciar ElectronStore");
 
     const savedTheme = themeStore.get("theme");
     if (savedTheme && ["light", "dark", "system"].includes(savedTheme)) {
@@ -137,9 +137,9 @@ async function main() {
       return { success: false, error: "Tema no válido" };
     });
 
-    console.info("[DEBUG] Antes de appManager.initialize()");
+    // console.info("[DEBUG] Antes de appManager.initialize()");
     await appManager.initialize();
-    console.info("[DEBUG] Después de appManager.initialize()");
+    // console.info("[DEBUG] Después de appManager.initialize()");
 
     autoUpdater.on("update-available", () => {
       appManager.notifyUpdateAvailable();

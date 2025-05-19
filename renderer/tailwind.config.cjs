@@ -1,8 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
+    "./renderer/**/*.{js,ts,jsx,tsx}", // Incluye todos los archivos en renderer
     "./renderer/pages/**/*.{js,ts,jsx,tsx}",
     "./renderer/components/**/*.{js,ts,jsx,tsx}",
+    "./renderer/app/**/*.{js,ts,jsx,tsx}",
+    "./renderer/lib/**/*.{js,ts,jsx,tsx}",
   ],
   darkMode: ["class"],
   theme: {
@@ -15,27 +18,21 @@ module.exports = {
     },
     extend: {
       colors: {
-        // Colores principales de PACTA como objeto separado para prevenir conflictos
-        "primary-dark": "#001B48", // Azul Marino Oscuro
-        "primary-medium": "#018ABE", // Azul Medio
-        "primary-light": "#97CADB", // Azul Claro
-        "primary-lightest": "#D6E8EE", // Azul Muy Claro
-
-        // Colores funcionales
+        "primary-dark": "#001B48",
+        "primary-medium": "#018ABE",
+        "primary-light": "#97CADB",
+        "primary-lightest": "#D6E8EE",
         success: "#4CAF50",
         warning: "#FF9800",
         error: "#F44336",
-        // Colores neutrales
         neutral: {
           dark: "#333333",
           medium: "#757575",
           light: "#F5F5F5",
         },
-        // Asegurar que los colores base estén disponibles
         white: "#FFFFFF",
         black: "#000000",
         transparent: "transparent",
-
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -70,6 +67,9 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))",
         },
       },
+      fontSize: {
+        "2xl": ["1.5rem", { lineHeight: "2rem" }], // Define text-2xl explícitamente
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -85,6 +85,9 @@ module.exports = {
       boxShadow: {
         card: "0px 2px 8px rgba(0, 0, 0, 0.08)",
         input: "0 0 0 2px rgba(1, 138, 190, 0.25)",
+      },
+      ringColor: {
+        ring: "hsl(var(--ring))",
       },
       keyframes: {
         "accordion-down": {

@@ -6,229 +6,200 @@
   :root {
     --background: 0 0% 98%;
     --foreground: 240 10% 3.9%;
-    
-    --app-background: 140 100% 98%; /* Verde muy claro (f4fff8) para el fondo de la aplicación */
-    
+    --app-background: 140 100% 98%;
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
-    
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    
     --primary: 240 5.9% 10%;
     --primary-foreground: 0 0% 98%;
-    
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
-    
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    
-    --accent: 210 80% 40%; 
+    --accent: 210 80% 40%;
     --accent-foreground: 0 0% 98%;
-    
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-
     --success: 142 76% 36%;
     --success-foreground: 0 0% 98%;
-
     --warning: 38 92% 50%;
     --warning-foreground: 240 5.9% 10%;
-
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 10% 3.9%;
-    
     --radius: 0.5rem;
   }
- 
+
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-    
-    --app-background: 240 10% 3.9%; /* Mismo color que background para el modo oscuro */
-    
-    --card: 240 10% 5%; 
+    --app-background: 240 10% 3.9%;
+    --card: 240 10% 5%;
     --card-foreground: 0 0% 98%;
-    
     --popover: 240 10% 5%;
     --popover-foreground: 0 0% 98%;
-    
     --primary: 0 0% 98%;
     --primary-foreground: 240 5.9% 10%;
-    
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
-    
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-    
     --accent: 210 80% 50%;
     --accent-foreground: 0 0% 98%;
-    
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-
     --success: 142 69.2% 42%;
     --success-foreground: 0 0% 98%;
-
     --warning: 45 93% 47%;
     --warning-foreground: 240 5.9% 10%;
-    
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
   }
 
-  /* Transiciones suaves entre temas */
   * {
     @apply transition-colors duration-200;
-    /* Transición suave para cambios de tema */
-    transition-property: color, background-color, border-color, fill, stroke;
-    transition-timing-function: ease;
-    transition-duration: 200ms;
+    border-color: hsl(var(--border));
   }
-}
 
-/* Mejoras de accesibilidad para estados de foco */
-*:focus-visible {
-  @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
-}
- 
-@layer base {
-  * {
-    @apply border-border;
-  }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))];
   }
-  
-  /* Definiciones de tipografía */
+
   h1 {
-    @apply font-sans text-2xl font-semibold leading-tight tracking-tighter;
+    @apply text-2xl font-semibold leading-tight tracking-tighter;
   }
-  
+
   h2 {
-    @apply font-sans text-xl font-semibold leading-tight;
+    @apply text-xl font-semibold leading-tight;
   }
-  
+
   h3 {
-    @apply font-sans text-lg font-medium leading-normal;
+    @apply text-lg font-medium leading-normal;
   }
-  
+
   h4 {
-    @apply font-sans text-base font-medium leading-normal;
+    @apply text-base font-medium leading-normal;
   }
-  
+
   p {
-    @apply font-sans text-base leading-relaxed;
+    @apply text-base leading-relaxed;
   }
-  
+
   small {
-    @apply font-sans text-sm leading-normal;
+    @apply text-sm leading-normal;
   }
 }
 
-/* Componentes personalizados */
+*:focus-visible {
+  @apply outline-none ring-2 ring-ring ring-offset-2 bg-[hsl(var(--background))];
+}
+
 @layer components {
-  /* Fondo de la aplicación */
   .app-background {
     @apply bg-[hsl(var(--app-background))];
   }
-  
-  /* Card de dashboard */
+
   .card-dashboard {
     @apply bg-card text-card-foreground rounded-lg border shadow-sm p-6 transition-all duration-200 hover:shadow-md;
   }
-  
-  /* Botón principal */
+
   .btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-2;
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2;
+  }
+  .btn-primary:focus-visible {
+    @apply ring-2 ring-ring;
   }
 
-  /* Botón secundario */
   .btn-secondary {
-    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 focus-visible:ring-2;
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-md px-4 py-2;
+  }
+  .btn-secondary:focus-visible {
+    @apply ring-2 ring-ring;
   }
 
-  /* Botón de acento */
   .btn-accent {
-    @apply bg-accent text-accent-foreground hover:bg-accent/90 focus-visible:ring-2;
+    @apply bg-accent text-accent-foreground hover:bg-accent/90 rounded-md px-4 py-2;
+  }
+  .btn-accent:focus-visible {
+    @apply ring-2 ring-ring;
   }
 
-  /* Botón de éxito */
   .btn-success {
-    @apply bg-success text-success-foreground hover:bg-success/90 focus-visible:ring-2;
+    @apply bg-success text-success-foreground hover:bg-success/90 rounded-md px-4 py-2;
+  }
+  .btn-success:focus-visible {
+    @apply ring-2 ring-ring;
   }
 
-  /* Botón de advertencia */
   .btn-warning {
-    @apply bg-warning text-warning-foreground hover:bg-warning/90 focus-visible:ring-2;
+    @apply bg-warning text-warning-foreground hover:bg-warning/90 rounded-md px-4 py-2;
+  }
+  .btn-warning:focus-visible {
+    @apply ring-2 ring-ring;
   }
 
-  /* Botón de error */
   .btn-error {
-    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-2;
+    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md px-4 py-2;
+  }
+  .btn-error:focus-visible {
+    @apply ring-2 ring-ring;
   }
 
   .dashboard-card {
-    @apply bg-card rounded-card shadow-card overflow-hidden transition-all duration-300 hover:shadow-lg;
+    @apply bg-card rounded-lg border shadow-sm overflow-hidden transition-all duration-300 hover:shadow-lg;
   }
-  
+
   .dashboard-card-header {
-    @apply p-4 border-b border-[#D6E8EE] flex justify-between items-center;
+    @apply p-4 border-b flex justify-between items-center;
+    border-bottom-color: #d6e8ee;
   }
-  
+
   .dashboard-card-title {
     @apply text-lg font-semibold text-primary-dark;
   }
-  
+
   .dashboard-card-content {
     @apply p-4;
   }
-  
+
   .stat-card {
-    @apply rounded-card p-4 text-white relative overflow-hidden;
+    @apply rounded-lg p-4 text-white relative overflow-hidden;
   }
-  
+
   .stat-card-value {
     @apply text-2xl font-bold mb-1;
   }
-  
+
   .stat-card-label {
     @apply text-sm opacity-90;
   }
-  
+
   .stat-card-icon {
     @apply absolute right-4 top-4 opacity-20 text-white;
   }
-  
-  /* Indicador de tema actual */
+
   .theme-indicator {
     @apply fixed bottom-4 right-4 p-2 rounded-full shadow-md transition-colors duration-300;
   }
-  
+
   .theme-indicator .icon {
     @apply w-5 h-5;
   }
-  
-  /* Tema claro: fondo blanco, texto oscuro */
+
   .light .theme-indicator {
     @apply bg-white text-primary-dark border border-primary-lightest;
   }
-  
-  /* Tema oscuro: fondo oscuro, texto claro */
+
   .dark .theme-indicator {
-    @apply bg-primary-dark text-white border border-primary;
+    @apply bg-primary-dark text-white border border-primary-medium;
   }
 
-  /* Tarjetas con bordes y fondos adaptados al tema */
   .card {
-    @apply bg-card text-card-foreground border border-border rounded-lg shadow-sm;
+    @apply bg-card text-card-foreground border rounded-lg shadow-sm;
   }
 
-  /* Elementos de navegación */
   .nav-item {
     @apply px-2 py-1.5 text-sm font-medium text-foreground/80 hover:text-foreground rounded-md transition-colors;
   }
@@ -238,7 +209,6 @@
   }
 }
 
-/* Gradientes para las tarjetas de estadísticas */
 .gradient-blue-1 {
   background: linear-gradient(135deg, #001b48 0%, #02457a 100%);
 }

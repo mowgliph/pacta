@@ -4,7 +4,7 @@ import Footer from "./Footer";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ToastProviderCustom } from "./use-toast";
 import { ContextMenuProvider } from "./context-menu";
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useState, useCallback } from "react";
 import { UpdateBanner } from "./UpdateBanner";
 import { useNavigate } from "react-router-dom";
 
@@ -12,37 +12,56 @@ interface Props {
   children: ReactNode;
 }
 
+type ApiErrorEvent = CustomEvent<{ message?: string }>;
+
 export const ClientRootLayout = ({ children }: Props) => {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // @ts-ignore
-    if (window.Electron?.ipcRenderer) {
-      window.Electron.ipcRenderer.on("app:update-available", () => {
-        setUpdateAvailable(true);
-      });
-    }
+    const ipcRenderer = window.Electron?.ipcRenderer;
+    if (!ipcRenderer) return;
+
+    const handleUpdateAvailable = () => {
+      setUpdateAvailable(true);
+    };
+
+    ipcRenderer.on("app:update-available", handleUpdateAvailable);
+
     return () => {
-      // @ts-ignore
-      window.Electron?.ipcRenderer?.removeAllListeners("app:update-available");
+      ipcRenderer.removeListener("app:update-available", handleUpdateAvailable);
     };
   }, []);
 
   useEffect(() => {
-    const handleApiError = () => {
+    const handleApiError = (event: ApiErrorEvent) => {
+      console.error("API Error:", event.detail?.message);
       navigate("/_error");
     };
-    window.addEventListener("api-error", handleApiError);
+
+    window.addEventListener("api-error", handleApiError as EventListener);
     return () => {
-      window.removeEventListener("api-error", handleApiError);
+      window.removeEventListener("api-error", handleApiError as EventListener);
     };
   }, [navigate]);
 
-  const handleRestartApp = () => {
-    // @ts-ignore
-    window.Electron?.ipcRenderer?.invoke("app:restart");
-  };
+  const handleRestartApp = useCallback(async () => {
+    try {
+      const ipcRenderer = window.Electron?.ipcRenderer;
+      if (!ipcRenderer) {
+        throw new Error("IPC Renderer no disponible");
+      }
+
+      await ipcRenderer.invoke("app:restart");
+    } catch (error) {
+      console.error("Error al reiniciar la aplicación:", error);
+      // Disparar evento de error de API
+      const errorEvent = new CustomEvent("api-error", {
+        detail: { message: "No se pudo reiniciar la aplicación" },
+      });
+      window.dispatchEvent(errorEvent);
+    }
+  }, []);
 
   return (
     <ContextMenuProvider>

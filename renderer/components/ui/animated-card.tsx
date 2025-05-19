@@ -1,18 +1,22 @@
-"use client"
-
-import { motion } from "framer-motion"
-import { Card, CardContent, CardFooter, CardHeader } from "./card"
-import type { ReactNode } from "react"
+import { motion } from "framer-motion";
+import { Card, CardContent, CardFooter, CardHeader } from "./card";
+import type { ReactNode } from "react";
 
 interface AnimatedCardProps {
-  children: ReactNode
-  header?: ReactNode
-  footer?: ReactNode
-  className?: string
-  delay?: number
+  children: ReactNode;
+  header?: ReactNode;
+  footer?: ReactNode;
+  className?: string;
+  delay?: number;
 }
 
-export function AnimatedCard({ children, header, footer, className, delay = 0 }: AnimatedCardProps) {
+export function AnimatedCard({
+  children,
+  header,
+  footer,
+  className,
+  delay = 0,
+}: AnimatedCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -27,7 +31,7 @@ export function AnimatedCard({ children, header, footer, className, delay = 0 }:
         {footer && <CardFooter>{footer}</CardFooter>}
       </Card>
     </motion.div>
-  )
+  );
 }
 
 export function AnimatedContainer({ children }: { children: ReactNode }) {
@@ -41,5 +45,5 @@ export function AnimatedContainer({ children }: { children: ReactNode }) {
     >
       {children}
     </motion.div>
-  )
+  );
 }

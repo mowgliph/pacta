@@ -57,12 +57,7 @@ WindowManager.prototype.createMainWindow = async function () {
       window.webContents.openDevTools();
     } else {
       await window.loadFile(
-        join(
-          app.getAppPath(),
-          "renderer",
-          "public",
-          process.env.MAIN_WINDOW_VITE_NAME || "index.html"
-        )
+        join(app.getAppPath(), "renderer", process.env.MAIN_WINDOW_VITE_NAME)
       );
     }
     this.setupWindowEvents(window);

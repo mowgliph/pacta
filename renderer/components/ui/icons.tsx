@@ -1,5 +1,3 @@
-"use client"
-
 import {
   LayoutDashboard,
   FileText,
@@ -10,7 +8,7 @@ import {
   Circle,
   ChevronDown,
   PanelLeftClose,
-  type LucideIcon
+  type LucideIcon,
 } from "lucide-react";
 
 export const Icons = {
@@ -22,8 +20,8 @@ export const Icons = {
   Shield,
   Circle,
   ChevronDown,
-  PanelLeftClose
+  PanelLeftClose,
 } as const;
 
 export type Icon = keyof typeof Icons;
-export type IconComponent = LucideIcon; 
+export type IconComponent = LucideIcon;

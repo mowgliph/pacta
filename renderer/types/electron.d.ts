@@ -108,6 +108,7 @@ declare global {
           channel: string,
           listener: (...args: any[]) => void
         ) => void;
+        removeAllListeners: (channel: string) => void;
       };
       files: {
         open: (options: any) => Promise<any>;
