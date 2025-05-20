@@ -116,29 +116,29 @@ export default function DashboardPage() {
             <AlertTitle>Error al cargar estadísticas</AlertTitle>
             <AlertDescription>{error}</AlertDescription>
           </Alert>
-        ) : data ? (
+        ) : data?.totals ? (
           <>
             <StatCard
               title="Contratos Vigentes"
-              value={String(data.totals.active)}
+              value={String(data.totals.active || 0)}
               icon={<BarChart2 size={28} className="text-[#018ABE]" />}
               color="bg-[#018ABE]"
             />
             <StatCard
               title="Contratos Próximos a Vencer"
-              value={String(data.totals.expiring)}
+              value={String(data.totals.expiring || 0)}
               icon={<TrendingUp size={28} className="text-[#FF9800]" />}
               color="bg-[#FF9800]"
             />
             <StatCard
               title="Contratos Vencidos"
-              value={String(data.totals.expired)}
+              value={String(data.totals.expired || 0)}
               icon={<BarChart2 size={28} className="text-[#F44336]" />}
               color="bg-[#F44336]"
             />
             <StatCard
               title="Total Contratos"
-              value={String(data.totals.total)}
+              value={String(data.totals.total || 0)}
               icon={<BarChart2 size={28} className="text-[#018ABE]" />}
               color="bg-[#018ABE]"
             />

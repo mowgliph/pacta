@@ -35,7 +35,10 @@ exports.QueryOptimizer = class QueryOptimizer {
       prisma.contract.findMany({
         take: 10,
         orderBy: { updatedAt: "desc" },
-        include: {
+        select: {
+          id: true,
+          number: true,
+          updatedAt: true,
           createdBy: {
             select: {
               name: true,
@@ -45,18 +48,29 @@ exports.QueryOptimizer = class QueryOptimizer {
       }),
     ]);
 
+    // Transformar la actividad reciente al formato esperado
+    const formattedActivity = recentActivity.map((contract) => ({
+      id: contract.id,
+      title: `Contrato ${contract.number}`,
+      contractNumber: contract.number,
+      updatedAt: contract.updatedAt,
+      createdBy: {
+        name: contract.createdBy?.name || "Sistema",
+      },
+    }));
+
     return {
       totals: {
-        total: totalContracts,
-        active: activeContracts,
-        expiring: expiringContracts,
-        expired: expiredContracts,
+        total: totalContracts || 0,
+        active: activeContracts || 0,
+        expiring: expiringContracts || 0,
+        expired: expiredContracts || 0,
       },
       distribution: {
-        client: clientContracts,
-        supplier: supplierContracts,
+        client: clientContracts || 0,
+        supplier: supplierContracts || 0,
       },
-      recentActivity,
+      recentActivity: formattedActivity,
     };
   }
 

@@ -32,11 +32,18 @@ export function ThemeToggle() {
     const initializeTheme = async () => {
       if (!initialized.current && theme === "system") {
         try {
-          const systemTheme = await window.Electron.ipcRenderer.invoke(
-            "theme:get-system-theme"
-          );
-          if (systemTheme) {
+          const systemTheme = (await window.Electron.ipcRenderer.invoke(
+            "theme:get-system"
+          )) as Theme;
+
+          if (
+            systemTheme &&
+            (systemTheme === "light" || systemTheme === "dark")
+          ) {
             setTheme(systemTheme);
+          } else {
+            // Si el tema no es válido, usar tema claro por defecto
+            setTheme("light");
           }
           initialized.current = true;
         } catch (error) {
@@ -54,27 +61,13 @@ export function ThemeToggle() {
     setSaving(true);
     setTheme(value);
     try {
-      const res = await window.Electron.ipcRenderer.invoke(
-        "theme:set-app-theme",
-        value
+      await window.Electron.ipcRenderer.invoke("theme:set-app", value);
+      setToastMsg(
+        `Tema "${
+          value === "light" ? "Claro" : value === "dark" ? "Oscuro" : "Sistema"
+        }" guardado en preferencias.`
       );
-      if (res?.success) {
-        setToastMsg(
-          `Tema "${
-            value === "light"
-              ? "Claro"
-              : value === "dark"
-              ? "Oscuro"
-              : "Sistema"
-          }" guardado en preferencias.`
-        );
-      } else {
-        setToastError("No se pudo guardar la preferencia de tema.");
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent("api-error"));
-        }
-      }
-    } catch {
+    } catch (error) {
       setToastError("No se pudo guardar la preferencia de tema.");
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("api-error"));

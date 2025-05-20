@@ -19,17 +19,17 @@ export const ClientRootLayout = ({ children }: Props) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const ipcRenderer = window.Electron?.ipcRenderer;
-    if (!ipcRenderer) return;
+    const electron = window.Electron?.ipcRenderer;
+    if (!electron) return;
 
     const handleUpdateAvailable = () => {
       setUpdateAvailable(true);
     };
 
-    ipcRenderer.on("app:update-available", handleUpdateAvailable);
+    electron.on("app:update-available", handleUpdateAvailable);
 
     return () => {
-      ipcRenderer.removeListener("app:update-available", handleUpdateAvailable);
+      electron.removeListener("app:update-available", handleUpdateAvailable);
     };
   }, []);
 
@@ -47,15 +47,14 @@ export const ClientRootLayout = ({ children }: Props) => {
 
   const handleRestartApp = useCallback(async () => {
     try {
-      const ipcRenderer = window.Electron?.ipcRenderer;
-      if (!ipcRenderer) {
+      const electron = window.Electron?.ipcRenderer;
+      if (!electron) {
         throw new Error("IPC Renderer no disponible");
       }
 
-      await ipcRenderer.invoke("app:restart");
+      await electron.invoke("app:restart");
     } catch (error) {
       console.error("Error al reiniciar la aplicación:", error);
-      // Disparar evento de error de API
       const errorEvent = new CustomEvent("api-error", {
         detail: { message: "No se pudo reiniciar la aplicación" },
       });

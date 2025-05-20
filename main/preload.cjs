@@ -11,7 +11,26 @@ const flattenChannels = (channels) => {
   }, []);
 };
 
-const validInvokeChannels = flattenChannels(IPC_CHANNELS);
+// Lista de canales personalizados que no están en IPC_CHANNELS
+const customChannels = [
+  "app:update-available",
+  "app:restart",
+  "theme:get-system",
+  "theme:set-app",
+  "backups:create",
+  "backups:restore",
+  "backups:delete",
+  "backups:list",
+  "backups:clean-old",
+  "contracts:getById",
+  "users:getById",
+  "statistics:dashboard",
+];
+
+const validInvokeChannels = [
+  ...flattenChannels(IPC_CHANNELS),
+  ...customChannels,
+];
 
 /**
  * Validar si un canal está en la lista de canales permitidos
@@ -24,6 +43,33 @@ const isValidChannel = (channel) => {
 
 // APIs seguras expuestas al proceso de renderizado a través de contextBridge
 contextBridge.exposeInMainWorld("Electron", {
+  // API genérica de IPC
+  ipcRenderer: {
+    invoke: (channel, ...args) => {
+      if (isValidChannel(channel)) {
+        return ipcRenderer.invoke(channel, ...args);
+      }
+      throw new Error(`Canal no permitido: ${channel}`);
+    },
+    on: (channel, func) => {
+      if (isValidChannel(channel)) {
+        ipcRenderer.on(channel, (event, ...args) => func(...args));
+      }
+    },
+    removeListener: (channel, func) => {
+      if (isValidChannel(channel)) {
+        ipcRenderer.removeListener(channel, func);
+      }
+    },
+  },
+  // APIs específicas
+  app: {
+    onUpdateAvailable: (callback) =>
+      ipcRenderer.on("app:update-available", callback),
+    removeUpdateListener: (callback) =>
+      ipcRenderer.removeListener("app:update-available", callback),
+    restart: () => ipcRenderer.invoke("app:restart"),
+  },
   // Autenticación
   auth: {
     login: (credentials) =>
@@ -184,20 +230,5 @@ contextBridge.exposeInMainWorld("Electron", {
   // API genérica
   api: {
     request: (req) => ipcRenderer.invoke("api:request", req),
-  },
-  // IPC seguro
-  ipcRenderer: {
-    invoke: (channel, ...args) => {
-      if (isValidChannel(channel)) {
-        return ipcRenderer.invoke(channel, ...args);
-      }
-      return Promise.reject(new Error(`Canal IPC no permitido: ${channel}`));
-    },
-  },
-  files: {
-    open: (options) =>
-      ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.OPEN_FILE, options),
-    save: (options) =>
-      ipcRenderer.invoke(IPC_CHANNELS.SYSTEM.SAVE_FILE, options),
   },
 });
