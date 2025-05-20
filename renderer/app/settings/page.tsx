@@ -110,7 +110,7 @@ export default function SettingsPage() {
           <AlertDescription>{toast.message}</AlertDescription>
         </Alert>
       )}
-      <h1 className="text-2xl font-semibold text-[#001B48] font-inter mb-2">
+      <h1 className="text-2xl-custom font-semibold text-[#001B48] font-inter mb-2">
         Ajustes
       </h1>
       {/* Perfil */}

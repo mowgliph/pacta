@@ -154,9 +154,9 @@ export default function ContractsPage() {
       {/* Tabla de contratos */}
       <section className="bg-white rounded-xl shadow p-4 animate-fade-in-up">
         <div className="flex justify-between items-center mb-2">
-          <h2 className="text-lg font-semibold text-[#001B48] font-inter">
+          <h1 className="text-2xl-custom font-semibold text-[#001B48] font-inter mb-2">
             Contratos {tipo}
-          </h2>
+          </h1>
           <button
             className="flex items-center gap-1 text-[#018ABE] text-sm hover:underline"
             tabIndex={0}

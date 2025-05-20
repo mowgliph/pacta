@@ -93,7 +93,7 @@
 }
 
 *:focus-visible {
-  @apply outline-none ring-2 ring-ring ring-offset-2 bg-[hsl(var(--background))];
+  @apply outline-none ring-2 ring ring-offset-2 bg-[hsl(var(--background))];
 }
 
 @layer components {
@@ -109,42 +109,42 @@
     @apply bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2;
   }
   .btn-primary:focus-visible {
-    @apply ring-2 ring-ring;
+    @apply ring-2 ring;
   }
 
   .btn-secondary {
     @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-md px-4 py-2;
   }
   .btn-secondary:focus-visible {
-    @apply ring-2 ring-ring;
+    @apply ring-2 ring;
   }
 
   .btn-accent {
     @apply bg-accent text-accent-foreground hover:bg-accent/90 rounded-md px-4 py-2;
   }
   .btn-accent:focus-visible {
-    @apply ring-2 ring-ring;
+    @apply ring-2 ring;
   }
 
   .btn-success {
     @apply bg-success text-success-foreground hover:bg-success/90 rounded-md px-4 py-2;
   }
   .btn-success:focus-visible {
-    @apply ring-2 ring-ring;
+    @apply ring-2 ring;
   }
 
   .btn-warning {
     @apply bg-warning text-warning-foreground hover:bg-warning/90 rounded-md px-4 py-2;
   }
   .btn-warning:focus-visible {
-    @apply ring-2 ring-ring;
+    @apply ring-2 ring;
   }
 
   .btn-error {
     @apply bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md px-4 py-2;
   }
   .btn-error:focus-visible {
-    @apply ring-2 ring-ring;
+    @apply ring-2 ring;
   }
 
   .dashboard-card {
@@ -198,6 +198,10 @@
 
   .card {
     @apply bg-card text-card-foreground border rounded-lg shadow-sm;
+  }
+
+  .card-translucent {
+    @apply bg-[hsl(var(--card)/0.7)] text-[hsl(var(--card-foreground)/0.7)] border rounded-lg shadow-sm;
   }
 
   .nav-item {

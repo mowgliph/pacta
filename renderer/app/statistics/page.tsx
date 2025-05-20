@@ -60,7 +60,7 @@ export default function StatisticsPage() {
 
   return (
     <div className="max-w-6xl mx-auto py-10 px-4 flex flex-col gap-8">
-      <h1 className="text-2xl font-semibold text-[#001B48] font-inter mb-2">
+      <h1 className="text-2xl font-bold text-[#001B48] mb-4">
         Estadísticas
       </h1>
       {error ? (

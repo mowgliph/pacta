@@ -37,7 +37,7 @@ exports.QueryOptimizer = class QueryOptimizer {
         orderBy: { updatedAt: "desc" },
         select: {
           id: true,
-          number: true,
+          contractNumber: true,
           updatedAt: true,
           createdBy: {
             select: {

@@ -1,7 +1,5 @@
-import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ClientRootLayout } from "./components/ui/ClientRootLayout";
-import "./styles/globals.css";
 import Dashboard from "./app/dashboard/page";
 import Login from "./app/login/page";
 import Users from "./app/users/page";

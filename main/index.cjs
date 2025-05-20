@@ -40,7 +40,7 @@ async function main() {
     // console.info("[DEBUG] Inicio de main()");
     // Prevenir múltiples instancias de la aplicación
     const gotTheLock = app.requestSingleInstanceLock();
-    console.info("[DEBUG] requestSingleInstanceLock:", gotTheLock);
+    // console.info("[DEBUG] requestSingleInstanceLock:", gotTheLock);
 
     if (!gotTheLock) {
       console.info(
@@ -98,7 +98,7 @@ async function main() {
       return;
     }
 
-    console.info("[DEBUG] Antes de registrar manejadores de eventos");
+    // console.info("[DEBUG] Antes de registrar manejadores de eventos");
     registerAuthHandlers(eventManager);
     registerContractHandlers(eventManager);
     registerDocumentHandlers(eventManager);

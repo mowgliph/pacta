@@ -31,7 +31,7 @@ function StatCard({
       </div>
       <div>
         <div className="text-xs text-[#757575] font-roboto mb-1">{title}</div>
-        <div className="text-2xl font-semibold text-[#001B48] font-inter">
+        <div className="text-2xl-custom font-semibold text-[#001B48] font-inter">
           {value}
         </div>
       </div>
