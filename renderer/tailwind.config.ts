@@ -1,13 +1,14 @@
-/** @type {import('tailwindcss').Config} */
-module.exports = {
+import type { Config } from "tailwindcss";
+
+const config: Config = {
   content: [
-    "./renderer/**/*.{js,ts,jsx,tsx}", // Incluye todos los archivos en renderer
+    "./renderer/**/*.{js,ts,jsx,tsx}",
     "./renderer/pages/**/*.{js,ts,jsx,tsx}",
     "./renderer/components/**/*.{js,ts,jsx,tsx}",
     "./renderer/app/**/*.{js,ts,jsx,tsx}",
     "./renderer/lib/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: ["class"],
+  darkMode: "class",
   theme: {
     container: {
       center: true,
@@ -68,7 +69,7 @@ module.exports = {
         },
       },
       fontSize: {
-        "2xl": ["1.5rem", { lineHeight: "2rem" }], // Define text-2xl explícitamente
+        "2xl": ["1.5rem", { lineHeight: "2rem" }],
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -117,3 +118,5 @@ module.exports = {
   },
   plugins: [require("tailwindcss-animate")],
 };
+
+export default config;
