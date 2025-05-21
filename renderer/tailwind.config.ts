@@ -1,12 +1,17 @@
 import type { Config } from "tailwindcss";
+import defaultTheme from "tailwindcss/defaultTheme";
+import path from "path";
+
+// Resolve paths from project root
+const projectRoot = path.resolve(__dirname, "..");
 
 const config: Config = {
   content: [
-    "./renderer/**/*.{js,ts,jsx,tsx}",
-    "./renderer/pages/**/*.{js,ts,jsx,tsx}",
-    "./renderer/components/**/*.{js,ts,jsx,tsx}",
-    "./renderer/app/**/*.{js,ts,jsx,tsx}",
-    "./renderer/lib/**/*.{js,ts,jsx,tsx}",
+    path.join(projectRoot, "index.html"),
+    path.join(projectRoot, "renderer", "**", "*.{js,ts,jsx,tsx}"),
+    path.join(projectRoot, "renderer", "components", "**", "*.{js,ts,jsx,tsx}"),
+    path.join(projectRoot, "renderer", "pages", "**", "*.{js,ts,jsx,tsx}"),
+    path.join(projectRoot, "renderer", "styles", "**", "*.css"),
   ],
   darkMode: "class",
   theme: {
@@ -19,6 +24,7 @@ const config: Config = {
     },
     extend: {
       colors: {
+        // Colores personalizados
         "primary-dark": "#001B48",
         "primary-medium": "#018ABE",
         "primary-light": "#97CADB",
@@ -34,42 +40,59 @@ const config: Config = {
         white: "#FFFFFF",
         black: "#000000",
         transparent: "transparent",
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        
+        // Variables CSS para temas
+        border: "hsl(var(--border) / <alpha-value>)",
+        input: "hsl(var(--input) / <alpha-value>)",
+        ring: "hsl(var(--ring) / <alpha-value>)",
+        background: "hsl(var(--background) / <alpha-value>)",
+        foreground: "hsl(var(--foreground) / <alpha-value>)",
+        
+        // Colores semánticos
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "hsl(var(--primary) / <alpha-value>)",
+          foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "hsl(var(--secondary) / <alpha-value>)",
+          foreground: "hsl(var(--secondary-foreground) / <alpha-value>)",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "hsl(var(--destructive) / <alpha-value>)",
+          foreground: "hsl(var(--destructive-foreground) / <alpha-value>)",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "hsl(var(--muted) / <alpha-value>)",
+          foreground: "hsl(var(--muted-foreground) / <alpha-value>)",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "hsl(var(--accent) / <alpha-value>)",
+          foreground: "hsl(var(--accent-foreground) / <alpha-value>)",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "hsl(var(--popover) / <alpha-value>)",
+          foreground: "hsl(var(--popover-foreground) / <alpha-value>)",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "hsl(var(--card) / <alpha-value>)",
+          foreground: "hsl(var(--card-foreground) / <alpha-value>)",
+        },
+        // Añadir app-background como color personalizado
+        app: {
+          background: "hsl(var(--app-background) / <alpha-value>)",
         },
       },
       fontSize: {
-        "2xl": ["1.5rem", { lineHeight: "2rem" }],
+        xs: ["0.75rem", { lineHeight: "1rem" }],         // 12px
+        sm: ["0.875rem", { lineHeight: "1.25rem" }],     // 14px
+        base: ["1rem", { lineHeight: "1.5rem" }],        // 16px
+        lg: ["1.125rem", { lineHeight: "1.75rem" }],     // 18px
+        xl: ["1.25rem", { lineHeight: "1.75rem" }],      // 20px
+        "2xl": ["1.5rem", { lineHeight: "2rem" }],       // 24px
+        "3xl": ["1.875rem", { lineHeight: "2.25rem" }],  // 30px
+        "4xl": ["2rem", { lineHeight: "2.5rem" }],       // 32px
+        "5xl": ["2.5rem", { lineHeight: "3rem" }],       // 40px
+        "6xl": ["3rem", { lineHeight: "3.5rem" }],       // 48px
       },
       borderRadius: {
         lg: "var(--radius)",

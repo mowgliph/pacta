@@ -1,3 +1,7 @@
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -106,42 +110,42 @@
   }
 
   .btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2;
+    @apply bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary)/0.9)] rounded-md px-4 py-2;
   }
   .btn-primary:focus-visible {
     @apply ring-2 ring;
   }
 
   .btn-secondary {
-    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-md px-4 py-2;
+    @apply bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))] hover:bg-[hsl(var(--secondary)/0.8)] rounded-md px-4 py-2;
   }
   .btn-secondary:focus-visible {
     @apply ring-2 ring;
   }
 
   .btn-accent {
-    @apply bg-accent text-accent-foreground hover:bg-accent/90 rounded-md px-4 py-2;
+    @apply bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] hover:bg-[hsl(var(--accent)/0.9)] rounded-md px-4 py-2;
   }
   .btn-accent:focus-visible {
     @apply ring-2 ring;
   }
 
   .btn-success {
-    @apply bg-success text-success-foreground hover:bg-success/90 rounded-md px-4 py-2;
+    @apply bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))] hover:bg-[hsl(var(--success)/0.9)] rounded-md px-4 py-2;
   }
   .btn-success:focus-visible {
     @apply ring-2 ring;
   }
 
   .btn-warning {
-    @apply bg-warning text-warning-foreground hover:bg-warning/90 rounded-md px-4 py-2;
+    @apply bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))] hover:bg-[hsl(var(--warning)/0.9)] rounded-md px-4 py-2;
   }
   .btn-warning:focus-visible {
     @apply ring-2 ring;
   }
 
   .btn-error {
-    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-md px-4 py-2;
+    @apply bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))] hover:bg-[hsl(var(--destructive)/0.9)] rounded-md px-4 py-2;
   }
   .btn-error:focus-visible {
     @apply ring-2 ring;
