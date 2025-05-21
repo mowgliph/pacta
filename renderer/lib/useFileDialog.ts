@@ -1,25 +1,55 @@
 "use client";
 import { useCallback } from "react";
+import type { FileDialogOptions, FileDialogResult } from "../types/electron.d";
 
+/**
+ * Hook para usar diálogos de archivos de Electron
+ * @returns Objeto con funciones para abrir y guardar archivos
+ */
 export const useFileDialog = () => {
-  const openFile = useCallback(async (options: any = {}) => {
-    if (
-      typeof window !== "undefined" &&
-      (window.Electron as any)["files"]?.open
-    ) {
-      return await (window.Electron as any)["files"].open(options);
+  /**
+   * Abre un diálogo para seleccionar un archivo
+   * @param options - Opciones de configuración para el diálogo
+   * @returns Resultado del diálogo o null si se canceló o no está disponible
+   */
+  const openFile = useCallback(async (options: FileDialogOptions = {}) => {
+    try {
+      if (!window.Electron?.files?.open) {
+        throw new Error('API de diálogo de archivos no disponible');
+      }
+      const result = await window.Electron.files.open(options);
+      if (!result) return null;
+      return result;
+    } catch (err) {
+      console.error('Error al abrir archivo:', err);
+      window.dispatchEvent(new CustomEvent("api-error", {
+        detail: {
+          error: err instanceof Error ? err.message : 'Error desconocido',
+          type: 'file-dialog-error' as const
+        }
+      }));
+      return null;
     }
-    return null;
   }, []);
 
-  const saveFile = useCallback(async (options: any = {}) => {
-    if (
-      typeof window !== "undefined" &&
-      (window.Electron as any)["files"]?.save
-    ) {
-      return await (window.Electron as any)["files"].save(options);
+  const saveFile = useCallback(async (options: FileDialogOptions = {}) => {
+    try {
+      if (!window.Electron?.files?.save) {
+        throw new Error('API de diálogo de archivos no disponible');
+      }
+      const result = await window.Electron.files.save(options);
+      if (!result) return null;
+      return result;
+    } catch (err) {
+      console.error('Error al guardar archivo:', err);
+      window.dispatchEvent(new CustomEvent("api-error", {
+        detail: {
+          error: err instanceof Error ? err.message : 'Error desconocido',
+          type: 'file-dialog-error' as const
+        }
+      }));
+      return null;
     }
-    return null;
   }, []);
 
   return { openFile, saveFile };

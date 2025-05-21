@@ -25,12 +25,9 @@ export function useContractDetail(id: string) {
     setLoading(true);
     setError(null);
     Promise.all([
-      // @ts-ignore
       window.Electron.ipcRenderer.invoke("contracts:getById", id),
-      // @ts-ignore
       window.Electron.ipcRenderer.invoke("supplements:list", id),
-      // @ts-ignore
-      window.Electron.documents.getByContract(id),
+      window.Electron.ipcRenderer.invoke("documents:getByContract", id),
     ])
       .then(([cRes, sRes, dRes]: any[]) => {
         if (!mounted) return;

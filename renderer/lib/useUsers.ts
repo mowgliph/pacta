@@ -1,20 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
-import { handleIpcResponse } from "./handleIpcResponse";
+import type { User, UserResponse, IpcRenderer } from "../types/electron.d";
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  roleId: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export function getIpcRenderer() {
+export function getIpcRenderer(): IpcRenderer | null {
   if (typeof window !== "undefined" && window.Electron?.ipcRenderer) {
-    // @ts-ignore
     return window.Electron.ipcRenderer;
   }
   return null;
@@ -29,36 +18,38 @@ export function useUsers() {
     let mounted = true;
     setLoading(true);
     setError(null);
-    const ipc = getIpcRenderer();
-    if (!ipc) {
-      setError("API de usuarios no disponible");
-      setLoading(false);
-      return;
-    }
-    ipc
-      .invoke("users:list")
-      .then((res: any) => {
+    const fetchUsers = async () => {
+      const ipc = getIpcRenderer();
+      if (!ipc) {
+        throw new Error("API de usuarios no disponible");
+      }
+
+      try {
+        const response = await ipc.invoke("users:list") as UserResponse;
         if (!mounted) return;
-        try {
-          setUsers(handleIpcResponse<User[]>(res));
-        } catch (err: any) {
-          setError(err?.message || "Error al obtener usuarios");
-          if (typeof window !== "undefined") {
-            window.dispatchEvent(new CustomEvent("api-error"));
-          }
+        setUsers(response.data);
+      } catch (err) {
+        if (!mounted) return;
+        
+        const error = err instanceof Error ? err : new Error("Error al obtener usuarios");
+        setError(error.message);
+        
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("api-error", {
+            detail: {
+              error: error.message,
+              type: 'users-error' as const
+            }
+          }));
         }
-      })
-      .catch((err: any) => {
+      } finally {
         if (mounted) {
-          setError(err?.message || "Error de conexión");
-          if (typeof window !== "undefined") {
-            window.dispatchEvent(new CustomEvent("api-error"));
-          }
+          setLoading(false);
         }
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
+      }
+    };
+
+    fetchUsers();
     return () => {
       mounted = false;
     };

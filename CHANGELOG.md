@@ -2,6 +2,45 @@
 
 Todos los cambios notables en PACTA serán documentados en este archivo.
 
+## [1.1.0] - 2025-05-21
+### Añadido
+- Sistema de Notificaciones Mejorado
+  - Implementación de notificaciones push nativas
+  - Configuración personalizada por usuario
+  - Historial de notificaciones
+  - Soporte para múltiples plataformas
+
+- Estadísticas y Reportes Avanzados
+  - Generación de reportes PDF
+  - Exportación de datos a Excel
+  - Gráficos interactivos
+  - Dashboard personalizable
+
+- Sistema de Backup Mejorado
+  - Backup automático diario
+  - Restauración selectiva
+  - Sistema de purga automática
+  - Verificación de integridad
+
+### Modificado
+- Arquitectura del Sistema
+  - Optimización de rendimiento
+  - Mejora en la gestión de memoria
+  - Reducción del tiempo de carga
+  - Mejora en la estabilidad
+
+- Interfaz de Usuario
+  - Diseño más moderno y limpio
+  - Mejoras en la accesibilidad
+  - Navegación más intuitiva
+  - Optimización para pantallas pequeñas
+
+### Corregido
+- Problemas de sincronización de datos
+- Inconsistencias en la generación de reportes
+- Errores en la gestión de permisos
+- Problemas de compatibilidad con diferentes sistemas operativos
+
 ## [0.6.0] - 2025-04-15
 ### Añadido
 - Dashboard Público Mejorado

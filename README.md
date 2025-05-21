@@ -1,6 +1,6 @@
 # PACTA: Plataforma de Automatización y Control de Contratos Empresariales
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](package.json) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](package.json) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 <!-- TODO: Añadir badges de estado de build/CI cuando esté configurado -->
 
 **PACTA es una aplicación de escritorio para Windows (instalable localmente) diseñada para optimizar la gestión de contratos existentes en empresas grandes, con un enfoque en seguridad, accesibilidad y funcionamiento offline.** Centraliza la documentación contractual, automatiza el seguimiento de vencimientos y mejora la organización general.
@@ -37,16 +37,17 @@ PACTA aborda la necesidad de las empresas de gestionar eficientemente su cartera
 
 ---
 
-## Características Principales (v1.0)
+## Características Principales (v1.1.0)
 
 <!-- TODO: Insertar GIFs o capturas de pantalla de las características clave -->
 
 - **Dashboard Interactivo:**
   - Resumen estadístico (total de contratos, por estado, por tipo).
-  - Gráficos de distribución (estado, tipo).
+  - Gráficos interactivos y personalizables.
   - Lista de contratos con vencimiento próximo.
   - Accesos directos para acciones comunes (Agregar Contrato/Suplemento).
-  - Feed de actividad reciente.
+  - Feed de actividad reciente con filtros avanzados.
+  - Panel de notificaciones mejorado con historial.
 - **Gestión Completa de Contratos:**
   - Creación de contratos con campos detallados (Número, Empresa, Fechas, Monto, etc.). *Los datos iniciales son inmutables.*
   - Listado, filtrado (Tipo, Estado) y búsqueda avanzada de contratos.
@@ -59,9 +60,11 @@ PACTA aborda la necesidad de las empresas de gestionar eficientemente su cartera
   - Cálculo automático del estado del contrato basado en fechas (considerando suplementos).
   - Archivado automático al vencer (si no hay suplemento que extienda).
   - Desarchivado automático si un suplemento futuro reactiva el contrato.
-- **Notificaciones Integradas:**
-  - Alertas dentro de la aplicación para contratos próximos a vencer.
-  - Panel de notificaciones no leídas.
+- **Sistema de Notificaciones Avanzado:**
+  - Alertas push nativas para contratos próximos a vencer.
+  - Configuración personalizada de notificaciones por usuario.
+  - Historial de notificaciones con filtros.
+  - Soporte para múltiples plataformas.
 - **Gestión de Usuarios y Roles:**
   - Roles definidos: Administrador (Admin) y Responsable de Área (RA).
   - Admin puede crear y gestionar usuarios RA.
@@ -71,12 +74,16 @@ PACTA aborda la necesidad de las empresas de gestionar eficientemente su cartera
 - **Almacenamiento Local:**
   - Base de datos SQLite gestionada con Prisma.
   - Documentos adjuntos guardados en el sistema de archivos local.
-- **Backup y Restauración:**
-  - Sistema de backup diario automático local.
-  - Funcionalidad de restauración manual para Administradores.
-- **Interfaz de Usuario:**
-  - Tema claro y oscuro.
-  - Diseño moderno basado en Shadcn/UI y Tailwind CSS.
+- **Sistema de Backup Mejorado:**
+  - Backup automático diario con verificación de integridad.
+  - Restauración selectiva de datos.
+  - Sistema de purga automática de backups antiguos.
+  - Verificación de integridad y validación de backups.
+- **Interfaz de Usuario Mejorada:**
+  - Tema claro y oscuro optimizados.
+  - Diseño moderno y limpio basado en Shadcn/UI y Tailwind CSS.
+  - Navegación más intuitiva y accesible.
+  - Optimización para pantallas pequeñas y dispositivos móviles.
 
 ---
 
@@ -134,16 +141,24 @@ PACTA aborda la necesidad de las empresas de gestionar eficientemente su cartera
 2.  **Dashboard:** Al iniciar sesión, verás un resumen general, contratos por vencer y acciones rápidas.
 3.  **Gestionar Contratos:**
     *   Navega a la sección de "Contratos".
-    *   Usa los filtros y la búsqueda para encontrar contratos específicos.
+    *   Usa los filtros avanzados y la búsqueda para encontrar contratos específicos.
     *   Haz clic en "Agregar Contrato" para crear uno nuevo, completando todos los campos requeridos y adjuntando el documento principal.
-    *   Selecciona un contrato existente para ver sus detalles.
+    *   Selecciona un contrato existente para ver sus detalles y exportar reportes.
 4.  **Añadir Suplementos:**
     *   Desde la vista de detalle de un contrato, haz clic en "Agregar Suplemento".
     *   Especifica qué campo se modifica, el nuevo valor y adjunta documentos si es necesario. El historial se actualizará.
-5.  **Consultar Estadísticas:** Ve a la sección de "Estadísticas" para análisis más profundos.
-6.  **Revisar Notificaciones:** Haz clic en el icono de notificaciones para ver alertas importantes.
-7.  **Gestionar Usuarios (Admin):** Accede a la configuración para añadir o gestionar usuarios RA.
-8.  **Backup/Restauración (Admin):** En la configuración, puedes gestionar los backups y restaurar la base de datos desde un archivo previo.
+5.  **Consultar Estadísticas y Generar Reportes:**
+    *   Accede a la sección de "Estadísticas" para análisis más profundos.
+    *   Genera reportes PDF y exporta datos a Excel.
+6.  **Sistema de Notificaciones:**
+    *   Configura tus preferencias de notificaciones en el panel de configuración.
+    *   Revisa el historial de notificaciones y gestiona tus alertas personalizadas.
+7.  **Gestionar Usuarios (Admin):**
+    *   Accede a la configuración para añadir o gestionar usuarios RA.
+    *   Configura permisos y roles avanzados.
+8.  **Sistema de Backup y Restauración (Admin):**
+    *   En la configuración, gestiona los backups automáticos.
+    *   Realiza restauraciones selectivas y verifica la integridad de los backups.
 
 ---
 

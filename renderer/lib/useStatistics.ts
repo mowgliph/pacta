@@ -1,23 +1,27 @@
 "use client";
 import { useEffect, useState } from "react";
-import { handleIpcResponse } from "./handleIpcResponse";
+
+import type { 
+  StatisticsContracts, 
+  StatisticsByCurrency, 
+  StatisticsByUser, 
+  StatisticsByMonth, 
+  StatisticsSupplements, 
+  StatisticsUsersActivity 
+} from "../types/electron.d";
 
 export interface Statistics {
-  stats: any;
-  byCurrency: any[];
-  byUser: any[];
-  contractsCreated: any[];
-  contractsExpired: any[];
-  supplementsByContract: any[];
-  usersActivity: any[];
+  stats: StatisticsContracts['data'];
+  byCurrency: StatisticsByCurrency['data'];
+  byUser: StatisticsByUser['data'];
+  contractsCreated: StatisticsByMonth['data'];
+  contractsExpired: StatisticsByMonth['data'];
+  supplementsByContract: StatisticsSupplements['data'];
+  usersActivity: StatisticsUsersActivity['data'];
 }
 
 function getIpcRenderer() {
-  if (typeof window !== "undefined" && window.Electron?.ipcRenderer) {
-    // @ts-ignore
-    return window.Electron.ipcRenderer;
-  }
-  return null;
+  return window.Electron?.ipcRenderer;
 }
 
 export function useStatistics() {
@@ -26,25 +30,19 @@ export function useStatistics() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    const ipc = getIpcRenderer();
-    if (!ipc) {
-      setError("Estadísticas solo disponibles en entorno Electron");
-      setLoading(false);
-      return;
-    }
-    Promise.all([
-      ipc.invoke("statistics:contracts"),
-      ipc.invoke("statistics:contractsByCurrency"),
-      ipc.invoke("statistics:contractsByUser"),
-      ipc.invoke("statistics:contractsCreatedByMonth"),
-      ipc.invoke("statistics:contractsExpiredByMonth"),
-      ipc.invoke("statistics:supplementsCountByContract"),
-      ipc.invoke("statistics:usersActivity"),
-    ])
-      .then(
-        ([
+    let mounted = true;
+
+    const fetchStatistics = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const ipc = getIpcRenderer();
+        if (!ipc) {
+          throw new Error("Estadísticas solo disponibles en entorno Electron");
+        }
+
+        const [
           statsRes,
           byCurrencyRes,
           byUserRes,
@@ -52,34 +50,54 @@ export function useStatistics() {
           contractsExpiredRes,
           supplementsByContractRes,
           usersActivityRes,
-        ]) => {
-          try {
-            setData({
-              stats: handleIpcResponse(statsRes),
-              byCurrency: handleIpcResponse(byCurrencyRes),
-              byUser: handleIpcResponse(byUserRes),
-              contractsCreated: handleIpcResponse(contractsCreatedRes),
-              contractsExpired: handleIpcResponse(contractsExpiredRes),
-              supplementsByContract: handleIpcResponse(
-                supplementsByContractRes
-              ),
-              usersActivity: handleIpcResponse(usersActivityRes),
-            });
-          } catch (err: any) {
-            setError(err?.message || "Error al obtener estadísticas");
-            if (typeof window !== "undefined") {
-              window.dispatchEvent(new CustomEvent("api-error"));
-            }
-          }
-        }
-      )
-      .catch((err: any) => {
-        setError(err?.message || "Error de conexión");
+        ] = await Promise.all([
+          ipc.invoke("statistics:contracts") as Promise<StatisticsContracts>,
+          ipc.invoke("statistics:contractsByCurrency") as Promise<StatisticsByCurrency>,
+          ipc.invoke("statistics:contractsByUser") as Promise<StatisticsByUser>,
+          ipc.invoke("statistics:contractsCreatedByMonth") as Promise<StatisticsByMonth>,
+          ipc.invoke("statistics:contractsExpiredByMonth") as Promise<StatisticsByMonth>,
+          ipc.invoke("statistics:supplementsCountByContract") as Promise<StatisticsSupplements>,
+          ipc.invoke("statistics:usersActivity") as Promise<StatisticsUsersActivity>,
+        ]);
+
+        if (!mounted) return;
+
+        setData({
+          stats: statsRes.data,
+          byCurrency: byCurrencyRes.data,
+          byUser: byUserRes.data,
+          contractsCreated: contractsCreatedRes.data,
+          contractsExpired: contractsExpiredRes.data,
+          supplementsByContract: supplementsByContractRes.data,
+          usersActivity: usersActivityRes.data,
+        });
+
+      } catch (err) {
+        if (!mounted) return;
+        
+        const error = err instanceof Error ? err : new Error("Error al obtener estadísticas");
+        setError(error.message);
+        
         if (typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent("api-error"));
+          window.dispatchEvent(new CustomEvent("api-error", {
+            detail: {
+              error: error.message,
+              type: 'statistics-error' as const
+            }
+          }));
         }
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchStatistics();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return { data, loading, error };

@@ -1,43 +1,27 @@
 "use client";
 import { useCallback } from "react";
-import { useToast } from "@/components/ui/use-toast";
-
-type NotificationOptions = {
-  title: string;
-  body: string;
-  variant?: "default" | "success" | "destructive" | "warning" | "info";
-  description?: string;
-  silent?: boolean;
-};
+import type { NotificationOptions } from "../types/electron.d";
 
 export const useNotification = () => {
-  const { toast } = useToast();
-
   const notify = useCallback(
-    async ({
-      title,
-      body,
-      variant = "default",
-      description,
-      silent = false,
-    }: NotificationOptions) => {
-      if (
-        typeof window !== "undefined" &&
-        (window.Electron as any)["notifications"]?.show
-      ) {
-        (window.Electron as any)["notifications"].show({
-          title,
-          body,
-          silent,
-        });
+    async (options: NotificationOptions) => {
+      try {
+        if (!window.Electron?.notifications?.show) {
+          throw new Error('API de notificaciones no disponible');
+        }
+
+        await window.Electron.notifications.show(options);
+      } catch (err) {
+        console.error('Error al mostrar notificación:', err);
+        window.dispatchEvent(new CustomEvent("api-error", {
+          detail: {
+            error: err instanceof Error ? err.message : 'Error desconocido',
+            type: 'notification-error' as const
+          }
+        }));
       }
-      toast({
-        title,
-        description: description || body,
-        variant,
-      });
     },
-    [toast]
+    []
   );
 
   return { notify };

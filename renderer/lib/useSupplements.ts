@@ -1,30 +1,20 @@
 import { useState, useCallback } from "react";
-import { handleIpcResponse } from "./handleIpcResponse";
 import { useFileDialog } from "@/lib/useFileDialog";
 import { useNotification } from "@/lib/useNotification";
+import type { Supplement, SupplementsResponse, SupplementsAPI, IpcRenderer } from "../types/electron.d";
+import { errorMessages, notificationMessages } from "./errorMessages";
 
-export interface Supplement {
-  id: string;
-  contractId: string;
-  field: string;
-  oldValue: string;
-  newValue: string;
-  description: string;
-  createdAt: string;
-  fileName?: string;
-}
 
-function getIpcRenderer() {
+function getIpcRenderer(): IpcRenderer | null {
   if (typeof window !== "undefined" && window.Electron?.ipcRenderer) {
-    // @ts-ignore
     return window.Electron.ipcRenderer;
   }
   return null;
 }
 
-function getSupplementsApi() {
-  if (typeof window !== "undefined" && (window as any).Electron?.supplements) {
-    return (window as any).Electron.supplements;
+function getSupplementsApi(): SupplementsAPI | null {
+  if (typeof window !== "undefined" && window.Electron?.supplements) {
+    return window.Electron.supplements;
   }
   return null;
 }
@@ -46,12 +36,18 @@ export const useSupplements = (contractId: string) => {
       return;
     }
     try {
-      const res = await ipc.invoke("supplements:list", contractId);
-      setSupplements(handleIpcResponse<Supplement[]>(res));
+      const response = await ipc.invoke("supplements:list", contractId) as SupplementsResponse;
+      setSupplements(response.data);
     } catch (err: any) {
-      setError(err?.message || "Error al obtener suplementos");
+      const errorMessage = err instanceof Error ? err.message : errorMessages.fetchError;
+      setError(errorMessage);
       if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("api-error"));
+        window.dispatchEvent(new CustomEvent("api-error", {
+          detail: {
+            error: errorMessage,
+            type: 'supplements-error' as const
+          }
+        }));
       }
     } finally {
       setIsLoading(false);
@@ -70,35 +66,46 @@ export const useSupplements = (contractId: string) => {
       }
       try {
         const supplement = supplements.find((s) => s.id === supplementId);
+        if (!supplement) {
+          throw new Error(errorMessages.apiUnavailable);
+        }
+
         const fileResult = await saveFile({
           title: "Guardar suplemento",
-          defaultPath: supplement?.fileName || "Suplemento.pdf",
+          defaultPath: supplement.fileName || "Suplemento.pdf",
           filters: [{ name: "PDF", extensions: ["pdf"] }],
         });
+
         if (!fileResult || !fileResult.filePath) {
           notify({
-            title: "Descarga cancelada",
+            title: notificationMessages.warning.cancelled,
             body: "No se seleccionó ninguna ruta para guardar.",
             variant: "warning",
           });
           return;
         }
-        const res = await supplementsApi.export(
+
+        const response = await supplementsApi.export(
           supplementId,
           fileResult.filePath
-        );
-        handleIpcResponse(res);
+        ) as SupplementsResponse;
+
+        if (!response.success) {
+          throw new Error(response.error?.message || errorMessages.exportError);
+        }
+
         notify({
           title: "Suplemento exportado",
-          body: "El suplemento fue exportado correctamente.",
+          body: notificationMessages.success.export,
           variant: "success",
         });
       } catch (err: any) {
-        setError(err?.message || "No se pudo descargar el suplemento.");
+        const errorMessage = err instanceof Error ? err.message : errorMessages.exportError;
+        setError(errorMessage);
         notify({
           title: "Error",
-          body: "No se pudo exportar el suplemento.",
-          variant: "destructive",
+          body: notificationMessages.error.export,
+          variant: "error",
         });
       } finally {
         setIsLoading(false);

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { handleIpcResponse } from "./handleIpcResponse";
+import { handleIpcResponse, IpcResponse } from "./handleIpcResponse";
 
 export interface Contract {
   id: string;
@@ -15,14 +15,6 @@ export interface Contract {
   attachment?: string | null;
 }
 
-export function getIpcRenderer() {
-  if (typeof window !== "undefined" && window.Electron?.ipcRenderer) {
-    // @ts-ignore
-    return window.Electron.ipcRenderer;
-  }
-  return null;
-}
-
 export function useContracts(tipo?: "Cliente" | "Proveedor") {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,32 +24,60 @@ export function useContracts(tipo?: "Cliente" | "Proveedor") {
     let mounted = true;
     setLoading(true);
     setError(null);
-    const ipc = getIpcRenderer();
-    if (!ipc) {
+
+    // Verificar entorno
+    if (typeof window === 'undefined') {
+      console.error('No se puede acceder a Electron en el servidor');
+      setError('Error de entorno: No se puede acceder a Electron');
+      setLoading(false);
+      return;
+    }
+
+    console.log('useContracts: Entorno verificado');
+
+    // Verificar Electron
+    if (!window.Electron?.ipcRenderer) {
+      console.error('Electron no está disponible');
       setError("API de contratos no disponible");
       setLoading(false);
       return;
     }
-    ipc
+    console.log('useContracts: Electron verificado');
+
+    console.log('Intentando listar contratos...');
+    window.Electron.ipcRenderer
       .invoke("contracts:list", tipo ? { tipo } : {})
-      .then((res: any) => {
+      .then((res: IpcResponse<Contract[]>) => {
+        console.log('useContracts: Respuesta recibida');
         if (!mounted) return;
+        console.log('Respuesta recibida:', res);
         try {
-          setContracts(handleIpcResponse<Contract[]>(res));
-        } catch (err: any) {
-          setError(err?.message || "Error al obtener contratos");
+          const contracts = handleIpcResponse<Contract[]>(res);
+          console.log('Contratos procesados:', contracts);
+          setContracts(contracts);
+        } catch (err) {
+          console.error('Error al procesar respuesta:', err);
+          setError(err instanceof Error ? err.message : 'Error desconocido');
         }
       })
-      .catch((err: any) => {
-        if (mounted) setError(err?.message || "Error de conexión");
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent("api-error"));
+      .catch((err) => {
+        console.error('Error en la llamada IPC:', err);
+        if (mounted) {
+          setError(err instanceof Error ? err.message : 'Error de conexión');
+          window.dispatchEvent(new CustomEvent("api-error", {
+            detail: {
+              error: err instanceof Error ? err.message : 'Error desconocido',
+              type: 'ipc-error' as const
+            }
+          }));
         }
       })
       .finally(() => {
+        console.log('useContracts: Finalizando efecto');
         if (mounted) setLoading(false);
       });
     return () => {
+      console.log('useContracts: Limpiando efecto');
       mounted = false;
     };
   }, [tipo]);

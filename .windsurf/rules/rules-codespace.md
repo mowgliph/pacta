@@ -6,6 +6,8 @@ trigger: always_on
 
 Rules for developing PACTA, a desktop contract management app built with Electron, Vite, TypeScript (renderer), JavaScript (main), and SQLite. These ensure consistency, security, and alignment with project goals.
 
+- Always response on Spanish
+
 ## General Code Style & Formatting
 - Follow Airbnb Style Guide for JavaScript and TypeScript.
 - Use 2-space indentation, max 100-character line length.
