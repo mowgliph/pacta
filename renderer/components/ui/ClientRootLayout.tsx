@@ -65,12 +65,21 @@ export const ClientRootLayout = ({ children }: Props) => {
   return (
     <ContextMenuProvider>
       <ToastProviderCustom>
-        <div className="flex min-h-screen">
-          <Sidebar />
-          <div className="flex-1 flex flex-col min-h-screen">
-            <Header />
+        <div className="relative min-h-screen">
+          {/* Sidebar fijo a la izquierda */}
+          <div className="fixed left-0 top-0 h-screen z-10">
+            <Sidebar />
+          </div>
+          <div className="ml-64 flex flex-col min-h-screen">
+            {/* Header fijo en la parte superior */}
+            <div className="fixed top-0 right-0 left-64 z-10">
+              <Header />
+            </div>
+            {/* Espacio para el header */}
+            <div className="h-16"></div>
             <ErrorBoundary>
-              <main className="flex-1 p-6 bg-[#F5F5F5]">
+              {/* Contenido principal con scroll */}
+              <main className="flex-1 p-6 pb-20 bg-[#F5F5F5] overflow-y-auto min-h-[calc(100vh-112px)]">
                 <UpdateBanner
                   visible={updateAvailable}
                   onRestart={handleRestartApp}
@@ -78,7 +87,10 @@ export const ClientRootLayout = ({ children }: Props) => {
                 {children}
               </main>
             </ErrorBoundary>
-            <Footer />
+            {/* Footer fijo en la parte inferior */}
+            <div className="fixed bottom-0 right-0 left-64 z-10">
+              <Footer />
+            </div>
           </div>
         </div>
       </ToastProviderCustom>
