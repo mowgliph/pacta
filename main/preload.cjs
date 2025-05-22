@@ -42,7 +42,24 @@ const isValidChannel = (channel) => {
 };
 
 // APIs seguras expuestas al proceso de renderizado a través de contextBridge
-contextBridge.exposeInMainWorld("Electron", {
+contextBridge.exposeInMainWorld("electron", {
+  license: {
+    async validateLicense(licenseData) {
+      return await ipcRenderer.invoke(IPC_CHANNELS.LICENSE.VALIDATE, licenseData);
+    },
+    async getLicenseStatus() {
+      return await ipcRenderer.invoke(IPC_CHANNELS.LICENSE.STATUS);
+    },
+    async revokeLicense(licenseNumber) {
+      return await ipcRenderer.invoke(IPC_CHANNELS.LICENSE.REVOKE, licenseNumber);
+    },
+    async listLicenses() {
+      return await ipcRenderer.invoke(IPC_CHANNELS.LICENSE.LIST);
+    },
+    async getLicenseInfo(licenseNumber) {
+      return await ipcRenderer.invoke(IPC_CHANNELS.LICENSE.INFO, licenseNumber);
+    }
+  },
   // API genérica de IPC
   ipcRenderer: {
     invoke: (channel, ...args) => {

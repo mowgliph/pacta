@@ -14,6 +14,7 @@ const {
   registerNotificationHandlers,
 } = require("./handlers/notification.handlers.cjs");
 const { registerRoleHandlers } = require("./handlers/role.handlers.cjs");
+const { registerLicenseHandlers } = require("./handlers/license.handlers.cjs");
 const {
   registerSupplementHandlers,
 } = require("./handlers/supplement.handlers.cjs");
@@ -37,11 +38,7 @@ const { autoUpdater } = require("electron-updater");
  */
 async function main() {
   try {
-    // console.info("[DEBUG] Inicio de main()");
-    // Prevenir múltiples instancias de la aplicación
     const gotTheLock = app.requestSingleInstanceLock();
-    // console.info("[DEBUG] requestSingleInstanceLock:", gotTheLock);
-
     if (!gotTheLock) {
       console.info(
         "Otra instancia ya está en ejecución. Cerrando esta instancia."
@@ -81,24 +78,15 @@ async function main() {
       });
     });
 
-    // console.info("[DEBUG] Antes de AppManager.getInstance()");
     const appManager = AppManager.getInstance();
-    // console.info("[DEBUG] Después de AppManager.getInstance()");
-
-    // console.info("[DEBUG] Antes de EventManager.getInstance()");
     const eventManager = EventManager.getInstance();
-    // console.info("[DEBUG] Después de EventManager.getInstance()");
-
-    // console.info("[DEBUG] Antes de initPrisma()");
     const dbOk = await initPrisma();
-    // console.info("[DEBUG] Después de initPrisma():", dbOk);
     if (!dbOk) {
       console.error("No se pudo conectar a la base de datos. Abortando.");
       app.quit();
       return;
     }
 
-    // console.info("[DEBUG] Antes de registrar manejadores de eventos");
     registerAuthHandlers(eventManager);
     registerContractHandlers(eventManager);
     registerDocumentHandlers(eventManager);
@@ -111,14 +99,12 @@ async function main() {
     registerSecurityHandlers(eventManager);
     registerStoreHandlers(eventManager);
     registerValidationHandlers(eventManager);
-    // console.info("[DEBUG] Después de registrar manejadores de eventos");
-
-    // console.info("[DEBUG] Antes de instanciar ElectronStore");
+    registerLicenseHandlers(eventManager);
+    
     console.log("ElectronStore:", ElectronStore);
     const themeStore = new ElectronStore({
       name: "theme-preference",
     });
-    // console.info("[DEBUG] Después de instanciar ElectronStore");
 
     const savedTheme = themeStore.get("theme");
     if (savedTheme && ["light", "dark", "system"].includes(savedTheme)) {
@@ -137,9 +123,7 @@ async function main() {
       return { success: false, error: "Tema no válido" };
     });
 
-    // console.info("[DEBUG] Antes de appManager.initialize()");
     await appManager.initialize();
-    // console.info("[DEBUG] Después de appManager.initialize()");
 
     autoUpdater.on("update-available", () => {
       appManager.notifyUpdateAvailable();

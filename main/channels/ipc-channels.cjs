@@ -1,6 +1,13 @@
 // Archivo de definición de canales IPC para CommonJS puro
 
 const IPC_CHANNELS = {
+  LICENSE: {
+    VALIDATE: 'license:validate',
+    STATUS: 'license:status',
+    REVOKE: 'license:revoke',
+    LIST: 'license:list',
+    INFO: 'license:info',
+  },
   AUTH: {
     LOGIN: "auth:login",
     LOGOUT: "auth:logout",

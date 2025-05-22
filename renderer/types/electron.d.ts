@@ -2,6 +2,9 @@ export interface IpcRenderer {
   invoke: <T>(channel: string, ...args: unknown[]) => Promise<T>;
   on: (channel: string, listener: (...args: unknown[]) => void) => void;
   removeListener: (channel: string, listener: (...args: unknown[]) => void) => void;
+  invoke(channel: 'email:get-settings'): Promise<ApiResponse<EmailSettings>>;
+  invoke(channel: 'email:update-settings', settings: Partial<EmailSettings>): Promise<ApiResponse<EmailSettings>>;
+  invoke(channel: 'email:test-connection'): Promise<ApiResponse<boolean>>;
 }
 
 export interface ApiError {
@@ -180,6 +183,78 @@ export interface NotificationsAPI {
   show: (options: NotificationOptions) => Promise<void>;
 }
 
+// Tipos para configuración de correo
+export interface EmailSettings {
+  smtpHost: string;
+  smtpPort: string;
+  smtpUser: string;
+  smtpPassword: string;
+  fromEmail: string;
+  security: 'tls' | 'ssl' | 'none';
+  isEnabled?: boolean;
+  lastTested?: string;
+  lastError?: string;
+}
+
+// Tipos para autenticación
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  token: string;
+  refreshToken: string;
+}
+
+export interface AuthAPI {
+  login: (credentials: LoginCredentials) => Promise<ApiResponse<AuthResponse>>;
+  logout: () => Promise<ApiResponse<boolean>>;
+  verify: (token: string) => Promise<ApiResponse<{ user: User }>>;
+  refresh: (refreshToken: string) => Promise<ApiResponse<AuthResponse>>;
+  changePassword: (data: { currentPassword: string; newPassword: string }) => Promise<ApiResponse<boolean>>;
+  getProfile: () => Promise<ApiResponse<User>>;
+}
+
+// Tipos para usuarios
+export interface UserFilters {
+  search?: string;
+  isActive?: boolean;
+  role?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface UserCreateData {
+  name: string;
+  email: string;
+  password: string;
+  roleId: string;
+  isActive: boolean;
+}
+
+export interface UserUpdateData extends Partial<UserCreateData> {
+  id: string;
+  currentPassword?: string;
+}
+
+// Interfaz extendida de User con la relación a Role
+export interface UserWithRole extends User {
+  role: Role;
+}
+
+export interface UsersAPI {
+  list: (filters?: UserFilters) => Promise<ApiResponse<{ users: User[]; total: number }>>;
+  create: (userData: UserCreateData) => Promise<ApiResponse<User>>;
+  update: (userData: UserUpdateData) => Promise<ApiResponse<User>>;
+  delete: (userId: string) => Promise<ApiResponse<boolean>>;
+  toggleActive: (userId: string) => Promise<ApiResponse<boolean>>;
+  changePassword: (userId: string, data: { currentPassword: string; newPassword: string }) => Promise<ApiResponse<boolean>>;
+  getUserProfile: () => Promise<ApiResponse<UserWithRole>>;
+  getById: (userId: string) => Promise<ApiResponse<UserWithRole>>;
+}
+
 export interface ElectronAPI {
   files: ElectronFiles;
   ipcRenderer: IpcRenderer;
@@ -195,28 +270,75 @@ export interface ElectronAPI {
     dashboard: () => Promise<StatisticsDashboard>;
   };
   notifications: NotificationsAPI;
+  auth: AuthAPI;
+  users: UsersAPI;
 }
 
+export interface License {
+  id: string;
+  licenseNumber: string;
+  companyName: string;
+  contactName: string;
+  email: string;
+  licenseType: string;
+  issueDate: string;
+  expiryDate: string;
+  signature: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LicenseStatus {
+  valid: boolean;
+  type: string;
+  expiryDate: string;
+  features: string[];
+  licenseNumber?: string;
+  companyName?: string;
+  contactName?: string;
+  email?: string;
+  licenseType?: string;
+  issueDate?: string;
+  signature?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Extender la interfaz Window para incluir electron
 declare global {
   interface Window {
-    Electron?: {
-      ipcRenderer: IpcRenderer;
-      documents: {
-        getByContract: (id: string) => Promise<Document>;
-      };
-      app: {
-        onUpdateAvailable: (callback: () => void) => void;
-        removeUpdateListener: (callback: () => void) => void;
-        restart: () => Promise<void>;
-      };
-      statistics: {
-        dashboard: () => Promise<StatisticsDashboard>;
-      };
-      files: ElectronFiles;
-      notifications: NotificationsAPI;
-      supplements: SupplementsAPI;
-    };
+    electron: ElectronAPI;
   }
 }
 
-export {};
+// Actualizar la interfaz ElectronAPI con los métodos de licencias
+export interface LicenseAPI {
+  validateLicense: (licenseData: string) => Promise<ApiResponse<License>>;
+  getLicenseStatus: () => Promise<ApiResponse<LicenseStatus>>;
+  revokeLicense: (licenseNumber: string) => Promise<ApiResponse<boolean>>;
+  listLicenses: () => Promise<ApiResponse<License[]>>;
+  getLicenseInfo: (licenseNumber: string) => Promise<ApiResponse<License>>;
+}
+
+export interface ElectronAPI {
+  files: ElectronFiles;
+  ipcRenderer: IpcRenderer;
+  documents: {
+    getByContract: (id: string) => Promise<Document>;
+  };
+  app: {
+    onUpdateAvailable: (callback: () => void) => void;
+    removeUpdateListener: (callback: () => void) => void;
+    restart: () => Promise<void>;
+  };
+  statistics: {
+    dashboard: () => Promise<StatisticsDashboard>;
+  };
+  notifications: NotificationsAPI;
+  auth: AuthAPI;
+  users: UsersAPI;
+  license: LicenseAPI;
+}
+
