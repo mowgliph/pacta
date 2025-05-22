@@ -1,8 +1,9 @@
-const { BrowserWindow, app, screen, shell } = require("electron");
+const { BrowserWindow, app, screen, shell, dialog } = require("electron");
 const { join, resolve } = require("path");
 const ElectronStore = require("electron-store");
 const { MAIN_WINDOW_CONFIG, isDevelopment } = require("../utils/constants.cjs");
 const { securityManager } = require("../security/security-manager.cjs");
+const { ErrorWindow } = require("./error-window.cjs");
 
 // Gestor centralizado para la creación y manejo de ventanas de la aplicación
 // Implementa el patrón Singleton para garantizar una única instancia
@@ -30,17 +31,40 @@ WindowManager.getInstance = function () {
 
 WindowManager.prototype.createMainWindow = async function () {
   const windowId = "main";
+  console.log(`[WINDOW] Intentando crear ventana principal (${windowId})`);
+  
+  // Si la ventana ya existe, restaurarla y enfocarla
   if (this.windows.has(windowId)) {
-    const existingWindow = this.windows.get(windowId);
-    if (existingWindow.isMinimized()) existingWindow.restore();
-    existingWindow.focus();
-    return existingWindow;
+    try {
+      const existingWindow = this.windows.get(windowId);
+      console.log(`[WINDOW] Ventana existente encontrada (ID: ${existingWindow.id})`);
+      
+      if (!existingWindow.isDestroyed()) {
+        if (existingWindow.isMinimized()) {
+          console.log('[WINDOW] Restaurando ventana minimizada');
+          existingWindow.restore();
+        }
+        console.log('[WINDOW] Enfocando ventana existente');
+        existingWindow.focus();
+        return existingWindow;
+      } else {
+        console.log('[WINDOW] Ventana existente está destruida, creando una nueva');
+        this.windows.delete(windowId);
+      }
+    } catch (error) {
+      console.error('[WINDOW] Error al manejar ventana existente:', error);
+      this.windows.delete(windowId);
+    }
   }
   try {
+    console.log('[WINDOW] Obteniendo estado de la ventana');
     const windowState = this.getWindowState();
+    
+    console.log('[WINDOW] Creando instancia de BrowserWindow');
     const window = new BrowserWindow({
       ...MAIN_WINDOW_CONFIG,
       ...windowState,
+      show: false, // No mostrar hasta que esté lista
       icon: join(app.getAppPath(), "renderer", "favicon.ico"),
       backgroundColor: "#F5F5F5",
       webPreferences: {
@@ -50,38 +74,103 @@ WindowManager.prototype.createMainWindow = async function () {
         contextIsolation: true,
         nodeIntegration: false,
         sandbox: true,
+        webSecurity: true,
+        nodeIntegrationInWorker: false,
+        webviewTag: false,
       },
     });
-    if (process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-      await window.loadURL(process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL);
-      window.webContents.openDevTools();
-    } else {
-      await window.loadFile(
-        join(app.getAppPath(), "renderer", process.env.MAIN_WINDOW_VITE_NAME)
-      );
-    }
-    this.setupWindowEvents(window);
-    window.once("ready-to-show", () => {
-      window.show();
-      if (windowState.isMaximized) {
-        window.maximize();
+
+    // Configurar manejador de errores de carga
+    window.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+      console.error(`[WINDOW] Error al cargar la ventana (${errorCode}): ${errorDescription}`);
+      this.showErrorWindow(`Error al cargar la aplicación: ${errorDescription}`);
+    });
+
+    // Configurar evento para mostrar la ventana cuando esté lista
+    window.once('ready-to-show', () => {
+      console.log('[WINDOW] Ventana lista para mostrarse');
+      try {
+        window.show();
+        if (windowState.isMaximized) {
+          console.log('[WINDOW] Maximizando ventana');
+          window.maximize();
+        }
+        window.focus();
+        console.log(`[WINDOW] Ventana mostrada correctamente (ID: ${window.id})`);
+      } catch (showError) {
+        console.error('[WINDOW] Error al mostrar la ventana:', showError);
+        this.showErrorWindow('Error al mostrar la ventana principal');
       }
     });
-    window.webContents.setWindowOpenHandler(function (data) {
-      const url = data.url;
-      if (url.startsWith("http:") || url.startsWith("https:")) {
+
+    // Forzar mostrar la ventana después de 5 segundos como respaldo
+    const showTimeout = setTimeout(() => {
+      if (!window.isDestroyed() && !window.isVisible()) {
+        console.log('[WINDOW] Mostrando ventana (timeout)');
+        window.show();
+        window.focus();
+      }
+    }, 5000);
+
+    // Configurar eventos de la ventana
+    this.setupWindowEvents(window);
+
+    // Cargar la URL de desarrollo o el archivo de producción
+    try {
+      if (process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL) {
+        console.log('[WINDOW] Cargando URL de desarrollo:', process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL);
+        await window.loadURL(process.env.MAIN_WINDOW_VITE_DEV_SERVER_URL);
+        if (isDevelopment) {
+          window.webContents.openDevTools();
+        }
+      } else {
+        const filePath = join(app.getAppPath(), "renderer", process.env.MAIN_WINDOW_VITE_NAME || 'index.html');
+        console.log('[WINDOW] Cargando archivo:', filePath);
+        await window.loadFile(filePath);
+      }
+    } catch (loadError) {
+      console.error('[WINDOW] Error al cargar el contenido:', loadError);
+      throw loadError;
+    }
+
+    // Limpiar el timeout cuando la ventana se muestre
+    window.once('show', () => {
+      clearTimeout(showTimeout);
+      console.log('[WINDOW] Timeout de visibilidad limpiado');
+    });
+
+    // Configurar manejador para enlaces externos
+    window.webContents.setWindowOpenHandler(({ url }) => {
+      console.log(`[WINDOW] Intento de abrir URL: ${url}`);
+      if (url.startsWith('http:') || url.startsWith('https:')) {
         shell.openExternal(url);
       }
-      return { action: "deny" };
+      return { action: 'deny' };
     });
+
+    // Registrar la ventana
     this.windows.set(windowId, window);
-    console.info(`Ventana principal creada (${window.id})`);
+    console.log(`[WINDOW] Ventana principal creada (ID: ${window.id})`);
+    
     return window;
+    
   } catch (error) {
-    console.error(
-      "Error creating main window:",
-      error && error.message ? error.message : String(error)
-    );
+    const errorMessage = error && error.message ? error.message : String(error);
+    console.error('[WINDOW] Error crítico al crear la ventana principal:', error);
+    
+    // Mostrar ventana de error
+    this.showErrorWindow(`Error crítico: ${errorMessage}`);
+    
+    // Si es un error de carga, intentar reiniciar la aplicación después de un tiempo
+    if (errorMessage.includes('ERR_CONNECTION_REFUSED') || 
+        errorMessage.includes('ERR_FILE_NOT_FOUND')) {
+      console.log('Reintentando en 3 segundos...');
+      setTimeout(() => {
+        app.relaunch();
+        app.exit(1);
+      }, 3000);
+    }
+    
     throw error;
   }
 };
@@ -236,7 +325,49 @@ WindowManager.prototype.getMainWindow = function () {
 };
 
 WindowManager.prototype.getWindowCount = function () {
-  return BrowserWindow.getAllWindows().length;
+  return this.windows.size;
+};
+
+/**
+ * Muestra una ventana de error al usuario
+ * @param {string} message - Mensaje de error a mostrar
+ */
+WindowManager.prototype.showErrorWindow = function (message) {
+  console.error('[WINDOW] Mostrando ventana de error:', message);
+  
+  try {
+    // Primero intentar usar la ventana principal si existe
+    const mainWindow = this.getMainWindow();
+    
+    // Si hay una ventana principal y no está destruida, usarla para mostrar el error
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      try {
+        mainWindow.webContents.send('show-error-dialog', {
+          title: 'Error en la aplicación',
+          message: message
+        });
+        mainWindow.show();
+        mainWindow.focus();
+        return;
+      } catch (e) {
+        console.error('[WINDOW] Error al usar ventana principal para mostrar error:', e);
+      }
+    }
+    
+    // Si no se pudo usar la ventana principal, crear una nueva ventana de error
+    console.log('[WINDOW] Creando ventana de error dedicada');
+    const errorWindow = new ErrorWindow(mainWindow);
+    errorWindow.show(message);
+    
+  } catch (error) {
+    console.error('[WINDOW] Error al mostrar la ventana de error:', error);
+    
+    // Si todo falla, mostrar un diálogo nativo
+    dialog.showErrorBox(
+      'Error en la aplicación',
+      `No se pudo mostrar la interfaz de error. Detalles:\n\n${message || 'Error desconocido'}`
+    );
+  }
 };
 
 WindowManager.prototype.closeAllWindows = function () {

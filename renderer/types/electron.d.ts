@@ -4,6 +4,18 @@ export interface IpcRenderer {
   removeListener: (channel: string, listener: (...args: unknown[]) => void) => void;
 }
 
+export interface ApiError {
+  message: string;
+  code?: string;
+  statusCode?: number;
+}
+
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: ApiError;
+}
+
 export interface Document {
   success: boolean;
   data: any[];

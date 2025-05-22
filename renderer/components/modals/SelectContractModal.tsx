@@ -51,11 +51,14 @@ export function SelectContractModal({ isOpen, onClose }: SelectContractModalProp
     }
   }, [error, toast]);
 
-  const filteredContracts = contracts.filter(
-    (contract) =>
-      contract.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contract.company.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Asegurarse de que contracts sea un array antes de usar filter
+  const filteredContracts = Array.isArray(contracts) 
+    ? contracts.filter(
+        (contract) =>
+          contract?.number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          contract?.company?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : [];
 
   const handleSelectContract = (contract: Contract) => {
     setSelectedContract(contract);
@@ -153,17 +156,16 @@ export function SelectContractModal({ isOpen, onClose }: SelectContractModalProp
                 </TableBody>
               </Table>
             ) : (
-              <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
-                <p>No se encontraron contratos</p>
-                {searchTerm && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mt-2"
-                    onClick={() => setSearchTerm("")}
-                  >
-                    Limpiar búsqueda
-                  </Button>
+              <div className="flex flex-col items-center justify-center h-40 p-4 text-center">
+                <p className="text-muted-foreground">
+                  {searchTerm 
+                    ? 'No se encontraron contratos que coincidan con la búsqueda'
+                    : 'No hay contratos disponibles'}
+                </p>
+                {!searchTerm && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Intenta crear un nuevo contrato si aún no hay ninguno
+                  </p>
                 )}
               </div>
             )}

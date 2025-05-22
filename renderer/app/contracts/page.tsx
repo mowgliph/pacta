@@ -34,12 +34,20 @@ export default function ContractsPage() {
   const { saveFile } = useFileDialog();
   const { openContextMenu } = useContextMenu();
 
-  const filtered = contracts.filter(
-    (c) =>
-      c.number.toLowerCase().includes(search.toLowerCase()) ||
-      c.company.toLowerCase().includes(search.toLowerCase()) ||
-      c.description.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = contracts.filter((c) => {
+    if (!c) return false;
+    
+    const searchTerm = search.toLowerCase();
+    const number = c.number?.toLowerCase() || '';
+    const company = c.company?.toLowerCase() || '';
+    const description = c.description?.toLowerCase() || '';
+    
+    return (
+      number.includes(searchTerm) ||
+      company.includes(searchTerm) ||
+      description.includes(searchTerm)
+    );
+  });
 
   const [page, setPage] = useState(1);
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
@@ -223,7 +231,7 @@ export default function ContractsPage() {
                           notify({
                             title: "Error",
                             body: "No se pudo archivar el contrato.",
-                            variant: "destructive",
+                            variant: "error",
                           });
                         }
                       },
@@ -260,10 +268,10 @@ export default function ContractsPage() {
                         {new Date(c.endDate).toLocaleDateString()}
                       </td>
                       <td className="px-4 py-2">
-                        {c.amount.toLocaleString("es-ES", {
+                        {c.amount ? new Intl.NumberFormat("es-ES", {
                           style: "currency",
                           currency: "USD",
-                        })}
+                        }).format(c.amount) : 'N/A'}
                       </td>
                       <td className="px-4 py-2">
                         <span
@@ -330,7 +338,7 @@ export default function ContractsPage() {
                               notify({
                                 title: "Error",
                                 body: "No se pudo archivar el contrato.",
-                                variant: "destructive",
+                                variant: "error",
                               });
                             }
                           }}

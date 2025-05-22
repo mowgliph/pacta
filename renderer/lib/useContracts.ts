@@ -1,6 +1,5 @@
-"use client";
 import { useEffect, useState } from "react";
-import { handleIpcResponse, IpcResponse } from "./handleIpcResponse";
+import type { ApiError } from "@/types/electron";
 
 export interface Contract {
   id: string;
@@ -16,68 +15,121 @@ export interface Contract {
 }
 
 export function useContracts(tipo?: "Cliente" | "Proveedor") {
+  // Inicializar el estado de contratos
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Función para extraer el mensaje de error de la respuesta
+  const getErrorMessage = (error: unknown): string => {
+    if (typeof error === 'string') return error;
+    if (!error || typeof error !== 'object') return 'Error desconocido al cargar los contratos';
+    
+    // Manejar ApiError
+    const apiError = error as ApiError;
+    if (apiError.message && typeof apiError.message === 'string') {
+      return apiError.message;
+    }
+    
+    // Manejar error anidado
+    const nestedError = error as { error?: { message?: unknown } };
+    if (nestedError.error && typeof nestedError.error === 'object') {
+      if (nestedError.error.message) {
+        return String(nestedError.error.message);
+      }
+    }
+    
+    // Intentar obtener el mensaje de error de la respuesta
+    const responseError = error as { response?: { data?: { message?: string } } };
+    if (responseError?.response?.data?.message) {
+      return responseError.response.data.message;
+    }
+    
+    return 'Error desconocido al cargar los contratos';
+  };
 
   useEffect(() => {
     let mounted = true;
     setLoading(true);
     setError(null);
 
-    // Verificar entorno
-    if (typeof window === 'undefined') {
-      console.error('No se puede acceder a Electron en el servidor');
-      setError('Error de entorno: No se puede acceder a Electron');
+    console.log('useContracts: Iniciando carga de contratos...');
+    console.log('useContracts: Tipo seleccionado:', tipo);
+    console.log('useContracts: Electron disponible:', typeof window.Electron !== 'undefined');
+    
+    if (typeof window.Electron === 'undefined') {
+      console.error('useContracts: Electron no está disponible');
+      setError('Error: La aplicación no se está ejecutando en un entorno Electron');
       setLoading(false);
       return;
     }
 
-    console.log('useContracts: Entorno verificado');
-
-    // Verificar Electron
-    if (!window.Electron?.ipcRenderer) {
-      console.error('Electron no está disponible');
-      setError("API de contratos no disponible");
-      setLoading(false);
-      return;
-    }
     console.log('useContracts: Electron verificado');
 
-    console.log('Intentando listar contratos...');
-    window.Electron.ipcRenderer
-      .invoke("contracts:list", tipo ? { tipo } : {})
-      .then((res: IpcResponse<Contract[]>) => {
+    const loadContracts = async () => {
+      try {
+        console.log('Intentando listar contratos...');
+        const response = await window.Electron.ipcRenderer.invoke(
+          "contracts:list", 
+          tipo ? { type: tipo } : {}
+        );
+
         console.log('useContracts: Respuesta recibida');
         if (!mounted) return;
-        console.log('Respuesta recibida:', res);
-        try {
-          const contracts = handleIpcResponse<Contract[]>(res);
-          console.log('Contratos procesados:', contracts);
-          setContracts(contracts);
-        } catch (err) {
-          console.error('Error al procesar respuesta:', err);
-          setError(err instanceof Error ? err.message : 'Error desconocido');
+        
+        console.log('Tipo de respuesta:', typeof response);
+        console.log('Respuesta completa:', response);
+        
+        if (!response || typeof response !== 'object') {
+          throw new Error('Respuesta del servidor inválida');
         }
-      })
-      .catch((err) => {
-        console.error('Error en la llamada IPC:', err);
+        
+        // Manejar respuesta de error
+        if ('success' in response && response.success === false) {
+          const errorSource = (response as { error?: unknown }).error || response;
+          const errorMessage = getErrorMessage(errorSource);
+          throw new Error(errorMessage);
+        }
+        
+        // Extraer datos de la respuesta
+        let contractsData: Contract[] = [];
+        
+        if ('data' in response) {
+          if (Array.isArray(response.data)) {
+            contractsData = response.data;
+          } else if (response.data && typeof response.data === 'object') {
+            const nestedArray = Object.values(response.data).find(Array.isArray);
+            if (nestedArray) contractsData = nestedArray;
+          }
+        } else if (Array.isArray(response)) {
+          contractsData = response;
+        }
+        
+        if (contractsData.length > 0) {
+          console.log('Contratos cargados:', contractsData);
+          setContracts(contractsData);
+        } else {
+          console.log('No se encontraron contratos');
+          setContracts([]);
+          setError('No se encontraron contratos');
+        }
+        
+      } catch (err) {
+        console.error('Error al cargar los contratos:', err);
         if (mounted) {
-          setError(err instanceof Error ? err.message : 'Error de conexión');
-          window.dispatchEvent(new CustomEvent("api-error", {
-            detail: {
-              error: err instanceof Error ? err.message : 'Error desconocido',
-              type: 'ipc-error' as const
-            }
-          }));
+          setError(getErrorMessage(err));
+          setContracts([]);
         }
-      })
-      .finally(() => {
-        console.log('useContracts: Finalizando efecto');
-        if (mounted) setLoading(false);
-      });
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadContracts();
+
     return () => {
-      console.log('useContracts: Limpiando efecto');
       mounted = false;
     };
   }, [tipo]);
