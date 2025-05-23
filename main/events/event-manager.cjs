@@ -1,5 +1,6 @@
 const { ipcMain } = require("electron");
 const { IPC_CHANNELS } = require("../channels/ipc-channels.cjs");
+const { ErrorHandler, AppError } = require("../utils/error-handler.cjs");
 
 function EventManager() {
   if (!(this instanceof EventManager)) return new EventManager();
@@ -40,8 +41,9 @@ EventManager.prototype.registerHandler = function (channel) {
     try {
       const handler = this.handlers[channel];
       if (!handler) {
-        throw new Error(
-          `No hay manejador registrado para el canal: ${channel}`
+        throw AppError.notFound(
+          `No hay manejador registrado para el canal: ${channel}`,
+          "HANDLER_NOT_FOUND"
         );
       }
       const result = await handler(event, ...args);
@@ -50,10 +52,7 @@ EventManager.prototype.registerHandler = function (channel) {
         data: result,
       };
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : "Error desconocido",
-      };
+      return ErrorHandler.handle(error);
     }
   });
 };

@@ -3,10 +3,11 @@ const {
   DocumentSchema,
 } = require("../validations/schemas/document.schema.cjs");
 const { prisma } = require("../utils/prisma.cjs");
-const fs = require("fs");
+const { EventManager } = require("../events/event-manager.cjs");
+const fs = require("fs").promises;
 const path = require("path");
 const { shell } = require("electron");
-const { withErrorHandling } = require("../utils/error-handler.cjs");
+const { AppError } = require("../utils/error-handler.cjs");
 
 const DOCUMENTS_DIR = path.resolve(__dirname, "../../data/documents");
 const EXPORTS_DIR = path.resolve(__dirname, "../../data/documents/exports");
@@ -15,7 +16,6 @@ const ALLOWED_MIME_TYPES = [
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
-const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx"];
 
 function documentZodToPrisma(data) {
   const {
@@ -49,173 +49,230 @@ function buildDocumentWhere(filters = {}) {
   if (filters.type) where.mimeType = filters.type;
   if (filters.name)
     where.originalName = { contains: filters.name, mode: "insensitive" };
-  if (filters.isPublic !== undefined) where.isPublic = filters.isPublic;
   return where;
 }
 
-function registerDocumentHandlers(eventManager) {
+function registerDocumentHandlers() {
+  const eventManager = EventManager.getInstance();
+
+  // Asegurar que existen los directorios necesarios
+  fs.mkdir(DOCUMENTS_DIR, { recursive: true }).catch(console.error);
+  fs.mkdir(EXPORTS_DIR, { recursive: true }).catch(console.error);
+
   const handlers = {
-    [IPC_CHANNELS.DATA.DOCUMENTS.LIST]: withErrorHandling(
-      IPC_CHANNELS.DATA.DOCUMENTS.LIST,
-      async (event, filters) => {
+    [IPC_CHANNELS.DATA.DOCUMENTS.LIST]: async (event, filters) => {
+      try {
+        if (filters && typeof filters !== 'object') {
+          throw AppError.validation(
+            "Filtros inválidos",
+            "INVALID_FILTERS"
+          );
+        }
+
         const where = buildDocumentWhere(filters);
-        const documents = await prisma.document.findMany({ where });
-        return { success: true, data: documents };
-      }
-    ),
-    [IPC_CHANNELS.DATA.DOCUMENTS.GET_BY_CONTRACT]: withErrorHandling(
-      IPC_CHANNELS.DATA.DOCUMENTS.GET_BY_CONTRACT,
-      async (event, contractId) => {
         const documents = await prisma.document.findMany({
-          where: { contractId },
-        });
-        return { success: true, data: documents };
-      }
-    ),
-    [IPC_CHANNELS.DATA.DOCUMENTS.GET_BY_SUPPLEMENT]: withErrorHandling(
-      IPC_CHANNELS.DATA.DOCUMENTS.GET_BY_SUPPLEMENT,
-      async (event, supplementId) => {
-        const documents = await prisma.document.findMany({
-          where: { supplementId },
-        });
-        return { success: true, data: documents };
-      }
-    ),
-    [IPC_CHANNELS.DATA.DOCUMENTS.UPLOAD]: withErrorHandling(
-      IPC_CHANNELS.DATA.DOCUMENTS.UPLOAD,
-      async (event, meta, attachment) => {
-        console.info("Subida de documento solicitada", {
-          meta,
-          fileName: attachment?.name,
-        });
-        if (
-          !attachment ||
-          !attachment.name ||
-          !attachment.data ||
-          !attachment.type
-        ) {
-          console.error("Archivo adjunto inválido", { attachment });
-          throw new Error("Archivo adjunto inválido");
-        }
-        const baseName = path.basename(attachment.name);
-        const ext = path.extname(baseName).toLowerCase();
-        if (
-          !ALLOWED_EXTENSIONS.includes(ext) ||
-          !ALLOWED_MIME_TYPES.includes(attachment.type)
-        ) {
-          console.error("Tipo de archivo no permitido", {
-            ext,
-            mime: attachment.type,
-          });
-          throw new Error("Tipo de archivo no permitido. Solo PDF o Word.");
-        }
-        fs.mkdirSync(DOCUMENTS_DIR, { recursive: true });
-        let safeName = `${Date.now()}_${baseName}`;
-        let filePath = path.join(DOCUMENTS_DIR, safeName);
-        let counter = 1;
-        while (fs.existsSync(filePath)) {
-          safeName = `${Date.now()}_${counter}_${baseName}`;
-          filePath = path.join(DOCUMENTS_DIR, safeName);
-          counter++;
-        }
-        fs.writeFileSync(filePath, Buffer.from(attachment.data));
-        const parsed = DocumentSchema.parse({
-          ...meta,
-          name: baseName,
-          type: attachment.type,
-        });
-        const prismaData = documentZodToPrisma(parsed);
-        const document = await prisma.document.create({
-          data: {
-            ...prismaData,
-            filename: safeName,
-            originalName: baseName,
-            mimeType: attachment.type,
-            size: attachment.data.length,
-            path: safeName,
+          where,
+          orderBy: { createdAt: "desc" },
+          include: {
+            uploadedBy: {
+              select: { name: true, email: true },
+            },
           },
         });
-        console.info("Documento guardado en:", filePath);
-        return { success: true, data: document };
+
+        return documents;
+      } catch (error) {
+        console.error("Error al listar documentos:", error);
+        throw AppError.internal(
+          "Error al listar documentos",
+          "DOCUMENT_LIST_ERROR",
+          { error: error.message }
+        );
       }
-    ),
-    [IPC_CHANNELS.DATA.DOCUMENTS.DOWNLOAD]: withErrorHandling(
-      IPC_CHANNELS.DATA.DOCUMENTS.DOWNLOAD,
-      async (event, id) => {
-        const doc = await prisma.document.findUnique({
-          where: { id },
-          select: { path: true, originalName: true },
-        });
-        if (!doc || !doc.path) {
-          console.error(`Documento no encontrado en base de datos: ${id}`);
-          throw new Error("Documento no encontrado");
-        }
-        const absPath = path.resolve(DOCUMENTS_DIR, doc.path);
-        if (!absPath.startsWith(DOCUMENTS_DIR)) {
-          console.error(
-            `Intento de acceso a ruta fuera de documentos: ${absPath}`
+    },
+
+    [IPC_CHANNELS.DATA.DOCUMENTS.UPLOAD]: async (event, data) => {
+      try {
+        if (!data) {
+          throw AppError.validation(
+            "Datos de documento requeridos",
+            "DOCUMENT_DATA_REQUIRED"
           );
-          throw new Error("Acceso no permitido");
         }
-        if (!fs.existsSync(absPath)) {
-          console.error(`Archivo no encontrado en disco: ${absPath}`);
-          throw new Error("Archivo no encontrado en disco");
+
+        const validatedData = DocumentSchema.parse(data);
+        const prismaData = documentZodToPrisma(validatedData);
+
+        // Validar tipo de archivo
+        if (!ALLOWED_MIME_TYPES.includes(prismaData.mimeType)) {
+          throw AppError.validation(
+            "Tipo de archivo no permitido",
+            "INVALID_FILE_TYPE",
+            { allowedTypes: ALLOWED_MIME_TYPES }
+          );
         }
-        await prisma.document.update({
-          where: { id },
-          data: { downloads: { increment: 1 } },
+
+        const document = await prisma.document.create({
+          data: prismaData,
+          include: {
+            uploadedBy: {
+              select: { name: true, email: true },
+            },
+          },
         });
-        console.info(`Documento descargado: ${doc.originalName} (${absPath})`);
-        return {
-          success: true,
-          data: { path: absPath, name: doc.originalName },
-        };
-      }
-    ),
-    [IPC_CHANNELS.DATA.DOCUMENTS.OPEN]: withErrorHandling(
-      IPC_CHANNELS.DATA.DOCUMENTS.OPEN,
-      async (event, id) => {
-        const doc = await prisma.document.findUnique({
-          where: { id },
-          select: { path: true },
-        });
-        if (!doc || !doc.path) throw new Error("Documento no encontrado");
-        const absPath = path.resolve(DOCUMENTS_DIR, doc.path);
-        if (!fs.existsSync(absPath))
-          throw new Error("Archivo no encontrado en disco");
-        await shell.openPath(absPath);
-        return { success: true, data: true };
-      }
-    ),
-    [IPC_CHANNELS.DATA.DOCUMENTS.DELETE]: withErrorHandling(
-      IPC_CHANNELS.DATA.DOCUMENTS.DELETE,
-      async (event, id) => {
-        const doc = await prisma.document.findUnique({
-          where: { id },
-          select: { path: true },
-        });
-        if (doc && doc.path) {
-          const absPath = path.resolve(DOCUMENTS_DIR, doc.path);
-          if (!absPath.startsWith(DOCUMENTS_DIR)) {
-            console.error(
-              `Intento de eliminar archivo fuera de documentos: ${absPath}`
-            );
-            throw new Error("Acceso no permitido");
-          }
-          if (fs.existsSync(absPath)) {
-            fs.unlinkSync(absPath);
-            console.info(`Archivo eliminado: ${absPath}`);
-          } else {
-            console.warn(`Intento de eliminar archivo inexistente: ${absPath}`);
-          }
+
+        console.info("Documento subido exitosamente", { documentId: document.id });
+        return document;
+      } catch (error) {
+        if (error.name === "ZodError") {
+          throw AppError.validation(
+            "Datos de documento inválidos",
+            "INVALID_DOCUMENT_DATA",
+            { details: error.errors }
+          );
         }
-        await prisma.document.delete({ where: { id } });
-        console.info(`Registro de documento eliminado: ${id}`);
-        return { success: true, data: true };
+        console.error("Error al subir documento:", error);
+        throw AppError.internal(
+          "Error al subir documento",
+          "DOCUMENT_UPLOAD_ERROR",
+          { error: error.message }
+        );
       }
-    ),
+    },
+
+    [IPC_CHANNELS.DATA.DOCUMENTS.DELETE]: async (event, id) => {
+      try {
+        if (!id) {
+          throw AppError.validation(
+            "ID de documento requerido",
+            "DOCUMENT_ID_REQUIRED"
+          );
+        }
+
+        const document = await prisma.document.delete({
+          where: { id },
+        });
+
+        // Eliminar archivo físico si existe
+        try {
+          await fs.unlink(path.join(DOCUMENTS_DIR, document.filename));
+        } catch (error) {
+          console.error("Error eliminando archivo:", error);
+          // No lanzamos error aquí para permitir continuar con la eliminación del registro
+        }
+
+        console.info("Documento eliminado exitosamente", { documentId: id });
+        return true;
+      } catch (error) {
+        console.error("Error al eliminar documento:", error);
+        throw AppError.internal(
+          "Error al eliminar documento",
+          "DOCUMENT_DELETE_ERROR",
+          { error: error.message }
+        );
+      }
+    },
+
+    [IPC_CHANNELS.DATA.DOCUMENTS.DOWNLOAD]: async (event, id) => {
+      try {
+        if (!id) {
+          throw AppError.validation(
+            "ID de documento requerido",
+            "DOCUMENT_ID_REQUIRED"
+          );
+        }
+
+        const document = await prisma.document.findUnique({
+          where: { id },
+        });
+
+        if (!document) {
+          throw AppError.notFound(
+            "Documento no encontrado",
+            "DOCUMENT_NOT_FOUND"
+          );
+        }
+
+        const filePath = path.join(DOCUMENTS_DIR, document.filename);
+        return { filePath, originalName: document.originalName };
+      } catch (error) {
+        console.error("Error al descargar documento:", error);
+        throw AppError.internal(
+          "Error al descargar documento",
+          "DOCUMENT_DOWNLOAD_ERROR",
+          { error: error.message }
+        );
+      }
+    },
+
+    [IPC_CHANNELS.DATA.DOCUMENTS.GET_BY_CONTRACT]: async (
+      event,
+      contractId
+    ) => {
+      return await prisma.document.findMany({
+        where: { contractId },
+        orderBy: { createdAt: "desc" },
+        include: {
+          uploadedBy: {
+            select: { name: true, email: true },
+          },
+        },
+      });
+    },
+
+    [IPC_CHANNELS.DATA.DOCUMENTS.GET_BY_SUPPLEMENT]: async (
+      event,
+      supplementId
+    ) => {
+      return await prisma.document.findMany({
+        where: { supplementId },
+        orderBy: { createdAt: "desc" },
+        include: {
+          uploadedBy: {
+            select: { name: true, email: true },
+          },
+        },
+      });
+    },
+
+    [IPC_CHANNELS.DATA.DOCUMENTS.OPEN]: async (event, id) => {
+      try {
+        if (!id) {
+          throw AppError.validation(
+            "ID de documento requerido",
+            "DOCUMENT_ID_REQUIRED"
+          );
+        }
+
+        const document = await prisma.document.findUnique({
+          where: { id },
+        });
+
+        if (!document) {
+          throw AppError.notFound(
+            "Documento no encontrado",
+            "DOCUMENT_NOT_FOUND"
+          );
+        }
+
+        const filePath = path.join(DOCUMENTS_DIR, document.filename);
+        await shell.openPath(filePath);
+        return true;
+      } catch (error) {
+        console.error("Error al abrir documento:", error);
+        throw AppError.internal(
+          "Error al abrir documento",
+          "DOCUMENT_OPEN_ERROR",
+          { error: error.message }
+        );
+      }
+    },
   };
+
+  // Registrar los manejadores con el eventManager
   eventManager.registerHandlers(handlers);
 }
 
-module.exports = { registerDocumentHandlers, documentZodToPrisma };
+module.exports = {
+  registerDocumentHandlers,
+};

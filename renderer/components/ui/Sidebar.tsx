@@ -11,6 +11,10 @@ import {
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../store/auth";
 
+interface SidebarProps {
+  onClose?: () => void;
+}
+
 const menu = [
   { label: "Dashboard", icon: <Home size={20} />, href: "/dashboard" },
   { label: "Estadísticas", icon: <BarChart2 size={20} />, href: "/statistics" },
@@ -18,7 +22,7 @@ const menu = [
   { label: "Usuarios", icon: <Users size={20} />, href: "/users" },
 ];
 
-const Sidebar = () => {
+const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();

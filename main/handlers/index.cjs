@@ -1,24 +1,20 @@
-import { BrowserWindow } from "electron";
-import { EventManager } from "../events/event-manager.cjs";
-import { registerAuthHandlers } from "./auth.handlers.cjs";
-import { registerContractHandlers } from "./contract.handlers.cjs";
-import { registerDocumentHandlers } from "./document.handlers.cjs";
-import { registerUserHandlers } from "./user.handlers.cjs";
-import { registerSystemHandlers } from "./system.handlers.cjs";
-import { registerNotificationHandlers } from "./notification.handlers.cjs";
-import { registerRoleHandlers } from "./role.handlers.cjs";
-import { registerSupplementHandlers } from "./supplement.handlers.cjs";
-import { registerStatisticsHandlers } from "./statistics.handlers.cjs";
+const { registerAuthHandlers } = require("./auth.handlers.cjs");
+const { registerContractHandlers } = require("./contract.handlers.cjs");
+const { registerDocumentHandlers } = require("./document.handlers.cjs");
+const { registerUserHandlers } = require("./user.handlers.cjs");
+const { registerSystemHandlers } = require("./system.handlers.cjs");
+const { registerNotificationHandlers } = require("./notification.handlers.cjs");
+const { registerRoleHandlers } = require("./role.handlers.cjs");
+const { registerSupplementHandlers } = require("./supplement.handlers.cjs");
+const { registerStatisticsHandlers } = require("./statistics.handlers.cjs");
+const { registerLicenseHandlers } = require("./license.handlers.cjs");
 
 /**
  * Configura todos los manejadores IPC
  * @param mainWindow - Ventana principal de la aplicación
  * @param eventManager - Gestor de eventos de la aplicación
  */
-export function setupIpcHandlers(
-  mainWindow: BrowserWindow,
-  eventManager: EventManager
-): void {
+function setupIpcHandlers(mainWindow, eventManager) {
   // Registrar todos los manejadores IPC
   registerAuthHandlers(eventManager);
   registerContractHandlers(eventManager);
@@ -29,4 +25,9 @@ export function setupIpcHandlers(
   registerRoleHandlers(eventManager);
   registerSupplementHandlers(eventManager);
   registerStatisticsHandlers(eventManager);
+  registerLicenseHandlers();
 }
+
+module.exports = {
+  setupIpcHandlers
+};

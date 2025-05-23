@@ -1,22 +1,18 @@
 const { IPC_CHANNELS } = require("../channels/ipc-channels.cjs");
 const { prisma } = require("../utils/prisma.cjs");
-const fs = require("fs");
+const { EventManager } = require("../events/event-manager.cjs");
+const fs = require("fs").promises;
 const path = require("path");
-const { withErrorHandling } = require("../utils/error-handler.cjs");
+const { AppError } = require("../utils/error-handler.cjs");
 
+// Directorios y configuración
 const EXPORTS_DIR = path.resolve(__dirname, "../../data/documents/exports");
 const CONTRACTS_ATTACHMENTS_DIR = path.resolve(
   __dirname,
   "../../data/documents/contracts"
 );
 
-const ALLOWED_MIME_TYPES = [
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-];
-const ALLOWED_EXTENSIONS = [".pdf", ".doc", ".docx"];
-
+// Función auxiliar para convertir datos del esquema Zod a formato Prisma
 function contractZodToPrisma(data) {
   const {
     bankDetails = {},
@@ -25,9 +21,10 @@ function contractZodToPrisma(data) {
     clientObligations = [],
     contactPhones = [],
     notificationMethods = [],
-    attachments, // ignorado
+    attachments,
     ...rest
   } = data;
+
   return {
     ...rest,
     bankAccount: bankDetails.account,
@@ -47,134 +44,169 @@ function contractZodToPrisma(data) {
   };
 }
 
-function registerContractHandlers(eventManager) {
+function registerContractHandlers() {
+  const eventManager = EventManager.getInstance();
+
+  // Asegurar que existen los directorios necesarios
+  fs.mkdir(EXPORTS_DIR, { recursive: true }).catch(console.error);
+  fs.mkdir(CONTRACTS_ATTACHMENTS_DIR, { recursive: true }).catch(console.error);
+
   const handlers = {
-    [IPC_CHANNELS.DATA.CONTRACTS.LIST]: withErrorHandling(
-      IPC_CHANNELS.DATA.CONTRACTS.LIST,
-      async (event, filters) => {
-        const contracts = await prisma.contract.findMany({ where: filters });
-        return { success: true, data: contracts };
-      }
-    ),
-    [IPC_CHANNELS.DATA.CONTRACTS.CREATE]: withErrorHandling(
-      IPC_CHANNELS.DATA.CONTRACTS.CREATE,
-      async (event, contractData) => {
-        const contract = await prisma.contract.create({ data: contractData });
-        return { success: true, data: contract };
-      }
-    ),
-    [IPC_CHANNELS.DATA.CONTRACTS.UPDATE]: withErrorHandling(
-      IPC_CHANNELS.DATA.CONTRACTS.UPDATE,
-      async (event, contractId, contractData) => {
-        const contract = await prisma.contract.update({
-          where: { id: contractId },
-          data: contractData,
-        });
-        return { success: true, data: contract };
-      }
-    ),
-    [IPC_CHANNELS.DATA.CONTRACTS.ARCHIVE]: withErrorHandling(
-      IPC_CHANNELS.DATA.CONTRACTS.ARCHIVE,
-      async (event, contractId) => {
-        const contract = await prisma.contract.update({
-          where: { id: contractId },
-          data: { status: "ARCHIVED" },
-        });
-        return { success: true, data: contract };
-      }
-    ),
-    [IPC_CHANNELS.DATA.CONTRACTS.UPLOAD]: async (event, id, attachment) => {
-      console.info("Subida de archivo de contrato solicitada", {
-        id,
-        attachment,
-      });
+    [IPC_CHANNELS.DATA.CONTRACTS.LIST]: async (event, filters = {}) => {
       try {
-        if (
-          !attachment ||
-          !attachment.name ||
-          !attachment.data ||
-          !attachment.type
-        ) {
-          throw new Error("Archivo adjunto inválido");
+        if (filters && typeof filters !== 'object') {
+          throw AppError.validation(
+            "Filtros inválidos",
+            "INVALID_FILTERS"
+          );
         }
-        const ext = path.extname(attachment.name).toLowerCase();
-        if (
-          !ALLOWED_EXTENSIONS.includes(ext) ||
-          !ALLOWED_MIME_TYPES.includes(attachment.type)
-        ) {
-          throw new Error("Tipo de archivo no permitido. Solo PDF o Word.");
-        }
-        fs.mkdirSync(CONTRACTS_ATTACHMENTS_DIR, { recursive: true });
-        const filePath = path.join(
-          CONTRACTS_ATTACHMENTS_DIR,
-          `${id}_${Date.now()}_${attachment.name}`
-        );
-        fs.writeFileSync(filePath, Buffer.from(attachment.data));
-        console.info("Archivo de contrato guardado en:", filePath);
-        return { path: filePath };
+
+        const contracts = await prisma.contract.findMany({
+          where: filters,
+          orderBy: { createdAt: "desc" },
+          include: {
+            user: {
+              select: { name: true, email: true },
+            },
+          },
+        });
+
+        return contracts;
       } catch (error) {
-        console.error("Error al subir archivo de contrato:", error);
-        throw error;
+        console.error("Error al listar contratos:", error);
+        throw AppError.internal(
+          "Error al listar contratos",
+          "CONTRACT_LIST_ERROR",
+          { error: error.message }
+        );
       }
     },
-    [IPC_CHANNELS.DATA.CONTRACTS.EXPORT]: async (
-      event,
-      id,
-      destPathOrOptions
-    ) => {
-      console.info("Exportación de contrato solicitada", {
-        id,
-        destPathOrOptions,
-      });
+
+    [IPC_CHANNELS.DATA.CONTRACTS.CREATE]: async (event, data) => {
       try {
-        let destPath =
-          typeof destPathOrOptions === "string" ? destPathOrOptions : undefined;
-        let format =
-          destPathOrOptions && destPathOrOptions.format
-            ? destPathOrOptions.format
-            : "pdf";
-        const documents = await prisma.document.findMany({
-          where: { contractId: id },
-          orderBy: { uploadedAt: "asc" },
-          take: 1,
+        if (!data) {
+          throw AppError.validation(
+            "Datos de contrato requeridos",
+            "CONTRACT_DATA_REQUIRED"
+          );
+        }
+
+        const prismaData = contractZodToPrisma(data);
+        const contract = await prisma.contract.create({
+          data: prismaData,
+          include: {
+            user: {
+              select: { name: true, email: true },
+            },
+          },
         });
-        if (documents.length > 0 && documents[0].path && destPath) {
-          if (!fs.existsSync(documents[0].path)) {
-            throw new Error("El archivo adjunto no existe en el sistema.");
-          }
-          fs.copyFileSync(documents[0].path, destPath);
-          console.info("Adjunto exportado en:", destPath);
-          return { path: destPath };
-        }
-        fs.mkdirSync(EXPORTS_DIR, { recursive: true });
-        let exportPath;
-        if (format === "docx") {
-          exportPath =
-            destPath ||
-            path.join(EXPORTS_DIR, `contrato_${id}_${Date.now()}.docx`);
-          fs.writeFileSync(
-            exportPath,
-            Buffer.from("DOCX simulado del contrato")
-          );
-        } else {
-          exportPath =
-            destPath ||
-            path.join(EXPORTS_DIR, `contrato_${id}_${Date.now()}.pdf`);
-          fs.writeFileSync(
-            exportPath,
-            Buffer.from("PDF simulado del contrato")
-          );
-        }
-        console.info("Contrato exportado en:", exportPath);
-        return { path: exportPath };
+
+        console.info("Contrato creado exitosamente", { contractId: contract.id });
+        return contract;
       } catch (error) {
-        console.error("Error al exportar contrato:", error);
-        throw error;
+        console.error("Error al crear contrato:", error);
+        throw AppError.internal(
+          "Error al crear contrato",
+          "CONTRACT_CREATE_ERROR",
+          { error: error.message }
+        );
       }
+    },
+
+    [IPC_CHANNELS.DATA.CONTRACTS.UPDATE]: async (event, { id, data }) => {
+      try {
+        if (!id) {
+          throw AppError.validation(
+            "ID de contrato requerido",
+            "CONTRACT_ID_REQUIRED"
+          );
+        }
+        if (!data) {
+          throw AppError.validation(
+            "Datos de contrato requeridos",
+            "CONTRACT_DATA_REQUIRED"
+          );
+        }
+
+        const prismaData = contractZodToPrisma(data);
+        const contract = await prisma.contract.update({
+          where: { id },
+          data: prismaData,
+          include: {
+            user: {
+              select: { name: true, email: true },
+            },
+          },
+        });
+
+        console.info("Contrato actualizado exitosamente", { contractId: id });
+        return contract;
+      } catch (error) {
+        console.error("Error al actualizar contrato:", error);
+        throw AppError.internal(
+          "Error al actualizar contrato",
+          "CONTRACT_UPDATE_ERROR",
+          { error: error.message }
+        );
+      }
+    },
+
+    [IPC_CHANNELS.DATA.CONTRACTS.DELETE]: async (event, id) => {
+      try {
+        if (!id) {
+          throw AppError.validation(
+            "ID de contrato requerido",
+            "CONTRACT_ID_REQUIRED"
+          );
+        }
+
+        await prisma.contract.delete({
+          where: { id },
+        });
+        console.info("Contrato eliminado exitosamente", { contractId: id });
+        return true;
+      } catch (error) {
+        console.error("Error al eliminar contrato:", error);
+        throw AppError.internal(
+          "Error al eliminar contrato",
+          "CONTRACT_DELETE_ERROR",
+          { error: error.message }
+        );
+      }
+    },
+
+    [IPC_CHANNELS.DATA.CONTRACTS.GET_BY_ID]: async (event, id) => {
+      const contract = await prisma.contract.findUnique({
+        where: { id },
+        include: {
+          user: {
+            select: { name: true, email: true },
+          },
+          supplements: true,
+          documents: true,
+        },
+      });
+
+      if (!contract) {
+        throw new Error("Contrato no encontrado");
+      }
+
+      return contract;
+    },
+
+    [IPC_CHANNELS.DATA.CONTRACTS.ARCHIVE]: async (event, id) => {
+      const contract = await prisma.contract.update({
+        where: { id },
+        data: { status: "ARCHIVED" },
+      });
+      return contract;
     },
   };
 
+  // Registrar los manejadores con el eventManager
   eventManager.registerHandlers(handlers);
 }
 
-module.exports = { registerContractHandlers, contractZodToPrisma };
+module.exports = {
+  registerContractHandlers,
+};

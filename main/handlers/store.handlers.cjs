@@ -1,38 +1,82 @@
 const { IPC_CHANNELS } = require("../channels/ipc-channels.cjs");
 const store = require("../store/store-manager.cjs");
-const { withErrorHandling } = require("../utils/error-handler.cjs");
+const { EventManager } = require("../events/event-manager.cjs");
+const { AppError } = require("../utils/error-handler.cjs");
 
-function registerStoreHandlers(eventManager) {
+const VALID_KEYS = [
+  "theme",
+  "notificationsEnabled",
+  "notificationDays",
+  "authToken",
+  "authUserId",
+];
+
+function registerStoreHandlers() {
+  const eventManager = EventManager.getInstance();
+
   const handlers = {
-    [IPC_CHANNELS.STORE.GET]: withErrorHandling(
-      IPC_CHANNELS.STORE.GET,
-      async (event, key) => {
-        console.info("Obteniendo valor del store:", key);
-        let value = null;
-        switch (key) {
-          case "theme":
-            value = store.getTheme();
-            break;
-          case "notificationsEnabled":
-            value = store.getNotificationsEnabled();
-            break;
-          case "notificationDays":
-            value = store.getNotificationDays();
-            break;
-          case "authToken":
-            value = store.getAuthToken();
-            break;
-          case "authUserId":
-            value = store.getAuthUserId();
-            break;
-        }
-        return { success: true, data: value };
+    [IPC_CHANNELS.STORE.GET]: async (event, key) => {
+      if (!key) {
+        throw AppError.validation(
+          "Key requerida para obtener valor",
+          "KEY_REQUIRED"
+        );
       }
-    ),
-    [IPC_CHANNELS.STORE.SET]: withErrorHandling(
-      IPC_CHANNELS.STORE.SET,
-      async (event, { key, value }) => {
-        console.info("Guardando valor en store:", { key, value });
+
+      if (!VALID_KEYS.includes(key)) {
+        throw AppError.validation(`Key inválida: ${key}`, "INVALID_KEY", {
+          validKeys: VALID_KEYS,
+        });
+      }
+
+      console.info("Obteniendo valor del store:", key);
+
+      let value = null;
+      switch (key) {
+        case "theme":
+          value = store.getTheme();
+          break;
+        case "notificationsEnabled":
+          value = store.getNotificationsEnabled();
+          break;
+        case "notificationDays":
+          value = store.getNotificationDays();
+          break;
+        case "authToken":
+          value = store.getAuthToken();
+          break;
+        case "authUserId":
+          value = store.getAuthUserId();
+          break;
+      }
+
+      if (value === null || value === undefined) {
+        throw AppError.notFound(
+          `No se encontró valor para la key: ${key}`,
+          "VALUE_NOT_FOUND"
+        );
+      }
+
+      return value;
+    },
+
+    [IPC_CHANNELS.STORE.SET]: async (event, { key, value }) => {
+      if (!key || value === undefined) {
+        throw AppError.validation(
+          "Key y value requeridos para almacenar",
+          "KEY_VALUE_REQUIRED"
+        );
+      }
+
+      if (!VALID_KEYS.includes(key)) {
+        throw AppError.validation(`Key inválida: ${key}`, "INVALID_KEY", {
+          validKeys: VALID_KEYS,
+        });
+      }
+
+      console.info("Guardando valor en store:", { key, value });
+
+      try {
         switch (key) {
           case "theme":
             store.setTheme(value);
@@ -46,44 +90,26 @@ function registerStoreHandlers(eventManager) {
           case "authToken":
             store.setAuthToken(value);
             break;
+          default:
+            throw AppError.validation(
+              `Key no soportada para escritura: ${key}`,
+              "UNSUPPORTED_KEY_WRITE"
+            );
         }
-        return { success: true, data: true };
+        return true;
+      } catch (error) {
+        throw AppError.internal(
+          "Error al guardar en el store",
+          "STORE_SAVE_ERROR",
+          { key, error: error.message }
+        );
       }
-    ),
-    [IPC_CHANNELS.STORE.DELETE]: withErrorHandling(
-      IPC_CHANNELS.STORE.DELETE,
-      async (event, key) => {
-        console.info("Eliminando valor del store:", key);
-        if (key === "auth") {
-          store.clearAuth();
-        }
-        return { success: true, data: true };
-      }
-    ),
-    [IPC_CHANNELS.STORE.CLEAR]: withErrorHandling(
-      IPC_CHANNELS.STORE.CLEAR,
-      async () => {
-        console.info("Limpiando store");
-        store.clearStore();
-        return { success: true, data: true };
-      }
-    ),
-    [IPC_CHANNELS.STORE.BACKUP]: withErrorHandling(
-      IPC_CHANNELS.STORE.BACKUP,
-      async () => {
-        console.info("Backup no implementado");
-        return { success: true, data: false };
-      }
-    ),
-    [IPC_CHANNELS.STORE.RESTORE]: withErrorHandling(
-      IPC_CHANNELS.STORE.RESTORE,
-      async (event, backupPath) => {
-        console.info("Restore no implementado");
-        return { success: true, data: false };
-      }
-    ),
+    },
   };
+
   eventManager.registerHandlers(handlers);
 }
 
-module.exports = { registerStoreHandlers };
+module.exports = {
+  registerStoreHandlers,
+};

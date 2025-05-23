@@ -1,6 +1,13 @@
 // Archivo de definición de canales IPC para CommonJS puro
 
 const IPC_CHANNELS = {
+  LICENSE: {
+    VALIDATE: "license:validate",
+    STATUS: "license:status",
+    REVOKE: "license:revoke",
+    LIST: "license:list",
+    INFO: "license:info",
+  },
   AUTH: {
     LOGIN: "auth:login",
     LOGOUT: "auth:logout",
@@ -8,6 +15,15 @@ const IPC_CHANNELS = {
     REFRESH: "auth:refresh",
     CHANGE_PASSWORD: "auth:change-password",
     PROFILE: "auth:profile",
+  },
+  REPORT: {
+    EXPORT_PDF: "export:pdf",
+    EXPORT_EXCEL: "export:excel",
+    TEMPLATES: {
+      GET: "report:templates:get",
+      SAVE: "report:template:save",
+      DELETE: "report:template:delete"
+    }
   },
   DATA: {
     CONTRACTS: {
@@ -20,6 +36,7 @@ const IPC_CHANNELS = {
       ARCHIVE: "contracts:archive",
       UPDATE_ACCESS_CONTROL: "contracts:update-access-control",
       ASSIGN_USERS: "contracts:assign-users",
+      GET_BY_ID: "contracts:getById",
     },
     DOCUMENTS: {
       LIST: "documents:list",
@@ -37,6 +54,7 @@ const IPC_CHANNELS = {
       DELETE: "users:delete",
       TOGGLE_ACTIVE: "users:toggle-active",
       CHANGE_PASSWORD: "users:change-password",
+      GET_BY_ID: "users:getById",
     },
     ROLES: {
       LIST: "roles:list",
@@ -70,6 +88,8 @@ const IPC_CHANNELS = {
       GET_VERSION: "app:get-version",
       GET_PATH: "app:get-path",
       GET_INFO: "app:get-info",
+      UPDATE_AVAILABLE: "app:update-available",
+      RESTART: "app:restart",
     },
   },
   NOTIFICATIONS: {
@@ -130,6 +150,19 @@ const IPC_CHANNELS = {
     FOCUS: "window:focus",
     GET_STATE: "window:get-state",
     SET_STATE: "window:set-state",
+  },
+  THEME: {
+    GET_SYSTEM: "theme:get-system",
+    GET_SAVED: "theme:get-saved",
+    SET_APP: "theme:set-app",
+    SYSTEM_CHANGED: "theme:system-changed",
+  },
+  BACKUPS: {
+    CREATE: "backups:create",
+    RESTORE: "backups:restore",
+    DELETE: "backups:delete",
+    LIST: "backups:list",
+    CLEAN_OLD: "backups:clean-old",
   },
 };
 
