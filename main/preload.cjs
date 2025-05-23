@@ -12,19 +12,9 @@ const flattenChannels = (channels) => {
 };
 
 // Lista de canales personalizados que no están en IPC_CHANNELS
+// Lista de canales personalizados que aún no se han migrado a IPC_CHANNELS
 const customChannels = [
-  "app:update-available",
-  "app:restart",
-  "theme:get-system",
-  "theme:set-app",
-  "backups:create",
-  "backups:restore",
-  "backups:delete",
-  "backups:list",
-  "backups:clean-old",
-  "contracts:getById",
-  "users:getById",
-  "statistics:dashboard",
+  // Agregar aquí cualquier canal nuevo antes de moverlo a IPC_CHANNELS
 ];
 
 const validInvokeChannels = [
@@ -45,20 +35,26 @@ const isValidChannel = (channel) => {
 contextBridge.exposeInMainWorld("electron", {
   license: {
     async validateLicense(licenseData) {
-      return await ipcRenderer.invoke(IPC_CHANNELS.LICENSE.VALIDATE, licenseData);
+      return await ipcRenderer.invoke(
+        IPC_CHANNELS.LICENSE.VALIDATE,
+        licenseData
+      );
     },
     async getLicenseStatus() {
       return await ipcRenderer.invoke(IPC_CHANNELS.LICENSE.STATUS);
     },
     async revokeLicense(licenseNumber) {
-      return await ipcRenderer.invoke(IPC_CHANNELS.LICENSE.REVOKE, licenseNumber);
+      return await ipcRenderer.invoke(
+        IPC_CHANNELS.LICENSE.REVOKE,
+        licenseNumber
+      );
     },
     async listLicenses() {
       return await ipcRenderer.invoke(IPC_CHANNELS.LICENSE.LIST);
     },
     async getLicenseInfo(licenseNumber) {
       return await ipcRenderer.invoke(IPC_CHANNELS.LICENSE.INFO, licenseNumber);
-    }
+    },
   },
   // API genérica de IPC
   ipcRenderer: {
@@ -82,10 +78,10 @@ contextBridge.exposeInMainWorld("electron", {
   // APIs específicas
   app: {
     onUpdateAvailable: (callback) =>
-      ipcRenderer.on("app:update-available", callback),
+      ipcRenderer.on(IPC_CHANNELS.APP.UPDATE_AVAILABLE, callback),
     removeUpdateListener: (callback) =>
-      ipcRenderer.removeListener("app:update-available", callback),
-    restart: () => ipcRenderer.invoke("app:restart"),
+      ipcRenderer.removeListener(IPC_CHANNELS.APP.UPDATE_AVAILABLE, callback),
+    restart: () => ipcRenderer.invoke(IPC_CHANNELS.APP.RESTART),
   },
   // Autenticación
   auth: {
@@ -117,7 +113,8 @@ contextBridge.exposeInMainWorld("electron", {
       ),
     assignUsers: (id, users) =>
       ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.ASSIGN_USERS, id, users),
-    getById: (id) => ipcRenderer.invoke("contracts:getById", id),
+    getById: (id) =>
+      ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.GET_BY_ID, id),
   },
   // Suplementos
   supplements: {
@@ -171,7 +168,7 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.invoke(IPC_CHANNELS.DATA.USERS.TOGGLE_ACTIVE, id),
     changePassword: (data) =>
       ipcRenderer.invoke(IPC_CHANNELS.DATA.USERS.CHANGE_PASSWORD, data),
-    getById: (id) => ipcRenderer.invoke("users:getById", id),
+    getById: (id) => ipcRenderer.invoke(IPC_CHANNELS.DATA.USERS.GET_BY_ID, id),
   },
   // Roles
   roles: {
@@ -233,16 +230,27 @@ contextBridge.exposeInMainWorld("electron", {
   },
   // Backups
   backups: {
-    create: (description) => ipcRenderer.invoke("backups:create", description),
-    restore: (id) => ipcRenderer.invoke("backups:restore", id),
-    delete: (id) => ipcRenderer.invoke("backups:delete", id),
-    list: () => ipcRenderer.invoke("backups:list"),
-    cleanOld: () => ipcRenderer.invoke("backups:clean-old"),
+    create: (description) =>
+      ipcRenderer.invoke(IPC_CHANNELS.BACKUPS.CREATE, description),
+    restore: (id) => ipcRenderer.invoke(IPC_CHANNELS.BACKUPS.RESTORE, id),
+    delete: (id) => ipcRenderer.invoke(IPC_CHANNELS.BACKUPS.DELETE, id),
+    list: () => ipcRenderer.invoke(IPC_CHANNELS.BACKUPS.LIST),
+    cleanOld: () => ipcRenderer.invoke(IPC_CHANNELS.BACKUPS.CLEAN_OLD),
   },
   // Theme
   theme: {
-    getSystemTheme: () => ipcRenderer.invoke("theme:get-system"),
-    setAppTheme: (theme) => ipcRenderer.invoke("theme:set-app", theme),
+    getSystemTheme: () => ipcRenderer.invoke(IPC_CHANNELS.THEME.GET_SYSTEM),
+    getSavedTheme: () => ipcRenderer.invoke(IPC_CHANNELS.THEME.GET_SAVED),
+    setAppTheme: (theme) =>
+      ipcRenderer.invoke(IPC_CHANNELS.THEME.SET_APP, theme),
+    onSystemThemeChange: (callback) => {
+      ipcRenderer.on(IPC_CHANNELS.THEME.SYSTEM_CHANGED, (event, ...args) =>
+        callback(...args)
+      );
+    },
+    removeSystemThemeListener: (callback) => {
+      ipcRenderer.removeListener(IPC_CHANNELS.THEME.SYSTEM_CHANGED, callback);
+    },
   },
   // API genérica
   api: {

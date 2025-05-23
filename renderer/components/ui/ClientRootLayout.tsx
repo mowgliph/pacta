@@ -1,12 +1,14 @@
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import Footer from "./Footer";
+import { ThemeToggle } from "../ThemeToggle";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ToastProviderCustom } from "./use-toast";
 import { ContextMenuProvider } from "./context-menu";
 import { ReactNode, useEffect, useState, useCallback } from "react";
 import { UpdateBanner } from "./UpdateBanner";
 import { useNavigate } from "react-router-dom";
+import { useThemeStore } from "../../store/theme";
 
 interface Props {
   children: ReactNode;
@@ -15,8 +17,19 @@ interface Props {
 type ApiErrorEvent = CustomEvent<{ message?: string }>;
 
 export const ClientRootLayout = ({ children }: Props) => {
+  const theme = useThemeStore((state) => state.theme);
+  const systemTheme = useThemeStore((state) => state.systemTheme);
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const isDark =
+      theme === "dark" || (theme === "system" && systemTheme === "dark");
+
+    root.classList.toggle("dark", isDark);
+  }, [theme, systemTheme]);
 
   useEffect(() => {
     const electron = window.Electron?.ipcRenderer;
@@ -63,37 +76,78 @@ export const ClientRootLayout = ({ children }: Props) => {
   }, []);
 
   return (
-    <ContextMenuProvider>
-      <ToastProviderCustom>
-        <div className="relative min-h-screen">
-          {/* Sidebar fijo a la izquierda */}
-          <div className="fixed left-0 top-0 h-screen z-10">
-            <Sidebar />
-          </div>
-          <div className="ml-64 flex flex-col min-h-screen">
-            {/* Header fijo en la parte superior */}
-            <div className="fixed top-0 right-0 left-64 z-10">
-              <Header />
-            </div>
-            {/* Espacio para el header */}
-            <div className="h-16"></div>
-            <ErrorBoundary>
-              {/* Contenido principal con scroll */}
-              <main className="flex-1 p-6 pb-20 bg-[#F5F5F5] overflow-y-auto min-h-[calc(100vh-112px)]">
-                <UpdateBanner
-                  visible={updateAvailable}
-                  onRestart={handleRestartApp}
-                />
-                {children}
-              </main>
-            </ErrorBoundary>
-            {/* Footer fijo en la parte inferior */}
-            <div className="fixed bottom-0 right-0 left-64 z-10">
-              <Footer />
-            </div>
-          </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+      <div className="flex flex-col md:flex-row min-h-screen">
+        {/* Sidebar - responsive */}
+        <div
+          className={`
+            fixed md:relative w-64 transform transition-transform duration-200 ease-in-out z-30
+            ${
+              isSidebarOpen
+                ? "translate-x-0"
+                : "-translate-x-full md:translate-x-0"
+            }
+          `}
+          role="navigation"
+          aria-label="Menú principal"
+        >
+          <Sidebar onClose={() => setSidebarOpen(false)} />
         </div>
-      </ToastProviderCustom>
-    </ContextMenuProvider>
+
+        {/* Main content */}
+        <div className="flex-1">
+          <header className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+              {/* Hamburger menu for mobile */}
+              <button
+                onClick={() => setSidebarOpen(!isSidebarOpen)}
+                className="md:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                aria-label={isSidebarOpen ? "Cerrar menú" : "Abrir menú"}
+              >
+                <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6h16M4 12h16M4 18h16"
+                  />
+                </svg>
+              </button>
+
+              {/* Header content */}
+              <div className="flex items-center space-x-4">
+                <Header />
+                <ThemeToggle />
+              </div>
+            </div>
+          </header>
+
+          <main
+            className="flex-1 p-4 sm:p-6 lg:p-8"
+            role="main"
+            id="main-content"
+          >
+            <ErrorBoundary>
+              <ToastProviderCustom>
+                <ContextMenuProvider>
+                  <UpdateBanner
+                    visible={updateAvailable}
+                    onRestart={handleRestartApp}
+                  />
+                  {children}
+                </ContextMenuProvider>
+              </ToastProviderCustom>
+            </ErrorBoundary>
+          </main>
+
+          <Footer />
+        </div>
+      </div>
+    </div>
   );
 };

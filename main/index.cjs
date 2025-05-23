@@ -1,6 +1,9 @@
 const { app, nativeTheme, ipcMain } = require("electron");
 const { AppManager } = require("./app-manager.cjs");
 const { EventManager } = require("./events/event-manager.cjs");
+const { registerAppHandlers } = require("./handlers/app.handlers.cjs");
+const { registerBackupHandlers } = require("./handlers/backup.handlers.cjs");
+const { registerThemeHandlers } = require("./handlers/theme.handlers.cjs");
 const { registerAuthHandlers } = require("./handlers/auth.handlers.cjs");
 const {
   registerContractHandlers,
@@ -47,46 +50,13 @@ async function main() {
       return;
     }
 
-    // Configurar el manejo de segundas instancias
-    app.on("second-instance", (_event, commandLine, _workingDirectory) => {
-      console.info("Se detectó un intento de abrir una segunda instancia", {
-        commandLine,
-      });
-      const appManager = AppManager.getInstance();
-      appManager.focusMainWindow();
-      if (commandLine.length > 1) {
-        appManager.processCommandLineArgs(commandLine);
-      }
-    });
+    const eventManager = new EventManager();
+    const appManager = new AppManager(eventManager);
 
-    app.on("web-contents-created", (_event, contents) => {
-      contents.on("will-navigate", (event, navigationUrl) => {
-        const parsedUrl = new URL(navigationUrl);
-        if (
-          parsedUrl.protocol !== "file:" &&
-          !(
-            parsedUrl.protocol === "http:" && parsedUrl.hostname === "localhost"
-          )
-        ) {
-          console.warn("Navegación bloqueada a URL externa:", navigationUrl);
-          event.preventDefault();
-        }
-      });
-      contents.setWindowOpenHandler(({ url }) => {
-        console.warn("Intento de abrir nueva ventana bloqueado:", url);
-        return { action: "deny" };
-      });
-    });
-
-    const appManager = AppManager.getInstance();
-    const eventManager = EventManager.getInstance();
-    const dbOk = await initPrisma();
-    if (!dbOk) {
-      console.error("No se pudo conectar a la base de datos. Abortando.");
-      app.quit();
-      return;
-    }
-
+    // Registrar todos los manejadores
+    registerThemeHandlers(eventManager);
+    registerAppHandlers(eventManager);
+    registerBackupHandlers(eventManager);
     registerAuthHandlers(eventManager);
     registerContractHandlers(eventManager);
     registerDocumentHandlers(eventManager);
@@ -100,28 +70,10 @@ async function main() {
     registerStoreHandlers(eventManager);
     registerValidationHandlers(eventManager);
     registerLicenseHandlers(eventManager);
-    
-    console.log("ElectronStore:", ElectronStore);
-    const themeStore = new ElectronStore({
-      name: "theme-preference",
-    });
 
-    const savedTheme = themeStore.get("theme");
-    if (savedTheme && ["light", "dark", "system"].includes(savedTheme)) {
-      nativeTheme.themeSource = savedTheme;
-    }
-
-    ipcMain.handle("theme:get-system", () => {
-      return nativeTheme.shouldUseDarkColors ? "dark" : "light";
-    });
-    ipcMain.handle("theme:set-app", (event, theme) => {
-      if (["light", "dark", "system"].includes(theme)) {
-        nativeTheme.themeSource = theme;
-        themeStore.set("theme", theme);
-        return { success: true };
-      }
-      return { success: false, error: "Tema no válido" };
-    });
+    // Inicializar el tema
+    const themeHandler = registerThemeHandlers(eventManager);
+    themeHandler.initialize();
 
     await appManager.initialize();
 
