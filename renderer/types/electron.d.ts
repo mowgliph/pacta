@@ -1,105 +1,30 @@
+import { IpcRenderer, ReportsApi, UsersApi, ContractsApi, AuthApi, StatisticsApi, LicenseAPI, DocumentsApi, UpdateApi, FileApi, SupplementsApi, NotificationsAPI, EmailApi } from "@/api";
+
+declare global {
+  interface Window {
+    electron: {
+      ipcRenderer: IpcRenderer;
+      reports: ReportsApi;
+      users: UsersApi;
+      contracts: ContractsApi;
+      auth: AuthApi;
+      statistics: StatisticsApi;
+      licenses: LicenseAPI;
+      documents: DocumentsApi;
+      updates: UpdateApi;
+      files: FileApi;
+      supplements: SupplementsApi;
+      notifications: NotificationsAPI;
+      email: EmailApi;
+    };
+  }
+}
+
+// Tipos de IPC
 export interface IpcRenderer {
   invoke: <T>(channel: string, ...args: unknown[]) => Promise<T>;
   on: (channel: string, listener: (...args: unknown[]) => void) => void;
   removeListener: (channel: string, listener: (...args: unknown[]) => void) => void;
-  invoke(channel: 'email:get-settings'): Promise<ApiResponse<EmailSettings>>;
-  invoke(channel: 'email:update-settings', settings: Partial<EmailSettings>): Promise<ApiResponse<EmailSettings>>;
-  invoke(channel: 'email:test-connection'): Promise<ApiResponse<boolean>>;
-}
-
-export interface ApiError {
-  message: string;
-  code?: string;
-  statusCode?: number;
-}
-
-export interface ApiResponse<T = unknown> {
-  success: boolean;
-  data?: T;
-  error?: ApiError;
-}
-
-export interface Document {
-  success: boolean;
-  data: any[];
-}
-
-export interface RecentActivity {
-  id: string;
-  type: 'new' | 'updated' | 'expired';
-  date: string;
-  description: string;
-  name: string;
-}
-
-export interface StatisticsDashboard {
-  success: boolean;
-  data: {
-    totals: {
-      total: number;
-      active: number;
-      expiring: number;
-      expired: number;
-    };
-    distribution: {
-      client: number;
-      supplier: number;
-    };
-    recentActivity: RecentActivity[];
-  };
-}
-
-import type { IpcResponse } from "./handleIpcResponse";
-
-export interface StatisticsContracts {
-  success: boolean;
-  data: {
-    total: number;
-    active: number;
-    expiring: number;
-    expired: number;
-  };
-}
-
-export interface StatisticsByCurrency {
-  success: boolean;
-  data: Array<{
-    currency: string;
-    count: number;
-  }>;
-}
-
-export interface StatisticsByUser {
-  success: boolean;
-  data: Array<{
-    user: string;
-    count: number;
-  }>;
-}
-
-export interface StatisticsByMonth {
-  success: boolean;
-  data: Array<{
-    month: string;
-    count: number;
-  }>;
-}
-
-export interface StatisticsSupplements {
-  success: boolean;
-  data: Array<{
-    contractId: string;
-    count: number;
-  }>;
-}
-
-export interface StatisticsUsersActivity {
-  success: boolean;
-  data: Array<{
-    user: string;
-    lastActivity: string;
-    actions: number;
-  }>;
 }
 
 export interface Role {

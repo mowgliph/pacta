@@ -28,11 +28,9 @@ const {
   registerSecurityHandlers,
 } = require("./handlers/security.handlers.cjs");
 const { registerStoreHandlers } = require("./handlers/store.handlers.cjs");
-const {
-  registerValidationHandlers,
-} = require("./handlers/validation.handlers.cjs");
+const { registerValidationHandlers } = require("./handlers/validation.handlers.cjs");
+const { registerReportHandlers } = require("./handlers/reportHandler.cjs");
 const { initPrisma } = require("./utils/prisma.cjs");
-const ElectronStore = require("electron-store");
 const { autoUpdater } = require("electron-updater");
 
 /**
@@ -41,6 +39,7 @@ const { autoUpdater } = require("electron-updater");
  */
 async function main() {
   try {
+    // Prevenir múltiples instancias de la aplicación
     const gotTheLock = app.requestSingleInstanceLock();
     if (!gotTheLock) {
       console.info(
@@ -50,30 +49,49 @@ async function main() {
       return;
     }
 
+    // Configurar el manejo de segundas instancias
+    app.on("second-instance", (_event, commandLine, _workingDirectory) => {
+      console.info("Se detectó un intento de abrir una segunda instancia", {
+        commandLine,
+      });
+      const appManager = AppManager.getInstance();
+      appManager.focusMainWindow();
+      if (commandLine.length > 1) {
+        appManager.processCommandLineArgs(commandLine);
+      }
+    });
+
+    app.on("web-contents-created", (_event, contents) => {
+      contents.on("will-navigate", (event, navigationUrl) => {
+        const parsedUrl = new URL(navigationUrl);
+        if (
+          parsedUrl.protocol !== "file:" &&
+          !(
+            parsedUrl.protocol === "http:" && parsedUrl.hostname === "localhost"
+          )
+        ) {
+          console.warn("Navegación bloqueada a URL externa:", navigationUrl);
+          event.preventDefault();
+        }
+      });
+      contents.setWindowOpenHandler(({ url }) => {
+        console.warn("Intento de abrir nueva ventana bloqueado:", url);
+        return { action: "deny" };
+      });
+    });
+
+    const dbOk = await initPrisma();
+    if (!dbOk) {
+      console.error("No se pudo conectar a la base de datos. Abortando.");
+      app.quit();
+      return;
+    }
+
     const eventManager = new EventManager();
     const appManager = new AppManager(eventManager);
 
     // Registrar todos los manejadores
-    registerThemeHandlers(eventManager);
-    registerAppHandlers(eventManager);
-    registerBackupHandlers(eventManager);
-    registerAuthHandlers(eventManager);
-    registerContractHandlers(eventManager);
-    registerDocumentHandlers(eventManager);
-    registerUserHandlers(eventManager);
-    registerSystemHandlers(eventManager);
-    registerNotificationHandlers(eventManager);
-    registerRoleHandlers(eventManager);
-    registerSupplementHandlers(eventManager);
-    registerStatisticsHandlers(eventManager);
-    registerSecurityHandlers(eventManager);
-    registerStoreHandlers(eventManager);
-    registerValidationHandlers(eventManager);
-    registerLicenseHandlers(eventManager);
 
-    // Inicializar el tema
-    const themeHandler = registerThemeHandlers(eventManager);
-    themeHandler.initialize();
 
     await appManager.initialize();
 

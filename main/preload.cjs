@@ -33,6 +33,18 @@ const isValidChannel = (channel) => {
 
 // APIs seguras expuestas al proceso de renderizado a través de contextBridge
 contextBridge.exposeInMainWorld("electron", {
+  reports: {
+    exportPDF: (data, template) =>
+      ipcRenderer.invoke("export:pdf", { data, template }),
+    exportExcel: (data, template) =>
+      ipcRenderer.invoke("export:excel", { data, template }),
+    getTemplates: () =>
+      ipcRenderer.invoke("report:templates:get"),
+    saveTemplate: (name, content) =>
+      ipcRenderer.invoke("report:template:save", { name, content }),
+    deleteTemplate: (name) =>
+      ipcRenderer.invoke("report:template:delete", name),
+  },
   license: {
     async validateLicense(licenseData) {
       return await ipcRenderer.invoke(
@@ -99,8 +111,10 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.CREATE, datos),
     update: (id, datos) =>
       ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.UPDATE, id, datos),
-    delete: (id) => ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.DELETE, id),
-    export: (id) => ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.EXPORT, id),
+    delete: (id) =>
+      ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.DELETE, id),
+    export: (id) =>
+      ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.EXPORT, id),
     upload: (file) =>
       ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.UPLOAD, file),
     archive: (id) =>
@@ -198,12 +212,19 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.CONTRACTS_EXPIRED_BY_MONTH),
     supplementsCountByContract: () =>
       ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.SUPPLEMENTS_COUNT_BY_CONTRACT),
-    contractsExpiringSoon: () =>
-      ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.CONTRACTS_EXPIRING_SOON),
-    contractsWithoutDocuments: () =>
-      ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.CONTRACTS_WITHOUT_DOCUMENTS),
-    usersActivity: () =>
-      ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.USERS_ACTIVITY),
+  },
+  // Reportes
+  reports: {
+    exportPDF: (data, template) =>
+      ipcRenderer.invoke(IPC_CHANNELS.REPORT.EXPORT_PDF, { data, template }),
+    exportExcel: (data, template) =>
+      ipcRenderer.invoke(IPC_CHANNELS.REPORT.EXPORT_EXCEL, { data, template }),
+    getTemplates: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.REPORT.TEMPLATES.GET),
+    saveTemplate: (name, content) =>
+      ipcRenderer.invoke(IPC_CHANNELS.REPORT.TEMPLATES.SAVE, { name, content }),
+    deleteTemplate: (name) =>
+      ipcRenderer.invoke(IPC_CHANNELS.REPORT.TEMPLATES.DELETE, name),
   },
   // Sistema
   system: {

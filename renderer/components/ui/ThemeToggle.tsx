@@ -1,14 +1,14 @@
 import React, { useRef, useState } from "react";
-import { useThemeStore } from "../store/theme";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { Button } from "./ui/button";
+import { useThemeStore } from "../../store/theme";
+import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+import { Button } from "./button";
 import {
   Toast,
   ToastDescription,
   ToastProvider,
   ToastTitle,
   ToastViewport,
-} from "./ui/toast";
+} from "./toast";
 
 type Theme = "light" | "dark" | "system";
 

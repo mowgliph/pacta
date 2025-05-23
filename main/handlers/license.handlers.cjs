@@ -1,11 +1,21 @@
 const { IPC_CHANNELS } = require("../channels/ipc-channels.cjs");
-const { validateLicense } = require("./license-handler.cjs");
+const { validateLicense } = require("../utils/license.utils.cjs");
 const { EventManager } = require("../events/event-manager.cjs");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { AppError } = require("../utils/error-handler.cjs");
 
+if (!globalThis.__PACTA_LICENSE_HANDLERS_REGISTERED__) {
+  globalThis.__PACTA_LICENSE_HANDLERS_REGISTERED__ = false;
+}
+
 function registerLicenseHandlers() {
+  if (globalThis.__PACTA_LICENSE_HANDLERS_REGISTERED__) {
+    console.warn('[PACTA] Los handlers de licencia ya están registrados (global). Evitando doble registro.');
+    return;
+  }
+  globalThis.__PACTA_LICENSE_HANDLERS_REGISTERED__ = true;
+
   const eventManager = EventManager.getInstance();
 
   const handlers = {
@@ -137,6 +147,7 @@ function registerLicenseHandlers() {
   // Registrar los manejadores con el eventManager
   eventManager.registerHandlers(handlers);
 }
+
 
 module.exports = {
   registerLicenseHandlers,

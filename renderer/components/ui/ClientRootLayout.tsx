@@ -1,7 +1,7 @@
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import Footer from "./Footer";
-import { ThemeToggle } from "../ThemeToggle";
+import { ThemeToggle } from "./ThemeToggle";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ToastProviderCustom } from "./use-toast";
 import { ContextMenuProvider } from "./context-menu";

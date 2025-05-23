@@ -16,6 +16,15 @@ const IPC_CHANNELS = {
     CHANGE_PASSWORD: "auth:change-password",
     PROFILE: "auth:profile",
   },
+  REPORT: {
+    EXPORT_PDF: "export:pdf",
+    EXPORT_EXCEL: "export:excel",
+    TEMPLATES: {
+      GET: "report:templates:get",
+      SAVE: "report:template:save",
+      DELETE: "report:template:delete"
+    }
+  },
   DATA: {
     CONTRACTS: {
       LIST: "contracts:list",

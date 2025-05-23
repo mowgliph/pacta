@@ -80,7 +80,7 @@ export function LicenseSection() {
     }
 
     try {
-      const result = await window.electron.license.revokeLicense(licenseStatus.licenseNumber);
+      const result = await window.electron.licenses.revokeLicense(licenseStatus.licenseNumber);
       if (result.success) {
         await getLicenseStatus();
       }
@@ -96,13 +96,26 @@ export function LicenseSection() {
     }
 
     try {
-      const info = await window.electron.license.getLicenseInfo(licenseStatus.licenseNumber);
-      if (info.success) {
-        // Aquí implementar la lógica de exportación
-        console.log('Información de licencia exportada:', info.data);
+      const info = await window.electron.licenses.getLicenseInfo(licenseStatus.licenseNumber);
+      if (info.success && info.data) {
+
+        // Exportar como archivo JSON
+        const blob = new Blob([JSON.stringify(info.data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `licencia_${licenseStatus.licenseNumber}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        alert('Información de licencia exportada correctamente');
+      } else {
+        alert('No se pudo obtener la información de la licencia');
       }
     } catch (err) {
       console.error('Error al exportar información:', err);
+      alert('Error al exportar la información de la licencia');
     }
   };
 
@@ -148,75 +161,76 @@ export function LicenseSection() {
               )}
             </Button>
 
-          {/* Alertas de error */}
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+            {/* Alertas de error */}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          {/* Estado de la licencia */}
-          {licenseStatus?.valid ? (
-            <div className="bg-green-50 p-4 rounded-md">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <Key className="h-5 w-5 text-green-400" />
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-green-800">Licencia Válida</h3>
-                  <div className="mt-2 text-sm text-green-700">
-                    <p>Tipo: {licenseStatus.type || 'No especificado'}</p>
-                    <p>Válida hasta: {licenseStatus.expiryDate || 'Sin fecha de expiración'}</p>
-                    <p>Características: {licenseStatus.features?.join(', ') || 'No especificadas'}</p>
+            {/* Estado de la licencia */}
+            {licenseStatus?.valid ? (
+              <div className="bg-green-50 p-4 rounded-md">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <Key className="h-5 w-5 text-green-400" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-green-800">Licencia Válida</h3>
+                    <div className="mt-2 text-sm text-green-700">
+                      <p>Tipo: {licenseStatus.type || 'No especificado'}</p>
+                      <p>Válida hasta: {licenseStatus.expiryDate || 'Sin fecha de expiración'}</p>
+                      <p>Características: {licenseStatus.features?.join(', ') || 'No especificadas'}</p>
+                    </div>
                   </div>
                 </div>
+                <dl className="mt-6 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                  <div className="sm:col-span-1">
+                    <dt className="text-sm font-medium text-gray-500">Fecha de Activación</dt>
+                    <dd className="mt-1 text-sm text-gray-900">{licenseStatus.expiryDate || 'Sin fecha de expiración'}</dd>
+                  </div>
+                  <div className="sm:col-span-1">
+                    <dt className="text-sm font-medium text-gray-500">Estado</dt>
+                    <dd className="mt-1 text-sm text-gray-900">{licenseStatus.valid ? 'Válida' : 'No válida'}</dd>
+                  </div>
+                  {licenseStatus.features && licenseStatus.features.length > 0 && (
+                    <div className="sm:col-span-2">
+                      <dt className="text-sm font-medium text-gray-500">Características</dt>
+                      <dd className="mt-1 text-sm text-gray-900">
+                        <ul className="list-disc list-inside">
+                          {licenseStatus.features.map((feature: string, index: number) => (
+                            <li key={index}>{feature}</li>
+                          ))}
+                        </ul>
+                      </dd>
+                    </div>
+                  )}
+                </dl>
               </div>
-              <dl className="mt-6 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
-                <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-500">Fecha de Activación</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{licenseStatus.expiryDate || 'Sin fecha de expiración'}</dd>
-                </div>
-                <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-500">Estado</dt>
-                  <dd className="mt-1 text-sm text-gray-900">{licenseStatus.valid ? 'Válida' : 'No válida'}</dd>
-                </div>
-                {licenseStatus.features && licenseStatus.features.length > 0 && (
-                  <div className="sm:col-span-2">
-                    <dt className="text-sm font-medium text-gray-500">Características</dt>
-                    <dd className="mt-1 text-sm text-gray-900">
-                      <ul className="list-disc list-inside">
-                        {licenseStatus.features.map((feature: string, index: number) => (
-                          <li key={index}>{feature}</li>
-                        ))}
-                      </ul>
-                    </dd>
+            ) : (
+              <div className="bg-yellow-50 p-4 rounded-md">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <AlertTriangle className="h-5 w-5 text-yellow-400" />
                   </div>
-                )}
-              </dl>
-            </div>
-          ) : (
-            <div className="bg-yellow-50 p-4 rounded-md">
-              <div className="flex">
-                <div className="flex-shrink-0">
-                  <AlertTriangle className="h-5 w-5 text-yellow-400" />
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800">Sin Licencia Válida</h3>
-                  <div className="mt-2 text-sm text-yellow-700">
-                    <p>Por favor, ingrese una clave de licencia válida</p>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-yellow-800">Sin Licencia Válida</h3>
+                    <div className="mt-2 text-sm text-yellow-700">
+                      <p>Por favor, ingrese una clave de licencia válida</p>
+                    </div>
                   </div>
                 </div>
+                <dl className="mt-6 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
+                  <div className="sm:col-span-1">
+                    <dt className="text-sm font-medium text-gray-500">Estado</dt>
+                    <dd className="mt-1 text-sm text-gray-900">No válida</dd>
+                  </div>
+                </dl>
               </div>
-              <dl className="mt-6 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2">
-                <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-500">Estado</dt>
-                  <dd className="mt-1 text-sm text-gray-900">No válida</dd>
-                </div>
-              </dl>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
