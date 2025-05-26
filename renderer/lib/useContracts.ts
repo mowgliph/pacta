@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { ApiError } from "@/types/electron";
+import { ApiResponse, PaginationResponse } from "@/types/electron";
 
 export interface Contract {
   id: string;
@@ -25,12 +25,7 @@ export function useContracts(tipo?: "Cliente" | "Proveedor") {
     if (typeof error === 'string') return error;
     if (!error || typeof error !== 'object') return 'Error desconocido al cargar los contratos';
     
-    // Manejar ApiError
-    const apiError = error as ApiError;
-    if (apiError.message && typeof apiError.message === 'string') {
-      return apiError.message;
-    }
-    
+ 
     // Manejar error anidado
     const nestedError = error as { error?: { message?: unknown } };
     if (nestedError.error && typeof nestedError.error === 'object') {
@@ -55,11 +50,20 @@ export function useContracts(tipo?: "Cliente" | "Proveedor") {
 
     console.log('useContracts: Iniciando carga de contratos...');
     console.log('useContracts: Tipo seleccionado:', tipo);
-    console.log('useContracts: Electron disponible:', typeof window.Electron !== 'undefined');
+    console.log('useContracts: Electron disponible:', typeof window.electron !== 'undefined');
     
-    if (typeof window.Electron === 'undefined') {
+    if (typeof window.electron === 'undefined') {
       console.error('useContracts: Electron no está disponible');
-      setError('Error: La aplicación no se está ejecutando en un entorno Electron');
+      setError('Error: La aplicación debe ejecutarse en el entorno de Electron. Por favor, inicie la aplicación desde el ejecutable.');
+      setLoading(false);
+      return;
+    }
+
+    // Verificar que la API de contratos esté disponible
+    const electron = window.electron as any; // Aserción temporal
+    if (!electron.contracts) {
+      console.error('useContracts: La API de contratos no está disponible', electron);
+      setError('Error: No se pudo acceder al módulo de contratos. Por favor, intente reiniciar la aplicación.');
       setLoading(false);
       return;
     }
@@ -69,10 +73,10 @@ export function useContracts(tipo?: "Cliente" | "Proveedor") {
     const loadContracts = async () => {
       try {
         console.log('Intentando listar contratos...');
-        const response = await window.Electron.ipcRenderer.invoke(
-          "contracts:list", 
+        const electron = window.electron as any; // Aserción temporal
+        const response = await electron.contracts.list(
           tipo ? { type: tipo } : {}
-        );
+        ) as ApiResponse<PaginationResponse<Contract>>;
 
         console.log('useContracts: Respuesta recibida');
         if (!mounted) return;
@@ -80,29 +84,39 @@ export function useContracts(tipo?: "Cliente" | "Proveedor") {
         console.log('Tipo de respuesta:', typeof response);
         console.log('Respuesta completa:', response);
         
-        if (!response || typeof response !== 'object') {
-          throw new Error('Respuesta del servidor inválida');
+        if (!response) {
+          throw new Error('No se recibió respuesta del servidor');
         }
         
         // Manejar respuesta de error
-        if ('success' in response && response.success === false) {
-          const errorSource = (response as { error?: unknown }).error || response;
-          const errorMessage = getErrorMessage(errorSource);
-          throw new Error(errorMessage);
+        if (!response.success) {
+          throw new Error(
+            response.error?.message || 'Error al cargar los contratos'
+          );
         }
         
-        // Extraer datos de la respuesta
+        // Extraer los datos de la respuesta
         let contractsData: Contract[] = [];
         
-        if ('data' in response) {
-          if (Array.isArray(response.data)) {
-            contractsData = response.data;
-          } else if (response.data && typeof response.data === 'object') {
-            const nestedArray = Object.values(response.data).find(Array.isArray);
-            if (nestedArray) contractsData = nestedArray;
+        // Verificar si la respuesta tiene el formato PaginationResponse
+        if (response.data && 'items' in response.data) {
+          contractsData = response.data.items || [];
+        } 
+        // Si no tiene el formato esperado, intentar extraer los datos de otra manera
+        else if (response.data) {
+          const data = response.data as any;
+          
+          if (Array.isArray(data)) {
+            contractsData = data;
+          } else if (data.items && Array.isArray(data.items)) {
+            contractsData = data.items;
+          } else if (typeof data === 'object') {
+            // Buscar cualquier propiedad que sea un array
+            const arrayProp = Object.values(data).find(Array.isArray);
+            if (arrayProp) {
+              contractsData = arrayProp as Contract[];
+            }
           }
-        } else if (Array.isArray(response)) {
-          contractsData = response;
         }
         
         if (contractsData.length > 0) {

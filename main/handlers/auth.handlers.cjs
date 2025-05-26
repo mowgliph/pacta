@@ -27,7 +27,14 @@ const VerifyTokenSchema = z.object({
 
 function registerAuthHandlers() {
   const eventManager = EventManager.getInstance();
-
+  
+  // Verificar si ya hay manejadores registrados
+  if (eventManager.handlers[IPC_CHANNELS.AUTH.LOGIN]) {
+    console.log('[Auth Handlers] Los manejadores de autenticación ya están registrados');
+    return;
+  }
+  
+  console.log('[Auth Handlers] Registrando manejadores de autenticación');
   const handlers = {
     [IPC_CHANNELS.AUTH.LOGIN]: async (event, credentials) => {
       try {

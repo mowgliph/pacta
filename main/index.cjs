@@ -17,7 +17,6 @@ const {
   registerNotificationHandlers,
 } = require("./handlers/notification.handlers.cjs");
 const { registerRoleHandlers } = require("./handlers/role.handlers.cjs");
-const { registerLicenseHandlers } = require("./handlers/license.handlers.cjs");
 const {
   registerSupplementHandlers,
 } = require("./handlers/supplement.handlers.cjs");
@@ -89,10 +88,8 @@ async function main() {
 
     const eventManager = new EventManager();
     const appManager = new AppManager(eventManager);
-
-    // Registrar todos los manejadores
-
-
+    
+    // Inicializar la aplicación (los manejadores se registrarán durante la inicialización)
     await appManager.initialize();
 
     autoUpdater.on("update-available", () => {

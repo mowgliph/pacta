@@ -54,23 +54,78 @@ function registerContractHandlers() {
   const handlers = {
     [IPC_CHANNELS.DATA.CONTRACTS.LIST]: async (event, filters = {}) => {
       try {
+        console.log('=== INICIO listar contratos ===');
+        console.log('Filtros recibidos:', JSON.stringify(filters, null, 2));
+        
+        // Validar que Prisma esté disponible
+        if (!prisma || !prisma.contract) {
+          console.error('ERROR: Prisma o el modelo Contract no están disponibles');
+          throw new Error('Error de configuración del servidor');
+        }
+
+        // Validar filtros
         if (filters && typeof filters !== 'object') {
+          console.error('ERROR: Filtros inválidos:', filters);
           throw AppError.validation(
             "Filtros inválidos",
             "INVALID_FILTERS"
           );
         }
 
-        const contracts = await prisma.contract.findMany({
-          where: filters,
-          orderBy: { createdAt: "desc" },
-          include: {
-            user: {
-              select: { name: true, email: true },
-            },
-          },
+        // Construir el objeto where de manera segura
+        const where = {};
+        
+        // Solo agregar los filtros válidos
+        const validFilters = ['type', 'status', 'id', 'number', 'company'];
+        Object.entries(filters).forEach(([key, value]) => {
+          if (validFilters.includes(key) && value !== undefined) {
+            // Manejar el caso especial de "Próximo a Vencer"
+            if (key === 'status' && value === 'Próximo a Vencer') {
+              where[key] = 'Próximo a Vencer';
+            } else {
+              where[key] = value;
+            }
+          }
         });
-
+        
+        // Si no hay filtros, devolver un array vacío
+        if (Object.keys(where).length === 0) {
+          console.log('No se proporcionaron filtros válidos, devolviendo array vacío');
+          return [];
+        }
+        
+        console.log('Consulta a la base de datos con where:', JSON.stringify(where, null, 2));
+        
+        // Ejecutar consulta con manejo de errores específico
+        let contracts = [];
+        try {
+          contracts = await prisma.contract.findMany({
+            where,
+            orderBy: { createdAt: "desc" },
+            include: {
+              owner: {
+                select: { name: true, email: true },
+              },
+              createdBy: {
+                select: { name: true, email: true },
+              }
+            },
+          });
+          
+          // Mapear los resultados para mantener la compatibilidad
+          contracts = contracts.map(contract => ({
+            ...contract,
+            user: contract.owner // Mantener compatibilidad con el frontend
+          }));
+          
+          console.log(`Consulta exitosa. Se encontraron ${contracts.length} contratos`);
+        } catch (dbError) {
+          console.error('ERROR en consulta a la base de datos:', dbError);
+          console.error('Stack trace:', dbError.stack);
+          throw new Error(`Error al consultar la base de datos: ${dbError.message}`);
+        }
+        
+        console.log('=== FIN listar contratos ===');
         return contracts;
       } catch (error) {
         console.error("Error al listar contratos:", error);

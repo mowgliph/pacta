@@ -1,16 +1,33 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
-import { 
-  User, 
-  LoginCredentials, 
-  ApiResponse,
-  Role,
-  AuthAPI,
-  UsersAPI,
-  UserWithRole,
-  ElectronAPI
-} from '@/types/electron';
+
+interface UserWithRole {
+  id: string;
+  name: string;
+  email: string;
+  roleId: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  role: {
+    id: string;
+    name: string;
+    description: string;
+    permissions: string[];
+  };
+}
+
+interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+interface AuthResponse {
+  user: UserWithRole;
+  token: string;
+  refreshToken: string;
+}
 
 type UserRole = 'admin' | 'ra';
 
@@ -18,7 +35,7 @@ interface AuthContextType {
   user: UserWithRole | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (credentials: LoginCredentials) => Promise<boolean>;
   logout: () => Promise<void>;
   hasRole: (roles: UserRole[]) => boolean;
   refreshToken: () => Promise<boolean>;
@@ -47,11 +64,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const response = await window.electron.auth.verify(token);
             
             if (response?.success && response.data?.user) {
-              const userResponse = await window.electron.users.getUserProfile();
-              if (userResponse?.success && userResponse.data) {
-                setUser(userResponse.data);
-                return true;
+              // Usar el usuario de la respuesta de verificación
+              const user = response.data.user as UserWithRole;
+              
+              // Verificar si el usuario tiene un rol
+              if (!user.role) {
+                console.error('El usuario no tiene un rol asignado');
+                return false;
               }
+              
+              setUser(user);
+              return true;
             }
             return false;
           } catch (error) {
@@ -89,17 +112,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await window.electron.auth.refresh(refreshToken);
       
       if (response?.success && response.data) {
-        const { token, refreshToken: newRefreshToken } = response.data;
+        const { token, refreshToken: newRefreshToken, user } = response.data;
         
+        // Verificar si el usuario tiene un rol
+        const userWithRole = user as UserWithRole;
+        if (!userWithRole.role) {
+          console.error('El usuario no tiene un rol asignado');
+          return false;
+        }
+        
+        // Guardar tokens
         localStorage.setItem('token', token);
         localStorage.setItem('refreshToken', newRefreshToken);
         
-        // Obtener el perfil completo del usuario
-        const userResponse = await window.electron.users.getUserProfile();
-        if (userResponse?.success && userResponse.data) {
-          setUser(userResponse.data);
-          return true;
-        }
+        // Usar el usuario de la respuesta de refresh
+        setUser(userWithRole);
+        return true;
       }
       return false;
     } catch (error) {
@@ -108,39 +136,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (credentials: LoginCredentials): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const credentials: LoginCredentials = { email, password };
       const response = await window.electron.auth.login(credentials);
       
-      if (response?.success && response.data) {
-        const { token, refreshToken } = response.data;
+      if (response.success && response.data) {
+        const { token, refreshToken, user } = response.data;
+        const userWithRole = user as UserWithRole;
+        
+        // Verificar si el usuario tiene un rol
+        if (!userWithRole.role) {
+          throw new Error('El usuario no tiene un rol asignado');
+        }
         
         // Guardar token y refreshToken
         localStorage.setItem('token', token);
         localStorage.setItem('refreshToken', refreshToken);
         
-        // Obtener el perfil completo del usuario
-        const userResponse = await window.electron.users.getUserProfile();
-        if (userResponse?.success && userResponse.data) {
-          setUser(userResponse.data);
+        // Actualizar el estado del usuario con los datos del login
+        setUser(userWithRole);
           
-          // Mostrar notificación
-          toast({
-            title: '¡Bienvenido!',
-            description: `Has iniciado sesión como ${userResponse.data.name}`,
-            variant: 'default',
-          });
-          
-          // Redirigir al dashboard
-          navigate('/admin/dashboard');
-          return true;
-        } else {
-          throw new Error('No se pudo cargar el perfil del usuario');
-        }
+        // Mostrar notificación
+        toast({
+          title: '¡Bienvenido!',
+          description: `Has iniciado sesión como ${userWithRole.name}`,
+          variant: 'default',
+        });
+        
+        // Redirigir al dashboard
+        navigate('/admin/dashboard');
+        return true;
       } else {
-        throw new Error(response?.error?.message || 'Error al iniciar sesión');
+        throw new Error(response.error?.message || 'Error al iniciar sesión');
       }
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
@@ -168,8 +196,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
       
-      // Redirigir a la página de login
-      navigate('/login');
+      // Redirigir a la página de dashboard
+      navigate('/dashboard');
       
       toast({
         title: 'Sesión cerrada',

@@ -5,13 +5,13 @@ import { ThemeToggle } from "./ThemeToggle";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ToastProviderCustom } from "./use-toast";
 import { ContextMenuProvider } from "./context-menu";
-import { ReactNode, useEffect, useState, useCallback } from "react";
-import { UpdateBanner } from "./UpdateBanner";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useThemeStore } from "../../store/theme";
+import { UpdateBanner } from "./UpdateBanner";
 
 interface Props {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 type ApiErrorEvent = CustomEvent<{ message?: string }>;
@@ -20,7 +20,6 @@ export const ClientRootLayout = ({ children }: Props) => {
   const theme = useThemeStore((state) => state.theme);
   const systemTheme = useThemeStore((state) => state.systemTheme);
   const [updateAvailable, setUpdateAvailable] = useState(false);
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,24 +31,30 @@ export const ClientRootLayout = ({ children }: Props) => {
   }, [theme, systemTheme]);
 
   useEffect(() => {
-    const electron = window.Electron?.ipcRenderer;
-    if (!electron) return;
-
+    if (!window.electron?.ipcRenderer) {
+      console.warn('IPC Renderer no disponible');
+      return;
+    }
+    
     const handleUpdateAvailable = () => {
       setUpdateAvailable(true);
     };
 
-    electron.on("app:update-available", handleUpdateAvailable);
+    // Usar ipcRenderer para manejar eventos de actualización
+    window.electron.ipcRenderer.on('app:update-available', handleUpdateAvailable);
 
     return () => {
-      electron.removeListener("app:update-available", handleUpdateAvailable);
+      // Limpiar el listener cuando el componente se desmonte
+      if (window.electron.ipcRenderer.removeListener) {
+        window.electron.ipcRenderer.removeListener('app:update-available', handleUpdateAvailable);
+      }
     };
   }, []);
 
   useEffect(() => {
     const handleApiError = (event: ApiErrorEvent) => {
       console.error("API Error:", event.detail?.message);
-      navigate("/_error");
+      navigate("/not-found");
     };
 
     window.addEventListener("api-error", handleApiError as EventListener);
@@ -60,78 +65,44 @@ export const ClientRootLayout = ({ children }: Props) => {
 
   const handleRestartApp = useCallback(async () => {
     try {
-      const electron = window.Electron?.ipcRenderer;
-      if (!electron) {
+      
+      if (!window.electron.ipcRenderer) {
         throw new Error("IPC Renderer no disponible");
       }
 
-      await electron.invoke("app:restart");
+      // Usar ipcRenderer.invoke para llamar al método de reinicio
+      await window.electron.ipcRenderer.invoke('app:restart');
     } catch (error) {
       console.error("Error al reiniciar la aplicación:", error);
       const errorEvent = new CustomEvent("api-error", {
-        detail: { message: "No se pudo reiniciar la aplicación" },
+        detail: { 
+          message: error instanceof Error ? error.message : "No se pudo reiniciar la aplicación" 
+        },
       });
       window.dispatchEvent(errorEvent);
     }
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-      <div className="flex flex-col md:flex-row min-h-screen">
-        {/* Sidebar - responsive */}
-        <div
-          className={`
-            fixed md:relative w-64 transform transition-transform duration-200 ease-in-out z-30
-            ${
-              isSidebarOpen
-                ? "translate-x-0"
-                : "-translate-x-full md:translate-x-0"
-            }
-          `}
-          role="navigation"
-          aria-label="Menú principal"
-        >
-          <Sidebar onClose={() => setSidebarOpen(false)} />
-        </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200 flex">
+      {/* Sidebar - Siempre visible en escritorio */}
+      <div className="w-64 flex-shrink-0 h-screen sticky top-0 overflow-y-auto bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+        <Sidebar />
+      </div>
 
-        {/* Main content */}
-        <div className="flex-1">
-          <header className="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-            <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-              {/* Hamburger menu for mobile */}
-              <button
-                onClick={() => setSidebarOpen(!isSidebarOpen)}
-                className="md:hidden p-2 rounded-md text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                aria-label={isSidebarOpen ? "Cerrar menú" : "Abrir menú"}
-              >
-                <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 6h16M4 12h16M4 18h16"
-                  />
-                </svg>
-              </button>
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Header - fixed */}
+        <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <Header />
+            <ThemeToggle />
+          </div>
+        </header>
 
-              {/* Header content */}
-              <div className="flex items-center space-x-4">
-                <Header />
-                <ThemeToggle />
-              </div>
-            </div>
-          </header>
-
-          <main
-            className="flex-1 p-4 sm:p-6 lg:p-8"
-            role="main"
-            id="main-content"
-          >
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto">
+          <main className="p-6">
             <ErrorBoundary>
               <ToastProviderCustom>
                 <ContextMenuProvider>
@@ -144,8 +115,9 @@ export const ClientRootLayout = ({ children }: Props) => {
               </ToastProviderCustom>
             </ErrorBoundary>
           </main>
-
-          <Footer />
+          
+          {/* Footer */}
+          <Footer className="px-6 py-4 border-t border-gray-200 dark:border-gray-700" />
         </div>
       </div>
     </div>

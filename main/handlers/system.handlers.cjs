@@ -84,7 +84,10 @@ function persistConfig() {
   }
 }
 
-function registerSystemHandlers(eventManager) {
+const { EventManager } = require("../events/event-manager.cjs");
+function registerSystemHandlers() {
+  const eventManager = EventManager.getInstance();
+  
   const handlers = {
     [IPC_CHANNELS.SYSTEM.OPEN_FILE]: withErrorHandling(
       IPC_CHANNELS.SYSTEM.OPEN_FILE,
@@ -270,7 +273,7 @@ function registerSystemHandlers(eventManager) {
       }
     ),
   };
-  eventManager.registerHandlers(handlers);
+  // Los manejadores se registrarán cuando se llame a initializeHandlers
 }
 
 module.exports = { registerSystemHandlers };

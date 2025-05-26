@@ -4,20 +4,50 @@ const { ErrorHandler, AppError } = require("../utils/error-handler.cjs");
 
 function EventManager() {
   if (!(this instanceof EventManager)) return new EventManager();
+  
+  if (EventManager._instance) {
+    console.warn('[EventManager] Ya existe una instancia de EventManager');
+    return EventManager._instance;
+  }
+  
   this.handlers = {};
-  this.initializeHandlers();
+  this.initialized = false;
+  
+  // Marcar como instancia
+  EventManager._instance = this;
+  
+  // No inicializar manejadores en el constructor
+  // Se inicializarán cuando se llame a initializeHandlers explícitamente
 }
 
 EventManager._instance = null;
 
 EventManager.getInstance = function () {
   if (!EventManager._instance) {
+    console.log('[EventManager] Creando nueva instancia de EventManager');
     EventManager._instance = new EventManager();
   }
   return EventManager._instance;
 };
 
+// Limpiar manejadores IPC al recargar
+if (module.hot) {
+  module.hot.dispose(() => {
+    if (EventManager._instance) {
+      EventManager._instance.unregisterAllHandlers();
+      EventManager._instance = null;
+    }
+  });
+}
+
 EventManager.prototype.initializeHandlers = function () {
+  if (this.initialized) {
+    console.log('[EventManager] Los manejadores ya están inicializados');
+    return;
+  }
+  
+  console.log('[EventManager] Inicializando manejadores IPC');
+  
   // Registrar todos los canales IPC
   Object.values(IPC_CHANNELS).forEach((category) => {
     if (typeof category === "object") {
@@ -34,9 +64,19 @@ EventManager.prototype.initializeHandlers = function () {
       });
     }
   });
+  
+  this.initialized = true;
+  console.log('[EventManager] Manejadores IPC inicializados');
 };
 
 EventManager.prototype.registerHandler = function (channel) {
+  // Verificar si el manejador ya está registrado
+  if (ipcMain.listenerCount(channel) > 0) {
+    console.warn(`[EventManager] El manejador para el canal '${channel}' ya está registrado`);
+    return;
+  }
+  
+  console.log(`[EventManager] Registrando manejador para canal: ${channel}`);
   ipcMain.handle(channel, async (event, ...args) => {
     try {
       const handler = this.handlers[channel];

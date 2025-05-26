@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Bell, LogOut, LogIn, Settings } from "lucide-react";
 import { useAuth } from "../../store/auth";
 import { useNavigate } from "react-router-dom";
-import { ThemeToggle } from "./theme-toggle";
+import { ThemeToggle } from "./ThemeToggle";
 import {
   Dialog,
   DialogTrigger,
@@ -42,7 +42,6 @@ function useNotifications() {
 
   const markAllAsRead = async () => {
     for (const id of notifications.map((n) => n.id)) {
-      // @ts-ignore
       await window.Electron.notifications.markRead(id);
     }
     fetchNotifications();
