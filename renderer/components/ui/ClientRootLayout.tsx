@@ -14,7 +14,28 @@ interface Props {
   children: React.ReactNode;
 }
 
-type ApiErrorEvent = CustomEvent<{ message?: string }>;
+interface ApiErrorEvent extends CustomEvent {
+  detail: {
+    error: string;
+    type: string;
+    metadata?: {
+      channel?: string;
+      timestamp?: string;
+      response?: {
+        success?: boolean;
+        hasData?: boolean;
+        hasUsers?: boolean;
+        usersCount?: number;
+        dataStructure?: {
+          isObject?: boolean;
+          hasUsers?: boolean;
+          hasTotal?: boolean;
+          usersType?: string;
+        };
+      };
+    };
+  };
+}
 
 export const ClientRootLayout = ({ children }: Props) => {
   const theme = useThemeStore((state) => state.theme);
@@ -53,8 +74,37 @@ export const ClientRootLayout = ({ children }: Props) => {
 
   useEffect(() => {
     const handleApiError = (event: ApiErrorEvent) => {
-      console.error("API Error:", event.detail?.message);
-      navigate("/not-found");
+      console.error("API Error:", {
+        message: event.detail.error,
+        type: event.detail.type,
+        metadata: event.detail.metadata
+      });
+
+      const { type, metadata } = event.detail;
+      
+      // Log adicional para debugging
+      console.log("Error Type:", type);
+      if (metadata) {
+        console.log("Error Metadata:", metadata);
+        if (metadata.response) {
+          console.log("Response Details:", {
+            success: metadata.response.success,
+            hasData: metadata.response.hasData,
+            hasUsers: metadata.response.hasUsers,
+            usersCount: metadata.response.usersCount,
+            dataStructure: metadata.response.dataStructure
+          });
+        }
+      }
+      
+      // Navegar a la página de error con detalles del error
+      navigate("/error", {
+        state: {
+          error: event.detail.error,
+          type: event.detail.type,
+          metadata: metadata
+        }
+      });
     };
 
     window.addEventListener("api-error", handleApiError as EventListener);

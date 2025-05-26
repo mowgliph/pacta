@@ -36,7 +36,18 @@ export function ActivityFeed({ activities, maxItems = 5, className }: ActivityFe
     if (diffInSeconds < 60) return 'Hace unos segundos';
     if (diffInSeconds < 3600) return `Hace ${Math.floor(diffInSeconds / 60)} min`;
     if (diffInSeconds < 86400) return `Hace ${Math.floor(diffInSeconds / 3600)} h`;
-    return `Hace ${Math.floor(diffInSeconds / 86400)} días`;
+    if (diffInSeconds < 604800) return `Hace ${Math.floor(diffInSeconds / 86400)} días`;
+    return `Hace ${Math.floor(diffInSeconds / 604800)} semanas`;
+  };
+
+  const formatDateTime = (date: Date) => {
+    return new Intl.DateTimeFormat('es-ES', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
   };
 
   return (
@@ -59,9 +70,14 @@ export function ActivityFeed({ activities, maxItems = 5, className }: ActivityFe
                   <div className="ml-3 flex-1">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium text-gray-900">{activity.title}</p>
+                      <div className="flex items-center gap-2">
                       <span className="text-xs text-gray-500">
-                        {formatTimeAgo(new Date(activity.timestamp))}
+                        {activity.timestamp ? formatTimeAgo(activity.timestamp) : 'Sin fecha'}
                       </span>
+                      <span className="text-xs text-gray-400">
+                        • {activity.timestamp ? formatDateTime(activity.timestamp) : 'Sin fecha'}
+                      </span>
+                    </div>
                     </div>
                     <p className="text-sm text-gray-500 mt-1">{activity.description}</p>
                     {activity.user && (

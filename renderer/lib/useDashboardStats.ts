@@ -29,11 +29,14 @@ export function useDashboardStats() {
         setLoading(true);
         setError(null);
 
-        if (!window.Electron?.ipcRenderer) {
-          throw new Error("API de estadísticas no disponible");
+        // Verificar si estamos en un entorno Electron
+        if (typeof window.electron === 'undefined' || !window.electron.ipcRenderer) {
+          setData(defaultStats);
+          setLoading(false);
+          return;
         }
 
-        const response = await window.Electron.ipcRenderer.invoke("statistics:dashboard");
+        const response = await window.electron.ipcRenderer.invoke("statistics:dashboard");
         if (!mounted) return;
 
         const statsResponse = response as StatisticsDashboard;

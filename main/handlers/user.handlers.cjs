@@ -9,15 +9,56 @@ function registerUserHandlers() {
     [IPC_CHANNELS.DATA.USERS.LIST]: async (event) => {
       try {
         const users = await prisma.user.findMany();
+        
+        // Validar que los datos son un array
+        if (!Array.isArray(users)) {
+          console.error("Error: La respuesta de la base de datos no es un array");
+          return {
+            success: false,
+            data: {
+              users: [],
+              total: 0
+            },
+            error: {
+              message: "Error en la respuesta de la base de datos",
+              code: "INVALID_RESPONSE",
+              context: {
+                operation: "list",
+                timestamp: new Date().toISOString(),
+                errorDetails: "La respuesta no es un array"
+              }
+            }
+          };
+        }
+
         console.info("Usuarios listados exitosamente", { count: users.length });
-        return { success: true, data: users };
+        return { 
+          success: true, 
+          data: { 
+            users,
+            total: users.length 
+          } 
+        };
       } catch (error) {
         console.error("Error al listar usuarios:", error);
-        throw AppError.internal(
-          "Error al listar usuarios",
-          "USER_LIST_ERROR",
-          { error: error.message }
-        );
+        
+        // Asegurarnos de que siempre devolvemos un objeto con la estructura correcta
+        return {
+          success: false,
+          data: {
+            users: [],
+            total: 0
+          },
+          error: {
+            message: error.message || "Error al listar usuarios",
+            code: "USER_LIST_ERROR",
+            context: {
+              operation: "list",
+              timestamp: new Date().toISOString(),
+              errorDetails: error.message
+            }
+          }
+        };
       }
     },
     [IPC_CHANNELS.DATA.USERS.CREATE]: async (event, userData) => {

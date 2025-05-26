@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { FileDown, Eye, ExternalLink, AlertTriangle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -77,11 +77,14 @@ const ExpiringContractsModal: React.FC<ExpiringContractsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px]">
+      <DialogContent className="sm:max-w-[700px]" aria-describedby="expiring-contracts-description">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-[#001B48] font-inter">
             {title}
           </DialogTitle>
+          <DialogDescription id="expiring-contracts-description">
+            Lista de contratos próximos a vencer con opciones de exportación y navegación.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="py-4">

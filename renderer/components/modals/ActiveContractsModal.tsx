@@ -20,47 +20,27 @@ const PAGE_SIZE = 5;
  * Modal que muestra una lista paginada de contratos vigentes
  * Permite exportar a PDF y redirigir a la página de contratos
  */
-const ActiveContractsModal = ({
+const ActiveContractsModal: React.FC<ActiveContractsModalProps> = ({
   isOpen,
   onClose,
   title = "Contratos Vigentes",
-}: ActiveContractsModalProps) => {
+  contracts: initialContracts,
+  onExportPDF
+}) => {
   const navigate = useNavigate();
-  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [contracts, setContracts] = useState<Contract[]>(initialContracts || []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [exporting, setExporting] = useState(false);
 
-  // Cargar contratos vigentes cuando se abre el modal
+  // Usar los contratos pasados como prop
   useEffect(() => {
     if (!isOpen) return;
-
-    const fetchActiveContracts = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await window.Electron?.ipcRenderer.invoke<{ data: Contract[] }>(
-          "contracts:list",
-          { status: "Vigente" }
-        );
-        
-        if (response) {
-          setContracts(response.data || []);
-        } else {
-          throw new Error("No se pudieron obtener los contratos vigentes");
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Error al cargar contratos");
-        console.error("Error al cargar contratos vigentes:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchActiveContracts();
-  }, [isOpen]);
+    setContracts(initialContracts || []);
+    setLoading(false);
+  }, [isOpen, initialContracts]);
 
   // Filtrar contratos por búsqueda
   const filteredContracts = contracts.filter(
@@ -86,25 +66,22 @@ const ActiveContractsModal = ({
 
     setExporting(true);
     try {
-      // Diálogo para guardar archivo
-      const fileResult = await window.Electron?.files.save({
-        title: "Exportar contratos vigentes como PDF",
-        defaultPath: `Contratos_Vigentes_${new Date().toISOString().slice(0, 10)}.pdf`,
-        filters: [{ name: "PDF", extensions: ["pdf"] }],
-      });
+      // Exportar contratos usando el canal directo
+      const result = await window.electron.ipcRenderer.invoke(
+        "export:pdf",
+        {
+          data: filteredContracts,
+          template: 'contracts-active'
+        }
+      );
 
-      if (!fileResult?.filePath) {
+      if (!result?.success) {
+        alert("Error al exportar los contratos: " + (result?.error?.message || "Error desconocido"));
         return;
       }
 
-      // Llamada IPC para exportar solo los contratos filtrados
-      await window.Electron?.ipcRenderer.invoke("reports:exportActiveContracts", {
-        filePath: fileResult.filePath,
-        contractIds: filteredContracts.map(c => c.id)
-      });
-
-      // Notificar éxito (se podría implementar un toast)
-      alert(`Se exportaron ${filteredContracts.length} contratos correctamente.`);
+      // Mostrar mensaje de éxito
+      alert("Contratos exportados exitosamente");
     } catch (err) {
       console.error("Error al exportar PDF:", err);
       alert(`Error al exportar el reporte: ${err instanceof Error ? err.message : 'Error desconocido'}`);

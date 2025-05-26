@@ -22,7 +22,7 @@ export function useBackupSettings() {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const response = await window.electron.ipcRenderer.invoke<{ success: boolean; data: BackupSettings }>('backup:get-settings');
+      const response = await window.electron.ipcRenderer.invoke('backup:get-settings');
       if (response?.success) {
         setSettings(response.data);
       }
@@ -37,7 +37,7 @@ export function useBackupSettings() {
   const saveSettings = async (newSettings: Partial<BackupSettings>) => {
     try {
       setLoading(true);
-      const response = await window.electron.ipcRenderer.invoke<{ success: boolean; data: BackupSettings }>(
+      const response = await window.electron.ipcRenderer.invoke(
         'backup:update-settings',
         { ...settings, ...newSettings }
       );
@@ -57,7 +57,7 @@ export function useBackupSettings() {
   const createBackup = async () => {
     try {
       setLoading(true);
-      const response = await window.electron.ipcRenderer.invoke<{ success: boolean; data: { lastBackup: string } }>('backup:create');
+      const response = await window.electron.ipcRenderer.invoke('backup:create');
       if (response?.success) {
         await fetchSettings(); // Actualizar el estado con el último respaldo
       }

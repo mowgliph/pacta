@@ -7,6 +7,9 @@ export interface ApiResponse<T = unknown> {
   error?: {
     message: string;
     code?: string;
+    context?: {
+      [key: string]: any;
+    };
   };
 }
 
@@ -40,6 +43,27 @@ export interface Role {
 }
 
 // Tipos de contrato
+export interface StatisticsDashboard {
+  success: boolean;
+  data: {
+    totals: {
+      total: number;
+      active: number;
+      expiring: number;
+      expired: number;
+    };
+    distribution: {
+      client: number;
+      supplier: number;
+    };
+    recentActivity: Array<{
+      title: string;
+      date: string;
+      description: string;
+    }>;
+  };
+}
+
 export interface Contract {
   id: string;
   // Agregar otros campos según corresponda

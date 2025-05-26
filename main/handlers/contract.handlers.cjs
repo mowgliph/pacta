@@ -51,7 +51,65 @@ function registerContractHandlers() {
   fs.mkdir(EXPORTS_DIR, { recursive: true }).catch(console.error);
   fs.mkdir(CONTRACTS_ATTACHMENTS_DIR, { recursive: true }).catch(console.error);
 
+  // Handlers principales
   const handlers = {
+    [IPC_CHANNELS.DATA.CONTRACTS.LIST]: async (event, { page = 1, limit = 10, search = "" }) => {
+      try {
+        const skip = (page - 1) * limit;
+        const where = search ? {
+          OR: [
+            { name: { contains: search, mode: "insensitive" } },
+            { number: { contains: search, mode: "insensitive" } }
+          ]
+        } : {};
+
+        const [contracts, total] = await Promise.all([
+          prisma.contract.findMany({
+            skip,
+            take: limit,
+            where,
+            orderBy: { createdAt: "desc" },
+            include: {
+              client: true,
+              provider: true,
+              attachments: true
+            }
+          }),
+          prisma.contract.count({ where })
+        ]);
+
+        console.info("Contratos listados exitosamente", { count: contracts.length, page, total });
+        return {
+          success: true,
+          data: {
+            contracts,
+            total,
+            page,
+            limit
+          }
+        };
+      } catch (error) {
+        console.error("Error al listar contratos:", error);
+        return {
+          success: false,
+          data: {
+            contracts: [],
+            total: 0,
+            page: 1,
+            limit: 10
+          },
+          error: {
+            message: error.message || "Error al listar contratos",
+            code: "CONTRACT_LIST_ERROR",
+            context: {
+              operation: "list",
+              timestamp: new Date().toISOString(),
+              errorDetails: error.message
+            }
+          }
+        };
+      }
+    },
     [IPC_CHANNELS.DATA.CONTRACTS.LIST]: async (event, filters = {}) => {
       try {
         console.log('=== INICIO listar contratos ===');

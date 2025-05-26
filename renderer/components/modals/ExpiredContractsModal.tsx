@@ -32,10 +32,14 @@ const ExpiredContractsModal: React.FC<ExpiredContractsModalProps> = ({
 
   // Filtrar contratos por búsqueda
   const filteredContracts = contracts.filter(
-    (c) =>
-      c.number.toLowerCase().includes(search.toLowerCase()) ||
-      c.company.toLowerCase().includes(search.toLowerCase()) ||
-      (c.description?.toLowerCase().includes(search.toLowerCase()) ?? false)
+    (c) => {
+      const searchLower = search.toLowerCase();
+      return (
+        (c.number?.toLowerCase?.().includes(searchLower) ?? false) ||
+        (c.company?.toLowerCase?.().includes(searchLower) ?? false) ||
+        (c.description?.toLowerCase?.().includes(searchLower) ?? false)
+      );
+    }
   );
 
   // Calcular paginación

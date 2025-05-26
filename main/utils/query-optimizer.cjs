@@ -49,14 +49,16 @@ exports.QueryOptimizer = class QueryOptimizer {
     ]);
 
     // Transformar la actividad reciente al formato esperado
-    const formattedActivity = recentActivity.map((contract) => ({
+    const formattedRecentActivity = recentActivity.map((contract) => ({
       id: contract.id,
-      title: `Contrato ${contract.number}`,
-      contractNumber: contract.number,
-      updatedAt: contract.updatedAt,
-      createdBy: {
-        name: contract.createdBy?.name || "Sistema",
-      },
+      title: `Contrato ${contract.contractNumber}`,
+      description: `Actualizado por ${contract.createdBy?.name || 'Usuario desconocido'}`,
+      date: contract.updatedAt.toISOString(),
+      type: 'contract',
+      user: {
+        name: contract.createdBy?.name || 'Usuario desconocido',
+        avatar: undefined
+      }
     }));
 
     return {

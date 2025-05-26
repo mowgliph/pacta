@@ -49,14 +49,18 @@ EventManager.prototype.initializeHandlers = function () {
   console.log('[EventManager] Inicializando manejadores IPC');
   
   // Registrar todos los canales IPC
-  Object.values(IPC_CHANNELS).forEach((category) => {
-    if (typeof category === "object") {
-      Object.values(category).forEach((channel) => {
-        if (typeof channel === "string") {
+  Object.keys(IPC_CHANNELS).forEach((category) => {
+    const channels = IPC_CHANNELS[category];
+    if (typeof channels === 'object') {
+      Object.keys(channels).forEach((channelKey) => {
+        const channel = channels[channelKey];
+        if (typeof channel === 'string') {
+          console.log(`[EventManager] Registrando canal: ${channel}`);
           this.registerHandler(channel);
         } else if (typeof channel === "object") {
           Object.values(channel).forEach((subChannel) => {
             if (typeof subChannel === "string") {
+              console.log(`[EventManager] Registrando subcanal: ${subChannel}`);
               this.registerHandler(subChannel);
             }
           });

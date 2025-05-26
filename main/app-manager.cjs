@@ -45,8 +45,13 @@ AppManager.prototype.initialize = async function () {
     
     // Configurar manejadores de eventos
     if (this.eventManager) {
+      console.log('[AppManager] EventManager está disponible, inicializando handlers...');
       const { setupIpcHandlers } = require('./handlers');
       setupIpcHandlers(this.mainWindow, this.eventManager);
+      console.log('[AppManager] Handlers inicializados');
+    } else {
+      console.error('[AppManager] EventManager no está disponible');
+      throw new Error('EventManager no está disponible para inicializar handlers');
     }
     
     // Configurar manejadores de errores y respaldo automático

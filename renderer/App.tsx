@@ -40,7 +40,7 @@ function AppContent() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/users" element={<Users />} />
+        <Route path="/admin/users" element={<Users />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/statistics" element={<Statistics />} />
         <Route path="/contracts" element={<Contracts />} />

@@ -19,7 +19,7 @@ const menu = [
   { label: "Dashboard", icon: <Home size={20} />, href: "/dashboard" },
   { label: "Estadísticas", icon: <BarChart2 size={20} />, href: "/statistics" },
   { label: "Contratos", icon: <FileText size={20} />, href: "/contracts" },
-  { label: "Usuarios", icon: <Users size={20} />, href: "/users" },
+  { label: "Usuarios", icon: <Users size={20} />, href: "/admin/users" },
 ];
 
 const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {

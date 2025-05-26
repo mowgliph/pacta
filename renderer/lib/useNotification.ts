@@ -6,11 +6,11 @@ export const useNotification = () => {
   const notify = useCallback(
     async (options: NotificationOptions) => {
       try {
-        if (!window.Electron?.notifications?.show) {
+        if (!window.electron?.notifications?.show) {
           throw new Error('API de notificaciones no disponible');
         }
 
-        await window.Electron.notifications.show(options);
+        await window.electron.notifications.show(options);
       } catch (err) {
         console.error('Error al mostrar notificación:', err);
         window.dispatchEvent(new CustomEvent("api-error", {
