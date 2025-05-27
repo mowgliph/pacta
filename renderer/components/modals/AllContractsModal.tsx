@@ -29,7 +29,7 @@ const AllContractsModal: React.FC<AllContractsModalProps> = ({
   loading = false,
   error = null,
   onExportPDF,
-  title = "Todos los Contratos",
+  title = "Contratos",
 }) => {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);

@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, ExternalLink, Search } from "lucide-react";
 import { Contract } from "@/lib/useContracts";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -13,6 +13,7 @@ interface ExpiredContractsModalProps {
   loading: boolean;
   error: string | null;
   onExportPDF: (contracts: Contract[]) => Promise<void>;
+  title?: string;
 }
 
 const PAGE_SIZE = 5;
@@ -24,6 +25,7 @@ const ExpiredContractsModal: React.FC<ExpiredContractsModalProps> = ({
   loading,
   error,
   onExportPDF,
+  title="Expirados"
 }) => {
   const navigate = useNavigate();
   const [page, setPage] = React.useState(1);
@@ -80,11 +82,14 @@ const ExpiredContractsModal: React.FC<ExpiredContractsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px]" aria-describedby="expired-contracts-description">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-[#001B48]">
             Contratos Vencidos
           </DialogTitle>
+          <DialogDescription id="expired-contracts-description">
+            Lista de contratos que han vencido con opciones de exportación y navegación.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Barra de búsqueda */}

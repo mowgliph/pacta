@@ -3,10 +3,10 @@ import Header from "./Header";
 import Footer from "./Footer";
 import { ThemeToggle } from "./ThemeToggle";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { ErrorHandler } from "./ErrorHandler";
 import { ToastProviderCustom } from "./use-toast";
 import { ContextMenuProvider } from "./context-menu";
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useThemeStore } from "../../store/theme";
 import { UpdateBanner } from "./UpdateBanner";
 
@@ -14,35 +14,12 @@ interface Props {
   children: React.ReactNode;
 }
 
-interface ApiErrorEvent extends CustomEvent {
-  detail: {
-    error: string;
-    type: string;
-    metadata?: {
-      channel?: string;
-      timestamp?: string;
-      response?: {
-        success?: boolean;
-        hasData?: boolean;
-        hasUsers?: boolean;
-        usersCount?: number;
-        dataStructure?: {
-          isObject?: boolean;
-          hasUsers?: boolean;
-          hasTotal?: boolean;
-          usersType?: string;
-        };
-      };
-    };
-  };
-}
-
 export const ClientRootLayout = ({ children }: Props) => {
   const theme = useThemeStore((state) => state.theme);
   const systemTheme = useThemeStore((state) => state.systemTheme);
   const [updateAvailable, setUpdateAvailable] = useState(false);
-  const navigate = useNavigate();
 
+  // Efecto para manejar el tema oscuro/claro
   useEffect(() => {
     const root = document.documentElement;
     const isDark =
@@ -51,6 +28,7 @@ export const ClientRootLayout = ({ children }: Props) => {
     root.classList.toggle("dark", isDark);
   }, [theme, systemTheme]);
 
+  // Efecto para manejar actualizaciones disponibles
   useEffect(() => {
     if (!window.electron?.ipcRenderer) {
       console.warn('IPC Renderer no disponible');
@@ -72,51 +50,9 @@ export const ClientRootLayout = ({ children }: Props) => {
     };
   }, []);
 
-  useEffect(() => {
-    const handleApiError = (event: ApiErrorEvent) => {
-      console.error("API Error:", {
-        message: event.detail.error,
-        type: event.detail.type,
-        metadata: event.detail.metadata
-      });
-
-      const { type, metadata } = event.detail;
-      
-      // Log adicional para debugging
-      console.log("Error Type:", type);
-      if (metadata) {
-        console.log("Error Metadata:", metadata);
-        if (metadata.response) {
-          console.log("Response Details:", {
-            success: metadata.response.success,
-            hasData: metadata.response.hasData,
-            hasUsers: metadata.response.hasUsers,
-            usersCount: metadata.response.usersCount,
-            dataStructure: metadata.response.dataStructure
-          });
-        }
-      }
-      
-      // Navegar a la página de error con detalles del error
-      navigate("/error", {
-        state: {
-          error: event.detail.error,
-          type: event.detail.type,
-          metadata: metadata
-        }
-      });
-    };
-
-    window.addEventListener("api-error", handleApiError as EventListener);
-    return () => {
-      window.removeEventListener("api-error", handleApiError as EventListener);
-    };
-  }, [navigate]);
-
   const handleRestartApp = useCallback(async () => {
     try {
-      
-      if (!window.electron.ipcRenderer) {
+      if (!window.electron?.ipcRenderer) {
         throw new Error("IPC Renderer no disponible");
       }
 
@@ -126,50 +62,57 @@ export const ClientRootLayout = ({ children }: Props) => {
       console.error("Error al reiniciar la aplicación:", error);
       const errorEvent = new CustomEvent("api-error", {
         detail: { 
-          message: error instanceof Error ? error.message : "No se pudo reiniciar la aplicación" 
-        },
+          error: error instanceof Error ? error.message : "No se pudo reiniciar la aplicación",
+          type: 'restart-error',
+          metadata: {
+            timestamp: new Date().toISOString(),
+            originalError: error
+          }
+        }
       });
       window.dispatchEvent(errorEvent);
     }
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200 flex">
+    <ErrorHandler>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200 flex">
       {/* Sidebar - Siempre visible en escritorio */}
-      <div className="w-64 flex-shrink-0 h-screen sticky top-0 overflow-y-auto bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
+      <div className="w-64 flex-shrink-0 h-screen sticky top-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
         <Sidebar />
       </div>
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
         {/* Header - fixed */}
-        <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <Header />
-            <ThemeToggle />
-          </div>
+        <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <Header />
         </header>
 
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto">
-          <main className="p-6">
-            <ErrorBoundary>
-              <ToastProviderCustom>
-                <ContextMenuProvider>
-                  <UpdateBanner
-                    visible={updateAvailable}
-                    onRestart={handleRestartApp}
-                  />
-                  {children}
-                </ContextMenuProvider>
-              </ToastProviderCustom>
-            </ErrorBoundary>
-          </main>
+        {/* Main content area with scroll */}
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto">
+            <main className="p-6">
+              <ErrorBoundary>
+                <ToastProviderCustom>
+                  <ContextMenuProvider>
+                    <UpdateBanner
+                      visible={updateAvailable}
+                      onRestart={handleRestartApp}
+                    />
+                    {children}
+                  </ContextMenuProvider>
+                </ToastProviderCustom>
+              </ErrorBoundary>
+            </main>
+          </div>
           
-          {/* Footer */}
-          <Footer className="px-6 py-4 border-t border-gray-200 dark:border-gray-700" />
+          {/* Footer - Fixed at bottom */}
+          <Footer className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" />
+        </div>
         </div>
       </div>
-    </div>
+    </ErrorHandler>
   );
 };

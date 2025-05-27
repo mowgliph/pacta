@@ -25,6 +25,13 @@ const IPC_CHANNELS = {
       DELETE: "report:template:delete"
     }
   },
+  NOTIFICATIONS: {
+    SHOW: "notifications:show",
+    CLEAR: "notifications:clear",
+    MARK_READ: "notifications:mark-read",
+    GET_UNREAD: "notifications:get-unread"
+  },
+  
   DATA: {
     CONTRACTS: {
       LIST: "contracts:list",
@@ -34,9 +41,12 @@ const IPC_CHANNELS = {
       EXPORT: "contracts:export",
       UPLOAD: "contracts:upload",
       ARCHIVE: "contracts:archive",
+      RESTORE: "contracts:restore",
+      LIST_ARCHIVED: "contracts:list-archived",
       UPDATE_ACCESS_CONTROL: "contracts:update-access-control",
       ASSIGN_USERS: "contracts:assign-users",
       GET_BY_ID: "contracts:getById",
+      GET_ARCHIVED: "contracts:get-archived",
     },
     DOCUMENTS: {
       LIST: "documents:list",

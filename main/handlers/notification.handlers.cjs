@@ -6,7 +6,15 @@ const { AppError } = require("../utils/error-handler.cjs");
 
 function registerNotificationHandlers() {
   const eventManager = EventManager.getInstance();
-
+  
+  // Verificar si ya hay manejadores registrados
+  if (eventManager.handlers[IPC_CHANNELS.NOTIFICATIONS.GET_UNREAD]) {
+    console.log('[Notification Handlers] Los manejadores de notificaciones ya están registrados');
+    return;
+  }
+  
+  console.log('[Notification Handlers] Registrando manejadores de notificaciones');
+  
   const handlers = {
     [IPC_CHANNELS.NOTIFICATIONS.SHOW]: async (event, options) => {
       try {
@@ -120,6 +128,13 @@ function registerNotificationHandlers() {
 
   // Registrar los manejadores con el eventManager
   eventManager.registerHandlers(handlers);
+  
+  // Verificar que los manejadores se registraron correctamente
+  if (!eventManager.handlers[IPC_CHANNELS.NOTIFICATIONS.GET_UNREAD]) {
+    console.error('[Notification Handlers] Error: No se pudo registrar el manejador para', IPC_CHANNELS.NOTIFICATIONS.GET_UNREAD);
+  } else {
+    console.log('[Notification Handlers] Manejadores registrados correctamente');
+  }
 }
 
 module.exports = {

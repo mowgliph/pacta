@@ -102,7 +102,23 @@ EventManager.prototype.registerHandler = function (channel) {
 };
 
 EventManager.prototype.registerHandlers = function (handlers) {
-  this.handlers = { ...this.handlers, ...handlers };
+  console.log('[EventManager] Registrando manejadores:', Object.keys(handlers).join(', '));
+  
+  // Asegurarse de que this.handlers existe
+  if (!this.handlers) {
+    console.log('[EventManager] Inicializando this.handlers');
+    this.handlers = {};
+  }
+  
+  // Registrar cada manejador individualmente
+  Object.entries(handlers).forEach(([channel, handler]) => {
+    if (typeof handler === 'function') {
+      console.log(`[EventManager] Registrando manejador para canal: ${channel}`);
+      this.handlers[channel] = handler;
+    }
+  });
+  
+  console.log('[EventManager] Manejadores registrados exitosamente');
 };
 
 EventManager.prototype.unregisterHandler = function (channel) {

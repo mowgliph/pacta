@@ -73,13 +73,19 @@ export function SelectContractModal({ isOpen, onClose }: SelectContractModalProp
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[80vh] flex flex-col">
+      <DialogContent 
+        className="max-w-4xl max-h-[80vh] flex flex-col"
+        aria-describedby="dialog-description"
+      >
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-[#001B48]">
             Seleccionar Contrato
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
             Elija el contrato al que desea agregar un suplemento.
+          </p>
+          <p id="dialog-description" className="sr-only">
+            Se mostrará una lista de contratos. Use la barra de búsqueda para filtrar y seleccione un contrato para continuar con la creación de un suplemento.
           </p>
         </DialogHeader>
 

@@ -119,6 +119,12 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.UPLOAD, file),
     archive: (id) =>
       ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.ARCHIVE, id),
+    getArchived: (id) =>
+      ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.GET_ARCHIVED, id),
+    restore: (id) =>
+      ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.RESTORE, id),
+    listArchived: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.LIST_ARCHIVED),
     updateAccessControl: (id, data) =>
       ipcRenderer.invoke(
         IPC_CHANNELS.DATA.CONTRACTS.UPDATE_ACCESS_CONTROL,

@@ -4,14 +4,33 @@ import {
   BarChart2,
   FilePlus,
   FileText,
+  Archive,
   TrendingUp,
-  PlusCircle,
-  Search
 } from "lucide-react";
-import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
+
+// Hooks
 import { useDashboardStats } from "@/lib/useDashboardStats";
 import { useExpiringContracts } from "@/lib/useExpiringContracts";
+import { useArchivedContracts } from "@/lib/useArchivedContracts";
+import { useAuth } from "@/store/auth";
+import { useToast } from "@/components/ui/use-toast";
+
+// Componentes
+import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import DashboardCard from "@/components/ui/DashboardCard";
+
+// Modales
+import ExpiredContractsModal from "@/components/modals/ExpiredContractsModal";
+import ActiveContractsModal from "@/components/modals/ActiveContractsModal";
+import ExpiringContractsModal from "@/components/modals/ExpiringContractsModal";
+import AllContractsModal from "@/components/modals/AllContractsModal";
+import ArchivedContractsModal from "@/components/modals/ArchivedContractsModal";
+import { SelectContractModal } from "@/components/modals/SelectContractModal";
+
+// Tipos
 import type { Contract } from "@/lib/useContracts";
+import { ArchivedContract } from "@/types/contracts";
 
 type DashboardData = {
   stats: any;
@@ -23,17 +42,6 @@ type DashboardData = {
     id?: string;
   }>;
 };
-
-import { useAuth } from "@/store/auth";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import DashboardCard from "@/components/ui/DashboardCard";
-
-// Importaciones de modales
-import ExpiredContractsModal from "@/components/modals/ExpiredContractsModal";
-import ActiveContractsModal from "@/components/modals/ActiveContractsModal";
-import ExpiringContractsModal from "@/components/modals/ExpiringContractsModal";
-import AllContractsModal from "@/components/modals/AllContractsModal";
-import { SelectContractModal } from "@/components/modals/SelectContractModal";
 
 function QuickAction({
   label,
@@ -93,6 +101,7 @@ export default function DashboardPage() {
   const { data, loading: statsLoading, error } = useDashboardStats();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   // Estados y datos para los modales
   const [activeContractsModalOpen, setActiveContractsModalOpen] = useState(false);
@@ -105,30 +114,31 @@ export default function DashboardPage() {
   const [expiringLoading, setExpiringLoading] = useState(true);
   const [expiringError, setExpiringError] = useState<string | null>(null);
 
-  // Cargar contratos próximos a vencer
-  useEffect(() => {
-    const fetchExpiringContracts = async () => {
-      try {
-        setExpiringLoading(true);
-        setExpiringError(null);
+  // Función para cargar contratos próximos a vencer
+  const fetchExpiringContracts = async () => {
+    try {
+      setExpiringLoading(true);
+      setExpiringError(null);
 
-        const response = await window.electron.ipcRenderer.invoke("contracts:list", {
-          status: "Pr├│ximo a Vencer"
-        });
+      const response = await window.electron.ipcRenderer.invoke("contracts:list", {
+        status: "Proximo a Vencer"  // Sin acentos para evitar problemas de codificación
+      });
 
-        if (!response?.success) {
-          throw new Error(response?.error?.message || "Error al obtener los contratos");
-        }
-
-        setExpiringContracts(response.data || []);
-      } catch (err) {
-        console.error("Error al cargar contratos próximos a vencer:", err);
-        setExpiringError(err instanceof Error ? err.message : "Error desconocido");
-      } finally {
-        setExpiringLoading(false);
+      if (!response?.success) {
+        throw new Error(response?.error?.message || "Error al obtener los contratos");
       }
-    };
 
+      setExpiringContracts(response.data || []);
+    } catch (err) {
+      console.error("Error al cargar contratos próximos a vencer:", err);
+      setExpiringError(err instanceof Error ? err.message : "Error desconocido");
+    } finally {
+      setExpiringLoading(false);
+    }
+  };
+
+  // Cargar contratos próximos a vencer al montar el componente
+  useEffect(() => {
     fetchExpiringContracts();
   }, []);
 
@@ -137,6 +147,12 @@ export default function DashboardPage() {
   const [expiredContracts, setExpiredContracts] = useState<Contract[]>([]);
   const [expiredLoading, setExpiredLoading] = useState(true);
   const [expiredError, setExpiredError] = useState<string | null>(null);
+
+  // Estados y datos para el modal de contratos archivados
+  const [archivedModalOpen, setArchivedModalOpen] = useState(false);
+  const [archivedContracts, setArchivedContracts] = useState<ArchivedContract[]>([]);
+  const [archivedLoading, setArchivedLoading] = useState(true);
+  const [archivedError, setArchivedError] = useState<string | null>(null);
 
   // Cargar contratos vencidos
   useEffect(() => {
@@ -163,6 +179,31 @@ export default function DashboardPage() {
     };
 
     fetchExpiredContracts();
+  }, []);
+
+  // Cargar contratos archivados
+  useEffect(() => {
+    const fetchArchivedContracts = async () => {
+      try {
+        setArchivedLoading(true);
+        setArchivedError(null);
+
+        const response = await window.electron.ipcRenderer.invoke("contracts:list-archived");
+
+        if (!response?.success) {
+          throw new Error(response?.error?.message || "Error al obtener los contratos archivados");
+        }
+
+        setArchivedContracts(response.data || []);
+      } catch (err) {
+        console.error("Error al cargar contratos archivados:", err);
+        setArchivedError(err instanceof Error ? err.message : "Error desconocido");
+      } finally {
+        setArchivedLoading(false);
+      }
+    };
+
+    fetchArchivedContracts();
   }, []);
 
   // Estados y datos para los modales
@@ -196,6 +237,10 @@ export default function DashboardPage() {
 
   // Abrir modal de contratos próximos a vencer
   const handleOpenExpiringContractsModal = () => {
+    // Asegurarse de que los contratos estén cargados antes de abrir el modal
+    if (expiringContracts.length === 0 && !expiringLoading && !expiringError) {
+      fetchExpiringContracts();
+    }
     setExpiringModalOpen(true);
   };
 
@@ -285,12 +330,10 @@ export default function DashboardPage() {
       console.error("Error al cargar todos los contratos:", err);
       setAllContractsError("Error al cargar los contratos. Intente nuevamente.");
       setAllContractsModalOpen(true);
-    } finally {
-      setAllContractsLoading(false);
     }
   };
 
-  // Exportar contratos vencidos a PDF
+  // Handler para exportar contratos vencidos a PDF
   const handleExportExpiredContractsPDF = async (contracts: Contract[]) => {
     if (!contracts.length) {
       alert("No hay contratos vencidos para exportar");
@@ -298,7 +341,6 @@ export default function DashboardPage() {
     }
 
     try {
-      // Exportar contratos usando el canal de reportes
       const result = await window.electron.ipcRenderer.invoke(
         "export:pdf",
         {
@@ -317,6 +359,62 @@ export default function DashboardPage() {
       console.error("Error al exportar PDF:", err);
       alert(`Error al exportar el reporte: ${err instanceof Error ? err.message : 'Error desconocido'}`);
     }
+  };
+
+  // Handler para exportar contratos archivados a PDF
+  const handleExportArchivedContractsPDF = async (contracts: ArchivedContract[]) => {
+    if (!contracts.length) {
+      alert("No hay contratos archivados para exportar");
+      return;
+    }
+
+    try {
+      // Obtener la ruta del archivo usando el canal IPC
+      const result = await window.electron.ipcRenderer.invoke("dialog:save-file", {
+        title: "Exportar contratos archivados como PDF",
+        defaultPath: `Contratos_Archivados_${new Date().toISOString().slice(0, 10)}.pdf`,
+        filters: [{ name: "PDF", extensions: ["pdf"] }]
+      });
+
+      if (!result?.success || !result?.filePath) {
+        return; // Usuario canceló el diálogo o error
+      }
+
+      // Exportar contratos usando el canal de reportes
+      const exportResult = await window.electron.ipcRenderer.invoke(
+        "export:pdf",
+        {
+          data: contracts,
+          template: 'contracts-archived',
+          filePath: result.filePath
+        }
+      );
+
+      if (!exportResult?.success) {
+        throw new Error(exportResult?.error?.message || "Error al exportar los contratos");
+      }
+
+      // Mostrar notificación de éxito
+      toast({
+        title: "Exportación exitosa",
+        description: `Se exportaron ${contracts.length} contratos archivados correctamente`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Error al exportar contratos archivados:", error);
+      
+      // Mostrar notificación de error
+      toast({
+        title: "Error al exportar",
+        description: `No se pudieron exportar los contratos: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Handler para abrir el modal de contratos archivados
+  const handleOpenArchivedContractsModal = () => {
+    setArchivedModalOpen(true);
   };
 
   // Exportar todos los contratos a PDF
@@ -399,103 +497,115 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-8">
       {/* Sección 1: Estadísticas generales */}
-      <section className="flex flex-wrap gap-6 animate-fade-in">
-        {statsLoading ? (
-          <div className="text-[#757575]">Cargando estadísticas...</div>
-        ) : error ? (
-          <>
-            <Alert variant="destructive" className="mb-4">
-              <AlertTitle>Error al cargar estadísticas</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-            {/* Mostrar tarjetas con valores en 0 */}
-            <DashboardCard
-              title="Contratos Vigentes"
-              count={0}
-              icon={<BarChart2 size={28} className="text-[#018ABE]" />}
-              color="bg-[#018ABE]"
-              onClick={handleOpenActiveContractsModal}
-            />
-            <DashboardCard
-              title="Contratos Próximos a Vencer"
-              count={0}
-              icon={<TrendingUp size={28} className="text-[#FF9800]" />}
-              color="bg-[#FF9800]"
-              onClick={handleOpenExpiringContractsModal}
-            />
-            <DashboardCard
-              title="Total Contratos"
-              count={0}
-              icon={<BarChart2 size={28} className="text-[#018ABE]" />}
-              color="bg-[#018ABE]"
-              onClick={handleOpenAllContractsModal}
-            />
-            <DashboardCard
-              title="Contratos Vencidos"
-              count={0}
-              icon={<FileText className="h-5 w-5" />}
-              color="bg-red-100 text-red-600"
-              onClick={handleOpenExpiredContractsModal}
-            />
-          </>
-        ) : data?.totals ? (
-          <>
-            <DashboardCard
-              title="Contratos Vigentes"
-              count={data.totals.active || 0}
-              icon={<BarChart2 size={28} className="text-[#018ABE]" />}
-              color="bg-[#018ABE]"
-              onClick={handleOpenActiveContractsModal}
-            />
-            <DashboardCard
-              title="Contratos Próximos a Vencer"
-              count={data.totals.expiring || 0}
-              icon={<TrendingUp size={28} className="text-[#FF9800]" />}
-              color="bg-[#FF9800]"
-              onClick={handleOpenExpiringContractsModal}
-            />
-            <DashboardCard
-              title="Contratos Vencidos"
-              count={data.totals.expired || 0}
-              icon={<FileText className="h-5 w-5" />}
-              color="bg-red-100 text-red-600"
-              onClick={handleOpenExpiredContractsModal}
-            />
-            <DashboardCard
-              title="Total Contratos"
-              count={data.totals.total || 0}
-              icon={<BarChart2 size={28} className="text-[#018ABE]" />}
-              color="bg-[#018ABE]"
-              onClick={handleOpenAllContractsModal}
-            />
-          </>
-        ) : null
-      }
+      <section className="w-full overflow-x-auto pb-4">
+        <div className="flex gap-6 min-w-max animate-fade-in">
+          {statsLoading ? (
+            <div className="text-[#757575]">Cargando estadísticas...</div>
+          ) : error ? (
+            <>
+              <Alert variant="destructive" className="mb-4">
+                <AlertTitle>Error al cargar estadísticas</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+              {/* Mostrar tarjetas con valores en 0 */}
+              <div className="flex gap-6">
+                <DashboardCard
+                  title="Total Contratos"
+                  count={0}
+                  icon={<BarChart2 size={28} className="text-[#018ABE]" />}
+                  color="bg-[#018ABE]"
+                  onClick={handleOpenAllContractsModal}
+                />
+                <DashboardCard
+                  title="Vigentes"
+                  count={0}
+                  icon={<BarChart2 size={28} className="text-[#4CAF50]" />}
+                  color="bg-[#4CAF50]"
+                  onClick={handleOpenActiveContractsModal}
+                />
+                <DashboardCard
+                  title="Próximos a Vencer"
+                  count={0}
+                  icon={<TrendingUp size={28} className="text-[#FF9800]" />}
+                  color="bg-[#FF9800]"
+                  onClick={handleOpenExpiringContractsModal}
+                />
+                <DashboardCard
+                  title="Vencidos"
+                  count={0}
+                  icon={<FileText size={28} className="text-red-600" />}
+                  color="bg-red-100 text-red-600"
+                  onClick={handleOpenExpiredContractsModal}
+                />
+                <DashboardCard
+                  title="Archivados"
+                  count={0}
+                  icon={<Archive size={28} className="text-[#757575]" />}
+                  color="bg-gray-100 text-[#757575]"
+                  onClick={handleOpenArchivedContractsModal}
+                />
+              </div>
+            </>
+          ) : data?.totals ? (
+            <>
+              <DashboardCard
+                title="Total Contratos"
+                count={data.totals.total || 0}
+                icon={<BarChart2 size={28} className="text-[#018ABE]" />}
+                color="bg-[#018ABE]"
+                onClick={handleOpenAllContractsModal}
+              />
+              <DashboardCard
+                title="Vigentes"
+                count={data.totals.active || 0}
+                icon={<BarChart2 size={28} className="text-[#4CAF50]" />}
+                color="bg-[#4CAF50]"
+                onClick={handleOpenActiveContractsModal}
+              />
+              <DashboardCard
+                title="Próximos a Vencer"
+                count={data.totals.expiring || 0}
+                icon={<TrendingUp size={28} className="text-[#FF9800]" />}
+                color="bg-[#FF9800]"
+                onClick={handleOpenExpiringContractsModal}
+              />
+              <DashboardCard
+                title="Vencidos"
+                count={data.totals.expired || 0}
+                icon={<FileText size={28} className="text-red-600" />}
+                color="bg-red-100 text-red-600"
+                onClick={handleOpenExpiredContractsModal}
+              />
+              <DashboardCard
+                title="Archivados"
+                count={data.totals.archived || 0}
+                icon={<Archive size={28} className="text-[#757575]" />}
+                color="bg-gray-100 text-[#757575]"
+                onClick={handleOpenArchivedContractsModal}
+              />
+            </>
+          ) : null}
+        </div>
       </section>
 
-      {/* Sección 2: Acciones rápidas */}      <section className="flex flex-wrap gap-4 animate-fade-in-up">
+      {/* Sección 2: Acciones rápidas */}
+      <section className="flex flex-wrap gap-4 mb-8">
         <QuickAction
           label="Nuevo Contrato"
           icon={<FilePlus size={20} className="text-[#018ABE]" />}
-          color=""
-          onClick={() => requireAuth(() => navigate("/contracts/new"))}
+          color="bg-white hover:bg-[#D6E8EE]"
+          onClick={() => navigate("/contracts/new")}
         />
         <QuickAction
           label="Nuevo Suplemento"
-          icon={<PlusCircle size={20} className="text-[#02457A]" />}
-          color=""
-          onClick={() => requireAuth(() => setSelectContractModalOpen(true))}
+          icon={<FilePlus size={20} className="text-[#4CAF50]" />}
+          color="bg-white hover:bg-[#E8F5E9]"
+          onClick={() => navigate("/supplements/new")}
         />
         <QuickAction
-          label="Buscar Contrato"
-          icon={<Search size={20} className="text-[#001B48]" />}
-          color=""
-          onClick={() => navigate("/contracts")}
-        />
-        <QuickAction
-          label="Ver Estadísticas Avanzadas"
+          label="Ver Estadísticas"
           icon={<BarChart2 size={20} className="text-[#018ABE]" />}
-          color=""
+          color="bg-white hover:bg-[#D6E8EE]"
           onClick={() => navigate("/statistics")}
         />
       </section>
@@ -542,21 +652,19 @@ export default function DashboardPage() {
         onClose={() => setActiveContractsModalOpen(false)}
         contracts={activeContracts}
         onExportPDF={handleExportActiveContractsPDF}
-        title="Contratos Vigentes"
+        title="Vigentes"
       />
       
       {/* Modal de contratos próximos a vencer */}
-      {showExpiringCard && (
-        <ExpiringContractsModal
-          isOpen={expiringModalOpen}
-          onClose={() => setExpiringModalOpen(false)}
-          contracts={expiringContracts}
-          loading={expiringLoading}
-          error={expiringError}
-          onExportPDF={handleExportExpiringContractsPDF}
-          title="Contratos Próximos a Vencer"
-        />
-      )}
+      <ExpiringContractsModal
+        isOpen={expiringModalOpen}
+        onClose={() => setExpiringModalOpen(false)}
+        contracts={expiringContracts}
+        loading={expiringLoading}
+        error={expiringError}
+        onExportPDF={handleExportExpiringContractsPDF}
+        title="Próximos a Vencer"
+      />
 
       {/* Modal de contratos vencidos */}
       <ExpiredContractsModal
@@ -566,6 +674,7 @@ export default function DashboardPage() {
         loading={expiredLoading}
         error={expiredError}
         onExportPDF={handleExportExpiredContractsPDF}
+        title="Expirados"
       />
 
       {/* Modal de todos los contratos */}
@@ -576,13 +685,23 @@ export default function DashboardPage() {
         loading={allContractsLoading}
         error={allContractsError}
         onExportPDF={handleExportAllContractsPDF}
-        title="Todos los Contratos"
+        title="Contratos"
       />
 
       {/* Modal para seleccionar contrato al crear un suplemento */}
       <SelectContractModal 
         isOpen={selectContractModalOpen} 
         onClose={() => setSelectContractModalOpen(false)} 
+      />
+
+      {/* Modal de contratos archivados */}
+      <ArchivedContractsModal
+        isOpen={archivedModalOpen}
+        onClose={() => setArchivedModalOpen(false)}
+        contracts={archivedContracts}
+        loading={archivedLoading}
+        error={archivedError}
+        onExportPDF={handleExportArchivedContractsPDF}
       />
     </div>
   );

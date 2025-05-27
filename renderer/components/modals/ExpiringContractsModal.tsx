@@ -49,6 +49,10 @@ const ExpiringContractsModal: React.FC<ExpiringContractsModalProps> = ({
 
   // Ver detalle de un contrato específico
   const handleViewContractDetail = (id: string) => {
+    if (!id) {
+      console.error("ID de contrato no válido");
+      return;
+    }
     navigate(`/contracts/${id}`);
     onClose();
   };
@@ -62,6 +66,7 @@ const ExpiringContractsModal: React.FC<ExpiringContractsModalProps> = ({
       await onExportPDF(contracts);
     } catch (error) {
       console.error("Error al exportar a PDF:", error);
+      // Mostrar mensaje de error al usuario
     } finally {
       setExporting(false);
     }
@@ -89,12 +94,23 @@ const ExpiringContractsModal: React.FC<ExpiringContractsModalProps> = ({
 
         <div className="py-4">
           {loading ? (
-            <div className="flex justify-center items-center py-10">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FF9800]"></div>
+            <div className="flex flex-col items-center justify-center py-10 space-y-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#018ABE]"></div>
+              <p className="text-[#757575]">Cargando contratos...</p>
             </div>
           ) : error ? (
-            <div className="bg-[#F44336]/10 text-[#F44336] p-4 rounded-lg text-sm">
-              {error}
+            <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg text-sm flex flex-col space-y-2">
+              <div className="flex items-center">
+                <AlertTriangle className="h-5 w-5 mr-2" />
+                <span className="font-medium">Error al cargar los contratos</span>
+              </div>
+              <p>{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="mt-2 px-4 py-2 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-sm font-medium"
+              >
+                Reintentar
+              </button>
             </div>
           ) : contracts.length === 0 ? (
             <div className="text-center py-10 text-[#757575] font-roboto">

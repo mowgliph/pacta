@@ -1,4 +1,3 @@
-"use client";
 import { useEffect, useState } from "react";
 import type { Contract } from "./useContracts";
 import { handleIpcResponse } from "./handleIpcResponse";

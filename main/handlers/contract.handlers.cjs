@@ -52,7 +52,86 @@ function registerContractHandlers() {
   fs.mkdir(CONTRACTS_ATTACHMENTS_DIR, { recursive: true }).catch(console.error);
 
   // Handlers principales
-  const handlers = {
+  // Obtener contratos archivados
+const getArchivedContracts = async (filters = {}) => {
+  const { search = '', page = 1, limit = 10 } = filters;
+  const skip = (page - 1) * limit;
+  
+  const where = {
+    status: 'Archivado',
+    OR: search ? [
+      { contractNumber: { contains: search, mode: 'insensitive' } },
+      { companyName: { contains: search, mode: 'insensitive' } },
+      { description: { contains: search, mode: 'insensitive' } }
+    ] : undefined
+  };
+
+  const [contracts, total] = await Promise.all([
+    prisma.contract.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { updatedAt: 'desc' },
+      include: {
+        owner: { select: { name: true, email: true } },
+        createdBy: { select: { name: true, email: true } }
+      }
+    }),
+    prisma.contract.count({ where })
+  ]);
+
+  return {
+    contracts,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit)
+  };
+};
+
+// Archivar un contrato
+const archiveContract = async (contractId) => {
+  const contract = await prisma.contract.findUnique({
+    where: { id: contractId }
+  });
+
+  if (!contract) {
+    throw new Error('Contrato no encontrado');
+  }
+
+  return prisma.contract.update({
+    where: { id: contractId },
+    data: {
+      status: 'Archivado',
+      updatedAt: new Date()
+    }
+  });
+};
+
+// Restaurar un contrato archivado
+const restoreContract = async (contractId) => {
+  const contract = await prisma.contract.findUnique({
+    where: { id: contractId }
+  });
+
+  if (!contract) {
+    throw new Error('Contrato no encontrado');
+  }
+
+  // Verificar si el contrato está vencido
+  const now = new Date();
+  const isExpired = new Date(contract.endDate) < now;
+  
+  return prisma.contract.update({
+    where: { id: contractId },
+    data: {
+      status: isExpired ? 'Vencido' : 'Vigente',
+      updatedAt: new Date()
+    }
+  });
+};
+
+const handlers = {
     [IPC_CHANNELS.DATA.CONTRACTS.LIST]: async (event, { page = 1, limit = 10, search = "" }) => {
       try {
         const skip = (page - 1) * limit;
@@ -110,6 +189,73 @@ function registerContractHandlers() {
         };
       }
     },
+    // Listar contratos archivados
+    [IPC_CHANNELS.DATA.CONTRACTS.LIST_ARCHIVED]: async (event, filters = {}) => {
+      try {
+        const result = await getArchivedContracts(filters);
+        return { success: true, data: result };
+      } catch (error) {
+        console.error('Error al listar contratos archivados:', error);
+        return {
+          success: false,
+          error: {
+            message: error.message || 'Error al listar contratos archivados',
+            code: 'ARCHIVED_CONTRACTS_LIST_ERROR'
+          }
+        };
+      }
+    },
+
+    // Archivar un contrato
+    [IPC_CHANNELS.DATA.CONTRACTS.ARCHIVE]: async (event, contractId) => {
+      try {
+        if (!contractId) {
+          throw new Error('ID de contrato no proporcionado');
+        }
+        
+        const contract = await archiveContract(contractId);
+        
+        // Emitir evento de contrato archivado
+        eventManager.emit('contract:archived', contract);
+        
+        return { success: true, data: contract };
+      } catch (error) {
+        console.error('Error al archivar contrato:', error);
+        return {
+          success: false,
+          error: {
+            message: error.message || 'Error al archivar el contrato',
+            code: 'ARCHIVE_CONTRACT_ERROR'
+          }
+        };
+      }
+    },
+
+    // Restaurar un contrato archivado
+    [IPC_CHANNELS.DATA.CONTRACTS.RESTORE]: async (event, contractId) => {
+      try {
+        if (!contractId) {
+          throw new Error('ID de contrato no proporcionado');
+        }
+        
+        const contract = await restoreContract(contractId);
+        
+        // Emitir evento de contrato restaurado
+        eventManager.emit('contract:restored', contract);
+        
+        return { success: true, data: contract };
+      } catch (error) {
+        console.error('Error al restaurar contrato:', error);
+        return {
+          success: false,
+          error: {
+            message: error.message || 'Error al restaurar el contrato',
+            code: 'RESTORE_CONTRACT_ERROR'
+          }
+        };
+      }
+    },
+
     [IPC_CHANNELS.DATA.CONTRACTS.LIST]: async (event, filters = {}) => {
       try {
         console.log('=== INICIO listar contratos ===');
@@ -137,9 +283,9 @@ function registerContractHandlers() {
         const validFilters = ['type', 'status', 'id', 'number', 'company'];
         Object.entries(filters).forEach(([key, value]) => {
           if (validFilters.includes(key) && value !== undefined) {
-            // Manejar el caso especial de "Próximo a Vencer"
-            if (key === 'status' && value === 'Próximo a Vencer') {
-              where[key] = 'Próximo a Vencer';
+            // Manejar el caso especial de "Proximo a Vencer"
+            if (key === 'status' && value === 'Proximo a Vencer') {
+              where[key] = 'Proximo a Vencer';
             } else {
               where[key] = value;
             }

@@ -51,6 +51,7 @@ export interface StatisticsDashboard {
       active: number;
       expiring: number;
       expired: number;
+      archived: number;
     };
     distribution: {
       client: number;
@@ -327,6 +328,7 @@ declare global {
       backups: BackupsApi;
       theme: ThemeApi;
       api: GenericApi;
+      licenses: LicenseApi;
     };
   }
 }

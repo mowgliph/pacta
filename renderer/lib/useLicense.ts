@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { License, LicenseStatus } from '@/types/electron.d.ts';
-import type { ApiResponse } from '@/types/electron.d.ts';
 
 // Función auxiliar para convertir License a LicenseStatus
 function convertToLicenseStatus(data: License | LicenseStatus): LicenseStatus {
@@ -30,7 +29,7 @@ export function useLicense() {
     try {
       setIsLoading(true);
       setError(null);
-      const status = await window.electron.license.getLicenseStatus();
+      const status = await window.electron.licenses.getLicenseStatus();
       if (status.success && status.data) {
         const licenseStatus = convertToLicenseStatus(status.data);
         setLicenseStatus(licenseStatus);
@@ -54,7 +53,7 @@ export function useLicense() {
     try {
       setIsLoading(true);
       setError(null);
-      const result = await window.electron.license.validateLicense(licenseData);
+      const result = await window.electron.licenses.validateLicense(licenseData);
       if (result.success && result.data) {
         const licenseStatus = convertToLicenseStatus(result.data);
         setLicenseStatus(licenseStatus);
@@ -74,7 +73,7 @@ export function useLicense() {
     try {
       setIsLoading(true);
       setError(null);
-      const result = await window.electron.license.revokeLicense(licenseNumber);
+      const result = await window.electron.licenses.revokeLicense(licenseNumber);
       if (result.success) {
         setLicenseStatus(null);
         return true;
@@ -96,7 +95,7 @@ export function useLicense() {
       if (!licenseStatus?.licenseNumber) {
         throw new Error('No hay licencia activa para exportar');
       }
-      const result = await window.electron.license.getLicenseInfo(licenseStatus.licenseNumber);
+      const result = await window.electron.licenses.getLicenseInfo(licenseStatus.licenseNumber);
       if (result.success && result.data) {
         return result.data;
       }
