@@ -1,6 +1,9 @@
 const { app, nativeTheme, ipcMain } = require("electron");
 const { AppManager } = require("./app-manager.cjs");
 const { EventManager } = require("./events/event-manager.cjs");
+const { registerAppHandlers } = require("./handlers/app.handlers.cjs");
+const { registerBackupHandlers } = require("./handlers/backup.handlers.cjs");
+const { registerThemeHandlers } = require("./handlers/theme.handlers.cjs");
 const { registerAuthHandlers } = require("./handlers/auth.handlers.cjs");
 const {
   registerContractHandlers,
@@ -24,11 +27,9 @@ const {
   registerSecurityHandlers,
 } = require("./handlers/security.handlers.cjs");
 const { registerStoreHandlers } = require("./handlers/store.handlers.cjs");
-const {
-  registerValidationHandlers,
-} = require("./handlers/validation.handlers.cjs");
+const { registerValidationHandlers } = require("./handlers/validation.handlers.cjs");
+const { registerReportHandlers } = require("./handlers/reportHandler.cjs");
 const { initPrisma } = require("./utils/prisma.cjs");
-const ElectronStore = require("electron-store");
 const { autoUpdater } = require("electron-updater");
 
 /**
@@ -37,11 +38,8 @@ const { autoUpdater } = require("electron-updater");
  */
 async function main() {
   try {
-    // console.info("[DEBUG] Inicio de main()");
     // Prevenir múltiples instancias de la aplicación
     const gotTheLock = app.requestSingleInstanceLock();
-    // console.info("[DEBUG] requestSingleInstanceLock:", gotTheLock);
-
     if (!gotTheLock) {
       console.info(
         "Otra instancia ya está en ejecución. Cerrando esta instancia."
@@ -81,65 +79,18 @@ async function main() {
       });
     });
 
-    // console.info("[DEBUG] Antes de AppManager.getInstance()");
-    const appManager = AppManager.getInstance();
-    // console.info("[DEBUG] Después de AppManager.getInstance()");
-
-    // console.info("[DEBUG] Antes de EventManager.getInstance()");
-    const eventManager = EventManager.getInstance();
-    // console.info("[DEBUG] Después de EventManager.getInstance()");
-
-    // console.info("[DEBUG] Antes de initPrisma()");
     const dbOk = await initPrisma();
-    // console.info("[DEBUG] Después de initPrisma():", dbOk);
     if (!dbOk) {
       console.error("No se pudo conectar a la base de datos. Abortando.");
       app.quit();
       return;
     }
 
-    // console.info("[DEBUG] Antes de registrar manejadores de eventos");
-    registerAuthHandlers(eventManager);
-    registerContractHandlers(eventManager);
-    registerDocumentHandlers(eventManager);
-    registerUserHandlers(eventManager);
-    registerSystemHandlers(eventManager);
-    registerNotificationHandlers(eventManager);
-    registerRoleHandlers(eventManager);
-    registerSupplementHandlers(eventManager);
-    registerStatisticsHandlers(eventManager);
-    registerSecurityHandlers(eventManager);
-    registerStoreHandlers(eventManager);
-    registerValidationHandlers(eventManager);
-    // console.info("[DEBUG] Después de registrar manejadores de eventos");
-
-    // console.info("[DEBUG] Antes de instanciar ElectronStore");
-    console.log("ElectronStore:", ElectronStore);
-    const themeStore = new ElectronStore({
-      name: "theme-preference",
-    });
-    // console.info("[DEBUG] Después de instanciar ElectronStore");
-
-    const savedTheme = themeStore.get("theme");
-    if (savedTheme && ["light", "dark", "system"].includes(savedTheme)) {
-      nativeTheme.themeSource = savedTheme;
-    }
-
-    ipcMain.handle("theme:get-system", () => {
-      return nativeTheme.shouldUseDarkColors ? "dark" : "light";
-    });
-    ipcMain.handle("theme:set-app", (event, theme) => {
-      if (["light", "dark", "system"].includes(theme)) {
-        nativeTheme.themeSource = theme;
-        themeStore.set("theme", theme);
-        return { success: true };
-      }
-      return { success: false, error: "Tema no válido" };
-    });
-
-    // console.info("[DEBUG] Antes de appManager.initialize()");
+    const eventManager = new EventManager();
+    const appManager = new AppManager(eventManager);
+    
+    // Inicializar la aplicación (los manejadores se registrarán durante la inicialización)
     await appManager.initialize();
-    // console.info("[DEBUG] Después de appManager.initialize()");
 
     autoUpdater.on("update-available", () => {
       appManager.notifyUpdateAvailable();

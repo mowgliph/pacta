@@ -8,10 +8,11 @@ const { backupService } = require("./utils/backup-service.cjs");
 
 // Clase para gestionar el ciclo de vida de la aplicación Electron
 // Implementa el patrón Singleton para garantizar una única instancia
-function AppManager() {
-  if (!(this instanceof AppManager)) return new AppManager();
+function AppManager(eventManager) {
+  if (!(this instanceof AppManager)) return new AppManager(eventManager);
   this.windowManager = WindowManager.getInstance();
   this.securityManager = securityManager;
+  this.eventManager = eventManager;
   this.errorHandler = null;
   this.mainWindow = null;
 
@@ -22,9 +23,9 @@ function AppManager() {
 
 AppManager._instance = null;
 
-AppManager.getInstance = function () {
+AppManager.getInstance = function (eventManager) {
   if (!AppManager._instance) {
-    AppManager._instance = new AppManager();
+    AppManager._instance = new AppManager(eventManager);
   }
   return AppManager._instance;
 };
@@ -35,10 +36,28 @@ AppManager.prototype.initialize = async function () {
     if (!app.isReady()) {
       await this.waitForAppReady();
     }
+    
+    // Configurar seguridad
     this.securityManager.setupSecurity();
+    
+    // Crear ventana principal
     this.mainWindow = await this.windowManager.createMainWindow();
+    
+    // Configurar manejadores de eventos
+    if (this.eventManager) {
+      console.log('[AppManager] EventManager está disponible, inicializando handlers...');
+      const { setupIpcHandlers } = require('./handlers');
+      setupIpcHandlers(this.mainWindow, this.eventManager);
+      console.log('[AppManager] Handlers inicializados');
+    } else {
+      console.error('[AppManager] EventManager no está disponible');
+      throw new Error('EventManager no está disponible para inicializar handlers');
+    }
+    
+    // Configurar manejadores de errores y respaldo automático
     this.setupErrorHandler();
     this.setupAutoBackup();
+    
     console.info("Aplicación PACTA inicializada correctamente");
   } catch (error) {
     console.error(

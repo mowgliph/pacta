@@ -1,14 +1,6 @@
 import { create } from "zustand";
-
-// Definir tipos para el usuario
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  role: 'admin' | 'ra' | 'user';
-  avatar?: string;
-  permissions?: string[];
-}
+import { authApi } from "@/api/auth.api";
+import { User } from "@/api/common";
 
 interface AuthState {
   user: User | null;
@@ -36,18 +28,26 @@ export const useAuth = create<AuthState>((set, get) => ({
   login: async (credentials) => {
     set({ loading: true, error: null });
     try {
-      // @ts-ignore
-      const res = await window.Electron.auth.login(credentials);
-      console.log('Respuesta de login:', res);
+      const response = await authApi.login(credentials);
+      console.log('Respuesta de login:', response);
       
-      if (res.success && res.data?.user && res.data?.token) {
-        const user = res.data.user;
-        const token = res.data.token;
-        const isAdmin = user.role === 'admin';
-        const isRA = user.role === 'ra';
+      if (response.success && response.data) {
+        const { user, token } = response.data;
+        const isAdmin = user.roleId === 'admin';
+        const isRA = user.roleId === 'ra';
+        
+        const userData: User = {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          roleId: user.roleId,
+          isActive: user.isActive,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt
+        };
         
         set({ 
-          user, 
+          user: userData, 
           token, 
           isAuthenticated: true,
           isAdmin,
@@ -59,12 +59,13 @@ export const useAuth = create<AuthState>((set, get) => ({
         localStorage.setItem('authToken', token);
         return true;
       } else {
-        const errorMessage = res.error || 'Credenciales incorrectas';
+        const errorMessage = response.error?.message || 'Credenciales incorrectas';
         set({ error: errorMessage, loading: false });
         return false;
       }
     } catch (e: any) {
-      const errorMessage = e.message || 'Error de conexión con el servidor';
+      console.error('Error en login:', e);
+      const errorMessage = e?.response?.data?.message || e.message || 'Error de conexión con el servidor';
       set({ error: errorMessage, loading: false });
       return false;
     }
@@ -72,8 +73,7 @@ export const useAuth = create<AuthState>((set, get) => ({
 
   logout: async () => {
     try {
-      // @ts-ignore
-      await window.Electron.auth.logout();
+      await authApi.logout();
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
     } finally {
@@ -97,16 +97,26 @@ export const useAuth = create<AuthState>((set, get) => ({
 
     set({ loading: true });
     try {
-      // @ts-ignore
-      const res = await window.Electron.auth.verify();
+      const response = await authApi.verify(token);
       
-      if (res.success && res.user) {
-        const isAdmin = res.user.role === 'admin';
-        const isRA = res.user.role === 'ra';
+      if (response.success && response.data?.user) {
+        const { user } = response.data;
+        const isAdmin = user.roleId === 'admin';
+        const isRA = user.roleId === 'ra';
+        
+        const userData: User = {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          roleId: user.roleId,
+          isActive: user.isActive,
+          createdAt: user.createdAt,
+          updatedAt: user.updatedAt
+        };
         
         set({ 
-          user: res.user, 
-          token: res.token || token,
+          user: userData,
+          token,
           isAuthenticated: true,
           isAdmin,
           isRA,
@@ -117,13 +127,27 @@ export const useAuth = create<AuthState>((set, get) => ({
       
       // Si la verificación falla, limpiar el token
       localStorage.removeItem('authToken');
-      set({ user: null, token: null, isAuthenticated: false, loading: false });
+      set({ 
+        user: null, 
+        token: null, 
+        isAuthenticated: false,
+        isAdmin: false,
+        isRA: false,
+        loading: false 
+      });
       return false;
       
     } catch (error) {
       console.error('Error al verificar la sesión:', error);
       localStorage.removeItem('authToken');
-      set({ user: null, token: null, isAuthenticated: false, loading: false });
+      set({ 
+        user: null, 
+        token: null, 
+        isAuthenticated: false,
+        isAdmin: false,
+        isRA: false,
+        loading: false 
+      });
       return false;
     }
   },

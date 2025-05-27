@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, Download, ExternalLink, Search } from "lucide-react";
 import { Contract } from "@/lib/useContracts";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -29,7 +29,7 @@ const AllContractsModal: React.FC<AllContractsModalProps> = ({
   loading = false,
   error = null,
   onExportPDF,
-  title = "Todos los Contratos",
+  title = "Contratos",
 }) => {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
@@ -92,72 +92,70 @@ const AllContractsModal: React.FC<AllContractsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px]" aria-describedby="dialog-description">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-[#001B48]">
             {title}
           </DialogTitle>
+          <DialogDescription id="dialog-description">
+            Lista de {title.toLowerCase()} con opciones de búsqueda, exportación y navegación.
+          </DialogDescription>
         </DialogHeader>
 
         {/* Barra de búsqueda */}
-        <div className="flex items-center bg-white rounded-lg border border-[#E5E5E5] px-3 py-2 gap-2 mb-4">
-          <Search size={18} className="text-[#757575]" />
-          <input
-            type="text"
-            placeholder="Buscar por número, empresa o descripción..."
-            className="outline-none border-none bg-transparent text-sm w-full"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            aria-label="Buscar contratos"
-          />
+        <div className="px-4 py-3 border-b border-gray-100">
+          <div className="flex items-center gap-2">
+            <Search className="w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar contratos..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 px-3 py-1.5 border border-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-azul-medio focus:border-transparent"
+            />
+          </div>
         </div>
 
         {/* Contenido principal */}
-        <div className="max-h-[400px] overflow-y-auto">
+        <div className="px-4 py-3">
           {loading ? (
-            <div className="flex justify-center items-center py-8">
-              <Spinner size="lg" />
+            <div className="flex justify-center">
+              <Spinner />
             </div>
           ) : error ? (
-            <div className="text-[#F44336] p-4 bg-[#F44336]/10 rounded-md">
+            <div className="text-red-500 text-center">
               {error}
             </div>
-          ) : paginatedContracts.length === 0 ? (
-            <div className="text-[#757575] text-center py-8">
-              No se encontraron contratos.
+          ) : filteredContracts.length === 0 ? (
+            <div className="text-gray-500 text-center">
+              No se encontraron contratos con los filtros actuales
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-4">
               {paginatedContracts.map((contract) => (
                 <div
-                  key={contract.id}
-                  className="bg-[#F9FBFC] p-4 rounded-lg border border-[#E5E5E5] hover:border-[#018ABE] transition-colors cursor-pointer"
-                  onClick={() => viewContractDetail(contract.id)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") viewContractDetail(contract.id);
-                  }}
+                  key={contract.id || `contract-${contract.number}-${contract.company}`}
+                  className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm border border-gray-100 hover:bg-gray-50"
                 >
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-medium text-[#001B48]">
-                        {contract.number}
-                      </h3>
-                      <p className="text-sm text-[#757575]">{contract.company}</p>
+                  <div>
+                    <div className="font-medium text-gray-900">
+                      {contract.number}
                     </div>
-                    <div className="text-sm text-[#757575]">
-                      {formatDate(contract.endDate)}
+                    <div className="text-sm text-gray-500">
+                      {contract.company}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {contract.description}
                     </div>
                   </div>
-                  <div className="mt-2 text-sm text-[#757575] line-clamp-1">
-                    {contract.description}
-                  </div>
-                  <div className="mt-2 text-right text-sm font-medium text-[#018ABE]">
-                    {contract.amount.toLocaleString("es-ES", {
-                      style: "currency",
-                      currency: "USD",
-                    })}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => viewContractDetail(contract.id)}
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -166,45 +164,62 @@ const AllContractsModal: React.FC<AllContractsModalProps> = ({
         </div>
 
         {/* Paginación */}
-        {!loading && !error && totalPages > 1 && (
-          <div className="flex justify-center gap-2 mt-4">
-            <button
-              className="px-3 py-1 rounded bg-[#D6E8EE] text-[#001B48] disabled:opacity-50"
+        <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
+          <div className="text-sm text-gray-500">
+            Página {page} de {totalPages}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              aria-label="Página anterior"
             >
               Anterior
-            </button>
-            <span className="px-2 text-sm text-[#757575]">
-              Página {page} de {totalPages}
-            </span>
-            <button
-              className="px-3 py-1 rounded bg-[#D6E8EE] text-[#001B48] disabled:opacity-50"
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              aria-label="Página siguiente"
             >
               Siguiente
-            </button>
+            </Button>
           </div>
-        )}
+        </div>
 
-        {/* Acciones del pie */}
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            variant="outline"
-            onClick={handleExportPDF}
-            disabled={loading || exporting || paginatedContracts.length === 0}
-            className="flex items-center gap-1"
-          >
-            <Download size={16} />
-            {exporting ? "Exportando..." : "Exportar PDF"}
+        {/* Footer */}
+        <DialogFooter className="flex justify-between">
+          <Button variant="outline" onClick={onClose}>
+            Cerrar
           </Button>
-          <Button onClick={navigateToContracts} className="flex items-center gap-1">
-            <ExternalLink size={16} />
-            Ver todos
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={navigateToContracts}
+              className="flex items-center gap-2"
+            >
+              <FileText className="w-4 h-4" />
+              Ver todos los contratos
+            </Button>
+            <Button
+              onClick={handleExportPDF}
+              disabled={exporting || filteredContracts.length === 0}
+              className="flex items-center gap-2"
+            >
+              {exporting ? (
+                <>
+                  <Spinner className="w-4 h-4" />
+                  Exportando...
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4" />
+                  Exportar PDF
+                </>
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -1,366 +1,149 @@
+// En renderer/app/statistics/page.tsx
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { BarChart2, TrendingUp, FileText } from "lucide-react";
-import React, { Suspense, lazy } from "react";
+import { BarChart2, TrendingUp, FileText, AlertCircle } from "lucide-react";
 import { useStatistics } from "@/lib/useStatistics";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Spinner } from "@/components/ui/spinner";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
-const BarChart = lazy(() =>
-  import("@/components/charts/charts").then((m) => ({ default: m.BarChart }))
-);
-const PieChart = lazy(() =>
-  import("@/components/charts/charts").then((m) => ({ default: m.PieChart }))
-);
-const LineChart = lazy(() =>
-  import("@/components/charts/charts").then((m) => ({ default: m.LineChart }))
-);
-
-// Placeholder para gráfico (puedes reemplazar por Recharts u otro)
-function ChartPlaceholder({ title }: { title: string }) {
-  return (
-    <div className="bg-[#F5F5F5] rounded-lg h-56 flex flex-col items-center justify-center border border-[#D6E8EE]">
-      <span className="text-[#757575] text-sm mb-2">{title}</span>
-      <div className="w-24 h-24 bg-[#D6E8EE] rounded-full flex items-center justify-center">
-        <BarChart2 size={48} className="text-[#018ABE]" />
-      </div>
-      <span className="text-xs text-[#757575] mt-2">
-        (Gráfico próximamente)
-      </span>
-    </div>
-  );
+// Tipos para los datos
+interface ContractStats {
+  byStatus: Array<{
+    status: string;
+    _count: { _all: number };
+  }>;
+  byType: Array<{
+    type: string;
+    _count: { _all: number };
+  }>;
 }
 
 export default function StatisticsPage() {
-  const { data, loading, error } = useStatistics();
+  // Usar el hook con tipado fuerte
+  const { 
+    data, 
+    loading, 
+    error, 
+    refetch,
+    lastUpdated 
+  } = useStatistics<{ stats: ContractStats }>('dashboard');
 
-  // Mapeo seguro de datos
-  const total =
-    data?.stats?.byStatus?.reduce(
-      (acc: number, s: any) => acc + (s._count?._all || 0),
-      0
-    ) || 0;
-  const active =
-    data?.stats?.byStatus?.find((s: any) => s.status === "Vigente")?._count
-      ?._all || 0;
-  const expiring =
-    data?.stats?.byStatus?.find((s: any) => s.status === "Próximo a Vencer")
-      ?._count?._all || 0;
-  const expired =
-    data?.stats?.byStatus?.find((s: any) => s.status === "Vencido")?._count
-      ?._all || 0;
-  const byType =
-    data?.stats?.byType?.reduce(
-      (acc: any, t: any) => ({ ...acc, [t.type]: t._count._all }),
-      {}
-    ) || {};
+  // Mapeo seguro de datos con tipado
+  const total = data?.stats?.byStatus?.reduce(
+    (acc, s) => acc + (s._count?._all || 0), 
+    0
+  ) || 0;
 
-  if (loading) {
-    return <div className="text-[#757575]">Cargando estadísticas...</div>;
+  const active = data?.stats?.byStatus?.find(s => s.status === "Vigente")?._count?._all || 0;
+  const expiring = data?.stats?.byStatus?.find(s => s.status === "Próximo a Vencer")?._count?._all || 0;
+  const expired = data?.stats?.byStatus?.find(s => s.status === "Vencido")?._count?._all || 0;
+  
+  const byType = data?.stats?.byType?.reduce(
+    (acc, t) => ({ ...acc, [t.type]: t._count._all }),
+    {} as Record<string, number>
+  ) || {};
+
+  // Función para manejar la recarga
+  const handleRefresh = () => {
+    refetch().catch(console.error);
+  };
+
+  // Estado de carga
+  if (loading && !data) {
+    return (
+      <div className="max-w-6xl mx-auto py-10 px-4 space-y-6">
+        <Skeleton className="h-10 w-64" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Manejo de errores
+  if (error) {
+    return (
+      <div className="max-w-6xl mx-auto py-10 px-4 space-y-4">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-[#001B48]">Estadísticas</h1>
+          <Button 
+            variant="outline" 
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Reintentar
+          </Button>
+        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error al cargar las estadísticas</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-6xl mx-auto py-10 px-4 flex flex-col gap-8">
-      <h1 className="text-2xl font-bold text-[#001B48] mb-4">
-        Estadísticas
-      </h1>
-      {error ? (
-        <Alert variant="destructive" className="mb-4">
-          <AlertTitle>Error al cargar estadísticas</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      ) : (
-        <>
-          {/* Cards resumen */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Total Contratos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2 text-3xl font-bold text-[#018ABE]">
-                  <FileText size={28} /> {total}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Vigentes</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2 text-3xl font-bold text-[#4CAF50]">
-                  <TrendingUp size={28} /> {active}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Próximos a Vencer</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2 text-3xl font-bold text-[#FF9800]">
-                  <BarChart2 size={28} /> {expiring}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Vencidos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2 text-3xl font-bold text-[#F44336]">
-                  <BarChart2 size={28} /> {expired}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          {/* Gráficos y métricas avanzadas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Distribución por tipo de contrato (Bar) */}
-            {data?.stats?.byType && Object.keys(byType).length > 0 ? (
-              <Suspense fallback={<Spinner size="lg" />}>
-                <BarChart
-                  data={{
-                    labels: Object.keys(byType),
-                    datasets: [
-                      {
-                        label: "Contratos por tipo",
-                        data: Object.values(byType),
-                        backgroundColor: ["#018ABE", "#97CADB"],
-                        borderRadius: 6,
-                      },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: { display: false },
-                      title: {
-                        display: true,
-                        text: "Distribución por tipo de contrato",
-                        color: "#001B48",
-                        font: { size: 18, weight: "bold" },
-                      },
-                    },
-                    scales: {
-                      x: {
-                        ticks: { color: "#001B48", font: { family: "Inter" } },
-                      },
-                      y: {
-                        beginAtZero: true,
-                        ticks: { color: "#001B48", font: { family: "Inter" } },
-                      },
-                    },
-                  }}
-                  className="h-64"
-                />
-              </Suspense>
-            ) : (
-              <ChartPlaceholder title="Distribución por tipo de contrato" />
-            )}
-            {/* Distribución por moneda (Pie) */}
-            {data?.byCurrency && data.byCurrency.length > 0 ? (
-              <Suspense fallback={<Spinner size="lg" />}>
-                <PieChart
-                  data={{
-                    labels: data.byCurrency.map(
-                      (c: any) => c.currency || "Sin especificar"
-                    ),
-                    datasets: [
-                      {
-                        label: "Contratos por moneda",
-                        data: data.byCurrency.map((c: any) => c._count._all),
-                        backgroundColor: [
-                          "#018ABE",
-                          "#97CADB",
-                          "#D6E8EE",
-                          "#FF9800",
-                        ],
-                      },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: {
-                        position: "bottom",
-                        labels: { color: "#001B48", font: { family: "Inter" } },
-                      },
-                      title: {
-                        display: true,
-                        text: "Distribución por moneda",
-                        color: "#001B48",
-                        font: { size: 18, weight: "bold" },
-                      },
-                    },
-                  }}
-                  className="h-64"
-                />
-              </Suspense>
-            ) : (
-              <ChartPlaceholder title="Distribución por moneda" />
-            )}
-            {/* Evolución mensual de contratos creados (Line) */}
-            {data?.contractsCreated && data.contractsCreated.length > 0 ? (
-              <Suspense fallback={<Spinner size="lg" />}>
-                <LineChart
-                  data={{
-                    labels: data.contractsCreated.map((m: any) => m.month),
-                    datasets: [
-                      {
-                        label: "Contratos creados",
-                        data: data.contractsCreated.map((m: any) => m.count),
-                        borderColor: "#018ABE",
-                        backgroundColor: "#97CADB",
-                        tension: 0.3,
-                        fill: true,
-                      },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: { display: false },
-                      title: {
-                        display: true,
-                        text: "Evolución mensual de contratos",
-                        color: "#001B48",
-                        font: { size: 18, weight: "bold" },
-                      },
-                    },
-                    scales: {
-                      x: {
-                        ticks: { color: "#001B48", font: { family: "Inter" } },
-                      },
-                      y: {
-                        beginAtZero: true,
-                        ticks: { color: "#001B48", font: { family: "Inter" } },
-                      },
-                    },
-                  }}
-                  className="h-64"
-                />
-              </Suspense>
-            ) : (
-              <ChartPlaceholder title="Evolución mensual de contratos" />
-            )}
-            {/* Contratos vencidos por mes (Line) */}
-            {data?.contractsExpired && data.contractsExpired.length > 0 ? (
-              <Suspense fallback={<Spinner size="lg" />}>
-                <LineChart
-                  data={{
-                    labels: data.contractsExpired.map((m: any) => m.month),
-                    datasets: [
-                      {
-                        label: "Contratos vencidos",
-                        data: data.contractsExpired.map((m: any) => m.count),
-                        borderColor: "#F44336",
-                        backgroundColor: "#F4433622",
-                        tension: 0.3,
-                        fill: true,
-                      },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: { display: false },
-                      title: {
-                        display: true,
-                        text: "Contratos vencidos por mes",
-                        color: "#001B48",
-                        font: { size: 18, weight: "bold" },
-                      },
-                    },
-                    scales: {
-                      x: {
-                        ticks: { color: "#001B48", font: { family: "Inter" } },
-                      },
-                      y: {
-                        beginAtZero: true,
-                        ticks: { color: "#001B48", font: { family: "Inter" } },
-                      },
-                    },
-                  }}
-                  className="h-64"
-                />
-              </Suspense>
-            ) : (
-              <ChartPlaceholder title="Contratos vencidos por mes" />
-            )}
-          </div>
-          {/* Tablas informativas */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Contratos por usuario */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Contratos por usuario</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr className="bg-[#D6E8EE] text-[#001B48]">
-                        <th className="px-4 py-2 text-left font-medium">
-                          Usuario
-                        </th>
-                        <th className="px-4 py-2 text-left font-medium">
-                          Cantidad
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data?.byUser?.map((u: any) => (
-                        <tr
-                          key={u.ownerId}
-                          className="even:bg-[#F9FBFC] hover:bg-[#D6E8EE] transition-colors"
-                        >
-                          <td className="px-4 py-2">
-                            {u.ownerId || "Sin asignar"}
-                          </td>
-                          <td className="px-4 py-2">{u._count._all}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-            {/* Suplementos por contrato */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Suplementos por contrato</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="min-w-full text-sm">
-                    <thead>
-                      <tr className="bg-[#D6E8EE] text-[#001B48]">
-                        <th className="px-4 py-2 text-left font-medium">
-                          Contrato
-                        </th>
-                        <th className="px-4 py-2 text-left font-medium">
-                          Suplementos
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data?.supplementsByContract?.map((s: any) => (
-                        <tr
-                          key={s.contractId}
-                          className="even:bg-[#F9FBFC] hover:bg-[#D6E8EE] transition-colors"
-                        >
-                          <td className="px-4 py-2">{s.contractId}</td>
-                          <td className="px-4 py-2">{s._count._all}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </>
-      )}
+    <div className="max-w-6xl mx-auto py-10 px-4 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-[#001B48]">Estadísticas</h1>
+        <div className="flex items-center space-x-2">
+          {lastUpdated && (
+            <span className="text-sm text-muted-foreground">
+              Actualizado: {new Date(lastUpdated).toLocaleTimeString()}
+            </span>
+          )}
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+      </div>
+
+      {/* Cards de resumen */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Total Contratos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2 text-3xl font-bold text-[#018ABE]">
+              <FileText className="h-6 w-6" /> 
+              {total.toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Otras cards similares... */}
+      </div>
+
+      {/* Sección de gráficos */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Gráfico de estado de contratos */}
+        <Card className="p-6">
+          <CardHeader className="p-0 pb-4">
+            <CardTitle className="text-lg">Contratos por Estado</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {/* Implementar gráfico con los datos */}
+            <div className="h-80 flex items-center justify-center bg-muted/50 rounded-md">
+              <p className="text-muted-foreground">Gráfico de estados</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Otros gráficos... */}
+      </div>
     </div>
   );
 }

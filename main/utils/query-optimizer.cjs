@@ -14,12 +14,13 @@ exports.QueryOptimizer = class QueryOptimizer {
       activeContracts,
       expiringContracts,
       expiredContracts,
+      archivedContracts,
       clientContracts,
       supplierContracts,
       recentActivity,
     ] = await Promise.all([
-      prisma.contract.count(),
-      prisma.contract.count({ where: { status: "Vigente" } }),
+      prisma.contract.count({ where: { isArchived: false } }), // Solo contar no archivados
+      prisma.contract.count({ where: { status: "Vigente", isArchived: false } }),
       prisma.contract.count({
         where: {
           endDate: {
@@ -27,11 +28,13 @@ exports.QueryOptimizer = class QueryOptimizer {
             lte: thirtyDaysLater,
           },
           status: "Vigente",
+          isArchived: false,
         },
       }),
-      prisma.contract.count({ where: { status: "Vencido" } }),
-      prisma.contract.count({ where: { type: "Cliente" } }),
-      prisma.contract.count({ where: { type: "Proveedor" } }),
+      prisma.contract.count({ where: { status: "Vencido", isArchived: false } }),
+      prisma.contract.count({ where: { isArchived: true } }), // Contar contratos archivados
+      prisma.contract.count({ where: { type: "Cliente", isArchived: false } }),
+      prisma.contract.count({ where: { type: "Proveedor", isArchived: false } }),
       prisma.contract.findMany({
         take: 10,
         orderBy: { updatedAt: "desc" },
@@ -49,14 +52,16 @@ exports.QueryOptimizer = class QueryOptimizer {
     ]);
 
     // Transformar la actividad reciente al formato esperado
-    const formattedActivity = recentActivity.map((contract) => ({
+    const formattedRecentActivity = recentActivity.map((contract) => ({
       id: contract.id,
-      title: `Contrato ${contract.number}`,
-      contractNumber: contract.number,
-      updatedAt: contract.updatedAt,
-      createdBy: {
-        name: contract.createdBy?.name || "Sistema",
-      },
+      title: `Contrato ${contract.contractNumber}`,
+      description: `Actualizado por ${contract.createdBy?.name || 'Usuario desconocido'}`,
+      date: contract.updatedAt.toISOString(),
+      type: 'contract',
+      user: {
+        name: contract.createdBy?.name || 'Usuario desconocido',
+        avatar: undefined
+      }
     }));
 
     return {
@@ -65,12 +70,13 @@ exports.QueryOptimizer = class QueryOptimizer {
         active: activeContracts || 0,
         expiring: expiringContracts || 0,
         expired: expiredContracts || 0,
+        archived: archivedContracts || 0,
       },
       distribution: {
         client: clientContracts || 0,
         supplier: supplierContracts || 0,
       },
-      recentActivity: formattedActivity,
+      recentActivity: formattedRecentActivity,
     };
   }
 

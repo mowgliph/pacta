@@ -7,6 +7,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model License {
+  id          String    @id @default(cuid())
+  licenseNumber String   @unique
+  companyName  String
+  contactName  String
+  email        String
+  licenseType  String
+  issueDate    DateTime
+  expiryDate   DateTime
+  signature    String
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
 model User {
   id                  String             @id @default(uuid())
   name                String

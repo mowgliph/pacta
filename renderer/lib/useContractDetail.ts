@@ -1,4 +1,3 @@
-"use client";
 import { useEffect, useState } from "react";
 import type { Contract } from "./useContracts";
 import { handleIpcResponse } from "./handleIpcResponse";
@@ -25,9 +24,9 @@ export function useContractDetail(id: string) {
     setLoading(true);
     setError(null);
     Promise.all([
-      window.Electron.ipcRenderer.invoke("contracts:getById", id),
-      window.Electron.ipcRenderer.invoke("supplements:list", id),
-      window.Electron.ipcRenderer.invoke("documents:getByContract", id),
+      window.electron.ipcRenderer.invoke("contracts:getById", id),
+      window.electron.ipcRenderer.invoke("supplements:list", id),
+      window.electron.ipcRenderer.invoke("documents:getByContract", id),
     ])
       .then(([cRes, sRes, dRes]: any[]) => {
         if (!mounted) return;
