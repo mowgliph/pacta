@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ClientRootLayout } from "./components/ui/ClientRootLayout";
+import { ClientRootLayout } from "./components/ui/RootLayout";
 import { useThemeStore } from "./store/theme";
 import { useEffect } from "react";
 import { AuthProvider } from "./contexts/AuthContext";

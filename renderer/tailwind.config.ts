@@ -1,5 +1,4 @@
 import type { Config } from "tailwindcss";
-import defaultTheme from "tailwindcss/defaultTheme";
 import path from "path";
 
 // Resolve paths from project root
@@ -25,17 +24,30 @@ const config: Config = {
     extend: {
       colors: {
         // Colores personalizados
-        "primary-dark": "#001B48",
-        "primary-medium": "#018ABE",
-        "primary-light": "#97CADB",
-        "primary-lightest": "#D6E8EE",
-        success: "#4CAF50",
-        warning: "#FF9800",
-        error: "#F44336",
+        primary: {
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
+          dark: '#001B48',
+          medium: '#018ABE',
+          light: '#97CADB',
+          lightest: '#D6E8EE',
+        },
+        success: {
+          DEFAULT: 'hsl(var(--success))',
+          foreground: 'hsl(var(--success-foreground))',
+        },
+        warning: {
+          DEFAULT: 'hsl(var(--warning))',
+          foreground: 'hsl(var(--warning-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
         neutral: {
-          dark: "#333333",
-          medium: "#757575",
-          light: "#F5F5F5",
+          dark: 'hsl(0, 0%, 20%)',
+          medium: 'hsl(0, 0%, 46%)',
+          light: 'hsl(0, 0%, 96%)',
         },
         white: "#FFFFFF",
         black: "#000000",
@@ -49,17 +61,9 @@ const config: Config = {
         foreground: "hsl(var(--foreground) / <alpha-value>)",
         
         // Colores semánticos
-        primary: {
-          DEFAULT: "hsl(var(--primary) / <alpha-value>)",
-          foreground: "hsl(var(--primary-foreground) / <alpha-value>)",
-        },
         secondary: {
           DEFAULT: "hsl(var(--secondary) / <alpha-value>)",
           foreground: "hsl(var(--secondary-foreground) / <alpha-value>)",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive) / <alpha-value>)",
-          foreground: "hsl(var(--destructive-foreground) / <alpha-value>)",
         },
         muted: {
           DEFAULT: "hsl(var(--muted) / <alpha-value>)",

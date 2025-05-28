@@ -36,95 +36,119 @@ export const DocumentList: React.FC<DocumentListProps> = ({
 
   return (
     <section className="mt-4">
-      <h3 className="text-base font-semibold text-[#001B48] mb-2">
-        Documentos adjuntos
-      </h3>
-      <ul className="flex flex-col gap-2">
-        {sortedDocuments.map((doc) => {
-          const actions: ContextMenuAction[] = [
-            {
-              label: "Descargar",
-              icon: <FileText size={16} />,
-              onClick: () => onDownload(doc),
-            },
-          ];
-          if (onViewDetails) {
-            actions.push({
-              label: "Ver detalles",
-              icon: <Eye size={16} />,
-              onClick: () => onViewDetails(doc),
-            });
-          }
-          if (onDelete) {
-            actions.push({
-              label: "Eliminar",
-              icon: <Trash2 size={16} />,
-              onClick: () => onDelete(doc),
-            });
-          }
-          return (
-            <li
-              key={doc.id}
-              className="flex items-center gap-3 bg-[#F5F5F5] rounded px-3 py-2 cursor-pointer select-none"
-              tabIndex={0}
-              aria-label={`Documento: ${doc.originalName || doc.filename}`}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                openContextMenu(actions, e.clientX, e.clientY);
-              }}
-            >
-              <span
-                className="text-sm text-[#018ABE] font-medium truncate max-w-xs"
-                title={doc.originalName || doc.filename}
-              >
-                {doc.originalName || doc.filename}
-              </span>
-              <Button
-                size="sm"
-                variant="default"
-                onClick={() => onDownload(doc)}
+      <div className="border rounded-lg overflow-hidden">
+        <div className="bg-muted/50 px-4 py-2 border-b">
+          <h3 className="text-sm font-medium text-foreground">
+            Documentos adjuntos ({documents.length})
+          </h3>
+        </div>
+        <ul className="divide-y divide-border">
+          {sortedDocuments.map((doc) => {
+            const actions: ContextMenuAction[] = [
+              {
+                label: "Descargar",
+                icon: <FileText size={16} />,
+                onClick: () => onDownload(doc),
+              },
+            ];
+            if (onViewDetails) {
+              actions.push({
+                label: "Ver detalles",
+                icon: <Eye size={16} />,
+                onClick: () => onViewDetails(doc),
+              });
+            }
+            if (onDelete) {
+              actions.push({
+                label: "Eliminar",
+                icon: <Trash2 size={16} />,
+                onClick: () => onDelete(doc),
+              });
+            }
+            return (
+              <li
+                key={doc.id}
+                className="group flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
                 tabIndex={0}
-                aria-label={`Descargar documento: ${
-                  doc.originalName || doc.filename
-                }`}
+                aria-label={`Documento: ${doc.originalName || doc.filename}`}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  openContextMenu(actions, e.clientX, e.clientY);
+                }}
               >
-                <FileText size={16} /> Descargar
-              </Button>
-              {onViewDetails && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => onViewDetails(doc)}
-                  tabIndex={0}
-                  aria-label={`Ver detalles de: ${
-                    doc.originalName || doc.filename
-                  }`}
-                >
-                  <Eye size={16} />
-                </Button>
-              )}
-              {onDelete && (
-                <Button
-                  size="icon"
-                  variant="destructive"
-                  onClick={() => onDelete(doc)}
-                  tabIndex={0}
-                  aria-label={`Eliminar documento: ${
-                    doc.originalName || doc.filename
-                  }`}
-                >
-                  <Trash2 size={16} />
-                </Button>
-              )}
-              {showDate && (
-                <span className="text-xs text-[#757575] ml-auto">
-                  {new Date(doc.uploadedAt).toLocaleDateString()}
-                </span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary">
+                    <FileText size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <p 
+                      className="text-sm font-medium text-foreground truncate"
+                      title={doc.originalName || doc.filename}
+                    >
+                      {doc.originalName || doc.filename}
+                    </p>
+                    {showDate && (
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(doc.uploadedAt).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDownload(doc);
+                    }}
+                    tabIndex={0}
+                    aria-label={`Descargar documento: ${doc.originalName || doc.filename}`}
+                  >
+                    <FileText className="h-4 w-4" />
+                  </Button>
+                  {onViewDetails && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onViewDetails(doc);
+                      }}
+                      tabIndex={0}
+                      aria-label={`Ver detalles de: ${doc.originalName || doc.filename}`}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {onDelete && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(doc);
+                      }}
+                      tabIndex={0}
+                      aria-label={`Eliminar documento: ${doc.originalName || doc.filename}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {showDate && (
+                    <span className="text-xs text-[#757575] ml-auto">
+                      {new Date(doc.uploadedAt).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
     </section>
   );
 };

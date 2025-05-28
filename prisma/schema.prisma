@@ -137,6 +137,7 @@ model Contract {
   // Metadatos del sistema
   status              String                @default("Vigente")
   isRestricted        Boolean               @default(false)
+  isArchived          Boolean               @default(false)
   createdById         String
   ownerId             String
   createdAt           DateTime              @default(now())

@@ -19,8 +19,10 @@ exports.QueryOptimizer = class QueryOptimizer {
       supplierContracts,
       recentActivity,
     ] = await Promise.all([
-      prisma.contract.count({ where: { isArchived: false } }), // Solo contar no archivados
-      prisma.contract.count({ where: { status: "Vigente", isArchived: false } }),
+      prisma.contract.count({ where: { isArchived: false } }),
+      prisma.contract.count({
+        where: { status: "Vigente", isArchived: false },
+      }),
       prisma.contract.count({
         where: {
           endDate: {
@@ -31,10 +33,14 @@ exports.QueryOptimizer = class QueryOptimizer {
           isArchived: false,
         },
       }),
-      prisma.contract.count({ where: { status: "Vencido", isArchived: false } }),
+      prisma.contract.count({
+        where: { status: "Vencido", isArchived: false },
+      }),
       prisma.contract.count({ where: { isArchived: true } }), // Contar contratos archivados
       prisma.contract.count({ where: { type: "Cliente", isArchived: false } }),
-      prisma.contract.count({ where: { type: "Proveedor", isArchived: false } }),
+      prisma.contract.count({
+        where: { type: "Proveedor", isArchived: false },
+      }),
       prisma.contract.findMany({
         take: 10,
         orderBy: { updatedAt: "desc" },
@@ -55,13 +61,15 @@ exports.QueryOptimizer = class QueryOptimizer {
     const formattedRecentActivity = recentActivity.map((contract) => ({
       id: contract.id,
       title: `Contrato ${contract.contractNumber}`,
-      description: `Actualizado por ${contract.createdBy?.name || 'Usuario desconocido'}`,
+      description: `Actualizado por ${
+        contract.createdBy?.name || "Usuario desconocido"
+      }`,
       date: contract.updatedAt.toISOString(),
-      type: 'contract',
+      type: "contract",
       user: {
-        name: contract.createdBy?.name || 'Usuario desconocido',
-        avatar: undefined
-      }
+        name: contract.createdBy?.name || "Usuario desconocido",
+        avatar: undefined,
+      },
     }));
 
     return {

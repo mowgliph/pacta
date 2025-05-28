@@ -47,20 +47,24 @@ function QuickAction({
   label,
   icon,
   onClick,
-  color,
+  color = "bg-primary",
 }: {
   label: string;
   icon: React.ReactNode;
   onClick?: () => void;
-  color: string;
+  color?: string;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium shadow-sm bg-white hover:bg-[#D6E8EE] transition-colors duration-150 border border-transparent hover:border-[#018ABE] focus:outline-none focus:ring-2 focus:ring-[#018ABE] ${color}`}
+      className={`group flex items-center gap-2 px-4 py-3 rounded-lg font-medium shadow-sm 
+        bg-card hover:bg-accent/10 transition-colors duration-200 border 
+        hover:border-accent/30 focus:outline-none focus:ring-2 focus:ring-accent/50 ${color}`}
     >
-      {icon}
-      <span>{label}</span>
+      <span className={`p-1.5 rounded-md ${color} text-primary-foreground`}>
+        {icon}
+      </span>
+      <span className="text-sm font-medium text-foreground">{label}</span>
     </button>
   );
 }
@@ -70,20 +74,36 @@ interface ActivityItem {
   title: string;
   date: string;
   description: string;
+  type?: 'success' | 'warning' | 'error' | 'info';
 };
 
 function RecentActivityItem({
   title,
   date,
   description,
+  type = 'info'
 }: ActivityItem) {
+  const typeColors = {
+    success: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
+    warning: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+    error: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
+    info: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
+  };
+
   return (
-    <div className="flex flex-col gap-1 p-4 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200">
-      <div className="flex justify-between items-center">
-        <span className="font-medium text-[#001B48]">{title}</span>
-        <span className="text-xs text-[#757575]">{date}</span>
+    <div className="group flex flex-col gap-1 p-4 bg-card rounded-lg border hover:border-accent/30 transition-all duration-200">
+      <div className="flex justify-between items-start gap-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${typeColors[type]}`}>
+              {type.charAt(0).toUpperCase() + type.slice(1)}
+            </span>
+            <span className="text-sm font-medium text-foreground">{title}</span>
+          </div>
+          <p className="text-sm text-muted-foreground">{description}</p>
+        </div>
+        <span className="text-xs text-muted-foreground whitespace-nowrap">{date}</span>
       </div>
-      <span className="text-sm text-[#757575]">{description}</span>
     </div>
   );
 }

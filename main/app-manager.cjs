@@ -36,28 +36,32 @@ AppManager.prototype.initialize = async function () {
     if (!app.isReady()) {
       await this.waitForAppReady();
     }
-    
+
     // Configurar seguridad
     this.securityManager.setupSecurity();
-    
+
+    // Configurar manejadores de eventos
+    if (!this.eventManager) {
+      console.error("[AppManager] EventManager no está disponible");
+      throw new Error(
+        "EventManager no está disponible para inicializar handlers"
+      );
+    }
+
+    console.log(
+      "[AppManager] EventManager está disponible, inicializando handlers..."
+    );
+    const { setupIpcHandlers } = require("./handlers");
+    setupIpcHandlers(null, this.eventManager);
+    console.log("[AppManager] Handlers inicializados");
+
     // Crear ventana principal
     this.mainWindow = await this.windowManager.createMainWindow();
-    
-    // Configurar manejadores de eventos
-    if (this.eventManager) {
-      console.log('[AppManager] EventManager está disponible, inicializando handlers...');
-      const { setupIpcHandlers } = require('./handlers');
-      setupIpcHandlers(this.mainWindow, this.eventManager);
-      console.log('[AppManager] Handlers inicializados');
-    } else {
-      console.error('[AppManager] EventManager no está disponible');
-      throw new Error('EventManager no está disponible para inicializar handlers');
-    }
-    
+
     // Configurar manejadores de errores y respaldo automático
     this.setupErrorHandler();
     this.setupAutoBackup();
-    
+
     console.info("Aplicación PACTA inicializada correctamente");
   } catch (error) {
     console.error(

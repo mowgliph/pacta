@@ -33,18 +33,6 @@ const isValidChannel = (channel) => {
 
 // APIs seguras expuestas al proceso de renderizado a través de contextBridge
 contextBridge.exposeInMainWorld("electron", {
-  reports: {
-    exportPDF: (data, template) =>
-      ipcRenderer.invoke("export:pdf", { data, template }),
-    exportExcel: (data, template) =>
-      ipcRenderer.invoke("export:excel", { data, template }),
-    getTemplates: () =>
-      ipcRenderer.invoke("report:templates:get"),
-    saveTemplate: (name, content) =>
-      ipcRenderer.invoke("report:template:save", { name, content }),
-    deleteTemplate: (name) =>
-      ipcRenderer.invoke("report:template:delete", name),
-  },
   license: {
     async validateLicense(licenseData) {
       return await ipcRenderer.invoke(
@@ -111,10 +99,8 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.CREATE, datos),
     update: (id, datos) =>
       ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.UPDATE, id, datos),
-    delete: (id) =>
-      ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.DELETE, id),
-    export: (id) =>
-      ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.EXPORT, id),
+    delete: (id) => ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.DELETE, id),
+    export: (id) => ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.EXPORT, id),
     upload: (file) =>
       ipcRenderer.invoke(IPC_CHANNELS.DATA.CONTRACTS.UPLOAD, file),
     archive: (id) =>
@@ -225,8 +211,7 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.invoke(IPC_CHANNELS.REPORT.EXPORT_PDF, { data, template }),
     exportExcel: (data, template) =>
       ipcRenderer.invoke(IPC_CHANNELS.REPORT.EXPORT_EXCEL, { data, template }),
-    getTemplates: () =>
-      ipcRenderer.invoke(IPC_CHANNELS.REPORT.TEMPLATES.GET),
+    getTemplates: () => ipcRenderer.invoke(IPC_CHANNELS.REPORT.TEMPLATES.GET),
     saveTemplate: (name, content) =>
       ipcRenderer.invoke(IPC_CHANNELS.REPORT.TEMPLATES.SAVE, { name, content }),
     deleteTemplate: (name) =>
@@ -253,7 +238,8 @@ contextBridge.exposeInMainWorld("electron", {
     clear: (id) => ipcRenderer.invoke(IPC_CHANNELS.NOTIFICATIONS.CLEAR, id),
     markRead: (id) =>
       ipcRenderer.invoke(IPC_CHANNELS.NOTIFICATIONS.MARK_READ, id),
-    getUnread: () => ipcRenderer.invoke(IPC_CHANNELS.NOTIFICATIONS.GET_UNREAD),
+    getUnread: (userId) =>
+      ipcRenderer.invoke(IPC_CHANNELS.NOTIFICATIONS.GET_UNREAD, userId),
   },
   // Backups
   backups: {
