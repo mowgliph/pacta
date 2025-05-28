@@ -22,16 +22,16 @@ const IPC_CHANNELS = {
     TEMPLATES: {
       GET: "report:templates:get",
       SAVE: "report:template:save",
-      DELETE: "report:template:delete"
-    }
+      DELETE: "report:template:delete",
+    },
   },
   NOTIFICATIONS: {
     SHOW: "notifications:show",
     CLEAR: "notifications:clear",
     MARK_READ: "notifications:mark-read",
-    GET_UNREAD: "notifications:get-unread"
+    GET_UNREAD: "notifications:get-unread",
   },
-  
+
   DATA: {
     CONTRACTS: {
       LIST: "contracts:list",
@@ -89,7 +89,6 @@ const IPC_CHANNELS = {
     SETTINGS: {
       GET: "settings:get",
       UPDATE: "settings:update",
-      THEME: "settings:theme",
       LOGS: "settings:logs",
     },
     APP: {
@@ -101,12 +100,6 @@ const IPC_CHANNELS = {
       UPDATE_AVAILABLE: "app:update-available",
       RESTART: "app:restart",
     },
-  },
-  NOTIFICATIONS: {
-    SHOW: "notifications:show",
-    CLEAR: "notifications:clear",
-    MARK_READ: "notifications:mark-read",
-    GET_UNREAD: "notifications:get-unread",
   },
   STATISTICS: {
     DASHBOARD: "statistics:dashboard",
@@ -160,12 +153,6 @@ const IPC_CHANNELS = {
     FOCUS: "window:focus",
     GET_STATE: "window:get-state",
     SET_STATE: "window:set-state",
-  },
-  THEME: {
-    GET_SYSTEM: "theme:get-system",
-    GET_SAVED: "theme:get-saved",
-    SET_APP: "theme:set-app",
-    SYSTEM_CHANGED: "theme:system-changed",
   },
   BACKUPS: {
     CREATE: "backups:create",

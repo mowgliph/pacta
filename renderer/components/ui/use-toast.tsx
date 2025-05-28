@@ -50,7 +50,7 @@ export const ToastProviderCustom: React.FC<{ children: ReactNode }> = ({
         {toasts.map((t, i) => (
           <Toast
             key={i}
-            variant={t.variant === "destructive" ? "destructive" : "default"}
+            variant={t.variant === "info" ? "default" : "default"}
           >
             <ToastTitle>{t.title}</ToastTitle>
             {t.description && (

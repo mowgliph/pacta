@@ -1,9 +1,8 @@
-const { app, nativeTheme, ipcMain } = require("electron");
+const { app } = require("electron");
 const { AppManager } = require("./app-manager.cjs");
 const { EventManager } = require("./events/event-manager.cjs");
 const { registerAppHandlers } = require("./handlers/app.handlers.cjs");
 const { registerBackupHandlers } = require("./handlers/backup.handlers.cjs");
-const { registerThemeHandlers } = require("./handlers/theme.handlers.cjs");
 const { registerAuthHandlers } = require("./handlers/auth.handlers.cjs");
 const {
   registerContractHandlers,
@@ -27,7 +26,9 @@ const {
   registerSecurityHandlers,
 } = require("./handlers/security.handlers.cjs");
 const { registerStoreHandlers } = require("./handlers/store.handlers.cjs");
-const { registerValidationHandlers } = require("./handlers/validation.handlers.cjs");
+const {
+  registerValidationHandlers,
+} = require("./handlers/validation.handlers.cjs");
 const { registerReportHandlers } = require("./handlers/reportHandler.cjs");
 const { initPrisma } = require("./utils/prisma.cjs");
 const { autoUpdater } = require("electron-updater");
@@ -88,7 +89,7 @@ async function main() {
 
     const eventManager = new EventManager();
     const appManager = new AppManager(eventManager);
-    
+
     // Inicializar la aplicación (los manejadores se registrarán durante la inicialización)
     await appManager.initialize();
 

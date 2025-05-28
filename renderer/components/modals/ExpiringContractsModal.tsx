@@ -1,9 +1,15 @@
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FileDown, Eye, ExternalLink, AlertTriangle } from "lucide-react";
+import { 
+  FileTextIcon, 
+  EyeOpenIcon, 
+  ExternalLinkIcon, 
+  ExclamationTriangleIcon 
+} from "@radix-ui/react-icons";
 import { useNavigate } from "react-router-dom";
 import type { Contract } from "../../lib/useContracts";
+import { toast } from "sonner";
 
 interface ExpiringContractsModalProps {
   isOpen: boolean;
@@ -11,7 +17,6 @@ interface ExpiringContractsModalProps {
   contracts: Contract[];
   loading?: boolean;
   error?: string | null;
-  onExportPDF: (contracts: Contract[]) => Promise<void>;
   title?: string;
 }
 
@@ -27,12 +32,11 @@ const ExpiringContractsModal: React.FC<ExpiringContractsModalProps> = ({
   contracts,
   loading = false,
   error = null,
-  onExportPDF,
   title = "Contratos Próximos a Vencer"
 }) => {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
-  const [exporting, setExporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Calcular paginación
   const totalPages = Math.ceil(contracts.length / PAGE_SIZE);
@@ -57,18 +61,32 @@ const ExpiringContractsModal: React.FC<ExpiringContractsModalProps> = ({
     onClose();
   };
 
-  // Exportar a PDF
+  // Manejar exportación a PDF
   const handleExportPDF = async () => {
-    if (contracts.length === 0) return;
+    if (contracts.length === 0) {
+      toast.error("No hay contratos para exportar");
+      return;
+    }
     
-    setExporting(true);
     try {
-      await onExportPDF(contracts);
+      setIsExporting(true);
+      const result = await window.electron.ipcRenderer.invoke("export:pdf", {
+        data: contracts,
+        template: "contracts-expiring",
+      });
+
+      if (!result?.success) {
+        throw new Error(result?.error?.message || "Error desconocido al exportar");
+      }
+      
+      toast.success("Contratos exportados exitosamente");
     } catch (error) {
-      console.error("Error al exportar a PDF:", error);
-      // Mostrar mensaje de error al usuario
+      console.error("Error al exportar PDF:", error);
+      toast.error(
+        `Error al exportar: ${error instanceof Error ? error.message : "Error desconocido"}`
+      );
     } finally {
-      setExporting(false);
+      setIsExporting(false);
     }
   };
 
@@ -101,7 +119,7 @@ const ExpiringContractsModal: React.FC<ExpiringContractsModalProps> = ({
           ) : error ? (
             <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg text-sm flex flex-col space-y-2">
               <div className="flex items-center">
-                <AlertTriangle className="h-5 w-5 mr-2" />
+                <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
                 <span className="font-medium">Error al cargar los contratos</span>
               </div>
               <p>{error}</p>
@@ -144,7 +162,7 @@ const ExpiringContractsModal: React.FC<ExpiringContractsModalProps> = ({
                         </td>
                         <td className="px-4 py-2">
                           <span className="flex items-center gap-1 text-[#FF9800] font-medium">
-                            <AlertTriangle size={14} />
+                            <ExclamationTriangleIcon className="h-3.5 w-3.5" />
                             {daysRemaining} días
                           </span>
                         </td>
@@ -157,7 +175,23 @@ const ExpiringContractsModal: React.FC<ExpiringContractsModalProps> = ({
                               className="h-8 px-2 text-[#018ABE]"
                               aria-label={`Ver detalle del contrato ${contract.number}`}
                             >
-                              <Eye size={16} />
+                              <EyeOpenIcon className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={handleExportPDF}
+                              disabled={contracts.length === 0 || isExporting}
+                              className="flex items-center gap-2"
+                            >
+                              {isExporting ? (
+                                <span className="animate-spin">
+                                  <ExclamationTriangleIcon className="w-4 h-4" />
+                                </span>
+                              ) : (
+                                <FileTextIcon className="w-4 h-4" />
+                              )}
+                              {isExporting ? 'Exportando...' : 'Exportar a PDF'}
                             </Button>
                           </div>
                         </td>
@@ -203,19 +237,19 @@ const ExpiringContractsModal: React.FC<ExpiringContractsModalProps> = ({
           <Button
             variant="outline"
             onClick={handleExportPDF}
-            disabled={loading || exporting || contracts.length === 0}
+            disabled={loading || isExporting || contracts.length === 0}
             className="h-10 px-4 flex items-center gap-1"
             aria-label="Exportar contratos próximos a vencer a PDF"
           >
-            <FileDown size={16} />
-            {exporting ? "Exportando..." : "Exportar PDF"}
+            <FileTextIcon className="h-4 w-4" />
+            {isExporting ? "Exportando..." : "Exportar PDF"}
           </Button>
           <Button
             onClick={handleViewAllContracts}
             className="h-10 px-4 bg-[#FF9800] hover:bg-[#F57C00] text-white flex items-center gap-1"
             aria-label="Ver todos los contratos próximos a vencer"
           >
-            <ExternalLink size={16} />
+            <ExternalLinkIcon className="h-4 w-4" />
             Ver todos
           </Button>
         </DialogFooter>

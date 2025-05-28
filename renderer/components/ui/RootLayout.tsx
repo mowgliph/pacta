@@ -6,45 +6,97 @@ import { ErrorHandler } from "./ErrorHandler";
 import { ToastProviderCustom } from "./use-toast";
 import { ContextMenuProvider } from "./context-menu";
 import { useCallback, useEffect, useState } from "react";
-import { useThemeStore } from "../../store/theme";
 import { UpdateBanner } from "./UpdateBanner";
+import { useCommandMenu } from "./use-command-menu";
+import {
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+} from "./command-menu";
+import type { CommandMenuGroup } from "./command-menu";
 
 interface Props {
   children: React.ReactNode;
 }
 
 export const ClientRootLayout = ({ children }: Props) => {
-  const theme = useThemeStore((state) => state.theme);
-  const systemTheme = useThemeStore((state) => state.systemTheme);
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const commandMenu = useCommandMenu();
 
-  // Efecto para manejar el tema oscuro/claro
-  useEffect(() => {
-    const root = document.documentElement;
-    const isDark =
-      theme === "dark" || (theme === "system" && systemTheme === "dark");
-
-    root.classList.toggle("dark", isDark);
-  }, [theme, systemTheme]);
+  const menuItems: CommandMenuGroup[] = [
+    {
+      label: "Navegación",
+      items: [
+        {
+          label: "Ir a inicio",
+          shortcut: ["⌘+1"],
+          action: () => (window.location.href = "#/"),
+        },
+        {
+          label: "Ir a contratos",
+          shortcut: ["⌘+2"],
+          action: () => (window.location.href = "#/contracts"),
+        },
+        {
+          label: "Ir a dashboard",
+          shortcut: ["⌘+3"],
+          action: () => (window.location.href = "#/dashboard"),
+        },
+      ],
+    },
+    {
+      label: "Acciones rápidas",
+      items: [
+        {
+          label: "Crear nuevo contrato",
+          shortcut: ["⌘+N"],
+          action: () => {
+            window.electron.ipcRenderer.invoke("contracts:create-new");
+          },
+        },
+        {
+          label: "Buscar contrato",
+          shortcut: ["⌘+F"],
+          action: () => {
+            window.electron.ipcRenderer.invoke("contracts:search");
+          },
+        },
+        {
+          label: "Ver estadísticas",
+          shortcut: ["⌘+S"],
+          action: () => (window.location.href = "#/statistics"),
+        },
+      ],
+    },
+  ];
 
   // Efecto para manejar actualizaciones disponibles
   useEffect(() => {
     if (!window.electron?.ipcRenderer) {
-      console.warn('IPC Renderer no disponible');
+      console.warn("IPC Renderer no disponible");
       return;
     }
-    
+
     const handleUpdateAvailable = () => {
       setUpdateAvailable(true);
     };
 
     // Usar ipcRenderer para manejar eventos de actualización
-    window.electron.ipcRenderer.on('app:update-available', handleUpdateAvailable);
+    window.electron.ipcRenderer.on(
+      "app:update-available",
+      handleUpdateAvailable
+    );
 
     return () => {
       // Limpiar el listener cuando el componente se desmonte
       if (window.electron.ipcRenderer.removeListener) {
-        window.electron.ipcRenderer.removeListener('app:update-available', handleUpdateAvailable);
+        window.electron.ipcRenderer.removeListener(
+          "app:update-available",
+          handleUpdateAvailable
+        );
       }
     };
   }, []);
@@ -56,18 +108,21 @@ export const ClientRootLayout = ({ children }: Props) => {
       }
 
       // Usar ipcRenderer.invoke para llamar al método de reinicio
-      await window.electron.ipcRenderer.invoke('app:restart');
+      await window.electron.ipcRenderer.invoke("app:restart");
     } catch (error) {
       console.error("Error al reiniciar la aplicación:", error);
       const errorEvent = new CustomEvent("api-error", {
-        detail: { 
-          error: error instanceof Error ? error.message : "No se pudo reiniciar la aplicación",
-          type: 'restart-error',
+        detail: {
+          error:
+            error instanceof Error
+              ? error.message
+              : "No se pudo reiniciar la aplicación",
+          type: "restart-error",
           metadata: {
             timestamp: new Date().toISOString(),
-            originalError: error
-          }
-        }
+            originalError: error,
+          },
+        },
       });
       window.dispatchEvent(errorEvent);
     }
@@ -75,43 +130,72 @@ export const ClientRootLayout = ({ children }: Props) => {
 
   return (
     <ErrorHandler>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200 flex">
-      {/* Sidebar - Siempre visible en escritorio */}
-      <div className="w-64 flex-shrink-0 h-screen sticky top-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
-        <Sidebar />
-      </div>
+      <ErrorBoundary>
+        <ToastProviderCustom>
+          <ContextMenuProvider>
+            <div className="min-h-screen bg-gray-50 flex">
+              {/* Sidebar - Siempre visible en escritorio */}
+              <div className="w-64 flex-shrink-0 h-screen sticky top-0 bg-white border-r border-gray-200">
+                <Sidebar />
+              </div>
 
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Header - fixed */}
-        <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-          <Header />
-        </header>
-
-        {/* Main content area with scroll */}
-        <div className="flex flex-col flex-1 overflow-hidden">
-          {/* Scrollable content */}
-          <div className="flex-1 overflow-y-auto">
-            <main className="p-6">
-              <ErrorBoundary>
-                <ToastProviderCustom>
-                  <ContextMenuProvider>
-                    <UpdateBanner
-                      visible={updateAvailable}
-                      onRestart={handleRestartApp}
+              {/* Main content area */}
+              <div className="flex-1 flex flex-col h-screen overflow-hidden">
+                <CommandDialog>
+                  <div className="flex flex-col h-full">
+                    <CommandInput
+                      placeholder="Buscar acciones..."
+                      value={commandMenu.query}
+                      onValueChange={commandMenu.setQuery}
+                      onKeyDown={(e: React.KeyboardEvent) =>
+                        commandMenu.handleKeyDown(e, menuItems)
+                      }
                     />
-                    {children}
-                  </ContextMenuProvider>
-                </ToastProviderCustom>
-              </ErrorBoundary>
-            </main>
-          </div>
-          
-          {/* Footer - Fixed at bottom */}
-          <Footer className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800" />
-        </div>
-        </div>
-      </div>
+                    <CommandList>
+                      {menuItems.map((group, groupIndex) => (
+                        <CommandGroup key={group.label}>
+                          <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
+                            {group.label}
+                          </div>
+                          {commandMenu
+                            .filterItems(group.items, commandMenu.query)
+                            .map((item, itemIndex) => (
+                              <CommandItem
+                                key={item.label}
+                                value={item.label}
+                                onSelect={item.action}
+                                disabled={item.disabled}
+                              >
+                                {item.label}
+                              </CommandItem>
+                            ))}
+                        </CommandGroup>
+                      ))}
+                    </CommandList>
+                    {commandMenu.query && (
+                      <CommandEmpty>
+                        No se encontraron acciones que coincidan con "
+                        {commandMenu.query}"
+                      </CommandEmpty>
+                    )}
+                  </div>
+                </CommandDialog>
+                <Header />
+                <div className="flex flex-1 flex-col h-screen overflow-hidden">
+                  {children}
+                  <Footer className="px-6 py-4 border-t border-gray-200 bg-white" />
+                </div>
+                {updateAvailable && (
+                  <UpdateBanner
+                    visible={updateAvailable}
+                    onRestart={handleRestartApp}
+                  />
+                )}
+              </div>
+            </div>
+          </ContextMenuProvider>
+        </ToastProviderCustom>
+      </ErrorBoundary>
     </ErrorHandler>
   );
 };

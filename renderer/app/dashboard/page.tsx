@@ -1,244 +1,124 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import {
-  BarChart2,
-  FilePlus,
-  FileText,
-  Archive,
-  TrendingUp,
-} from "lucide-react";
+  BarChartIcon,
+  PlusCircledIcon,
+  FileTextIcon,
+  ArchiveIcon,
+  BarChartIcon as TrendingUp,
+  ClipboardIcon,
+  GearIcon,
+} from "@radix-ui/react-icons";
 
-// Hooks
-import { useDashboardStats } from "@/lib/useDashboardStats";
-import { useExpiringContracts } from "@/lib/useExpiringContracts";
-import { useArchivedContracts } from "@/lib/useArchivedContracts";
-import { useAuth } from "@/store/auth";
-import { useToast } from "@/components/ui/use-toast";
+import { Alert, AlertTitle, AlertDescription } from "../../components/ui/alert";
+import DashboardCard from "../../components/ui/DashboardCard";
+import { QuickAction } from "../../components/dashboard/QuickAction";
+import { RecentActivityItem } from "../../components/dashboard/RecentActivityItem";
+import { useDashboardStats } from "../../lib/useDashboardStats";
+import { useAuth } from "../../store/auth";
 
-// Componentes
-import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import DashboardCard from "@/components/ui/DashboardCard";
+import { 
+  useExpiringContracts, 
+  useExpiredContracts, 
+  useArchivedContracts,
+  useAllContracts,
+  useActiveContracts 
+} from "../../lib/useContracts";
 
-// Modales
-import ExpiredContractsModal from "@/components/modals/ExpiredContractsModal";
-import ActiveContractsModal from "@/components/modals/ActiveContractsModal";
-import ExpiringContractsModal from "@/components/modals/ExpiringContractsModal";
-import AllContractsModal from "@/components/modals/AllContractsModal";
-import ArchivedContractsModal from "@/components/modals/ArchivedContractsModal";
-import { SelectContractModal } from "@/components/modals/SelectContractModal";
-
-// Tipos
-import type { Contract } from "@/lib/useContracts";
-import { ArchivedContract } from "@/types/contracts";
-
-type DashboardData = {
-  stats: any;
-  expiringContracts: Contract[];
-  recentActivity: Array<{
-    title: string;
-    date: string;
-    description: string;
-    id?: string;
-  }>;
-};
-
-function QuickAction({
-  label,
-  icon,
-  onClick,
-  color = "bg-primary",
-}: {
-  label: string;
-  icon: React.ReactNode;
-  onClick?: () => void;
-  color?: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`group flex items-center gap-2 px-4 py-3 rounded-lg font-medium shadow-sm 
-        bg-card hover:bg-accent/10 transition-colors duration-200 border 
-        hover:border-accent/30 focus:outline-none focus:ring-2 focus:ring-accent/50 ${color}`}
-    >
-      <span className={`p-1.5 rounded-md ${color} text-primary-foreground`}>
-        {icon}
-      </span>
-      <span className="text-sm font-medium text-foreground">{label}</span>
-    </button>
-  );
-}
-
-interface ActivityItem {
-  id: string;
-  title: string;
-  date: string;
-  description: string;
-  type?: 'success' | 'warning' | 'error' | 'info';
-};
-
-function RecentActivityItem({
-  title,
-  date,
-  description,
-  type = 'info'
-}: ActivityItem) {
-  const typeColors = {
-    success: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-    warning: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-    error: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-    info: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
-  };
-
-  return (
-    <div className="group flex flex-col gap-1 p-4 bg-card rounded-lg border hover:border-accent/30 transition-all duration-200">
-      <div className="flex justify-between items-start gap-4">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${typeColors[type]}`}>
-              {type.charAt(0).toUpperCase() + type.slice(1)}
-            </span>
-            <span className="text-sm font-medium text-foreground">{title}</span>
-          </div>
-          <p className="text-sm text-muted-foreground">{description}</p>
-        </div>
-        <span className="text-xs text-muted-foreground whitespace-nowrap">{date}</span>
-      </div>
-    </div>
-  );
-}
-
-function formatDate(dateStr: string) {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "short",
-    year: "2-digit",
-  });
-}
+import ActiveContractsModal from "../../components/modals/ActiveContractsModal";
+import ExpiringContractsModal from "../../components/modals/ExpiringContractsModal";
+import ExpiredContractsModal from "../../components/modals/ExpiredContractsModal";
+import AllContractsModal from "../../components/modals/AllContractsModal";
+import ArchivedContractsModal from "../../components/modals/ArchivedContractsModal";
+import { SelectContractModal } from "../../components/modals/SelectContractModal";
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const { data, loading: statsLoading, error } = useDashboardStats();
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
 
-  // Estados y datos para los modales
+  // Estados y datos para el modal de contratos activos
   const [activeContractsModalOpen, setActiveContractsModalOpen] = useState(false);
-  const [activeContracts, setActiveContracts] = useState<Array<Contract>>([]);
-  const [loading, setLoading] = useState(false);
+  const { 
+    contracts: activeContracts, 
+    loading: activeContractsLoading, 
+    error: activeContractsError 
+  } = useActiveContracts();
 
-  // Estados y datos para modal de contratos próximos a vencer
+  // Estados y datos para el modal de contratos próximos a vencer
   const [expiringModalOpen, setExpiringModalOpen] = useState(false);
-  const [expiringContracts, setExpiringContracts] = useState<Contract[]>([]);
-  const [expiringLoading, setExpiringLoading] = useState(true);
-  const [expiringError, setExpiringError] = useState<string | null>(null);
-
-  // Función para cargar contratos próximos a vencer
-  const fetchExpiringContracts = async () => {
-    try {
-      setExpiringLoading(true);
-      setExpiringError(null);
-
-      const response = await window.electron.ipcRenderer.invoke("contracts:list", {
-        status: "Proximo a Vencer"  // Sin acentos para evitar problemas de codificación
-      });
-
-      if (!response?.success) {
-        throw new Error(response?.error?.message || "Error al obtener los contratos");
-      }
-
-      setExpiringContracts(response.data || []);
-    } catch (err) {
-      console.error("Error al cargar contratos próximos a vencer:", err);
-      setExpiringError(err instanceof Error ? err.message : "Error desconocido");
-    } finally {
-      setExpiringLoading(false);
-    }
-  };
-
-  // Cargar contratos próximos a vencer al montar el componente
-  useEffect(() => {
-    fetchExpiringContracts();
-  }, []);
+  const { 
+    contracts: expiringContracts, 
+    loading: expiringLoading, 
+    error: expiringError 
+  } = useExpiringContracts();
 
   // Estados y datos para el modal de contratos vencidos
   const [expiredModalOpen, setExpiredModalOpen] = useState(false);
-  const [expiredContracts, setExpiredContracts] = useState<Contract[]>([]);
-  const [expiredLoading, setExpiredLoading] = useState(true);
-  const [expiredError, setExpiredError] = useState<string | null>(null);
+  const { 
+    contracts: expiredContracts, 
+    loading: expiredLoading, 
+    error: expiredError 
+  } = useExpiredContracts();
 
   // Estados y datos para el modal de contratos archivados
   const [archivedModalOpen, setArchivedModalOpen] = useState(false);
-  const [archivedContracts, setArchivedContracts] = useState<ArchivedContract[]>([]);
-  const [archivedLoading, setArchivedLoading] = useState(true);
-  const [archivedError, setArchivedError] = useState<string | null>(null);
+  const { 
+    contracts: archivedContracts, 
+    loading: archivedLoading, 
+    error: archivedError 
+  } = useArchivedContracts();
 
-  // Cargar contratos vencidos
-  useEffect(() => {
-    const fetchExpiredContracts = async () => {
-      try {
-        setExpiredLoading(true);
-        setExpiredError(null);
-
-        const response = await window.electron.ipcRenderer.invoke("contracts:list", {
-          status: "Vencido"
-        });
-
-        if (!response?.success) {
-          throw new Error(response?.error?.message || "Error al obtener los contratos");
-        }
-
-        setExpiredContracts(response.data || []);
-      } catch (err) {
-        console.error("Error al cargar contratos vencidos:", err);
-        setExpiredError(err instanceof Error ? err.message : "Error desconocido");
-      } finally {
-        setExpiredLoading(false);
-      }
-    };
-
-    fetchExpiredContracts();
-  }, []);
-
-  // Cargar contratos archivados
-  useEffect(() => {
-    const fetchArchivedContracts = async () => {
-      try {
-        setArchivedLoading(true);
-        setArchivedError(null);
-
-        const response = await window.electron.ipcRenderer.invoke("contracts:list-archived");
-
-        if (!response?.success) {
-          throw new Error(response?.error?.message || "Error al obtener los contratos archivados");
-        }
-
-        setArchivedContracts(response.data || []);
-      } catch (err) {
-        console.error("Error al cargar contratos archivados:", err);
-        setArchivedError(err instanceof Error ? err.message : "Error desconocido");
-      } finally {
-        setArchivedLoading(false);
-      }
-    };
-
-    fetchArchivedContracts();
-  }, []);
-
-  // Estados y datos para los modales
+  // Estado para controlar la visibilidad del modal de selección de contrato
   const [selectContractModalOpen, setSelectContractModalOpen] = useState(false);
+
+  // Estados y datos para el modal de todos los contratos
   const [allContractsModalOpen, setAllContractsModalOpen] = useState(false);
-  const [allContracts, setAllContracts] = useState<Contract[]>([]);
-  const [allContractsLoading, setAllContractsLoading] = useState(false);
-  const [allContractsError, setAllContractsError] = useState<string | null>(null);
+  const { 
+    contracts: allContracts, 
+    loading: allContractsLoading, 
+    error: allContractsError 
+  } = useAllContracts();
 
-  // Obtener contratos expirando
-  const { contracts: expiringContractsList = [] } = useExpiringContracts();
+  // Constantes para la lógica de visualización
+  const MIN_ITEMS_TO_SHOW = 1;
+  
+  // Contratos próximos a vencer
+  const hasExpiringContracts: boolean = 
+    Array.isArray(expiringContracts) && 
+    expiringContracts.length >= MIN_ITEMS_TO_SHOW;
+  const expiringCount: number = Array.isArray(expiringContracts) ? expiringContracts.length : 0;
+  const expiringErrorMessage: string | null = expiringError 
+    ? `Error al cargar contratos próximos a vencer: ${expiringError}` 
+    : null;
 
-  // Verificar si hay contratos próximos a vencer
-  const hasExpiringContracts = expiringContracts.length > 0;
-  const showExpiringCard = hasExpiringContracts || expiringLoading || Boolean(expiringError);
+  // Contratos vencidos
+  const hasExpiredContracts: boolean = 
+    Array.isArray(expiredContracts) && 
+    expiredContracts.length >= MIN_ITEMS_TO_SHOW;
+  const expiredCount: number = Array.isArray(expiredContracts) ? expiredContracts.length : 0;
+  const expiredErrorMessage: string | null = expiredError 
+    ? `Error al cargar contratos vencidos: ${expiredError}` 
+    : null;
+
+  // Contratos archivados
+  const hasArchivedContracts: boolean = 
+    Array.isArray(archivedContracts) && 
+    archivedContracts.length >= MIN_ITEMS_TO_SHOW;
+  const archivedCount: number = Array.isArray(archivedContracts) ? archivedContracts.length : 0;
+  const archivedErrorMessage: string | null = archivedError 
+    ? `Error al cargar contratos archivados: ${archivedError}` 
+    : null;
+
+  // Contratos activos
+  const hasActiveContracts: boolean = 
+    Array.isArray(activeContracts) && 
+    activeContracts.length >= MIN_ITEMS_TO_SHOW;
+  const activeCount: number = Array.isArray(activeContracts) ? activeContracts.length : 0;
+  const activeErrorMessage: string | null = activeContractsError 
+    ? `Error al cargar contratos activos: ${activeContractsError}` 
+    : null;
 
   // Handler para acciones que requieren autenticación
   const requireAuth = (cb: () => void) => {
@@ -249,440 +129,165 @@ export default function DashboardPage() {
     cb();
   };
 
-  // Cargar contratos activos 
-  const handleOpenActiveContractsModal = () => {
-    setActiveContracts(expiringContractsList.filter((contract: Contract) => contract.status === 'Vigente'));
-    setActiveContractsModalOpen(true);
-  };
-
-  // Abrir modal de contratos próximos a vencer
-  const handleOpenExpiringContractsModal = () => {
-    // Asegurarse de que los contratos estén cargados antes de abrir el modal
-    if (expiringContracts.length === 0 && !expiringLoading && !expiringError) {
-      fetchExpiringContracts();
-    }
-    setExpiringModalOpen(true);
-  };
-
-  // Abrir modal de contratos vencidos
-  const handleOpenExpiredContractsModal = async () => {
-    setExpiredLoading(true);
-    setExpiredError(null);
-    
-    try {
-      const response = await window.electron.ipcRenderer.invoke("contracts:list", { 
-        status: "Vencido"
-      });
-      
-      if (response) {
-        setExpiredContracts(response.data || []);
-        setExpiredModalOpen(true);
-      } else {
-        setExpiredError("No se pudieron cargar los contratos vencidos");
-        setExpiredModalOpen(true);
-      }
-    } catch (err) {
-      console.error("Error al cargar contratos vencidos:", err);
-      setExpiredError("Error al cargar los contratos vencidos. Intente nuevamente.");
-      setExpiredModalOpen(true);
-    } finally {
-      setExpiredLoading(false);
-    }
-  };
-
-  // Exportar contratos activos a PDF
-  const handleExportActiveContractsPDF = async (contracts: Contract[]) => {
-    if (!contracts.length) {
-      alert("No hay contratos activos para exportar");
-      return;
-    }
-
-    try {
-      // Exportar contratos usando el canal de reportes
-      const result = await window.electron.ipcRenderer.invoke(
-        "export:pdf",
-        {
-          data: contracts,
-          template: 'contracts-active'
-        }
-      );
-
-      if (!result?.success) {
-        alert("Error al exportar los contratos: " + (result?.error?.message || "Error desconocido"));
-        return;
-      }
-
-      alert("Contratos exportados exitosamente");
-    } catch (err) {
-      console.error("Error al exportar PDF:", err);
-      alert(`Error al exportar el reporte: ${err instanceof Error ? err.message : 'Error desconocido'}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Abrir modal de todos los contratos
-  const handleOpenAllContractsModal = async () => {
-    setAllContractsLoading(true);
-    setAllContractsError(null);
-    
-    try {
-      const response = await window.electron.ipcRenderer.invoke("contracts:list");
-      
-      if (!response?.success) {
-        throw new Error(response?.error?.message || "Error al obtener los contratos");
-      }
-
-      if (!Array.isArray(response.data)) {
-        throw new Error("Formato de datos inválido: no es un array");
-      }
-
-      // Validar que todos los contratos tengan un ID válido
-      const validContracts = response.data.filter((contract: any) => contract?.id);
-      
-      if (validContracts.length !== response.data.length) {
-        console.warn("Algunos contratos no tienen ID válido:", response.data.filter((contract: any) => !contract?.id));
-      }
-
-      setAllContracts(validContracts);
-      setAllContractsModalOpen(true);
-    } catch (err) {
-      console.error("Error al cargar todos los contratos:", err);
-      setAllContractsError("Error al cargar los contratos. Intente nuevamente.");
-      setAllContractsModalOpen(true);
-    }
-  };
-
-  // Handler para exportar contratos vencidos a PDF
-  const handleExportExpiredContractsPDF = async (contracts: Contract[]) => {
-    if (!contracts.length) {
-      alert("No hay contratos vencidos para exportar");
-      return;
-    }
-
-    try {
-      const result = await window.electron.ipcRenderer.invoke(
-        "export:pdf",
-        {
-          data: contracts,
-          template: 'contracts-expired'
-        }
-      );
-
-      if (!result?.success) {
-        alert("Error al exportar los contratos: " + (result?.error?.message || "Error desconocido"));
-        return;
-      }
-
-      alert("Contratos exportados exitosamente");
-    } catch (err) {
-      console.error("Error al exportar PDF:", err);
-      alert(`Error al exportar el reporte: ${err instanceof Error ? err.message : 'Error desconocido'}`);
-    }
-  };
-
-  // Handler para exportar contratos archivados a PDF
-  const handleExportArchivedContractsPDF = async (contracts: ArchivedContract[]) => {
-    if (!contracts.length) {
-      alert("No hay contratos archivados para exportar");
-      return;
-    }
-
-    try {
-      // Obtener la ruta del archivo usando el canal IPC
-      const result = await window.electron.ipcRenderer.invoke("dialog:save-file", {
-        title: "Exportar contratos archivados como PDF",
-        defaultPath: `Contratos_Archivados_${new Date().toISOString().slice(0, 10)}.pdf`,
-        filters: [{ name: "PDF", extensions: ["pdf"] }]
-      });
-
-      if (!result?.success || !result?.filePath) {
-        return; // Usuario canceló el diálogo o error
-      }
-
-      // Exportar contratos usando el canal de reportes
-      const exportResult = await window.electron.ipcRenderer.invoke(
-        "export:pdf",
-        {
-          data: contracts,
-          template: 'contracts-archived',
-          filePath: result.filePath
-        }
-      );
-
-      if (!exportResult?.success) {
-        throw new Error(exportResult?.error?.message || "Error al exportar los contratos");
-      }
-
-      // Mostrar notificación de éxito
-      toast({
-        title: "Exportación exitosa",
-        description: `Se exportaron ${contracts.length} contratos archivados correctamente`,
-        variant: "default",
-      });
-    } catch (error) {
-      console.error("Error al exportar contratos archivados:", error);
-      
-      // Mostrar notificación de error
-      toast({
-        title: "Error al exportar",
-        description: `No se pudieron exportar los contratos: ${error instanceof Error ? error.message : 'Error desconocido'}`,
-        variant: "destructive",
-      });
-    }
-  };
-
-  // Handler para abrir el modal de contratos archivados
-  const handleOpenArchivedContractsModal = () => {
-    setArchivedModalOpen(true);
-  };
-
-  // Exportar todos los contratos a PDF
-  const handleExportAllContractsPDF = async (contracts: Contract[]) => {
-    if (!contracts.length) {
-      alert("No hay contratos para exportar");
-      return;
-    }
-
-    try {
-      // Obtener la ruta del archivo usando el canal IPC
-      const result = await window.electron.ipcRenderer.invoke("dialog:save-file", {
-        title: "Exportar todos los contratos como PDF",
-        defaultPath: `Todos_Los_Contratos_${new Date().toISOString().slice(0, 10)}.pdf`,
-        filters: [{ name: "PDF", extensions: ["pdf"] }]
-      });
-
-      if (!result?.success || !result?.filePath) {
-        return; // Usuario canceló el diálogo o error
-      }
-
-      // Exportar contratos usando el canal de reportes
-      const exportResult = await window.electron.ipcRenderer.invoke(
-        "export:pdf",
-        {
-          data: contracts,
-          template: 'contracts-all',
-          filePath: result.filePath
-        }
-      );
-
-      if (!exportResult?.success) {
-        alert("Error al exportar los contratos: " + (exportResult?.error?.message || "Error desconocido"));
-        return;
-      }
-
-      
-      // Notificar éxito
-      alert(`Se exportaron ${contracts.length} contratos correctamente.`);
-    } catch (err) {
-      console.error("Error al exportar PDF:", err);
-      alert(`Error al exportar el reporte: ${err instanceof Error ? err.message : 'Error desconocido'}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Exportar contratos próximos a vencer a PDF
-  const handleExportExpiringContractsPDF = async (contracts: Contract[]) => {
-    if (!contracts.length) {
-      alert("No hay contratos próximos a vencer para exportar");
-      return;
-    }
-
-    try {
-      // Exportar contratos usando el canal de reportes
-      const result = await window.electron.ipcRenderer.invoke(
-        "export:pdf",
-        {
-          data: contracts,
-          template: 'contracts-expiring'
-        }
-      );
-
-      if (!result?.success) {
-        alert("Error al exportar los contratos: " + (result?.error?.message || "Error desconocido"));
-        return;
-      }
-
-      alert("Contratos exportados exitosamente");
-    } catch (err) {
-      console.error("Error al exportar PDF:", err);
-      alert(`Error al exportar el reporte: ${err instanceof Error ? err.message : 'Error desconocido'}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // El dashboard se muestra siempre, con o sin usuario
   return (
-    <div className="flex flex-col gap-8">
-      {/* Sección 1: Estadísticas generales */}
-      <section className="w-full overflow-x-auto pb-4">
-        <div className="flex gap-6 min-w-max animate-fade-in">
-          {statsLoading ? (
-            <div className="text-[#757575]">Cargando estadísticas...</div>
-          ) : error ? (
-            <>
-              <Alert variant="destructive" className="mb-4">
-                <AlertTitle>Error al cargar estadísticas</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-              {/* Mostrar tarjetas con valores en 0 */}
-              <div className="flex gap-6">
+    <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="flex flex-col gap-8">
+        {/* Sección de Estadísticas */}
+        <section>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Vista General
+            </h2>
+            <button
+              onClick={() => navigate("/statistics")}
+              className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-2"
+            >
+              <BarChartIcon className="w-4 h-4" />
+              Ver estadísticas
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {statsLoading ? (
+              <div className="col-span-full text-gray-500 flex items-center justify-center py-12">
+                <span className="animate-pulse">Cargando estadísticas...</span>
+              </div>
+            ) : error ? (
+              <div className="col-span-full">
+                <Alert variant="destructive">
+                  <AlertTitle>Error al cargar estadísticas</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              </div>
+            ) : (
+              <>
                 <DashboardCard
                   title="Total Contratos"
-                  count={0}
-                  icon={<BarChart2 size={28} className="text-[#018ABE]" />}
-                  color="bg-[#018ABE]"
-                  onClick={handleOpenAllContractsModal}
+                  count={data?.totals?.total || 0}
+                  icon={<BarChartIcon className="w-6 h-6 text-primary" />}
+                  onClick={() => navigate("/contracts")}
+                  trend={data?.trends?.total}
+                  loading={!data}
                 />
                 <DashboardCard
                   title="Vigentes"
-                  count={0}
-                  icon={<BarChart2 size={28} className="text-[#4CAF50]" />}
-                  color="bg-[#4CAF50]"
-                  onClick={handleOpenActiveContractsModal}
+                  count={data?.totals?.active || 0}
+                  icon={<ClipboardIcon className="w-6 h-6 text-green-600" />}
+                  onClick={() => setActiveContractsModalOpen(true)}
+                  trend={data?.trends?.active}
+                  loading={activeContractsLoading || !data}
+                  error={activeContractsError}
                 />
                 <DashboardCard
                   title="Próximos a Vencer"
-                  count={0}
-                  icon={<TrendingUp size={28} className="text-[#FF9800]" />}
-                  color="bg-[#FF9800]"
-                  onClick={handleOpenExpiringContractsModal}
+                  count={data?.totals?.expiring || 0}
+                  icon={<TrendingUp className="w-6 h-6 text-orange-500" />}
+                  onClick={() => setExpiringModalOpen(true)}
+                  trend={data?.trends?.expiring}
+                  loading={expiringLoading || !data}
+                  error={expiringError}
                 />
                 <DashboardCard
                   title="Vencidos"
-                  count={0}
-                  icon={<FileText size={28} className="text-red-600" />}
-                  color="bg-red-100 text-red-600"
-                  onClick={handleOpenExpiredContractsModal}
+                  count={data?.totals?.expired || 0}
+                  icon={<FileTextIcon className="w-6 h-6 text-red-500" />}
+                  onClick={() => setExpiredModalOpen(true)}
+                  trend={data?.trends?.expired}
+                  loading={expiredLoading || !data}
+                  error={expiredError}
                 />
-                <DashboardCard
-                  title="Archivados"
-                  count={0}
-                  icon={<Archive size={28} className="text-[#757575]" />}
-                  color="bg-gray-100 text-[#757575]"
-                  onClick={handleOpenArchivedContractsModal}
-                />
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* Sección de Acciones Rápidas */}
+        <section>
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+            Acciones Rápidas
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <QuickAction
+              icon={<PlusCircledIcon />}
+              title="Nuevo Contrato"
+              description="Crear un nuevo contrato"
+              onClick={() => requireAuth(() => navigate("/contracts/new"))}
+              colorScheme="primary"
+            />
+            <QuickAction
+              icon={<PlusCircledIcon />}
+              title="Nuevo Suplemento"
+              description="Añadir suplemento a contrato"
+              onClick={() => requireAuth(() => setSelectContractModalOpen(true))}
+              colorScheme="success"
+            />
+            <QuickAction
+              icon={<BarChartIcon />}
+              title="Estadísticas"
+              description="Ver reportes y análisis"
+              onClick={() => navigate("/statistics")}
+              colorScheme="primary"
+            />
+            <QuickAction
+              icon={<GearIcon />}
+              title="Configuración"
+              description="Ajustes del sistema"
+              onClick={() => navigate("/settings")}
+              colorScheme="primary"
+            />
+          </div>
+        </section>
+
+        {/* Sección de Actividades Recientes */}
+        <section>
+          <div className="bg-white rounded-xl border border-gray-100 divide-y divide-gray-100">
+            {statsLoading ? (
+              <div className="p-6 text-center text-gray-500">
+                <span className="animate-pulse">Cargando actividades...</span>
               </div>
-            </>
-          ) : data?.totals ? (
-            <>
-              <DashboardCard
-                title="Total Contratos"
-                count={data.totals.total || 0}
-                icon={<BarChart2 size={28} className="text-[#018ABE]" />}
-                color="bg-[#018ABE]"
-                onClick={handleOpenAllContractsModal}
-              />
-              <DashboardCard
-                title="Vigentes"
-                count={data.totals.active || 0}
-                icon={<BarChart2 size={28} className="text-[#4CAF50]" />}
-                color="bg-[#4CAF50]"
-                onClick={handleOpenActiveContractsModal}
-              />
-              <DashboardCard
-                title="Próximos a Vencer"
-                count={data.totals.expiring || 0}
-                icon={<TrendingUp size={28} className="text-[#FF9800]" />}
-                color="bg-[#FF9800]"
-                onClick={handleOpenExpiringContractsModal}
-              />
-              <DashboardCard
-                title="Vencidos"
-                count={data.totals.expired || 0}
-                icon={<FileText size={28} className="text-red-600" />}
-                color="bg-red-100 text-red-600"
-                onClick={handleOpenExpiredContractsModal}
-              />
-              <DashboardCard
-                title="Archivados"
-                count={data.totals.archived || 0}
-                icon={<Archive size={28} className="text-[#757575]" />}
-                color="bg-gray-100 text-[#757575]"
-                onClick={handleOpenArchivedContractsModal}
-              />
-            </>
-          ) : null}
-        </div>
-      </section>
+            ) : error ? (
+              <div className="p-6">
+                <Alert variant="destructive">
+                  <AlertTitle>Error al cargar actividades</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              </div>
+            ) : data?.recentActivity && data.recentActivity.length > 0 ? (
+              data.recentActivity.map((activity, index) => (
+                <div
+                  key={index}
+                  className="p-4 hover:bg-gray-50 transition-colors"
+                >
+                  <RecentActivityItem {...activity} />
+                </div>
+              ))
+            ) : (
+              <div className="p-6 text-center text-gray-500">
+                No hay actividades recientes
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
 
-      {/* Sección 2: Acciones rápidas */}
-      <section className="flex flex-wrap gap-4 mb-8">
-        <QuickAction
-          label="Nuevo Contrato"
-          icon={<FilePlus size={20} className="text-[#018ABE]" />}
-          color="bg-white hover:bg-[#D6E8EE]"
-          onClick={() => navigate("/contracts/new")}
-        />
-        <QuickAction
-          label="Nuevo Suplemento"
-          icon={<FilePlus size={20} className="text-[#4CAF50]" />}
-          color="bg-white hover:bg-[#E8F5E9]"
-          onClick={() => navigate("/supplements/new")}
-        />
-        <QuickAction
-          label="Ver Estadísticas"
-          icon={<BarChart2 size={20} className="text-[#018ABE]" />}
-          color="bg-white hover:bg-[#D6E8EE]"
-          onClick={() => navigate("/statistics")}
-        />
-      </section>
-
-      {/* Sección 3: Actividades recientes */}
-      <section className="flex flex-col gap-3 animate-fade-in-up">
-        <h2 className="text-lg font-semibold text-[#001B48] mb-2 font-inter">
-          Actividades recientes
-        </h2>
-        {loading ? (
-          <div className="text-[#757575]">Cargando actividades...</div>
-        ) : error ? (
-          <>
-            <Alert variant="destructive" className="mb-4">
-              <AlertTitle>Error al cargar actividades</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-            <div className="text-[#757575]">No hay actividades recientes.</div>
-          </>
-        ) : data && data.recentActivity ? (
-          <ActivityFeed
-            activities={data.recentActivity.map((item: { title: string; date: string; description: string; id?: string }) => ({
-              id: crypto.randomUUID(),
-              type: 'contract',
-              title: item.title,
-              description: item.description,
-              timestamp: item.date ? new Date(item.date) : new Date(),
-              user: {
-                name: item.description ? item.description.split('por ')[1] || 'Usuario' : 'Usuario',
-                avatar: undefined
-              }
-            }))}
-            maxItems={5}
-            className="w-full"
-          />
-        ) : (
-          <div className="text-[#757575]">No hay actividades recientes.</div>
-        )}
-      </section>
-
-      {/* Modal de contratos vigentes */}
+      {/* Modales */}
       <ActiveContractsModal
         isOpen={activeContractsModalOpen}
         onClose={() => setActiveContractsModalOpen(false)}
         contracts={activeContracts}
-        onExportPDF={handleExportActiveContractsPDF}
+        loading={activeContractsLoading}
+        error={activeContractsError}
         title="Vigentes"
       />
-      
+
       {/* Modal de contratos próximos a vencer */}
       <ExpiringContractsModal
         isOpen={expiringModalOpen}
         onClose={() => setExpiringModalOpen(false)}
-        contracts={expiringContracts}
+        contracts={expiringContracts || []}
         loading={expiringLoading}
         error={expiringError}
-        onExportPDF={handleExportExpiringContractsPDF}
         title="Próximos a Vencer"
       />
 
@@ -690,10 +295,9 @@ export default function DashboardPage() {
       <ExpiredContractsModal
         isOpen={expiredModalOpen}
         onClose={() => setExpiredModalOpen(false)}
-        contracts={expiredContracts}
+        contracts={expiredContracts || []}
         loading={expiredLoading}
         error={expiredError}
-        onExportPDF={handleExportExpiredContractsPDF}
         title="Expirados"
       />
 
@@ -704,14 +308,13 @@ export default function DashboardPage() {
         contracts={allContracts}
         loading={allContractsLoading}
         error={allContractsError}
-        onExportPDF={handleExportAllContractsPDF}
         title="Contratos"
       />
 
       {/* Modal para seleccionar contrato al crear un suplemento */}
-      <SelectContractModal 
-        isOpen={selectContractModalOpen} 
-        onClose={() => setSelectContractModalOpen(false)} 
+      <SelectContractModal
+        isOpen={selectContractModalOpen}
+        onClose={() => setSelectContractModalOpen(false)}
       />
 
       {/* Modal de contratos archivados */}
@@ -721,8 +324,8 @@ export default function DashboardPage() {
         contracts={archivedContracts}
         loading={archivedLoading}
         error={archivedError}
-        onExportPDF={handleExportArchivedContractsPDF}
       />
+
     </div>
   );
 }

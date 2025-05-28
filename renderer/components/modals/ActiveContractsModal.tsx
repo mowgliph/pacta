@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Download, ExternalLink, Search } from "lucide-react";
+import { DownloadIcon, Cross2Icon , ExternalLinkIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { Contract } from "@/lib/useContracts";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Cross2Icon } from "@radix-ui/react-icons";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ActiveContractsModalProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   contracts: Contract[];
-  onExportPDF: (contracts: Contract[]) => Promise<void>;
+  loading?: boolean;
+  error?: string | null;
 }
 
 const PAGE_SIZE = 5;
@@ -27,22 +27,33 @@ const ActiveContractsModal: React.FC<ActiveContractsModalProps> = ({
   onClose,
   title = "Contratos Vigentes",
   contracts: initialContracts,
-  onExportPDF
+  loading: propLoading,
+  error: propError
 }) => {
   const navigate = useNavigate();
   const [contracts, setContracts] = useState<Contract[]>(initialContracts || []);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [exporting, setExporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
 
-  // Usar los contratos pasados como prop
+  // Actualizar contratos cuando cambia la prop
   useEffect(() => {
     if (!isOpen) return;
     setContracts(initialContracts || []);
-    setLoading(false);
   }, [isOpen, initialContracts]);
+  
+  // Sincronizar con las props de carga y error
+  useEffect(() => {
+    if (propLoading !== undefined) {
+      setLoading(propLoading);
+    }
+    if (propError !== undefined) {
+      setError(propError);
+    }
+  }, [propLoading, propError]);
 
   // Filtrar contratos por búsqueda
   const filteredContracts = contracts.filter(
@@ -62,33 +73,61 @@ const ActiveContractsModal: React.FC<ActiveContractsModalProps> = ({
   // Manejar exportación a PDF
   const handleExportPDF = async () => {
     if (filteredContracts.length === 0) {
-      alert("No hay contratos para exportar con los filtros actuales");
+      toast({
+        title: "No hay contratos",
+        description: "No hay contratos para exportar con los filtros actuales",
+        variant: "destructive",
+      });
       return;
     }
-
-    setExporting(true);
+    
     try {
-      // Exportar contratos usando el canal directo
+      setIsExporting(true);
+      
+      // Obtener la ruta del archivo usando el canal IPC
       const result = await window.electron.ipcRenderer.invoke(
-        "export:pdf",
+        "dialog:save-file",
         {
-          data: filteredContracts,
-          template: 'contracts-active'
+          title: "Exportar contratos activos como PDF",
+          defaultPath: `Contratos_Activos_${new Date().toISOString().slice(0, 10)}.pdf`,
+          filters: [{ name: "PDF", extensions: ["pdf"] }],
         }
       );
 
-      if (!result?.success) {
-        alert("Error al exportar los contratos: " + (result?.error?.message || "Error desconocido"));
-        return;
+      if (!result?.success || !result?.filePath) {
+        return; // Usuario canceló el diálogo
       }
 
-      // Mostrar mensaje de éxito
-      alert("Contratos exportados exitosamente");
-    } catch (err) {
-      console.error("Error al exportar PDF:", err);
-      alert(`Error al exportar el reporte: ${err instanceof Error ? err.message : 'Error desconocido'}`);
+      // Exportar contratos usando el canal de reportes
+      const exportResult = await window.electron.ipcRenderer.invoke(
+        "export:pdf",
+        {
+          data: filteredContracts,
+          template: "contracts-active",
+          filePath: result.filePath,
+        }
+      );
+
+      if (!exportResult?.success) {
+        throw new Error(exportResult?.error?.message || "Error al exportar los contratos");
+      }
+      
+      toast({
+        title: "Exportación exitosa",
+        description: `Se exportaron ${filteredContracts.length} contratos activos correctamente`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Error al exportar PDF:", error);
+      toast({
+        title: "Error al exportar",
+        description: `No se pudieron exportar los contratos: ${
+          error instanceof Error ? error.message : "Error desconocido"
+        }`,
+        variant: "destructive",
+      });
     } finally {
-      setExporting(false);
+      setIsExporting(false);
     }
   };
 
@@ -117,9 +156,20 @@ const ActiveContractsModal: React.FC<ActiveContractsModalProps> = ({
           aria-describedby={descriptionId}
         >
           <div className="flex flex-col space-y-1.5">
-            <h2 id={titleId} className="text-xl font-semibold text-[#001B48] leading-none tracking-tight">
+            <Dialog.Title className="text-xl font-semibold text-gray-900 mb-4">
               {title}
-            </h2>
+              {loading && (
+                <span className="ml-2 text-sm font-normal text-gray-500">
+                  <Spinner className="inline-block mr-1 w-4 h-4" />
+                  Cargando...
+                </span>
+              )}
+              {error && (
+                <span className="ml-2 text-sm font-normal text-red-500">
+                  {error}
+                </span>
+              )}
+            </Dialog.Title>
             <p id={descriptionId} className="sr-only">
               Lista de contratos vigentes con opciones para ver detalles y exportar
             </p>
@@ -131,7 +181,7 @@ const ActiveContractsModal: React.FC<ActiveContractsModalProps> = ({
 
           {/* Barra de búsqueda */}
           <div className="flex items-center bg-white rounded-lg border border-[#E5E5E5] px-3 py-2 gap-2 mb-4">
-            <Search size={18} className="text-[#757575]" />
+            <MagnifyingGlassIcon className="h-4 w-4 text-[#757575]" />
             <input
               type="text"
               placeholder="Buscar por número, empresa o descripción..."
@@ -227,25 +277,20 @@ const ActiveContractsModal: React.FC<ActiveContractsModalProps> = ({
               onClick={navigateToContracts}
               className="flex items-center gap-2"
             >
-              <ExternalLink size={16} />
+              <ExternalLinkIcon className="h-4 w-4" />
               Ver todos los contratos
             </Button>
             <Button
               onClick={handleExportPDF}
-              disabled={exporting || filteredContracts.length === 0}
+              disabled={filteredContracts.length === 0 || isExporting}
               className="flex items-center gap-2"
             >
-              {exporting ? (
-                <>
-                  <Spinner size="sm" className="mr-2" />
-                  Exportando...
-                </>
+              {isExporting ? (
+                <Spinner className="w-4 h-4" />
               ) : (
-                <>
-                  <Download size={16} />
-                  Exportar a PDF
-                </>
+                <DownloadIcon className="w-4 h-4" />
               )}
+              {isExporting ? "Exportando..." : "Exportar PDF"}
             </Button>
           </div>
         </Dialog.Content>

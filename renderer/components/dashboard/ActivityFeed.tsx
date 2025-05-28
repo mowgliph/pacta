@@ -1,4 +1,10 @@
-import { Clock, FileText, FileCheck, FileWarning, FileX } from 'lucide-react';
+import { 
+  ClockIcon, 
+  FileTextIcon, 
+  CheckCircledIcon, 
+  ExclamationTriangleIcon, 
+  CrossCircledIcon 
+} from '@radix-ui/react-icons';
 
 interface ActivityItem {
   id: string;
@@ -19,11 +25,11 @@ interface ActivityFeedProps {
 }
 
 const activityIcons = {
-  contract: FileText,
-  supplement: FileCheck,
-  document: FileText,
-  login: Clock,
-  system: FileWarning,
+  contract: FileTextIcon,
+  supplement: CheckCircledIcon,
+  document: FileTextIcon,
+  login: ClockIcon,
+  system: ExclamationTriangleIcon,
 };
 
 export function ActivityFeed({ activities, maxItems = 5, className }: ActivityFeedProps) {
@@ -58,7 +64,7 @@ export function ActivityFeed({ activities, maxItems = 5, className }: ActivityFe
         </div>
         <div className="divide-y divide-gray-100">
           {displayedActivities.map((activity) => {
-            const Icon = activityIcons[activity.type] || FileText;
+            const Icon = activityIcons[activity.type] || FileTextIcon;
             return (
               <div key={activity.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
                 <div className="flex items-start">

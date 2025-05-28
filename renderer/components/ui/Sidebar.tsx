@@ -1,24 +1,21 @@
-import React, { useState } from "react";
+import React from 'react';
 import {
-  Home,
-  BarChart2,
-  FileText,
-  Users,
-  Settings,
-  LogOut,
-  LogIn,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../../store/auth";
-import { cn } from "../../lib/utils";
+  FileTextIcon,
+  GearIcon,
+  ExitIcon,
+  DashboardIcon,
+  BarChartIcon,
+  PersonIcon,
+  ChevronRightIcon
+} from '@radix-ui/react-icons';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../store/auth';
+import { cn } from '../../lib/utils';
 
 interface MenuItem {
   label: string;
-  icon?: React.ReactNode;
+  icon: React.ReactNode;
   href: string;
-  submenu?: MenuItem[];
 }
 
 interface SidebarProps {
@@ -26,151 +23,117 @@ interface SidebarProps {
 }
 
 const menu: MenuItem[] = [
-  { label: "Dashboard", icon: <Home size={20} />, href: "/dashboard" },
-  { label: "Estadísticas", icon: <BarChart2 size={20} />, href: "/statistics" },
-  { 
-    label: "Contratos", 
-    icon: <FileText size={20} />, 
-    href: "/contracts",
-    submenu: [
-      { label: "Todos los contratos", href: "/contracts" },
-      { label: "Contratos archivados", href: "/contracts/archived" },
-    ]
+  {
+    label: 'Dashboard',
+    icon: <DashboardIcon className="h-5 w-5" />,
+    href: '/dashboard',
   },
-  { label: "Usuarios", icon: <Users size={20} />, href: "/admin/users" },
+  {
+    label: 'Estadísticas',
+    icon: <BarChartIcon className="h-5 w-5" />,
+    href: '/statistics',
+  },
+  {
+    label: 'Contratos',
+    icon: <FileTextIcon className="h-5 w-5" />,
+    href: '/contracts',
+  },
+  {
+    label: 'Usuarios',
+    icon: <PersonIcon className="h-5 w-5" />,
+    href: '/admin/users',
+  },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ onClose }) => {
+const Sidebar = ({ onClose }: SidebarProps) => {
+  const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({});
 
-  const toggleSubmenu = (label: string) => {
-    setOpenSubmenus(prev => ({
-      ...prev,
-      [label]: !prev[label]
-    }));
+  const isActive = (path: string) => {
+    if (path === '/') return location.pathname === path;
+    return location.pathname.startsWith(path);
   };
 
-  const isActive = (href: string) => {
-    return location.pathname === href || 
-           (href !== '/' && location.pathname.startsWith(href + '/'));
-  };
-
-  const renderMenuItem = (item: MenuItem, index: number) => {
-    const hasSubmenu = item.submenu && item.submenu.length > 0;
-    const isItemActive = isActive(item.href) || 
-                        (hasSubmenu && item.submenu?.some(sub => isActive(sub.href)));
-    const isSubmenuOpen = openSubmenus[item.label] ?? false;
-
-    return (
-      <div key={`${item.href}-${index}`} className="mb-1">
-        <div 
-          className={cn(
-            "flex items-center justify-between px-4 py-2 rounded-lg font-medium transition-colors cursor-pointer",
-            isItemActive 
-              ? "bg-[#D6E8EE] text-[#018ABE]" 
-              : "text-white hover:bg-[#02457A]/60"
-          )}
-          onClick={() => {
-            if (hasSubmenu) {
-              toggleSubmenu(item.label);
-            } else {
-              navigate(item.href);
-              onClose?.();
-            }
-          }}
-        >
-          <div className="flex items-center gap-3">
-            {item.icon}
-            <span>{item.label}</span>
-          </div>
-          {hasSubmenu && (
-            <span className="ml-2">
-              {isSubmenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            </span>
-          )}
-        </div>
-        
-        {hasSubmenu && isSubmenuOpen && (
-          <div className="ml-6 mt-1 space-y-1">
-            {item.submenu?.map((subItem, subIndex) => (
-              <Link
-                key={`${subItem.href}-${subIndex}`}
-                to={subItem.href}
-                className={cn(
-                  "block px-4 py-2 text-sm rounded-lg transition-colors",
-                  isActive(subItem.href)
-                    ? "text-[#018ABE] font-medium"
-                    : "text-white/80 hover:text-white hover:bg-[#02457A]/40"
-                )}
-                onClick={() => onClose?.()}
-              >
-                {subItem.label}
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-    );
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+    }
   };
 
   return (
-    <aside className="h-screen w-64 bg-[#001B48] flex flex-col justify-between py-6 px-4 overflow-y-auto">
-      <div>
-        <div className="mb-8 flex items-center gap-2 px-2">
-          <img
-            src="/images/logo.png"
-            alt="Logo PACTA"
-            className="w-8 h-8"
-            style={{ filter: "brightness(0) invert(1)" }}
-          />
-          <span className="text-2xl font-bold text-white tracking-wide">
-            PACTA
-          </span>
-        </div>
-        <nav className="flex flex-col gap-1">
-          {menu.map(renderMenuItem)}
-        </nav>
-      </div>
-      <div className="flex flex-col items-center gap-2">
-        <div className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-full bg-[#97CADB] flex items-center justify-center text-[#001B48] font-bold">
-            {user ? user.name?.[0]?.toUpperCase() || "U" : "U"}
+    <div className="h-full flex flex-col bg-white border-r border-gray-200">
+      {/* Logo y botón de cierre */}
+      <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+        <div className="flex items-center">
+          <div className="h-8 w-8 rounded-md bg-primary flex items-center justify-center mr-2">
+            <FileTextIcon className="h-4 w-4 text-white" />
           </div>
-          <div className="text-white text-sm">
-            <div className="font-semibold">{user ? user.name : "Invitado"}</div>
-            <div className="text-xs opacity-70">
-              {user ? user.role : "Sin sesión"}
+          <h2 className="text-xl font-bold text-gray-900">PACTA</h2>
+        </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="md:hidden p-1.5 rounded-md text-gray-400 hover:bg-gray-100 hover:text-gray-500 transition-colors"
+            aria-label="Cerrar menú"
+          >
+            <ChevronRightIcon className="h-5 w-5" />
+          </button>
+        )}
+      </div>
+
+      {/* Menú de navegación */}
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {menu.map((item) => (
+          <div
+            key={item.href}
+            onClick={() => {
+              navigate(item.href);
+              onClose?.();
+            }}
+            className={cn(
+              'flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors cursor-pointer',
+              isActive(item.href)
+                ? 'bg-primary/10 text-primary font-semibold'
+                : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+            )}
+          >
+            <span className="mr-3">
+              {item.icon}
+            </span>
+            <span>{item.label}</span>
+          </div>
+        ))}
+      </nav>
+
+      {/* Perfil de usuario */}
+      <div className="p-4 border-t border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+              {user?.name
+                .split(' ')
+                .map((n: string) => n[0])
+                .join('')}
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+              <p className="text-xs text-gray-500 capitalize">{user?.role?.toLowerCase()}</p>
             </div>
           </div>
+          <button
+            onClick={handleLogout}
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+            title="Cerrar sesión"
+          >
+            <ExitIcon className="h-5 w-5" />
+          </button>
         </div>
-        {user && (
-          <button
-            className="flex items-center gap-2 text-white/80 hover:text-[#018ABE] mt-2 text-sm"
-            onClick={() => navigate("/settings")}
-          >
-            <Settings size={18} /> Configuración
-          </button>
-        )}
-        {user ? (
-          <button
-            className="flex items-center gap-2 text-white/80 hover:text-[#F44336] mt-4 text-sm"
-            onClick={logout}
-          >
-            <LogOut size={18} /> Cerrar sesión
-          </button>
-        ) : (
-          <button
-            className="flex items-center gap-2 text-white/80 hover:text-[#018ABE] mt-4 text-sm"
-            onClick={() => navigate("/login")}
-          >
-            <LogIn size={18} /> Iniciar sesión
-          </button>
-        )}
       </div>
-    </aside>
+    </div>
   );
 };
 

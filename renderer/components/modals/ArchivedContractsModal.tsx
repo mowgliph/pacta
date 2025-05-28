@@ -1,9 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Download, ExternalLink, Search, Archive } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Cross2Icon } from "@radix-ui/react-icons";
-import { cn } from "@/lib/utils";
+import { 
+  Cross2Icon,
+  FileTextIcon, 
+  DownloadIcon, 
+  ExternalLinkIcon, 
+  MagnifyingGlassIcon, 
+  ArchiveIcon 
+} from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { format, parseISO, isValid } from "date-fns";
@@ -16,7 +21,6 @@ interface ArchivedContractsModalProps {
   onClose: () => void;
   title?: string;
   contracts: ArchivedContract[];
-  onExportPDF: (contracts: ArchivedContract[]) => Promise<void>;
   onRestoreContract?: (contractId: string) => Promise<void>;
   loading?: boolean;
   error?: string | null;
@@ -33,7 +37,6 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
   onClose,
   title = "Contratos Archivados",
   contracts: initialContracts,
-  onExportPDF,
   onRestoreContract,
 }) => {
   const navigate = useNavigate();
@@ -43,7 +46,7 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [exporting, setExporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [restoring, setRestoring] = useState<string | null>(null);
 
   // Usar los contratos pasados como prop
@@ -97,35 +100,67 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
   }, [search]);
 
   // Manejar exportación a PDF
-  const handleExportPDF = async (): Promise<void> => {
+  const handleExportPDF = useCallback(async () => {
     if (filteredContracts.length === 0) {
       toast({
-        title: "No hay contratos para exportar",
-        description: "No se encontraron contratos archivados para exportar.",
+        title: "No hay contratos",
+        description: "No hay contratos para exportar con los filtros actuales",
         variant: "destructive",
       });
       return;
     }
-
+    
     try {
-      setExporting(true);
-      await onExportPDF(filteredContracts);
+      setIsExporting(true);
+      
+      // Obtener la ruta del archivo usando el canal IPC
+      const result = await window.electron.ipcRenderer.invoke(
+        "dialog:save-file",
+        {
+          title: "Exportar contratos archivados como PDF",
+          defaultPath: `Contratos_Archivados_${new Date().toISOString().slice(0, 10)}.pdf`,
+          filters: [{ name: "PDF", extensions: ["pdf"] }],
+        }
+      );
+
+      if (!result?.success || !result?.filePath) {
+        return; // Usuario canceló el diálogo
+      }
+
+      // Exportar contratos usando el canal de reportes
+      const exportResult = await window.electron.ipcRenderer.invoke(
+        "export:pdf",
+        {
+          data: filteredContracts,
+          template: "contracts-archived",
+          filePath: result.filePath,
+        }
+      );
+
+      if (!exportResult?.success) {
+        throw new Error(exportResult?.error?.message || "Error al exportar los contratos");
+      }
+      
+      // Mostrar notificación de éxito
       toast({
         title: "Exportación exitosa",
-        description: `Se exportaron ${filteredContracts.length} contratos correctamente`,
+        description: `Se exportaron ${filteredContracts.length} contratos archivados correctamente`,
         variant: "default",
       });
     } catch (error) {
-      console.error("Error al exportar PDF:", error);
+      console.error("Error al exportar contratos archivados:", error);
+      // Mostrar notificación de error
       toast({
         title: "Error al exportar",
-        description: `No se pudo exportar el archivo: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        description: `No se pudieron exportar los contratos: ${
+          error instanceof Error ? error.message : "Error desconocido"
+        }`,
         variant: "destructive",
       });
     } finally {
-      setExporting(false);
+      setIsExporting(false);
     }
-  };
+  }, [filteredContracts, toast]);
 
   // Manejar restauración de contrato
   const handleRestoreContract = async (contractId: string): Promise<void> => {
@@ -172,7 +207,7 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
         <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl bg-white rounded-lg shadow-lg z-50 max-h-[90vh] flex flex-col">
           <div className="flex items-center justify-between p-4 border-b">
             <Dialog.Title className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-              <Archive className="w-5 h-5" />
+              <ArchiveIcon className="w-5 h-5" />
               {title}
             </Dialog.Title>
             <Dialog.Close asChild>
@@ -187,7 +222,7 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
 
           <div className="p-4 border-b">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Buscar contratos..."
@@ -231,7 +266,7 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
                             {formatDate(contract.startDate)} - {formatDate(contract.endDate)}
                           </span>
                           <span className="inline-flex items-center">
-                            <Archive className="h-3 w-3 mr-1" />
+                            <ArchiveIcon className="h-3 w-3 mr-1" />
                             Archivado el: {formatDate(contract.updatedAt)}
                           </span>
                         </div>
@@ -247,7 +282,7 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
                             {restoring === contract.id ? (
                               <Spinner className="mr-2 h-4 w-4" />
                             ) : (
-                              <Archive className="mr-2 h-4 w-4" />
+                              <ArchiveIcon className="mr-2 h-4 w-4" />
                             )}
                             Restaurar
                           </Button>
@@ -257,7 +292,7 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
                           size="sm"
                           onClick={() => navigate(`/contracts/${contract.id}`)}
                         >
-                          <ExternalLink className="mr-2 h-4 w-4" />
+                          <ExternalLinkIcon className="mr-2 h-4 w-4" />
                           Ver
                         </Button>
                       </div>
@@ -301,14 +336,14 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
               <Button
                 variant="outline"
                 onClick={handleExportPDF}
-                disabled={filteredContracts.length === 0 || exporting}
+                disabled={filteredContracts.length === 0 || isExporting}
               >
-                {exporting ? (
+                {isExporting ? (
                   <Spinner className="mr-2 h-4 w-4" />
                 ) : (
-                  <Download className="mr-2 h-4 w-4" />
+                  <DownloadIcon className="mr-2 h-4 w-4" />
                 )}
-                Exportar PDF
+                {isExporting ? "Exportando..." : "Exportar PDF"}
               </Button>
               <Button onClick={onClose}>Cerrar</Button>
             </div>

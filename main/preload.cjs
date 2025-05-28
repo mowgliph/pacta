@@ -250,21 +250,6 @@ contextBridge.exposeInMainWorld("electron", {
     list: () => ipcRenderer.invoke(IPC_CHANNELS.BACKUPS.LIST),
     cleanOld: () => ipcRenderer.invoke(IPC_CHANNELS.BACKUPS.CLEAN_OLD),
   },
-  // Theme
-  theme: {
-    getSystemTheme: () => ipcRenderer.invoke(IPC_CHANNELS.THEME.GET_SYSTEM),
-    getSavedTheme: () => ipcRenderer.invoke(IPC_CHANNELS.THEME.GET_SAVED),
-    setAppTheme: (theme) =>
-      ipcRenderer.invoke(IPC_CHANNELS.THEME.SET_APP, theme),
-    onSystemThemeChange: (callback) => {
-      ipcRenderer.on(IPC_CHANNELS.THEME.SYSTEM_CHANGED, (event, ...args) =>
-        callback(...args)
-      );
-    },
-    removeSystemThemeListener: (callback) => {
-      ipcRenderer.removeListener(IPC_CHANNELS.THEME.SYSTEM_CHANGED, callback);
-    },
-  },
   // API genérica
   api: {
     request: (req) => ipcRenderer.invoke("api:request", req),

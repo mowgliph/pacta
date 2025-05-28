@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, ExternalLink, Search } from "lucide-react";
+import { FileTextIcon, ExternalLinkIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { Contract } from "@/lib/useContracts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
 
 interface ExpiredContractsModalProps {
   isOpen: boolean;
@@ -12,7 +13,6 @@ interface ExpiredContractsModalProps {
   contracts: Contract[];
   loading: boolean;
   error: string | null;
-  onExportPDF: (contracts: Contract[]) => Promise<void>;
   title?: string;
 }
 
@@ -24,13 +24,12 @@ const ExpiredContractsModal: React.FC<ExpiredContractsModalProps> = ({
   contracts,
   loading,
   error,
-  onExportPDF,
   title="Expirados"
 }) => {
   const navigate = useNavigate();
   const [page, setPage] = React.useState(1);
   const [search, setSearch] = React.useState("");
-  const [exporting, setExporting] = React.useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Filtrar contratos por búsqueda
   const filteredContracts = contracts.filter(
@@ -54,17 +53,28 @@ const ExpiredContractsModal: React.FC<ExpiredContractsModalProps> = ({
   // Manejar exportación a PDF
   const handleExportPDF = async () => {
     if (filteredContracts.length === 0) {
-      alert("No hay contratos vencidos para exportar con los filtros actuales");
       return;
     }
 
-    setExporting(true);
     try {
-      await onExportPDF(filteredContracts);
-    } catch (err) {
-      console.error("Error al exportar:", err);
+      setIsExporting(true);
+      const result = await window.electron.ipcRenderer.invoke("export:pdf", {
+        data: contracts,
+        template: "contracts-expired",
+      });
+
+      if (!result?.success) {
+        throw new Error(result?.error?.message || "Error desconocido al exportar");
+      }
+      
+      toast.success("Contratos exportados exitosamente");
+    } catch (error) {
+      console.error("Error al exportar PDF:", error);
+      toast.error(
+        `Error al exportar: ${error instanceof Error ? error.message : "Error desconocido"}`
+      );
     } finally {
-      setExporting(false);
+      setIsExporting(false);
     }
   };
 
@@ -94,7 +104,7 @@ const ExpiredContractsModal: React.FC<ExpiredContractsModalProps> = ({
 
         {/* Barra de búsqueda */}
         <div className="flex items-center bg-white rounded-lg border border-[#E5E5E5] px-3 py-2 gap-2 mb-4">
-          <Search size={18} className="text-[#757575]" />
+          <MagnifyingGlassIcon className="w-4.5 h-4.5 text-[#757575]" />
           <input
             type="text"
             placeholder="Buscar por número, empresa o descripción..."
@@ -146,7 +156,8 @@ const ExpiredContractsModal: React.FC<ExpiredContractsModalProps> = ({
                     </div>
                   </div>
                   {contract.description && (
-                    <div className="mt-2 text-sm text-[#757575] line-clamp-1">
+                    <div className="flex items-center gap-2 mt-2 text-sm text-[#757575] line-clamp-1">
+                      <FileTextIcon className="w-5 h-5 text-azul-medio" />
                       {contract.description}
                     </div>
                   )}
@@ -171,25 +182,19 @@ const ExpiredContractsModal: React.FC<ExpiredContractsModalProps> = ({
               onClick={navigateToExpiredContracts}
               className="flex items-center gap-2"
             >
-              <ExternalLink size={16} />
+              <ExternalLinkIcon className="w-4 h-4" />
               Ver todos
             </Button>
             <Button
               onClick={handleExportPDF}
-              disabled={loading || exporting || filteredContracts.length === 0}
-              className="flex items-center gap-2"
+              disabled={isExporting || contracts.length === 0}
             >
-              {exporting ? (
-                <>
-                  <Spinner size="sm" />
-                  Exportando...
-                </>
+              {isExporting ? (
+                <Spinner className="mr-2 h-4 w-4" />
               ) : (
-                <>
-                  <FileText size={16} />
-                  Exportar PDF
-                </>
+                <FileTextIcon className="mr-2 h-4 w-4" />
               )}
+              {isExporting ? 'Exportando...' : 'Exportar a PDF'}
             </Button>
           </div>
         </DialogFooter>

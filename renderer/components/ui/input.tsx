@@ -1,6 +1,6 @@
 import * as React from "react"
 import { cn } from "../../lib/utils"
-import { Info, AlertCircle, CheckCircle2 } from "lucide-react"
+import { InfoCircledIcon, ExclamationTriangleIcon, CheckCircledIcon } from "@radix-ui/react-icons"
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string
@@ -80,10 +80,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {showSuccess && (
-            <CheckCircle2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-success" />
+            <CheckCircledIcon className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-success" />
           )}
           {hasError && (
-            <AlertCircle className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-destructive" />
+            <ExclamationTriangleIcon className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-destructive" />
           )}
         </div>
         {description && !hasError && (
@@ -91,7 +91,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={`${inputId}-description`}
             className="flex items-center gap-1.5 text-xs text-muted-foreground"
           >
-            <Info className="h-3.5 w-3.5 flex-shrink-0" />
+            <InfoCircledIcon className="h-3.5 w-3.5 flex-shrink-0" />
             {description}
           </p>
         )}
@@ -100,7 +100,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={`${inputId}-error`}
             className="flex items-center gap-1.5 text-xs text-destructive"
           >
-            <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+            <ExclamationTriangleIcon className="h-3.5 w-3.5 flex-shrink-0" />
             {error}
           </p>
         )}

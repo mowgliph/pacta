@@ -1,7 +1,6 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import { ClientRootLayout } from "./components/ui/RootLayout";
-import { useThemeStore } from "./store/theme";
-import { useEffect } from "react";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProviderCustom } from "./components/ui/use-toast";
 import { ErrorBoundary } from "./components/ui/ErrorBoundary";
@@ -18,9 +17,7 @@ function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <BrowserRouter>
       <ToastProviderCustom>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <AuthProvider>{children}</AuthProvider>
       </ToastProviderCustom>
     </BrowserRouter>
   );
@@ -28,33 +25,31 @@ function AppProviders({ children }: { children: React.ReactNode }) {
 
 // Componente principal de la aplicación
 function AppContent() {
-  const initTheme = useThemeStore((state) => state.init);
-
-  useEffect(() => {
-    initTheme().catch(console.error);
-  }, [initTheme]);
-
+  const location = useLocation();
+  
   return (
     <ClientRootLayout>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/admin/users" element={<Users />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/statistics" element={<Statistics />} />
-        <Route path="/contracts" element={<Contracts />} />
-        
-        {/* Ruta para errores 404 */}
-        <Route 
-          path="*" 
-          element={
-            <ErrorBoundary>
-              <NotFound />
-            </ErrorBoundary>
-          } 
-        />
-      </Routes>
+      <AnimatePresence mode="wait" initial={false}>
+        <Routes location={location} key={location.pathname}>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/admin/users" element={<Users />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/statistics" element={<Statistics />} />
+          <Route path="/contracts" element={<Contracts />} />
+
+          {/* Ruta para errores 404 */}
+          <Route
+            path="*"
+            element={
+              <ErrorBoundary>
+                <NotFound />
+              </ErrorBoundary>
+            }
+          />
+        </Routes>
+      </AnimatePresence>
     </ClientRootLayout>
   );
 }
