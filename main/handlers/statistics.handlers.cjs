@@ -17,13 +17,28 @@ function registerStatisticsHandlers() {
   const handlers = {
     [IPC_CHANNELS.STATISTICS.DASHBOARD]: async () => {
       try {
-        return await optimizer.getDashboardStatistics();
+        console.log('[Statistics] Obteniendo estadísticas del dashboard...');
+        const data = await optimizer.getDashboardStatistics();
+        console.log('[Statistics] Estadísticas obtenidas:', JSON.stringify(data, null, 2));
+        
+        console.log('[Statistics] Obteniendo estadísticas del mes anterior...');
+        const lastMonth = await optimizer.getDashboardStatisticsLastMonth();
+        console.log('[Statistics] Estadísticas del mes anterior:', JSON.stringify(lastMonth, null, 2));
+        
+        const result = { success: true, data: { ...data, lastMonth } };
+        console.log('[Statistics] Resultado final:', JSON.stringify(result, null, 2));
+        
+        return result;
       } catch (error) {
-        throw AppError.internal(
-          "Error al obtener estadísticas del dashboard",
-          "DASHBOARD_ERROR",
-          { originalError: error.message }
-        );
+        console.error("[Statistics] Error al obtener estadísticas del dashboard:", error);
+        return {
+          success: false,
+          error: {
+            message: error.message || "Error al obtener estadísticas del dashboard",
+            code: error.code || "DASHBOARD_ERROR",
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+          },
+        };
       }
     },
 

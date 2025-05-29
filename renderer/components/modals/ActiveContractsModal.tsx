@@ -55,13 +55,21 @@ const ActiveContractsModal: React.FC<ActiveContractsModalProps> = ({
     }
   }, [propLoading, propError]);
 
-  // Filtrar contratos por búsqueda
-  const filteredContracts = contracts.filter(
-    (c) =>
-      c.number.toLowerCase().includes(search.toLowerCase()) ||
-      c.company.toLowerCase().includes(search.toLowerCase()) ||
-      c.description.toLowerCase().includes(search.toLowerCase())
-  );
+  // Filtrar contratos por búsqueda de manera segura
+  const filteredContracts = contracts.filter((c) => {
+    if (!c) return false;
+    
+    const searchTerm = search.toLowerCase();
+    const contractNumber = c.number?.toLowerCase?.() || '';
+    const company = c.company?.toLowerCase?.() || '';
+    const description = c.description?.toLowerCase?.() || '';
+    
+    return (
+      contractNumber.includes(searchTerm) ||
+      company.includes(searchTerm) ||
+      description.includes(searchTerm)
+    );
+  });
 
   // Calcular paginación
   const totalPages = Math.ceil(filteredContracts.length / PAGE_SIZE);
@@ -153,26 +161,14 @@ const ActiveContractsModal: React.FC<ActiveContractsModalProps> = ({
         <Dialog.Content 
           className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:max-w-[600px] sm:rounded-lg"
           aria-labelledby={titleId}
-          aria-describedby={descriptionId}
         >
-          <div className="flex flex-col space-y-1.5">
-            <Dialog.Title className="text-xl font-semibold text-gray-900 mb-4">
+          <div className="relative">
+            <Dialog.Title className="text-xl font-semibold text-[#001B48] mb-2">
               {title}
-              {loading && (
-                <span className="ml-2 text-sm font-normal text-gray-500">
-                  <Spinner className="inline-block mr-1 w-4 h-4" />
-                  Cargando...
-                </span>
-              )}
-              {error && (
-                <span className="ml-2 text-sm font-normal text-red-500">
-                  {error}
-                </span>
-              )}
             </Dialog.Title>
-            <p id={descriptionId} className="sr-only">
+            <Dialog.Description id="active-contracts-description" className="text-sm text-gray-500 mb-4">
               Lista de contratos vigentes con opciones para ver detalles y exportar
-            </p>
+            </Dialog.Description>
             <Dialog.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
               <Cross2Icon className="h-4 w-4" />
               <span className="sr-only">Cerrar</span>
@@ -227,17 +223,17 @@ const ActiveContractsModal: React.FC<ActiveContractsModalProps> = ({
                         <p className="text-sm text-[#757575]">{contract.company}</p>
                       </div>
                       <div className="text-sm text-[#757575]">
-                        {new Date(contract.endDate).toLocaleDateString()}
+                        {contract.endDate ? new Date(contract.endDate).toLocaleDateString() : 'No especificada'}
                       </div>
                     </div>
                     <div className="mt-2 text-sm text-[#757575] line-clamp-1">
-                      {contract.description}
+                      {contract.description || 'Sin descripción'}
                     </div>
                     <div className="mt-2 text-right text-sm font-medium text-[#018ABE]">
-                      {contract.amount.toLocaleString("es-ES", {
+                      {contract.amount ? contract.amount.toLocaleString("es-ES", {
                         style: "currency",
                         currency: "USD",
-                      })}
+                      }) : 'No especificado'}
                     </div>
                   </div>
                 ))}

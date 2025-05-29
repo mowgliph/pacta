@@ -60,6 +60,15 @@ model Role {
   users            User[]
 }
 
+enum ContractStatus {
+  VIGENTE
+  VENCIDO
+  ACTIVO
+  TERMINADO
+  CANCELADO
+  PENDIENTE
+}
+
 model Contract {
   id                    String               @id @default(uuid())
   contractNumber        String               @unique
@@ -135,7 +144,7 @@ model Contract {
   forceMajeure        String
   
   // Metadatos del sistema
-  status              String                @default("Vigente")
+  status              ContractStatus        @default(VIGENTE)
   isRestricted        Boolean               @default(false)
   isArchived          Boolean               @default(false)
   createdById         String

@@ -204,23 +204,29 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
     <Dialog.Root open={isOpen} onOpenChange={onClose}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl bg-white rounded-lg shadow-lg z-50 max-h-[90vh] flex flex-col">
-          <div className="flex items-center justify-between p-4 border-b">
-            <Dialog.Title className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-              <ArchiveIcon className="w-5 h-5" />
+        <Dialog.Content
+          className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-4xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg"
+          aria-labelledby="archived-contracts-title"
+          aria-describedby="archived-contracts-description"
+        >
+          <div className="flex flex-col space-y-1.5">
+            <Dialog.Title id="archived-contracts-title" className="text-xl font-semibold text-gray-900 mb-2">
               {title}
+              {loading && (
+                <span className="ml-2 text-sm font-normal text-gray-500">
+                  <Spinner className="inline-block mr-1 w-4 h-4" />
+                  Cargando...
+                </span>
+              )}
+              {error && (
+                <span className="ml-2 text-sm font-normal text-red-500">
+                  {error}
+                </span>
+              )}
             </Dialog.Title>
-            <Dialog.Close asChild>
-              <button
-                className="text-gray-400 hover:text-gray-500"
-                aria-label="Cerrar"
-              >
-                <Cross2Icon className="h-5 w-5" />
-              </button>
-            </Dialog.Close>
-          </div>
-
-          <div className="p-4 border-b">
+            <Dialog.Description id="archived-contracts-description" className="text-sm text-gray-500 mb-4">
+              Lista de contratos archivados con opciones para restaurar, exportar y ver detalles.
+            </Dialog.Description>
             <div className="relative">
               <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input

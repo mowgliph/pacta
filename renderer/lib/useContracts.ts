@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { ApiResponse, PaginationResponse } from "@/types/electron";
-import { ArchivedContract } from "@/types/contracts";
+import { PaginationResponse, ApiResponse } from "../types/electron.d";
+import { ArchivedContract } from "../types/contracts";
 
 export interface Contract {
   id: string;
@@ -28,25 +28,27 @@ export function useContracts({ tipo, status }: UseContractsOptions = {}) {
 
   // Función para extraer el mensaje de error de la respuesta
   const getErrorMessage = (error: unknown): string => {
-    if (typeof error === 'string') return error;
-    if (!error || typeof error !== 'object') return 'Error desconocido al cargar los contratos';
-    
- 
+    if (typeof error === "string") return error;
+    if (!error || typeof error !== "object")
+      return "Error desconocido al cargar los contratos";
+
     // Manejar error anidado
     const nestedError = error as { error?: { message?: unknown } };
-    if (nestedError.error && typeof nestedError.error === 'object') {
+    if (nestedError.error && typeof nestedError.error === "object") {
       if (nestedError.error.message) {
         return String(nestedError.error.message);
       }
     }
-    
+
     // Intentar obtener el mensaje de error de la respuesta
-    const responseError = error as { response?: { data?: { message?: string } } };
+    const responseError = error as {
+      response?: { data?: { message?: string } };
+    };
     if (responseError?.response?.data?.message) {
       return responseError.response.data.message;
     }
-    
-    return 'Error desconocido al cargar los contratos';
+
+    return "Error desconocido al cargar los contratos";
   };
 
   useEffect(() => {
@@ -54,13 +56,18 @@ export function useContracts({ tipo, status }: UseContractsOptions = {}) {
     setLoading(true);
     setError(null);
 
-    console.log('useContracts: Iniciando carga de contratos...');
-    console.log('useContracts: Tipo seleccionado:', tipo);
-    console.log('useContracts: Electron disponible:', typeof window.electron !== 'undefined');
-    
-    if (typeof window.electron === 'undefined') {
-      console.error('useContracts: Electron no está disponible');
-      setError('Error: La aplicación debe ejecutarse en el entorno de Electron. Por favor, inicie la aplicación desde el ejecutable.');
+    console.log("useContracts: Iniciando carga de contratos...");
+    console.log("useContracts: Tipo seleccionado:", tipo);
+    console.log(
+      "useContracts: Electron disponible:",
+      typeof window.electron !== "undefined"
+    );
+
+    if (typeof window.electron === "undefined") {
+      console.error("useContracts: Electron no está disponible");
+      setError(
+        "Error: La aplicación debe ejecutarse en el entorno de Electron. Por favor, inicie la aplicación desde el ejecutable."
+      );
       setLoading(false);
       return;
     }
@@ -68,59 +75,66 @@ export function useContracts({ tipo, status }: UseContractsOptions = {}) {
     // Verificar que la API de contratos esté disponible
     const electron = window.electron as any; // Aserción temporal
     if (!electron.contracts) {
-      console.error('useContracts: La API de contratos no está disponible', electron);
-      setError('Error: No se pudo acceder al módulo de contratos. Por favor, intente reiniciar la aplicación.');
+      console.error(
+        "useContracts: La API de contratos no está disponible",
+        electron
+      );
+      setError(
+        "Error: No se pudo acceder al módulo de contratos. Por favor, intente reiniciar la aplicación."
+      );
       setLoading(false);
       return;
     }
 
-    console.log('useContracts: Electron verificado');
+    console.log("useContracts: Electron verificado");
 
     const loadContracts = async () => {
       try {
-        console.log('Intentando listar contratos...');
+        console.log("Intentando listar contratos...");
         const electron = window.electron as any; // Aserción temporal
-        
+
         // Construir los filtros
         const filters: Record<string, any> = {};
         if (tipo) filters.type = tipo;
         if (status) filters.status = status;
-        
-        const response = await electron.contracts.list(filters) as ApiResponse<PaginationResponse<Contract>>;
 
-        console.log('useContracts: Respuesta recibida');
+        const response = (await electron.contracts.list(
+          filters
+        )) as ApiResponse<PaginationResponse<Contract>>;
+
+        console.log("useContracts: Respuesta recibida");
         if (!mounted) return;
-        
-        console.log('Tipo de respuesta:', typeof response);
-        console.log('Respuesta completa:', response);
-        
+
+        console.log("Tipo de respuesta:", typeof response);
+        console.log("Respuesta completa:", response);
+
         if (!response) {
-          throw new Error('No se recibió respuesta del servidor');
+          throw new Error("No se recibió respuesta del servidor");
         }
-        
+
         // Manejar respuesta de error
         if (!response.success) {
           throw new Error(
-            response.error?.message || 'Error al cargar los contratos'
+            response.error?.message || "Error al cargar los contratos"
           );
         }
-        
+
         // Extraer los datos de la respuesta
         let contractsData: Contract[] = [];
-        
+
         // Verificar si la respuesta tiene el formato PaginationResponse
-        if (response.data && 'items' in response.data) {
+        if (response.data && "items" in response.data) {
           contractsData = response.data.items || [];
-        } 
+        }
         // Si no tiene el formato esperado, intentar extraer los datos de otra manera
         else if (response.data) {
           const data = response.data as any;
-          
+
           if (Array.isArray(data)) {
             contractsData = data;
           } else if (data.items && Array.isArray(data.items)) {
             contractsData = data.items;
-          } else if (typeof data === 'object') {
+          } else if (typeof data === "object") {
             // Buscar cualquier propiedad que sea un array
             const arrayProp = Object.values(data).find(Array.isArray);
             if (arrayProp) {
@@ -128,18 +142,17 @@ export function useContracts({ tipo, status }: UseContractsOptions = {}) {
             }
           }
         }
-        
+
         if (contractsData.length > 0) {
-          console.log('Contratos cargados:', contractsData);
+          console.log("Contratos cargados:", contractsData);
           setContracts(contractsData);
         } else {
-          console.log('No se encontraron contratos');
+          console.log("No se encontraron contratos");
           setContracts([]);
-          setError('No se encontraron contratos');
+          setError("No se encontraron contratos");
         }
-        
       } catch (err) {
-        console.error('Error al cargar los contratos:', err);
+        console.error("Error al cargar los contratos:", err);
         if (mounted) {
           setError(getErrorMessage(err));
           setContracts([]);
@@ -163,8 +176,8 @@ export function useContracts({ tipo, status }: UseContractsOptions = {}) {
 
 // Hook específico para contratos próximos a vencer
 export function useExpiringContracts() {
-  const { contracts, loading, error } = useContracts({ 
-    status: "Proximo a Vencer"
+  const { contracts, loading, error } = useContracts({
+    status: "Proximo a Vencer",
   });
 
   return { contracts, loading, error };
@@ -172,8 +185,8 @@ export function useExpiringContracts() {
 
 // Hook específico para contratos vencidos
 export function useExpiredContracts() {
-  const { contracts, loading, error } = useContracts({ 
-    status: "Vencido"
+  const { contracts, loading, error } = useContracts({
+    status: "Vencido",
   });
 
   return { contracts, loading, error };
@@ -205,9 +218,7 @@ export function useActiveContracts() {
         setContracts(response.data || []);
       } catch (err) {
         console.error("Error al cargar los contratos activos:", err);
-        setError(
-          err instanceof Error ? err.message : "Error desconocido"
-        );
+        setError(err instanceof Error ? err.message : "Error desconocido");
       } finally {
         setLoading(false);
       }
@@ -245,9 +256,7 @@ export function useAllContracts() {
         setContracts(response.data || []);
       } catch (err) {
         console.error("Error al cargar los contratos:", err);
-        setError(
-          err instanceof Error ? err.message : "Error desconocido"
-        );
+        setError(err instanceof Error ? err.message : "Error desconocido");
       } finally {
         setLoading(false);
       }
@@ -277,24 +286,26 @@ export function useArchivedContracts() {
 
         if (!response?.success) {
           throw new Error(
-            response?.error?.message || "Error al obtener los contratos archivados"
+            response?.error?.message ||
+              "Error al obtener los contratos archivados"
           );
         }
 
-        // Asegurarse de que los datos tengan el formato correcto
-        const archivedContracts: ArchivedContract[] = (response.data || []).map((contract: any) => ({
-          ...contract,
-          // Asegurar que los campos requeridos estén presentes
-          contractNumber: contract.contractNumber || contract.number || '',
-          updatedAt: contract.updatedAt || new Date().toISOString(),
-        }));
+        // Asegurarse de que los datos sean un array y tengan el formato correcto
+        const data = Array.isArray(response.data) ? response.data : [];
+        const archivedContracts: ArchivedContract[] = data.map(
+          (contract: any) => ({
+            ...contract,
+            // Asegurar que los campos requeridos estén presentes
+            contractNumber: contract.contractNumber || contract.number || "",
+            updatedAt: contract.updatedAt || new Date().toISOString(),
+          })
+        ) || [];
 
         setContracts(archivedContracts);
       } catch (err) {
         console.error("Error al cargar contratos archivados:", err);
-        setError(
-          err instanceof Error ? err.message : "Error desconocido"
-        );
+        setError(err instanceof Error ? err.message : "Error desconocido");
       } finally {
         setLoading(false);
       }

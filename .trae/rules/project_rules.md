@@ -1,9 +1,3 @@
----
-trigger: always_on
----
-
-# Windsurf Rules for PACTA
-
 Rules for developing PACTA, a desktop contract management app built with Electron, Vite, TypeScript (renderer), JavaScript (main), and SQLite. These ensure consistency, security, and alignment with project goals.
 
 - Always response on Spanish

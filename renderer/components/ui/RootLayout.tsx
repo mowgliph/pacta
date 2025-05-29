@@ -1,6 +1,5 @@
 import Sidebar from "./Sidebar";
 import Header from "./Header";
-import Footer from "./Footer";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { ErrorHandler } from "./ErrorHandler";
 import { ToastProviderCustom } from "./use-toast";
@@ -133,14 +132,14 @@ export const ClientRootLayout = ({ children }: Props) => {
       <ErrorBoundary>
         <ToastProviderCustom>
           <ContextMenuProvider>
-            <div className="min-h-screen bg-gray-50 flex">
+            <div className="h-screen bg-gray-50 flex overflow-hidden">
               {/* Sidebar - Siempre visible en escritorio */}
-              <div className="w-64 flex-shrink-0 h-screen sticky top-0 bg-white border-r border-gray-200">
+              <div className="w-64 flex-shrink-0 h-full bg-white border-r border-gray-200">
                 <Sidebar />
               </div>
 
               {/* Main content area */}
-              <div className="flex-1 flex flex-col h-screen overflow-hidden">
+              <div className="flex-1 flex flex-col h-full overflow-hidden">
                 <CommandDialog>
                   <div className="flex flex-col h-full">
                     <CommandInput
@@ -180,10 +179,13 @@ export const ClientRootLayout = ({ children }: Props) => {
                     )}
                   </div>
                 </CommandDialog>
-                <Header />
-                <div className="flex flex-1 flex-col h-screen overflow-hidden">
-                  {children}
-                  <Footer className="px-6 py-4 border-t border-gray-200 bg-white" />
+                <div className="flex-shrink-0">
+                  <Header />
+                </div>
+                <div className="flex-1 overflow-y-auto">
+                  <main className="p-6">
+                    {children}
+                  </main>
                 </div>
                 {updateAvailable && (
                   <UpdateBanner

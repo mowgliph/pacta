@@ -92,13 +92,13 @@ const ExpiredContractsModal: React.FC<ExpiredContractsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]" aria-describedby="expired-contracts-description">
+      <DialogContent className="sm:max-w-[700px]" aria-describedby="expired-contracts-description">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-[#001B48]">
-            Contratos Vencidos
+          <DialogTitle className="text-xl font-semibold text-[#001B48] font-inter">
+            {title}
           </DialogTitle>
           <DialogDescription id="expired-contracts-description">
-            Lista de contratos que han vencido con opciones de exportación y navegación.
+            Lista de contratos vencidos con opciones de búsqueda, filtrado y exportación.
           </DialogDescription>
         </DialogHeader>
 

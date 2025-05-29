@@ -77,53 +77,93 @@ async function main() {
   const getContractDates = (status, index) => {
     const today = new Date();
     const oneDay = 24 * 60 * 60 * 1000; // milisegundos en un día
-    
-    switch(status) {
-      case 'Vencido':
+
+    switch (status) {
+      case "Vencido":
         return {
           startDate: new Date(today.getTime() - (90 + index * 7) * oneDay),
-          endDate: new Date(today.getTime() - (30 + index * 7) * oneDay)
+          endDate: new Date(today.getTime() - (30 + index * 7) * oneDay),
         };
-      case 'Próximo a Vencer':
+      case "Próximo a Vencer":
         return {
           startDate: new Date(today.getTime() - (60 + index * 5) * oneDay),
-          endDate: new Date(today.getTime() + (15 + index * 2) * oneDay)
+          endDate: new Date(today.getTime() + (15 + index * 2) * oneDay),
         };
-      case 'Vigente':
+      case "Vigente":
         return {
           startDate: new Date(today.getTime() - (30 + index * 3) * oneDay),
-          endDate: new Date(today.getTime() + (90 + index * 5) * oneDay)
+          endDate: new Date(today.getTime() + (90 + index * 5) * oneDay),
         };
-      case 'Archivado':
+      case "Archivado":
         return {
           startDate: new Date(today.getTime() - (180 + index * 10) * oneDay),
-          endDate: new Date(today.getTime() - (120 + index * 5) * oneDay)
+          endDate: new Date(today.getTime() - (120 + index * 5) * oneDay),
         };
       default:
         return {
           startDate: new Date(`2025-01-0${index + 1}`),
-          endDate: new Date(`2025-12-2${index + 1}`)
+          endDate: new Date(`2025-12-2${index + 1}`),
         };
     }
   };
 
   // Tipos de contratos y estados
-  const contractTypes = ['Proveedor', 'Cliente'];
-  const contractStatuses = ['Vigente', 'Vencido', 'Próximo a Vencer', 'Archivado'];
+  const contractTypes = ["Proveedor", "Cliente"];
+  const contractStatuses = [
+    "VIGENTE",
+    "VENCIDO",
+    "ACTIVO",
+    "TERMINADO",
+    "CANCELADO",
+    "PENDIENTE",
+  ];
   const companies = [
-    'TecnoSoluciones', 'InnovaTech', 'GlobalSoft', 'DataCorp', 'NetSecure',
-    'CloudSystems', 'WebMasters', 'CodeCraft', 'DigitalMind', 'FutureTech'
+    "TecnoSoluciones",
+    "InnovaTech",
+    "GlobalSoft",
+    "DataCorp",
+    "NetSecure",
+    "CloudSystems",
+    "WebMasters",
+    "CodeCraft",
+    "DigitalMind",
+    "FutureTech",
   ];
 
   // Crear 20 contratos de ejemplo
   const contratos = [];
   for (let i = 1; i <= 20; i++) {
-    const status = contractStatuses[(i - 1) % contractStatuses.length];
-    const { startDate, endDate } = getContractDates(status, i);
-    const contractNumber = `CONT-${startDate.getFullYear()}-${String(i).padStart(3, '0')}`;
+    // Asignar estados válidos del enum
+    let status = contractStatuses[(i - 1) % contractStatuses.length];
+    let isArchived = false;
+    // Simular algunos contratos vencidos y archivados
+    if (status === "VENCIDO" && i % 4 === 0) {
+      isArchived = true;
+    }
+    // Simular contratos próximos a vencer como VIGENTE con endDate cercana
+    let startDate, endDate;
+    if (status === "VIGENTE" && i % 5 === 0) {
+      startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 2);
+      endDate = new Date();
+      endDate.setDate(endDate.getDate() + 10); // Próximo a vencer
+    } else if (status === "VENCIDO") {
+      startDate = new Date();
+      startDate.setFullYear(startDate.getFullYear() - 1);
+      endDate = new Date();
+      endDate.setMonth(endDate.getMonth() - 6);
+    } else {
+      startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 1);
+      endDate = new Date();
+      endDate.setMonth(endDate.getMonth() + 6);
+    }
+    const contractNumber = `CONT-${startDate.getFullYear()}-${String(
+      i
+    ).padStart(3, "0")}`;
     const companyIndex = (i - 1) % companies.length;
     const type = contractTypes[(i - 1) % contractTypes.length];
-    
+
     const contrato = await prisma.contract.upsert({
       where: { contractNumber },
       update: {},
@@ -134,41 +174,60 @@ async function main() {
         type,
         companyName: companies[companyIndex],
         companyAddress: `Calle ${(i % 20) + 1} #${100 + i}`,
-        nationality: i % 3 === 0 ? 'Cubana' : (i % 3 === 1 ? 'Extranjera' : 'Mixta'),
-        commercialAuth: `MN-${startDate.getFullYear()}-${String(i).padStart(3, '0')}`,
+        nationality:
+          i % 3 === 0 ? "Cubana" : i % 3 === 1 ? "Extranjera" : "Mixta",
+        commercialAuth: `MN-${startDate.getFullYear()}-${String(i).padStart(
+          3,
+          "0"
+        )}`,
         bankAccount: `12345678${i}`,
         bankBranch: `Sucursal ${(i % 5) + 1}`,
         bankAgency: `Agencia ${(i % 3) + 1}`,
         bankHolder: `${companies[companyIndex]} S.A.`,
-        bankCurrency: i % 2 === 0 ? 'MLC' : 'CUP',
-        reeupCode: `REEUP-${String(i).padStart(3, '0')}-${startDate.getFullYear()}`,
-        nit: `NIT-${String(i).padStart(3, '0')}-${startDate.getFullYear()}`,
+        bankCurrency: i % 2 === 0 ? "MLC" : "CUP",
+        reeupCode: `REEUP-${String(i).padStart(
+          3,
+          "0"
+        )}-${startDate.getFullYear()}`,
+        nit: `NIT-${String(i).padStart(3, "0")}-${startDate.getFullYear()}`,
         contactPhones: JSON.stringify([
-          `555-${String(100 + i).padStart(3, '0')}`,
-          `555-${String(200 + i).padStart(3, '0')}`
+          `555-${String(100 + i).padStart(3, "0")}`,
+          `555-${String(200 + i).padStart(3, "0")}`,
         ]),
         repName: `Representante ${i}`,
-        repPosition: i % 2 === 0 ? 'Director' : 'Gerente',
-        repDocumentType: i % 2 === 0 ? 'Resolución' : 'Poder Notarial',
-        repDocumentNumber: `DOC-${startDate.getFullYear()}-${String(i).padStart(3, '0')}`,
-        repDocumentDate: new Date(startDate.getTime() - 45 * 24 * 60 * 60 * 1000), // 45 días antes de startDate
-        description: `Contrato de ${type.toLowerCase()} con ${companies[companyIndex]}`,
-        providerObligations: JSON.stringify([
-          `Obligación proveedor ${i}`,
-          i % 3 === 0 ? 'Mantenimiento incluido' : '',
-          i % 2 === 0 ? 'Soporte 24/7' : ''
-        ].filter(Boolean)),
-        clientObligations: JSON.stringify([
-          `Obligación cliente ${i}`,
-          i % 4 === 0 ? 'Pago puntual' : '',
-          i % 3 === 0 ? 'Espacio de trabajo' : ''
-        ].filter(Boolean)),
+        repPosition: i % 2 === 0 ? "Director" : "Gerente",
+        repDocumentType: i % 2 === 0 ? "Resolución" : "Poder Notarial",
+        repDocumentNumber: `DOC-${startDate.getFullYear()}-${String(i).padStart(
+          3,
+          "0"
+        )}`,
+        repDocumentDate: new Date(
+          startDate.getTime() - 45 * 24 * 60 * 60 * 1000
+        ), // 45 días antes de startDate
+        description: `Contrato de ${type.toLowerCase()} con ${
+          companies[companyIndex]
+        }`,
+        providerObligations: JSON.stringify(
+          [
+            `Obligación proveedor ${i}`,
+            i % 3 === 0 ? "Mantenimiento incluido" : "",
+            i % 2 === 0 ? "Soporte 24/7" : "",
+          ].filter(Boolean)
+        ),
+        clientObligations: JSON.stringify(
+          [
+            `Obligación cliente ${i}`,
+            i % 4 === 0 ? "Pago puntual" : "",
+            i % 3 === 0 ? "Espacio de trabajo" : "",
+          ].filter(Boolean)
+        ),
         deliveryPlace: `Lugar de entrega ${(i % 5) + 1}`,
         deliveryTerm: `${(i % 7) + 3} días hábiles`,
         acceptanceProcedure: `Procedimiento de aceptación ${(i % 3) + 1}`,
-        value: 5000 + (i * 1234.56),
-        currency: i % 2 === 0 ? 'MLC' : 'MN',
-        paymentMethod: i % 3 === 0 ? 'Transferencia' : (i % 3 === 1 ? 'Cheque' : 'Efectivo'),
+        value: 5000 + i * 1234.56,
+        currency: i % 2 === 0 ? "MLC" : "MN",
+        paymentMethod:
+          i % 3 === 0 ? "Transferencia" : i % 3 === 1 ? "Cheque" : "Efectivo",
         paymentTerm: `${15 + (i % 10)} días`,
         warrantyTerm: `${6 + (i % 6)} meses`,
         warrantyScope: `Cobertura garantía ${(i % 4) + 1}`,
@@ -178,8 +237,8 @@ async function main() {
         latePaymentInterest: `${(i % 5) + 1}% mensual`,
         breachPenalties: `${(i % 10) + 5}% del valor`,
         notificationMethods: JSON.stringify([
-          'Correo electrónico',
-          i % 2 === 0 ? 'Carta certificada' : 'Notificación personal'
+          "Correo electrónico",
+          i % 2 === 0 ? "Carta certificada" : "Notificación personal",
         ]),
         minimumNoticeTime: `${10 + (i % 10)} días`,
         startDate,
@@ -188,12 +247,13 @@ async function main() {
         earlyTerminationNotice: `${30 + (i % 10)} días`,
         forceMajeure: `Cláusula de fuerza mayor ${(i % 2) + 1}`,
         status,
+        isArchived,
         isRestricted: i % 5 === 0, // 20% de los contratos son restringidos
         createdById: i % 3 === 0 ? adminUser.id : raUser.id,
         ownerId: i % 2 === 0 ? raUser.id : adminUser.id,
-      }
+      },
     });
-    
+
     contratos.push(contrato);
   }
 

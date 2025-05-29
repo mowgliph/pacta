@@ -29,6 +29,7 @@ const DashboardCard = ({
   error = null,
   trend,
 }: DashboardCardProps) => {
+  console.log(`[DashboardCard] ${title} - count:`, count, 'loading:', loading, 'error:', error);
   return (
     <motion.div
       whileHover={{ scale: disabled ? 1 : 1.02 }}

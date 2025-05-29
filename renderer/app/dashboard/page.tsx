@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
   BarChartIcon,
   PlusCircledIcon,
   FileTextIcon,
-  ArchiveIcon,
   BarChartIcon as TrendingUp,
   ClipboardIcon,
   GearIcon,
@@ -36,6 +35,13 @@ import { SelectContractModal } from "../../components/modals/SelectContractModal
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { data, loading: statsLoading, error } = useDashboardStats();
+  
+  // Debug: Mostrar datos del dashboard
+  useEffect(() => {
+    console.log('[DashboardPage] Datos del dashboard:', JSON.stringify(data, null, 2));
+    console.log('[DashboardPage] Cargando:', statsLoading);
+    console.log('[DashboardPage] Error:', error);
+  }, [data, statsLoading, error]);
   const { user } = useAuth();
 
   // Estados y datos para el modal de contratos activos
@@ -139,13 +145,6 @@ export default function DashboardPage() {
             <h2 className="text-xl font-semibold text-gray-900">
               Vista General
             </h2>
-            <button
-              onClick={() => navigate("/statistics")}
-              className="text-sm text-primary hover:text-primary/80 font-medium flex items-center gap-2"
-            >
-              <BarChartIcon className="w-4 h-4" />
-              Ver estadísticas
-            </button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -164,7 +163,7 @@ export default function DashboardPage() {
               <>
                 <DashboardCard
                   title="Total Contratos"
-                  count={data?.totals?.total || 0}
+                  count={data?.totals?.total?.toString() || "0"}
                   icon={<BarChartIcon className="w-6 h-6 text-primary" />}
                   onClick={() => navigate("/contracts")}
                   trend={data?.trends?.total}
@@ -172,7 +171,7 @@ export default function DashboardPage() {
                 />
                 <DashboardCard
                   title="Vigentes"
-                  count={data?.totals?.active || 0}
+                  count={data?.totals?.active?.toString() || "0"}
                   icon={<ClipboardIcon className="w-6 h-6 text-green-600" />}
                   onClick={() => setActiveContractsModalOpen(true)}
                   trend={data?.trends?.active}
@@ -181,7 +180,7 @@ export default function DashboardPage() {
                 />
                 <DashboardCard
                   title="Próximos a Vencer"
-                  count={data?.totals?.expiring || 0}
+                  count={data?.totals?.expiring?.toString() || "0"}
                   icon={<TrendingUp className="w-6 h-6 text-orange-500" />}
                   onClick={() => setExpiringModalOpen(true)}
                   trend={data?.trends?.expiring}
@@ -190,7 +189,7 @@ export default function DashboardPage() {
                 />
                 <DashboardCard
                   title="Vencidos"
-                  count={data?.totals?.expired || 0}
+                  count={data?.totals?.expired?.toString() || "0"}
                   icon={<FileTextIcon className="w-6 h-6 text-red-500" />}
                   onClick={() => setExpiredModalOpen(true)}
                   trend={data?.trends?.expired}
@@ -211,21 +210,21 @@ export default function DashboardPage() {
             <QuickAction
               icon={<PlusCircledIcon />}
               title="Nuevo Contrato"
-              description="Crear un nuevo contrato"
+              description="Crear contrato"
               onClick={() => requireAuth(() => navigate("/contracts/new"))}
               colorScheme="primary"
             />
             <QuickAction
               icon={<PlusCircledIcon />}
               title="Nuevo Suplemento"
-              description="Añadir suplemento a contrato"
+              description="Añadir suplemento"
               onClick={() => requireAuth(() => setSelectContractModalOpen(true))}
               colorScheme="success"
             />
             <QuickAction
               icon={<BarChartIcon />}
               title="Estadísticas"
-              description="Ver reportes y análisis"
+              description="Ver estadísticas"
               onClick={() => navigate("/statistics")}
               colorScheme="primary"
             />

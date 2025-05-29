@@ -123,13 +123,13 @@ const AllContractsModal: React.FC<AllContractsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]" aria-describedby="dialog-description">
+      <DialogContent className="sm:max-w-[700px]" aria-describedby="all-contracts-description">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-[#001B48]">
+          <DialogTitle className="text-xl font-semibold text-[#001B48] font-inter">
             {title}
           </DialogTitle>
-          <DialogDescription id="dialog-description">
-            Lista de {title.toLowerCase()} con opciones de búsqueda, exportación y navegación.
+          <DialogDescription id="all-contracts-description">
+            Lista completa de contratos con opciones de búsqueda, filtrado y exportación.
           </DialogDescription>
         </DialogHeader>
 
