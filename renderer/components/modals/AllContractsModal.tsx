@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Download, ExternalLink, Search } from "lucide-react";
+import { FileTextIcon, DownloadIcon, ExternalLinkIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { Contract } from "@/lib/useContracts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
 
 interface AllContractsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onViewAll: () => void;
   contracts: Contract[];
   loading: boolean;
   error: string | null;
-  onExportPDF: (contracts: Contract[]) => Promise<void>;
   title?: string;
 }
 
@@ -25,16 +26,16 @@ const PAGE_SIZE = 5;
 const AllContractsModal: React.FC<AllContractsModalProps> = ({
   isOpen,
   onClose,
+  onViewAll,
   contracts = [],
   loading = false,
   error = null,
-  onExportPDF,
   title = "Contratos",
 }) => {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [exporting, setExporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Filtrar contratos por búsqueda
   const filteredContracts = contracts.filter(
@@ -54,25 +55,56 @@ const AllContractsModal: React.FC<AllContractsModalProps> = ({
   // Manejar exportación a PDF
   const handleExportPDF = async () => {
     if (filteredContracts.length === 0) {
-      alert("No hay contratos para exportar con los filtros actuales");
+      toast.error("No hay contratos para exportar");
       return;
     }
-
-    setExporting(true);
+    
     try {
-      await onExportPDF(filteredContracts);
-    } catch (err) {
-      console.error("Error al exportar PDF:", err);
-      alert(`Error al exportar el reporte: ${err instanceof Error ? err.message : 'Error desconocido'}`);
+      setIsExporting(true);
+      
+      // Obtener la ruta del archivo usando el canal IPC
+      const result = await window.electron.ipcRenderer.invoke(
+        "dialog:save-file",
+        {
+          title: "Exportar contratos como PDF",
+          defaultPath: `Contratos_${new Date().toISOString().slice(0, 10)}.pdf`,
+          filters: [{ name: "PDF", extensions: ["pdf"] }],
+        }
+      );
+
+      if (!result?.success || !result?.filePath) {
+        return; // Usuario canceló el diálogo
+      }
+
+      // Exportar contratos usando el canal de reportes
+      const exportResult = await window.electron.ipcRenderer.invoke(
+        "export:pdf",
+        {
+          data: filteredContracts,
+          template: "contracts-all",
+          filePath: result.filePath,
+        }
+      );
+
+      if (!exportResult?.success) {
+        throw new Error(exportResult?.error?.message || "Error al exportar los contratos");
+      }
+      
+      toast.success(`Se exportaron ${filteredContracts.length} contratos correctamente`);
+    } catch (error) {
+      console.error("Error al exportar PDF:", error);
+      toast.error(
+        `Error al exportar: ${error instanceof Error ? error.message : "Error desconocido"}`
+      );
     } finally {
-      setExporting(false);
+      setIsExporting(false);
     }
   };
 
-  // Navegar a la vista de contratos
-  const navigateToContracts = () => {
-    navigate("/contracts");
+  // Manejar clic en ver todos
+  const handleViewAll = () => {
     onClose();
+    onViewAll();
   };
 
   // Ver detalle de un contrato específico
@@ -92,20 +124,20 @@ const AllContractsModal: React.FC<AllContractsModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]" aria-describedby="dialog-description">
+      <DialogContent className="sm:max-w-[700px]" aria-describedby="all-contracts-description">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-[#001B48]">
+          <DialogTitle className="text-xl font-semibold text-[#001B48] font-inter">
             {title}
           </DialogTitle>
-          <DialogDescription id="dialog-description">
-            Lista de {title.toLowerCase()} con opciones de búsqueda, exportación y navegación.
+          <DialogDescription id="all-contracts-description">
+            Lista completa de contratos con opciones de búsqueda, filtrado y exportación.
           </DialogDescription>
         </DialogHeader>
 
         {/* Barra de búsqueda */}
         <div className="px-4 py-3 border-b border-gray-100">
           <div className="flex items-center gap-2">
-            <Search className="w-4 h-4 text-gray-400" />
+            <MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />
             <input
               type="text"
               placeholder="Buscar contratos..."
@@ -154,7 +186,7 @@ const AllContractsModal: React.FC<AllContractsModalProps> = ({
                       size="sm"
                       onClick={() => viewContractDetail(contract.id)}
                     >
-                      <ExternalLink className="w-4 h-4" />
+                      <ExternalLinkIcon className="w-4 h-4 text-gray-400" />
                     </Button>
                   </div>
                 </div>
@@ -196,28 +228,23 @@ const AllContractsModal: React.FC<AllContractsModalProps> = ({
           <div className="flex gap-2">
             <Button
               variant="outline"
-              onClick={navigateToContracts}
+              onClick={handleViewAll}
               className="flex items-center gap-2"
             >
-              <FileText className="w-4 h-4" />
+              <FileTextIcon className="w-5 h-5 text-azul-medio" />
               Ver todos los contratos
             </Button>
             <Button
               onClick={handleExportPDF}
-              disabled={exporting || filteredContracts.length === 0}
-              className="flex items-center gap-2"
+              disabled={filteredContracts.length === 0 || isExporting}
+              className="h-10 px-4 flex items-center gap-1"
             >
-              {exporting ? (
-                <>
-                  <Spinner className="w-4 h-4" />
-                  Exportando...
-                </>
+              {isExporting ? (
+                <Spinner className="h-4 w-4" />
               ) : (
-                <>
-                  <Download className="w-4 h-4" />
-                  Exportar PDF
-                </>
+                <DownloadIcon className="h-4 w-4" />
               )}
+              {isExporting ? "Exportando..." : "Exportar PDF"}
             </Button>
           </div>
         </DialogFooter>

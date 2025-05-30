@@ -22,14 +22,29 @@ const IPC_CHANNELS = {
     TEMPLATES: {
       GET: "report:templates:get",
       SAVE: "report:template:save",
-      DELETE: "report:template:delete"
-    }
+      DELETE: "report:template:delete",
+    },
   },
   NOTIFICATIONS: {
     SHOW: "notifications:show",
     CLEAR: "notifications:clear",
     MARK_READ: "notifications:mark-read",
-    GET_UNREAD: "notifications:get-unread"
+    GET_UNREAD: "notifications:get-unread",
+  },
+
+  STATISTICS: {
+    DASHBOARD: "statistics:dashboard",
+    CONTRACTS: "statistics:contracts",
+    EXPORT: "statistics:export",
+    CONTRACTS_BY_STATUS: "statistics:contracts-by-status",
+    CONTRACTS_BY_TYPE: "statistics:contracts-by-type",
+    CONTRACTS_BY_CURRENCY: "statistics:contracts-by-currency",
+    CONTRACTS_BY_USER: "statistics:contracts-by-user",
+    CONTRACTS_CREATED_BY_MONTH: "statistics:contracts-created-by-month",
+    CONTRACTS_EXPIRED_BY_MONTH: "statistics:contracts-expired-by-month",
+    CONTRACTS_EXPIRING_SOON: "statistics:contracts-expiring-soon",
+    CONTRACTS_WITHOUT_DOCUMENTS: "statistics:contracts-without-documents",
+    USERS_ACTIVITY: "statistics:users-activity"
   },
   
   DATA: {
@@ -89,7 +104,6 @@ const IPC_CHANNELS = {
     SETTINGS: {
       GET: "settings:get",
       UPDATE: "settings:update",
-      THEME: "settings:theme",
       LOGS: "settings:logs",
     },
     APP: {
@@ -101,12 +115,6 @@ const IPC_CHANNELS = {
       UPDATE_AVAILABLE: "app:update-available",
       RESTART: "app:restart",
     },
-  },
-  NOTIFICATIONS: {
-    SHOW: "notifications:show",
-    CLEAR: "notifications:clear",
-    MARK_READ: "notifications:mark-read",
-    GET_UNREAD: "notifications:get-unread",
   },
   STATISTICS: {
     DASHBOARD: "statistics:dashboard",
@@ -160,12 +168,6 @@ const IPC_CHANNELS = {
     FOCUS: "window:focus",
     GET_STATE: "window:get-state",
     SET_STATE: "window:set-state",
-  },
-  THEME: {
-    GET_SYSTEM: "theme:get-system",
-    GET_SAVED: "theme:get-saved",
-    SET_APP: "theme:set-app",
-    SYSTEM_CHANGED: "theme:system-changed",
   },
   BACKUPS: {
     CREATE: "backups:create",

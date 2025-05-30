@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { X, Search } from "lucide-react";
+import { Cross2Icon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
@@ -91,7 +91,7 @@ export function SelectContractModal({ isOpen, onClose }: SelectContractModalProp
 
         <div className="flex-1 flex flex-col gap-4 overflow-hidden">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Buscar por número de contrato o empresa..."
