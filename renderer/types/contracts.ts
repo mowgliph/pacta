@@ -55,6 +55,7 @@ export interface UseDashboardStatsReturn {
   data: DashboardStats | null;
   loading: boolean;
   error: string | null;
+  refetch: () => void;
 }
 
 // Tipo para las estadísticas del dashboard

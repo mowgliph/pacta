@@ -10,6 +10,7 @@ import { toast } from "sonner";
 interface AllContractsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onViewAll: () => void;
   contracts: Contract[];
   loading: boolean;
   error: string | null;
@@ -25,10 +26,10 @@ const PAGE_SIZE = 5;
 const AllContractsModal: React.FC<AllContractsModalProps> = ({
   isOpen,
   onClose,
+  onViewAll,
   contracts = [],
   loading = false,
   error = null,
-
   title = "Contratos",
 }) => {
   const navigate = useNavigate();
@@ -100,10 +101,10 @@ const AllContractsModal: React.FC<AllContractsModalProps> = ({
     }
   };
 
-  // Navegar a la vista de contratos
-  const navigateToContracts = () => {
-    navigate("/contracts");
+  // Manejar clic en ver todos
+  const handleViewAll = () => {
     onClose();
+    onViewAll();
   };
 
   // Ver detalle de un contrato específico
@@ -227,7 +228,7 @@ const AllContractsModal: React.FC<AllContractsModalProps> = ({
           <div className="flex gap-2">
             <Button
               variant="outline"
-              onClick={navigateToContracts}
+              onClick={handleViewAll}
               className="flex items-center gap-2"
             >
               <FileTextIcon className="w-5 h-5 text-azul-medio" />

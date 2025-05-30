@@ -41,7 +41,6 @@ export function useDashboardStats(): UseDashboardStatsReturn {
   const [data, setData] = useState<DashboardStats>(defaultStats);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-
   const fetchDashboardStats = useCallback(async () => {
     console.log('[useDashboardStats] Iniciando fetchDashboardStats');
     try {
@@ -57,53 +56,17 @@ export function useDashboardStats(): UseDashboardStatsReturn {
         return;
       }
 
-      let response;
-      try {
-        console.log('[useDashboardStats] Solicitando estadísticas al backend...');
-        response = await window.electron.ipcRenderer.invoke(
-          "statistics:dashboard"
-        );
-        console.log('[useDashboardStats] Respuesta del backend recibida');
-        console.debug('[useDashboardStats] Respuesta completa:', JSON.stringify(response, null, 2));
-        
-        // Validar que la respuesta no sea nula o indefinida
-        if (response === null || response === undefined) {
-          const errorMsg = 'No se recibió respuesta del servidor (respuesta nula o indefinida)';
-          console.error(errorMsg);
-          throw new Error(errorMsg);
-        }
-        
-        // Si hay un error en la respuesta, lanzarlo
-        if (response.error) {
-          const errorMsg = `Error del servidor: ${response.error.message || 'Error desconocido'}`;
-          console.error(errorMsg, response.error);
-          throw new Error(errorMsg);
-        }
-      } catch (error) {
-        const ipcError = error as Error;
-        const errorMsg = `Error en la comunicación IPC: ${ipcError.message || 'Error desconocido'}`;
-        console.error(errorMsg, ipcError);
-        throw new Error(`No se pudo conectar con el servidor: ${ipcError.message || 'Error desconocido'}`);
-      }
-
-      // Validar la estructura de la respuesta
-      if (!response || typeof response !== 'object') {
-        const errorMsg = `Respuesta del servidor inválida: ${typeof response}`;
-        console.error(errorMsg, response);
-        throw new Error('Formato de respuesta inválido del servidor');
-      }
-
-      // Verificar si la respuesta tiene éxito
-      if (response.success === false) {
-        const errorMsg = response.error?.message || 'Error desconocido al cargar las estadísticas';
-        console.error('Error en la respuesta del servidor:', errorMsg, response.error);
-        throw new Error(errorMsg);
-      }
-
-      // Validar la estructura de los datos
-      if (!response.data || typeof response.data !== 'object') {
-        const errorMsg = 'Datos de estadísticas no válidos o faltantes';
-        console.error(errorMsg, response);
+      console.log('[useDashboardStats] Solicitando estadísticas al backend...');
+      const response = await window.electron.ipcRenderer.invoke(
+        "statistics:dashboard"
+      );
+      
+      console.log('[useDashboardStats] Respuesta del backend recibida:', response);
+      
+      // Si la respuesta tiene éxito, extraer los datos
+      if (!response || response.success !== true || !response.data) {
+        const errorMsg = response?.error?.message || 'Error desconocido al cargar las estadísticas';
+        console.error('Error en la respuesta del servidor:', errorMsg);
         throw new Error(errorMsg);
       }
 
@@ -174,9 +137,19 @@ export function useDashboardStats(): UseDashboardStatsReturn {
     }
   }, []);
 
+  const refreshData = useCallback(() => {
+    console.log('[useDashboardStats] Forzando actualización de datos del dashboard');
+    fetchDashboardStats();
+  }, [fetchDashboardStats]);
+
   useEffect(() => {
     fetchDashboardStats();
   }, [fetchDashboardStats]);
 
-  return { data, loading, error };
+  return { 
+    data, 
+    loading, 
+    error, 
+    refetch: refreshData 
+  };
 }

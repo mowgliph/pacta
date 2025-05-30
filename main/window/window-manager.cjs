@@ -65,7 +65,7 @@ WindowManager.prototype.createMainWindow = async function () {
       ...MAIN_WINDOW_CONFIG,
       ...windowState,
       show: false, // No mostrar hasta que esté lista
-      icon: join(app.getAppPath(), "renderer", "favicon_b.ico"),
+      icon: join(app.getAppPath(), "renderer", "favicon.ico"),
       backgroundColor: "#F5F5F5",
       webPreferences: {
         ...MAIN_WINDOW_CONFIG.webPreferences,
