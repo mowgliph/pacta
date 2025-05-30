@@ -202,6 +202,8 @@ contextBridge.exposeInMainWorld("electron", {
       ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.CONTRACTS_CREATED_BY_MONTH),
     contractsExpiredByMonth: () =>
       ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.CONTRACTS_EXPIRED_BY_MONTH),
+    contractsExpiringSoon: () =>
+      ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.CONTRACTS_EXPIRING_SOON),
     supplementsCountByContract: () =>
       ipcRenderer.invoke(IPC_CHANNELS.STATISTICS.SUPPLEMENTS_COUNT_BY_CONTRACT),
   },

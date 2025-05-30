@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { PaginationResponse, ApiResponse } from "../types/electron.d";
-import { ArchivedContract } from "../types/contracts";
 
 export interface Contract {
   id: string;
@@ -174,20 +173,94 @@ export function useContracts({ tipo, status }: UseContractsOptions = {}) {
   return { contracts, loading, error };
 }
 
+// Valores del enum ContractStatus definidos en el esquema de Prisma
+const CONTRACT_STATUS = {
+  ACTIVO: 'ACTIVO',
+  VENCIDO: 'VENCIDO'
+};
+
 // Hook específico para contratos próximos a vencer
 export function useExpiringContracts() {
-  const { contracts, loading, error } = useContracts({
-    status: "Proximo a Vencer",
-  });
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  return { contracts, loading, error };
+  useEffect(() => {
+    const fetchExpiringContracts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Usar el método expuesto en el preload
+        const response = await window.electron.statistics.contractsExpiringSoon();
+
+        // Asegurarse de que response.data sea un array
+        const data = Array.isArray(response?.data) ? response.data : [];
+        
+        if (response?.success) {
+          setContracts(data);
+        } else {
+          throw new Error(
+            response?.error?.message || 'Error al cargar contratos próximos a vencer'
+          );
+        }
+      } catch (err) {
+        console.error('Error al cargar contratos próximos a vencer:', err);
+        setError(
+          err instanceof Error ? err.message : 'Error al cargar contratos próximos a vencer'
+        );
+        // Asegurarse de que siempre hay un array vacío en caso de error
+        setContracts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExpiringContracts();
+  }, []);
+
+  // Asegurarse de devolver siempre un array
+  return { 
+    contracts: Array.isArray(contracts) ? contracts : [], 
+    loading, 
+    error 
+  };
 }
 
-// Hook específico para contratos vencidos
+// Hook específico para contratos vencidos/archivados
 export function useExpiredContracts() {
-  const { contracts, loading, error } = useContracts({
-    status: "Vencido",
-  });
+  const [contracts, setContracts] = useState<Contract[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchExpiredContracts = async () => {
+      try {
+        const electron = window.electron as any;
+        const response = await electron.contracts.list({
+          status: CONTRACT_STATUS.VENCIDO,
+          isArchived: true,
+        });
+
+        if (response?.success) {
+          setContracts(response.data?.items || []);
+        } else {
+          throw new Error(
+            response?.error?.message || "Error al listar contratos vencidos"
+          );
+        }
+      } catch (err) {
+        console.error("Error al cargar los contratos vencidos:", err);
+        setError(
+          err instanceof Error ? err.message : "Error al cargar los contratos vencidos"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchExpiredContracts();
+  }, []);
 
   return { contracts, loading, error };
 }
@@ -201,24 +274,24 @@ export function useActiveContracts() {
   useEffect(() => {
     const fetchActiveContracts = async () => {
       try {
-        setLoading(true);
-        setError(null);
+        const electron = window.electron as any;
+        const response = await electron.contracts.list({
+          status: { in: [CONTRACT_STATUS.ACTIVO, CONTRACT_STATUS.VENCIDO] },
+          isArchived: false,
+        });
 
-        const response = await window.electron.ipcRenderer.invoke(
-          "contracts:list",
-          { status: "Vigente" }
-        );
-
-        if (!response?.success) {
+        if (response?.success) {
+          setContracts(response.data?.items || []);
+        } else {
           throw new Error(
-            response?.error?.message || "Error al obtener los contratos activos"
+            response?.error?.message || "Error al listar contratos"
           );
         }
-
-        setContracts(response.data || []);
       } catch (err) {
         console.error("Error al cargar los contratos activos:", err);
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(
+          err instanceof Error ? err.message : "Error al cargar los contratos"
+        );
       } finally {
         setLoading(false);
       }
@@ -242,21 +315,23 @@ export function useAllContracts() {
         setLoading(true);
         setError(null);
 
-        const response = await window.electron.ipcRenderer.invoke(
-          "contracts:list",
-          {}
-        );
+        const electron = window.electron as any;
+        const response = await electron.contracts.list({
+          isArchived: false,
+        });
 
-        if (!response?.success) {
+        if (response?.success) {
+          setContracts(response.data?.items || []);
+        } else {
           throw new Error(
-            response?.error?.message || "Error al obtener los contratos"
+            response?.error?.message || "Error al listar contratos"
           );
         }
-
-        setContracts(response.data || []);
       } catch (err) {
         console.error("Error al cargar los contratos:", err);
-        setError(err instanceof Error ? err.message : "Error desconocido");
+        setError(
+          err instanceof Error ? err.message : "Error al cargar los contratos"
+        );
       } finally {
         setLoading(false);
       }
@@ -268,51 +343,89 @@ export function useAllContracts() {
   return { contracts, loading, error };
 }
 
-// Hook específico para contratos archivados
+// Hook para manejar contratos archivados
 export function useArchivedContracts() {
-  const [contracts, setContracts] = useState<ArchivedContract[]>([]);
+  const [archivedContracts, setArchivedContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+  });
+
+  const fetchArchivedContracts = async (page = 1, limit = 10) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const electron = window.electron as any;
+      const response = await electron.contracts.list({
+        isArchived: true,
+        page,
+        limit,
+      });
+
+      if (response?.success) {
+        setArchivedContracts(response.data?.items || []);
+        setPagination({
+          page: response.data?.meta?.currentPage || 1,
+          limit: response.data?.meta?.itemsPerPage || 10,
+          total: response.data?.meta?.totalItems || 0,
+          totalPages: response.data?.meta?.totalPages || 1,
+        });
+      } else {
+        throw new Error(
+          response?.error?.message || "Error al cargar los contratos archivados"
+        );
+      }
+    } catch (err) {
+      console.error("Error al cargar los contratos archivados:", err);
+      setError(
+        err instanceof Error ? err.message : "Error al cargar los contratos archivados"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const restoreContract = async (contractId: string) => {
+    try {
+      const electron = window.electron as any;
+      const response = await electron.contracts.update(contractId, {
+        isArchived: false,
+      });
+
+      if (response?.success) {
+        // Actualizar la lista de contratos archivados
+        await fetchArchivedContracts(pagination.page, pagination.limit);
+        return { success: true };
+      } else {
+        throw new Error(
+          response?.error?.message || "Error al restaurar el contrato"
+        );
+      }
+    } catch (err) {
+      console.error("Error al restaurar el contrato:", err);
+      return {
+        success: false,
+        error:
+          err instanceof Error ? err.message : "Error al restaurar el contrato",
+      };
+    }
+  };
 
   useEffect(() => {
-    const fetchArchivedContracts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    fetchArchivedContracts(pagination.page, pagination.limit);
+  }, [pagination.page, pagination.limit]);
 
-        const response = await window.electron.ipcRenderer.invoke(
-          "contracts:list-archived"
-        );
-
-        if (!response?.success) {
-          throw new Error(
-            response?.error?.message ||
-              "Error al obtener los contratos archivados"
-          );
-        }
-
-        // Asegurarse de que los datos sean un array y tengan el formato correcto
-        const data = Array.isArray(response.data) ? response.data : [];
-        const archivedContracts: ArchivedContract[] = data.map(
-          (contract: any) => ({
-            ...contract,
-            // Asegurar que los campos requeridos estén presentes
-            contractNumber: contract.contractNumber || contract.number || "",
-            updatedAt: contract.updatedAt || new Date().toISOString(),
-          })
-        ) || [];
-
-        setContracts(archivedContracts);
-      } catch (err) {
-        console.error("Error al cargar contratos archivados:", err);
-        setError(err instanceof Error ? err.message : "Error desconocido");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchArchivedContracts();
-  }, []);
-
-  return { contracts, loading, error };
+  return {
+    archivedContracts,
+    loading,
+    error,
+    pagination,
+    fetchArchivedContracts,
+    restoreContract,
+  };
 }

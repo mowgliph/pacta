@@ -23,29 +23,30 @@ model License {
 }
 
 model User {
-  id                  String             @id @default(uuid())
+  id                  String               @id @default(uuid())
   name                String
-  email               String             @unique
+  email               String               @unique
   password            String
   roleId              String
   customPermissions   String?
-  isActive            Boolean            @default(true)
+  isActive            Boolean              @default(true)
   lastLogin           DateTime?
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
   backups             Backup[]
-  ownedContracts      Contract[]         @relation("OwnedByUser")
-  createdContracts    Contract[]         @relation("CreatedByUser")
+  ownedContracts      Contract[]           @relation("OwnedByUser")
+  createdContracts    Contract[]           @relation("CreatedByUser")
   contractAccess      ContractAccess[]
-  uploadedDocuments   Document[]         @relation("UploadedDocuments")
+  uploadedDocuments   Document[]           @relation("UploadedDocuments")
   actions             HistoryRecord[]
   supplements         Supplement[]
-  approvedSupplements Supplement[]       @relation("ApprovedByUser")
-  role                Role               @relation(fields: [roleId], references: [id])
-  notifications       UserNotification[] @relation("UserNotifications")
+  approvedSupplements Supplement[]         @relation("ApprovedByUser")
+  role                Role                 @relation(fields: [roleId], references: [id])
+  notifications       UserNotification[]   @relation("UserNotifications")
   preferences         UserPreference?
   documentActivities  DocumentActivity[]
-  restoredBackups     BackupRestore[]    // Relación con BackupRestore
+  restoredBackups     BackupRestore[]      // Relación con BackupRestore
+  legalRepresentatives LegalRepresentative[] @relation("CreatedLegalRepresentatives") // Relación añadida
 }
 
 model Role {
@@ -61,127 +62,90 @@ model Role {
 }
 
 enum ContractStatus {
-  VIGENTE
-  VENCIDO
   ACTIVO
-  TERMINADO
-  CANCELADO
-  PENDIENTE
+  VENCIDO
+}
+
+// Modelo para representantes legales
+model LegalRepresentative {
+  id                String       @id @default(uuid())
+  name              String
+  position          String       // Cargo en la empresa
+  documentType      String?
+  documentNumber    String?
+  documentDate      DateTime?
+  email             String?
+  phone             String?
+  companyName       String       // Nombre de la compañía que representa
+  companyAddress    String?
+  companyPhone      String?
+  companyEmail      String?
+  
+  // Relaciones
+  contracts         Contract[]
+  supplements       Supplement[]
+  
+  // Metadatos
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  createdById       String
+  createdBy         User         @relation("CreatedLegalRepresentatives", fields: [createdById], references: [id])
 }
 
 model Contract {
-  id                    String               @id @default(uuid())
-  contractNumber        String               @unique
-  signDate             DateTime
-  signPlace            String
-  
-  // Identificación de las Partes
-  type                 String                // Cliente/Proveedor
-  companyName          String
-  companyAddress       String
-  nationality          String
-  commercialAuth       String                // Autorización Comercial (MN)
-  
-  // Detalles bancarios
-  bankAccount          String
-  bankBranch           String
-  bankAgency           String
-  bankHolder           String
-  bankCurrency         String                // CUP/MLC
-  
-  // Códigos de identificación
-  reeupCode           String
-  nit                 String
-  contactPhones       String                 // Array almacenado como JSON
-  
-  // Representante legal
-  repName             String
-  repPosition         String
-  repDocumentType     String
-  repDocumentNumber   String
-  repDocumentDate     DateTime
-  
-  // Objeto y obligaciones
-  description         String
-  providerObligations String                 // Array almacenado como JSON
-  clientObligations   String                 // Array almacenado como JSON
-  
-  // Entrega y condiciones
-  deliveryPlace       String
-  deliveryTerm        String
-  acceptanceProcedure String
-  
-  // Condiciones económicas
-  value               Float
-  currency            String                 // MN/MLC
-  paymentMethod       String
-  paymentTerm         String
-  
-  // Garantía y calidad
-  warrantyTerm        String
-  warrantyScope       String
-  technicalStandards  String?
-  
-  // Reclamaciones y conflictos
-  claimProcedure      String
-  disputeResolution   String
-  
-  // Penalidades
-  latePaymentInterest String
-  breachPenalties     String
-  
-  // Avisos
-  notificationMethods String                 // Array almacenado como JSON
-  minimumNoticeTime   String
-  
-  // Duración
-  startDate           DateTime
-  endDate             DateTime
-  extensionTerms      String
-  earlyTerminationNotice String
-  
-  // Fuerza mayor
-  forceMajeure        String
+  id                String        @id @default(uuid())
+  contractNumber    String        @unique
+  type              String        // Cliente/Proveedor
+  companyName       String        // Nombre de la compañía con la que se hace el contrato
+  legalRepresentativeId String?    // Relación con el representante legal
+  legalRepresentative LegalRepresentative? @relation(fields: [legalRepresentativeId], references: [id])
+  startDate         DateTime
+  endDate           DateTime
   
   // Metadatos del sistema
-  status              ContractStatus        @default(VIGENTE)
-  isRestricted        Boolean               @default(false)
-  isArchived          Boolean               @default(false)
-  createdById         String
-  ownerId             String
-  createdAt           DateTime              @default(now())
-  updatedAt           DateTime              @updatedAt
+  status            ContractStatus @default(ACTIVO)
+  isArchived        Boolean        @default(false)
+  createdById       String
+  ownerId           String
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
   
   // Relaciones
-  owner               User                  @relation("OwnedByUser", fields: [ownerId], references: [id])
-  createdBy           User                  @relation("CreatedByUser", fields: [createdById], references: [id])
-  accessUsers         ContractAccess[]      @relation("ContractAccess")
-  accessRoles         ContractAccessRole[]  @relation("ContractAccessRole")
-  documents           Document[]
-  history            HistoryRecord[]
-  supplements        Supplement[]
-  notifications      UserNotification[]     @relation("ContractNotifications")
+  owner             User                 @relation("OwnedByUser", fields: [ownerId], references: [id])
+  createdBy         User                 @relation("CreatedByUser", fields: [createdById], references: [id])
+  accessUsers       ContractAccess[]     @relation("ContractAccess")
+  accessRoles       ContractAccessRole[] @relation("ContractAccessRole") // Relación añadida
+  documents         Document[]
+  history           HistoryRecord[]
+  supplements       Supplement[]
+  notifications     UserNotification[]    @relation("ContractNotifications")
 }
 
 model Supplement {
-  id            String          @id @default(uuid())
-  contractId    String
-  title         String
-  description   String?
-  documentUrl   String?
-  changes       String
-  effectiveDate DateTime
-  isApproved    Boolean         @default(false)
-  approvedById  String?
-  approvedAt    DateTime?
-  createdById   String
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  documents     Document[]
-  history       HistoryRecord[]
-  createdBy     User            @relation(fields: [createdById], references: [id])
-  approvedBy    User?           @relation("ApprovedByUser", fields: [approvedById], references: [id])
-  contract      Contract        @relation(fields: [contractId], references: [id])
+  id                  String             @id @default(uuid())
+  contractId          String
+  title               String
+  description         String?
+  documentUrl         String?
+  changes             String
+  effectiveDate       DateTime
+  isApproved          Boolean            @default(false)
+  approvedById        String?
+  approvedAt          DateTime?
+  createdById         String
+  legalRepresentativeId String?          // Relación con el representante legal
+  
+  // Metadatos
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  
+  // Relaciones
+  documents           Document[]
+  history             HistoryRecord[]
+  createdBy           User               @relation(fields: [createdById], references: [id])
+  approvedBy          User?              @relation("ApprovedByUser", fields: [approvedById], references: [id])
+  contract            Contract           @relation(fields: [contractId], references: [id])
+  legalRepresentative LegalRepresentative? @relation(fields: [legalRepresentativeId], references: [id])
 }
 
 model ContractAccess {

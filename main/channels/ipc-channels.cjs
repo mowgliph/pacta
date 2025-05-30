@@ -32,6 +32,21 @@ const IPC_CHANNELS = {
     GET_UNREAD: "notifications:get-unread",
   },
 
+  STATISTICS: {
+    DASHBOARD: "statistics:dashboard",
+    CONTRACTS: "statistics:contracts",
+    EXPORT: "statistics:export",
+    CONTRACTS_BY_STATUS: "statistics:contracts-by-status",
+    CONTRACTS_BY_TYPE: "statistics:contracts-by-type",
+    CONTRACTS_BY_CURRENCY: "statistics:contracts-by-currency",
+    CONTRACTS_BY_USER: "statistics:contracts-by-user",
+    CONTRACTS_CREATED_BY_MONTH: "statistics:contracts-created-by-month",
+    CONTRACTS_EXPIRED_BY_MONTH: "statistics:contracts-expired-by-month",
+    CONTRACTS_EXPIRING_SOON: "statistics:contracts-expiring-soon",
+    CONTRACTS_WITHOUT_DOCUMENTS: "statistics:contracts-without-documents",
+    USERS_ACTIVITY: "statistics:users-activity"
+  },
+  
   DATA: {
     CONTRACTS: {
       LIST: "contracts:list",

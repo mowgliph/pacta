@@ -1,35 +1,6 @@
 const { app } = require("electron");
 const { AppManager } = require("./app-manager.cjs");
 const { EventManager } = require("./events/event-manager.cjs");
-const { registerAppHandlers } = require("./handlers/app.handlers.cjs");
-const { registerBackupHandlers } = require("./handlers/backup.handlers.cjs");
-const { registerAuthHandlers } = require("./handlers/auth.handlers.cjs");
-const {
-  registerContractHandlers,
-} = require("./handlers/contract.handlers.cjs");
-const {
-  registerDocumentHandlers,
-} = require("./handlers/document.handlers.cjs");
-const { registerUserHandlers } = require("./handlers/user.handlers.cjs");
-const { registerSystemHandlers } = require("./handlers/system.handlers.cjs");
-const {
-  registerNotificationHandlers,
-} = require("./handlers/notification.handlers.cjs");
-const { registerRoleHandlers } = require("./handlers/role.handlers.cjs");
-const {
-  registerSupplementHandlers,
-} = require("./handlers/supplement.handlers.cjs");
-const {
-  registerStatisticsHandlers,
-} = require("./handlers/statistics.handlers.cjs");
-const {
-  registerSecurityHandlers,
-} = require("./handlers/security.handlers.cjs");
-const { registerStoreHandlers } = require("./handlers/store.handlers.cjs");
-const {
-  registerValidationHandlers,
-} = require("./handlers/validation.handlers.cjs");
-const { registerReportHandlers } = require("./handlers/reportHandler.cjs");
 const { initPrisma } = require("./utils/prisma.cjs");
 const { autoUpdater } = require("electron-updater");
 

@@ -284,6 +284,7 @@ export interface StatisticsApi {
   contractsByUser: () => Promise<ApiResponse<any>>;
   contractsCreatedByMonth: () => Promise<ApiResponse<any>>;
   contractsExpiredByMonth: () => Promise<ApiResponse<any>>;
+  contractsExpiringSoon: () => Promise<ApiResponse<any>>;
   supplementsCountByContract: () => Promise<ApiResponse<any>>;
 }
 

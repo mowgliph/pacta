@@ -92,7 +92,7 @@ AppManager.prototype.setupAppOptions = function () {
       mainWindow.focus();
     }
   });
-  app.setAppUserModelId("com.pacta.app");
+  app.setAppUserModelId("cu.pacta.app");
 };
 
 AppManager.prototype.setupAppEvents = function () {

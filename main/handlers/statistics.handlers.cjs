@@ -15,6 +15,23 @@ function registerStatisticsHandlers() {
   fs.mkdir(EXPORTS_DIR, { recursive: true }).catch(console.error);
 
   const handlers = {
+    // Obtener contratos próximos a vencer
+    [IPC_CHANNELS.STATISTICS.CONTRACTS_EXPIRING_SOON]: async () => {
+      try {
+        const expiringContracts = await optimizer.getContractsExpiringSoon();
+        return { success: true, data: expiringContracts };
+      } catch (error) {
+        console.error("[Statistics] Error al obtener contratos próximos a vencer:", error);
+        return {
+          success: false,
+          error: {
+            message: error.message || "Error al obtener contratos próximos a vencer",
+            code: "EXPIRING_CONTRACTS_ERROR"
+          }
+        };
+      }
+    },
+    
     [IPC_CHANNELS.STATISTICS.DASHBOARD]: async () => {
       try {
         console.log('[Statistics] Obteniendo estadísticas del dashboard...');

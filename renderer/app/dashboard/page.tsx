@@ -16,115 +16,123 @@ import { QuickAction } from "../../components/dashboard/QuickAction";
 import { RecentActivityItem } from "../../components/dashboard/RecentActivityItem";
 import { useDashboardStats } from "../../lib/useDashboardStats";
 import { useAuth } from "../../store/auth";
+import { AuthModal } from "../../components/modals/AuthModal";
 
-import { 
-  useExpiringContracts, 
-  useExpiredContracts, 
-  useArchivedContracts,
+import {
+  useExpiringContracts,
+  useExpiredContracts,
   useAllContracts,
-  useActiveContracts 
+  useActiveContracts,
 } from "../../lib/useContracts";
 
 import ActiveContractsModal from "../../components/modals/ActiveContractsModal";
 import ExpiringContractsModal from "../../components/modals/ExpiringContractsModal";
 import ExpiredContractsModal from "../../components/modals/ExpiredContractsModal";
 import AllContractsModal from "../../components/modals/AllContractsModal";
-import ArchivedContractsModal from "../../components/modals/ArchivedContractsModal";
 import { SelectContractModal } from "../../components/modals/SelectContractModal";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { data, loading: statsLoading, error } = useDashboardStats();
-  
-  // Debug: Mostrar datos del dashboard
-  useEffect(() => {
-    console.log('[DashboardPage] Datos del dashboard:', JSON.stringify(data, null, 2));
-    console.log('[DashboardPage] Cargando:', statsLoading);
-    console.log('[DashboardPage] Error:', error);
-  }, [data, statsLoading, error]);
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
-  // Estados y datos para el modal de contratos activos
-  const [activeContractsModalOpen, setActiveContractsModalOpen] = useState(false);
-  const { 
-    contracts: activeContracts, 
-    loading: activeContractsLoading, 
-    error: activeContractsError 
-  } = useActiveContracts();
-
-  // Estados y datos para el modal de contratos próximos a vencer
-  const [expiringModalOpen, setExpiringModalOpen] = useState(false);
-  const { 
-    contracts: expiringContracts, 
-    loading: expiringLoading, 
-    error: expiringError 
-  } = useExpiringContracts();
-
-  // Estados y datos para el modal de contratos vencidos
-  const [expiredModalOpen, setExpiredModalOpen] = useState(false);
-  const { 
-    contracts: expiredContracts, 
-    loading: expiredLoading, 
-    error: expiredError 
-  } = useExpiredContracts();
-
-  // Estados y datos para el modal de contratos archivados
-  const [archivedModalOpen, setArchivedModalOpen] = useState(false);
-  const { 
-    contracts: archivedContracts, 
-    loading: archivedLoading, 
-    error: archivedError 
-  } = useArchivedContracts();
-
-  // Estado para controlar la visibilidad del modal de selección de contrato
+  // Estados para modales
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showExpiringModal, setShowExpiringModal] = useState(false);
+  const [showExpiredModal, setShowExpiredModal] = useState(false);
+  const [showActiveModal, setShowActiveModal] = useState(false);
+  const [allContractsModalOpen, setAllContractsModalOpen] = useState(false);
   const [selectContractModalOpen, setSelectContractModalOpen] = useState(false);
 
-  // Estados y datos para el modal de todos los contratos
-  const [allContractsModalOpen, setAllContractsModalOpen] = useState(false);
-  const { 
-    contracts: allContracts, 
-    loading: allContractsLoading, 
-    error: allContractsError 
+  // Handler para acciones que requieren autenticación
+  const handleAuthAction = (action: () => void) => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+    action();
+  };
+
+  // Handlers para modales
+  const handleModal = {
+    open: {
+      expiring: () => handleAuthAction(() => setShowExpiringModal(true)),
+      expired: () => handleAuthAction(() => setShowExpiredModal(true)),
+      active: () => handleAuthAction(() => setShowActiveModal(true)),
+      selectContract: () =>
+        handleAuthAction(() => setSelectContractModalOpen(true)),
+    },
+    close: {
+      expiring: () => setShowExpiringModal(false),
+      expired: () => setShowExpiredModal(false),
+      active: () => setShowActiveModal(false),
+      auth: () => setShowAuthModal(false),
+      selectContract: () => setSelectContractModalOpen(false),
+      allContracts: () => setAllContractsModalOpen(false),
+    },
+  };
+  // Datos de contratos
+  const {
+    contracts: activeContracts,
+    loading: activeContractsLoading,
+    error: activeContractsError,
+  } = useActiveContracts();
+
+  const {
+    contracts: expiringContracts,
+    loading: expiringLoading,
+    error: expiringError,
+  } = useExpiringContracts();
+
+  const {
+    contracts: expiredContracts,
+    loading: expiredLoading,
+    error: expiredError,
+  } = useExpiredContracts();
+
+  const {
+    contracts: allContracts,
+    loading: allContractsLoading,
+    error: allContractsError,
   } = useAllContracts();
 
-  // Constantes para la lógica de visualización
-  const MIN_ITEMS_TO_SHOW = 1;
-  
-  // Contratos próximos a vencer
-  const hasExpiringContracts: boolean = 
-    Array.isArray(expiringContracts) && 
-    expiringContracts.length >= MIN_ITEMS_TO_SHOW;
-  const expiringCount: number = Array.isArray(expiringContracts) ? expiringContracts.length : 0;
-  const expiringErrorMessage: string | null = expiringError 
-    ? `Error al cargar contratos próximos a vencer: ${expiringError}` 
-    : null;
+  // Extraer datos del dashboard
+  const { totals, trends: dashboardTrends, recentActivity } = data || {};
 
-  // Contratos vencidos
-  const hasExpiredContracts: boolean = 
-    Array.isArray(expiredContracts) && 
-    expiredContracts.length >= MIN_ITEMS_TO_SHOW;
-  const expiredCount: number = Array.isArray(expiredContracts) ? expiredContracts.length : 0;
-  const expiredErrorMessage: string | null = expiredError 
-    ? `Error al cargar contratos vencidos: ${expiredError}` 
-    : null;
+  // Asegurar que los datos existan y tengan el formato correcto
+  const stats = {
+    total: totals?.total || 0,
+    active: totals?.active || 0,
+    expiring: totals?.expiring || 0,
+    expired: totals?.expired || 0,
+  };
 
-  // Contratos archivados
-  const hasArchivedContracts: boolean = 
-    Array.isArray(archivedContracts) && 
-    archivedContracts.length >= MIN_ITEMS_TO_SHOW;
-  const archivedCount: number = Array.isArray(archivedContracts) ? archivedContracts.length : 0;
-  const archivedErrorMessage: string | null = archivedError 
-    ? `Error al cargar contratos archivados: ${archivedError}` 
-    : null;
+  const trends = {
+    total: dashboardTrends?.total || {
+      value: 0,
+      positive: true,
+      label: "vs mes anterior",
+    },
+    active: dashboardTrends?.active || {
+      value: 0,
+      positive: true,
+      label: "vs mes anterior",
+    },
+    expiring: dashboardTrends?.expiring || {
+      value: 0,
+      positive: false,
+      label: "próximo mes",
+    },
+    expired: dashboardTrends?.expired || {
+      value: 0,
+      positive: false,
+      label: "este mes",
+    },
+  };
 
-  // Contratos activos
-  const hasActiveContracts: boolean = 
-    Array.isArray(activeContracts) && 
-    activeContracts.length >= MIN_ITEMS_TO_SHOW;
-  const activeCount: number = Array.isArray(activeContracts) ? activeContracts.length : 0;
-  const activeErrorMessage: string | null = activeContractsError 
-    ? `Error al cargar contratos activos: ${activeContractsError}` 
-    : null;
+  // Función auxiliar para validar arrays
+  const validateArray = (arr: any[] | null | undefined) =>
+    Array.isArray(arr) ? arr : [];
 
   // Handler para acciones que requieren autenticación
   const requireAuth = (cb: () => void) => {
@@ -163,38 +171,38 @@ export default function DashboardPage() {
               <>
                 <DashboardCard
                   title="Total Contratos"
-                  count={data?.totals?.total?.toString() || "0"}
+                  count={stats.total.toString()}
                   icon={<BarChartIcon className="w-6 h-6 text-primary" />}
                   onClick={() => navigate("/contracts")}
-                  trend={data?.trends?.total}
-                  loading={!data}
+                  trend={trends.total}
+                  loading={statsLoading}
                 />
                 <DashboardCard
                   title="Vigentes"
-                  count={data?.totals?.active?.toString() || "0"}
+                  count={stats.active.toString()}
                   icon={<ClipboardIcon className="w-6 h-6 text-green-600" />}
-                  onClick={() => setActiveContractsModalOpen(true)}
-                  trend={data?.trends?.active}
-                  loading={activeContractsLoading || !data}
-                  error={activeContractsError}
+                  onClick={handleModal.open.active}
+                  trend={trends.active}
+                  loading={statsLoading}
+                  error={error}
                 />
                 <DashboardCard
                   title="Próximos a Vencer"
-                  count={data?.totals?.expiring?.toString() || "0"}
+                  count={stats.expiring.toString()}
                   icon={<TrendingUp className="w-6 h-6 text-orange-500" />}
-                  onClick={() => setExpiringModalOpen(true)}
-                  trend={data?.trends?.expiring}
-                  loading={expiringLoading || !data}
-                  error={expiringError}
+                  onClick={handleModal.open.expiring}
+                  trend={trends.expiring}
+                  loading={statsLoading}
+                  error={error}
                 />
                 <DashboardCard
                   title="Vencidos"
-                  count={data?.totals?.expired?.toString() || "0"}
+                  count={stats.expired.toString()}
                   icon={<FileTextIcon className="w-6 h-6 text-red-500" />}
-                  onClick={() => setExpiredModalOpen(true)}
-                  trend={data?.trends?.expired}
-                  loading={expiredLoading || !data}
-                  error={expiredError}
+                  onClick={handleModal.open.expired}
+                  trend={trends.expired}
+                  loading={statsLoading}
+                  error={error}
                 />
               </>
             )}
@@ -218,7 +226,7 @@ export default function DashboardPage() {
               icon={<PlusCircledIcon />}
               title="Nuevo Suplemento"
               description="Añadir suplemento"
-              onClick={() => requireAuth(() => setSelectContractModalOpen(true))}
+              onClick={() => handleModal.open.selectContract()}
               colorScheme="success"
             />
             <QuickAction
@@ -271,40 +279,37 @@ export default function DashboardPage() {
       </div>
 
       {/* Modales */}
+      <AuthModal isOpen={showAuthModal} onClose={handleModal.close.auth} />
       <ActiveContractsModal
-        isOpen={activeContractsModalOpen}
-        onClose={() => setActiveContractsModalOpen(false)}
-        contracts={activeContracts}
+        isOpen={showActiveModal}
+        onClose={handleModal.close.active}
+        contracts={validateArray(activeContracts)}
         loading={activeContractsLoading}
         error={activeContractsError}
         title="Vigentes"
       />
-
-      {/* Modal de contratos próximos a vencer */}
       <ExpiringContractsModal
-        isOpen={expiringModalOpen}
-        onClose={() => setExpiringModalOpen(false)}
-        contracts={expiringContracts || []}
+        isOpen={showExpiringModal}
+        onClose={handleModal.close.expiring}
+        contracts={validateArray(expiringContracts)}
         loading={expiringLoading}
         error={expiringError}
         title="Próximos a Vencer"
       />
-
-      {/* Modal de contratos vencidos */}
       <ExpiredContractsModal
-        isOpen={expiredModalOpen}
-        onClose={() => setExpiredModalOpen(false)}
-        contracts={expiredContracts || []}
+        isOpen={showExpiredModal}
+        onClose={handleModal.close.expired}
+        contracts={validateArray(expiredContracts)}
         loading={expiredLoading}
         error={expiredError}
-        title="Expirados"
+        title="Vencidos"
       />
 
       {/* Modal de todos los contratos */}
       <AllContractsModal
         isOpen={allContractsModalOpen}
         onClose={() => setAllContractsModalOpen(false)}
-        contracts={allContracts}
+        contracts={validateArray(allContracts)}
         loading={allContractsLoading}
         error={allContractsError}
         title="Contratos"
@@ -315,16 +320,6 @@ export default function DashboardPage() {
         isOpen={selectContractModalOpen}
         onClose={() => setSelectContractModalOpen(false)}
       />
-
-      {/* Modal de contratos archivados */}
-      <ArchivedContractsModal
-        isOpen={archivedModalOpen}
-        onClose={() => setArchivedModalOpen(false)}
-        contracts={archivedContracts}
-        loading={archivedLoading}
-        error={archivedError}
-      />
-
     </div>
   );
 }

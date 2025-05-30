@@ -3,9 +3,14 @@ const fs = require("fs");
 const path = require("path");
 const PDFDocument = require("pdfkit");
 
-const ACTIVE_STATUSES = ['VIGENTE', 'ACTIVO'];
-const EXPIRING_STATUSES = ['VIGENTE', 'ACTIVO'];
-const EXPIRED_STATUS = 'VENCIDO';
+// Valores del enum ContractStatus definidos en el esquema de Prisma
+// Estados de contrato definidos como enum en Prisma
+const CONTRACT_STATUS = {
+  ACTIVE: 'ACTIVO',
+  EXPIRING: 'PROXIMO_A_VENCER',
+  EXPIRED: 'VENCIDO',
+  DRAFT: 'BORRADOR'
+};
 
 exports.QueryOptimizer = class QueryOptimizer {
   async getDashboardStatistics() {
@@ -15,59 +20,72 @@ exports.QueryOptimizer = class QueryOptimizer {
     const thirtyDaysLater = new Date();
     thirtyDaysLater.setDate(today.getDate() + 30);
     thirtyDaysLater.setHours(23, 59, 59, 999);
-    const todayStr = today.toISOString();
-    const thirtyDaysLaterStr = thirtyDaysLater.toISOString();
+
     try {
+      // Verificar conexión con la base de datos
       await prisma.$queryRaw`SELECT 1`;
-      const totalContracts = await prisma.contract.count({ where: { isArchived: false } });
-      if (totalContracts === 0) {
-        return {
-          totals: { total: 0, active: 0, expiring: 0, expired: 0, archived: 0 },
-          trends: {
-            total: { value: 0, label: "vs mes anterior", positive: true },
-            active: { value: 0, label: "vs mes anterior", positive: true },
-            expiring: { value: 0, label: "próximo mes", positive: false },
-            expired: { value: 0, label: "este mes", positive: false },
-          },
-          distribution: { client: 0, supplier: 0 },
-          recentActivity: [],
-        };
-      }
-      // Contratos activos
-      const activeContracts = await prisma.contract.count({
-        where: {
-          status: { in: ACTIVE_STATUSES },
-          isArchived: false,
-          OR: [
-            { endDate: { gte: todayStr } },
-            { endDate: null }
-          ]
-        }
-      });
-      // Contratos próximos a vencer
-      const expiringContracts = await prisma.contract.count({
-        where: {
-          status: { in: EXPIRING_STATUSES },
-          isArchived: false,
-          endDate: {
-            gte: todayStr,
-            lte: thirtyDaysLaterStr
+      
+      // Consulta única para obtener todos los contadores necesarios
+      const [
+        totalContracts,
+        activeContracts,
+        expiringContracts,
+        expiredContracts,
+        archivedContracts,
+        clientContracts,
+        supplierContracts,
+        recentActivity
+      ] = await Promise.all([
+        prisma.contract.count({ 
+          where: { isArchived: false } 
+        }),
+        prisma.contract.count({
+          where: {
+            AND: [
+              { status: CONTRACT_STATUS.ACTIVE },
+              { isArchived: false },
+              { endDate: { gte: today } }
+            ]
           }
-        }
-      });
-      // Contratos vencidos
-      const expiredContracts = await prisma.contract.count({
-        where: {
-          status: EXPIRED_STATUS,
-          isArchived: false,
-          endDate: { lt: todayStr }
-        }
-      });
-      // Otros datos en paralelo
-      const [archivedContracts, clientContracts, supplierContracts, recentActivity] = await Promise.all([
-        prisma.contract.count({ where: { isArchived: true } }),
-        prisma.contract.count({ where: { type: "Cliente", isArchived: false } }),
-        prisma.contract.count({ where: { type: "Proveedor", isArchived: false } }),
+        }),
+        prisma.contract.count({
+          where: {
+            AND: [
+              { status: CONTRACT_STATUS.ACTIVE },
+              { isArchived: false },
+              {
+                endDate: {
+                  gte: today,
+                  lte: thirtyDaysLater
+                }
+              }
+            ]
+          }
+        }),
+        prisma.contract.count({
+          where: {
+            AND: [
+              { status: CONTRACT_STATUS.EXPIRED },
+              { isArchived: false },
+              { endDate: { lt: today } }
+            ]
+          }
+        }),
+        prisma.contract.count({ 
+          where: { isArchived: true } 
+        }),
+        prisma.contract.count({ 
+          where: { 
+            type: "Cliente", 
+            isArchived: false 
+          } 
+        }),
+        prisma.contract.count({ 
+          where: { 
+            type: "Proveedor", 
+            isArchived: false 
+          } 
+        }),
         prisma.contract.findMany({
           take: 10,
           orderBy: { updatedAt: "desc" },
@@ -75,10 +93,42 @@ exports.QueryOptimizer = class QueryOptimizer {
             id: true,
             contractNumber: true,
             updatedAt: true,
-            createdBy: { select: { name: true } },
+            createdBy: {
+              select: { 
+                name: true 
+              } 
+            },
           },
-        }),
+          where: {
+            isArchived: false
+          }
+        })
       ]);
+
+      // Si no hay contratos, devolver estructura vacía
+      if (totalContracts === 0) {
+        return {
+          totals: { 
+            total: 0, 
+            active: 0, 
+            expiring: 0, 
+            expired: 0, 
+            archived: 0 
+          },
+          trends: {
+            total: { value: 0, label: "vs mes anterior", positive: true },
+            active: { value: 0, label: "vs mes anterior", positive: true },
+            expiring: { value: 0, label: "próximo mes", positive: false },
+            expired: { value: 0, label: "este mes", positive: false },
+          },
+          distribution: { 
+            client: 0, 
+            supplier: 0 
+          },
+          recentActivity: [],
+        };
+      }
+      // Formatear actividad reciente
       const formattedRecentActivity = recentActivity.map((contract) => ({
         id: contract.id,
         title: `Contrato ${contract.contractNumber}`,
@@ -90,73 +140,83 @@ exports.QueryOptimizer = class QueryOptimizer {
           avatar: undefined,
         },
       }));
-      if (
-        typeof totalContracts === 'undefined' ||
-        typeof activeContracts === 'undefined' ||
-        typeof expiringContracts === 'undefined' ||
-        typeof expiredContracts === 'undefined' ||
-        typeof archivedContracts === 'undefined' ||
-        typeof clientContracts === 'undefined' ||
-        typeof supplierContracts === 'undefined' ||
-        !Array.isArray(formattedRecentActivity)
-      ) {
-        throw new Error('Datos incompletos al generar estadísticas del dashboard');
+
+      // Validar datos obtenidos
+      const stats = {
+        total: totalContracts,
+        active: activeContracts,
+        expiring: expiringContracts,
+        expired: expiredContracts,
+        archived: archivedContracts,
+        client: clientContracts,
+        supplier: supplierContracts
+      };
+
+      for (const [key, value] of Object.entries(stats)) {
+        if (typeof value === 'undefined') {
+          throw new Error(`Dato inválido para ${key}: ${value}`);
+        }
       }
+
+      if (!Array.isArray(formattedRecentActivity)) {
+        throw new Error('Formato de actividad reciente inválido');
+      }
+
+      // Obtener estadísticas del mes anterior
       let lastMonthStats;
       try {
         lastMonthStats = await this.getDashboardStatisticsLastMonth();
-        const calculateTrend = (current, previous) => {
-          if (previous === 0) return { value: 100, label: 'sin datos previos', positive: true };
-          const change = ((current - previous) / previous) * 100;
-          return {
-            value: Math.round(Math.abs(change)),
-            label: 'vs mes anterior',
-            positive: change >= 0
-          };
-        };
-        return {
-          totals: {
-            total: totalContracts,
-            active: activeContracts,
-            expiring: expiringContracts,
-            expired: expiredContracts,
-            archived: archivedContracts,
-          },
-          trends: {
-            total: calculateTrend(totalContracts, lastMonthStats.total || 0),
-            active: calculateTrend(activeContracts, lastMonthStats.active || 0),
-            expiring: { value: expiringContracts, label: 'próximo mes', positive: false },
-            expired: { value: expiredContracts, label: 'este mes', positive: false },
-          },
-          distribution: {
-            client: clientContracts,
-            supplier: supplierContracts,
-          },
-          recentActivity: formattedRecentActivity,
-        };
       } catch (error) {
         console.error('[Dashboard] Error al obtener estadísticas del mes anterior:', error);
-        return {
-          totals: {
-            total: totalContracts,
-            active: activeContracts,
-            expiring: expiringContracts,
-            expired: expiredContracts,
-            archived: archivedContracts,
-          },
-          trends: {
-            total: { value: 0, label: 'error al calcular', positive: false },
-            active: { value: 0, label: 'error al calcular', positive: false },
-            expiring: { value: expiringContracts, label: 'próximo mes', positive: false },
-            expired: { value: expiredContracts, label: 'este mes', positive: false },
-          },
-          distribution: {
-            client: clientContracts,
-            supplier: supplierContracts,
-          },
-          recentActivity: formattedRecentActivity,
-        };
+        lastMonthStats = {}; // Usar objeto vacío para continuar con valores por defecto
       }
+
+      // Función auxiliar para calcular tendencias
+      const calculateTrend = (current, previous = 0) => {
+        if (previous === 0) return { 
+          value: 100, 
+          label: 'sin datos previos', 
+          positive: true 
+        };
+        const change = ((current - previous) / previous) * 100;
+        return {
+          value: Math.round(Math.abs(change)),
+          label: 'vs mes anterior',
+          positive: change >= 0
+        };
+      };
+
+      // Preparar respuesta
+      const response = {
+        totals: {
+          total: stats.total,
+          active: stats.active,
+          expiring: stats.expiring,
+          expired: stats.expired,
+          archived: stats.archived,
+        },
+        trends: {
+          total: calculateTrend(stats.total, lastMonthStats.total),
+          active: calculateTrend(stats.active, lastMonthStats.active),
+          expiring: { 
+            value: stats.expiring, 
+            label: 'próximo mes', 
+            positive: false 
+          },
+          expired: { 
+            value: stats.expired, 
+            label: 'este mes', 
+            positive: false 
+          },
+        },
+        distribution: {
+          client: stats.client,
+          supplier: stats.supplier,
+        },
+        recentActivity: formattedRecentActivity,
+      };
+
+      return response;
     } catch (error) {
       console.error('[Dashboard] Error crítico al obtener estadísticas:', error);
       throw new Error(`Error al generar estadísticas del dashboard: ${error.message}`);
@@ -168,107 +228,78 @@ exports.QueryOptimizer = class QueryOptimizer {
    * @returns {Promise<Object>} Totales del mes anterior.
    */
   async getDashboardStatisticsLastMonth() {
-    // Calcular el primer y último día del mes anterior
-    const now = new Date();
-    const firstDayThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDayLastMonth = new Date(firstDayThisMonth - 1);
-    const firstDayLastMonth = new Date(
-      lastDayLastMonth.getFullYear(),
-      lastDayLastMonth.getMonth(),
-      1
-    );
+    try {
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDayOfLastMonth = new Date(firstDayOfMonth);
+      lastDayOfLastMonth.setDate(0); // Último día del mes anterior
+      const firstDayOfLastMonth = new Date(lastDayOfLastMonth.getFullYear(), lastDayOfLastMonth.getMonth(), 1);
+      
+      // Obtener datos del mes anterior
+      const [
+        activeClientsLastMonth,
+        activeSuppliersLastMonth,
+        activeContractsLastMonth,
+        expiringLastMonth
+      ] = await Promise.all([
+        // Contar clientes activos al final del mes anterior
+        prisma.contract.count({
+          where: { 
+            type: 'Cliente',
+            isArchived: false,
+            createdAt: { lte: lastDayOfLastMonth }
+          }
+        }),
+        
+        // Contar proveedores activos al final del mes anterior
+        prisma.contract.count({
+          where: { 
+            type: 'Proveedor',
+            isArchived: false,
+            createdAt: { lte: lastDayOfLastMonth }
+          }
+        }),
+        
+        // Contar contratos activos al final del mes anterior
+        prisma.contract.count({
+          where: { 
+            status: 'ACTIVO',
+            isArchived: false,
+            createdAt: { lte: lastDayOfLastMonth },
+            endDate: { 
+              gte: lastDayOfLastMonth
+            }
+          }
+        }),
+        
+        // Contar contratos que vencieron durante el mes anterior
+        prisma.contract.count({
+          where: {
+            status: 'ACTIVO',
+            isArchived: false,
+            endDate: {
+              gte: firstDayOfLastMonth,
+              lte: lastDayOfLastMonth
+            }
+          }
+        })
+      ]);
 
-    // Formato ISO para Prisma
-    const start = firstDayLastMonth.toISOString();
-    const end = new Date(
-      lastDayLastMonth.getFullYear(),
-      lastDayLastMonth.getMonth(),
-      lastDayLastMonth.getDate(),
-      23,
-      59,
-      59,
-      999
-    ).toISOString();
-
-    // Total de contratos NO archivados creados hasta el último día del mes anterior
-    const totalContracts = await prisma.contract.count({
-      where: {
-        isArchived: false,
-        createdAt: { lte: end },
-      },
-    });
-
-    // Contratos activos (vigentes, no archivados, endDate futuro o nulo, y creados hasta el último día del mes anterior)
-    const activeContracts = await prisma.contract.count({
-      where: {
-        status: "Activo",
-        isArchived: false,
-        OR: [
-          { endDate: { not: null, gte: end } },
-          { endDate: null }
-        ],
-        createdAt: { lte: end },
-      },
-    });
-
-    // Contratos próximos a vencer (endDate entre el primer y último día del mes anterior, status vigente, no archivados)
-    const expiringContracts = await prisma.contract.count({
-      where: {
-        endDate: {
-          not: null,
-          gte: start,
-          lte: end
-        },
-        status: "Vigente",
-        isArchived: false,
-      },
-    });
-
-    // Contratos vencidos (endDate menor al último día del mes anterior, status vigente, no archivados)
-    const expiredContracts = await prisma.contract.count({
-      where: {
-        endDate: {
-          lt: end,
-        },
-        status: "Vencido",
-        isArchived: false,
-      },
-    });
-
-    // Contratos archivados hasta el último día del mes anterior
-    const archivedContracts = await prisma.contract.count({
-      where: {
-        isArchived: true,
-        updatedAt: { lte: end },
-      },
-    });
-
-    return {
-      total: totalContracts || 0,
-      active: activeContracts || 0,
-      expiring: expiringContracts || 0,
-      expired: expiredContracts || 0,
-      archived: archivedContracts || 0,
-    };
-  }
-
-  // Estadísticas generales de contratos
-  async getContractsStats(filters) {
-    // Por estado
-    const byStatus = await prisma.contract.groupBy({
-      by: ["status"],
-      _count: { _all: true },
-    });
-    // Por tipo
-    const byType = await prisma.contract.groupBy({
-      by: ["type"],
-      _count: { _all: true },
-    });
-    // Por mes de creación
-    const byMonth = await prisma.$queryRawUnsafe(
-      `SELECT strftime('%Y-%m', createdAt) as month, COUNT(*) as count FROM Contract GROUP BY month ORDER BY month`
-    );
-    return { byStatus, byType, byMonth };
+      return {
+        activeClients: activeClientsLastMonth || 0,
+        activeSuppliers: activeSuppliersLastMonth || 0,
+        activeContracts: activeContractsLastMonth || 0,
+        expiring: expiringLastMonth || 0
+      };
+    } catch (error) {
+      console.error('Error en getDashboardStatisticsLastMonth:', error);
+      return {
+        activeClients: 0,
+        activeSuppliers: 0,
+        activeContracts: 0,
+        expiring: 0
+      };
+    }
   }
 
   // Exportación simulada de estadísticas
@@ -346,7 +377,7 @@ exports.QueryOptimizer = class QueryOptimizer {
   // Contratos vencidos por mes
   async getContractsExpiredByMonth() {
     return prisma.$queryRawUnsafe(
-      `SELECT strftime('%Y-%m', endDate) as month, COUNT(*) as count FROM Contract WHERE status = 'Vencido' GROUP BY month ORDER BY month`
+      `SELECT strftime('%Y-%m', endDate) as month, COUNT(*) as count FROM Contract WHERE status = 'VENCIDO' GROUP BY month ORDER BY month`
     );
   }
   // Cantidad de suplementos por contrato
@@ -358,13 +389,37 @@ exports.QueryOptimizer = class QueryOptimizer {
   }
   // Contratos próximos a vencer en 30 días
   async getContractsExpiringSoon() {
-    const now = new Date();
-    const soon = new Date();
-    soon.setDate(now.getDate() + 30);
-    return prisma.contract.findMany({
-      where: { endDate: { gte: now, lte: soon }, status: "Vigente" },
-      select: { id: true, contractNumber: true, endDate: true },
-    });
+    try {
+      const now = new Date();
+      const soon = new Date();
+      soon.setDate(now.getDate() + 30);
+      
+      const contracts = await prisma.contract.findMany({
+        where: { 
+          endDate: { 
+            gte: now, 
+            lte: soon 
+          },
+          status: 'ACTIVO',
+          isArchived: false
+        },
+        select: { 
+          id: true, 
+          contractNumber: true, 
+          endDate: true,
+          companyName: true,
+          startDate: true
+        },
+        orderBy: {
+          endDate: 'asc'
+        }
+      });
+      
+      return contracts || [];
+    } catch (error) {
+      console.error('Error en getContractsExpiringSoon:', error);
+      return [];
+    }
   }
   // Contratos sin documentos adjuntos
   async getContractsWithoutDocuments() {
