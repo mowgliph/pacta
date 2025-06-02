@@ -23,10 +23,17 @@ export type Contract = BaseContract;
 
 // Tipos para el dashboard
 export interface RecentActivity {
+  id?: string;
   title: string;
-  date: string;
+  date?: string;
   description: string;
-  type?: "success" | "warning" | "error" | "info";
+  type?: "success" | "warning" | "error" | "info" | "contract" | "supplement" | "document" | "login" | "system";
+  contractNumber?: string;
+  updatedAt?: string;
+  user?: {
+    name: string;
+    avatar?: string;
+  };
 }
 
 export interface DashboardStats {

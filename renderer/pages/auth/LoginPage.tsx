@@ -8,7 +8,7 @@ import {
   CardContent,
 } from "../../components/ui/card";
 import { Alert, AlertTitle, AlertDescription } from "../../components/ui/alert";
-import { Loader2 } from "lucide-react";
+import { IconLoader2 } from "@tabler/icons-react";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -119,7 +119,7 @@ export default function LoginPage() {
               >
                 {(isSubmitting || loading) ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
                     Iniciando sesión...
                   </>
                 ) : 'Iniciar sesión'}

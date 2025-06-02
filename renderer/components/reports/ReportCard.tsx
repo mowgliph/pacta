@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { ArrowDown, ArrowUp, ArrowRight } from 'lucide-react';
+import { IconArrowDown, IconArrowUp, IconArrowRight } from '@tabler/icons-react';
 
 interface ReportCardProps {
   title: string;
@@ -34,9 +34,9 @@ export function ReportCard({
               isPositive ? 'text-green-600' : 'text-red-600'
             )}>
               {isPositive ? (
-                <ArrowUp className="h-4 w-4 mr-1" />
+                <IconArrowUp className="h-4 w-4 mr-1" />
               ) : (
-                <ArrowDown className="h-4 w-4 mr-1" />
+                <IconArrowDown className="h-4 w-4 mr-1" />
               )}
               {Math.abs(change)}% {isPositive ? 'aumento' : 'disminución'}
             </div>
@@ -44,7 +44,7 @@ export function ReportCard({
           
           {isNeutral && change === 0 && (
             <div className="mt-2 inline-flex items-center text-sm text-gray-500">
-              <ArrowRight className="h-4 w-4 mr-1" />
+              <IconArrowRight className="h-4 w-4 mr-1" />
               Sin cambios
             </div>
           )}

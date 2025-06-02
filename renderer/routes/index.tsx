@@ -14,6 +14,7 @@ const ClientsPage = lazy(() => import('@/pages/clients/ClientsPage'));
 const UsersPage = lazy(() => import('@/pages/users/UsersPage'));
 const ReportsPage = lazy(() => import('@/pages/reports/ReportsPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
+const ProfilePage = lazy(() => import('@/pages/profile/ProfilePage'));
 const NotFoundPage = lazy(() => import('@/pages/error/NotFoundPage'));
 const SuplementosPage = lazy(() => import('@/pages/suplementos/SuplementosPage'));
 
@@ -150,6 +151,14 @@ export const router = createBrowserRouter([
         element: (
           <PageWrapper>
             <SettingsPage />
+          </PageWrapper>
+        ),
+      },
+      {
+        path: 'profile',
+        element: (
+          <PageWrapper>
+            <ProfilePage />
           </PageWrapper>
         ),
       },

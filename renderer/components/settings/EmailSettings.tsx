@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Mail, AlertCircle, CheckCircle } from 'lucide-react';
+import { IconMail, IconAlertCircle, IconCircleCheck } from '@tabler/icons-react';
 
 export function EmailSettings() {
   const [isSaving, setIsSaving] = useState(false);
@@ -54,7 +54,7 @@ export function EmailSettings() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Mail className="h-5 w-5" />
+          <IconMail className="h-5 w-5" />
           Configuración de Correo Electrónico
         </CardTitle>
         <CardDescription>
@@ -64,7 +64,7 @@ export function EmailSettings() {
       <CardContent>
         {showSuccess && (
           <Alert className="mb-4 bg-green-50 border-green-200">
-            <CheckCircle className="h-4 w-4 text-green-600" />
+            <IconCircleCheck className="h-4 w-4 text-green-600" />
             <AlertTitle>¡Configuración guardada!</AlertTitle>
             <AlertDescription>
               Los cambios se han guardado correctamente.
@@ -73,7 +73,7 @@ export function EmailSettings() {
         )}
 
         <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
+          <IconAlertCircle className="h-4 w-4" />
           <AlertTitle>Importante</AlertTitle>
           <AlertDescription>
             Asegúrate de que el puerto SMTP esté abierto en tu servidor y que las credenciales sean correctas.

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { ArrowDownIcon, ArrowUpIcon } from '@radix-ui/react-icons';
+import { IconArrowDown, IconArrowUp } from '@tabler/icons-react';
 
 interface MetricCardProps {
   title: string;
@@ -35,9 +35,9 @@ export function MetricCard({
         {change !== undefined && (
           <div className="mt-2 flex items-center text-xs">
             {change >= 0 ? (
-              <ArrowUpIcon className="mr-1 h-3 w-3 text-green-500" />
+              <IconArrowUp className="mr-1 h-3 w-3 text-green-500" />
             ) : (
-              <ArrowDownIcon className="mr-1 h-3 w-3 text-red-500" />
+              <IconArrowDown className="mr-1 h-3 w-3 text-red-500" />
             )}
             <span className={cn(
               'font-medium',

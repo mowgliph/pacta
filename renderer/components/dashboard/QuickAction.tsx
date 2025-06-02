@@ -89,15 +89,14 @@ export function QuickAction({
   return (
     <div className={cn("relative", className)}>
       <motion.button
-        whileHover={{ y: -2 }}
+        whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         transition={{ duration: 0.15 }}
         onClick={onClick}
         className={cn(
-          "flex items-center gap-4 p-4 bg-white rounded-xl w-full h-full text-left",
-          "border transition-all group hover:shadow-sm",
-          colors.hover,
-          colors.border,
+          "flex items-center gap-3 px-4 py-2.5 rounded-lg w-full text-left transition-colors",
+          "bg-white hover:bg-gray-50 active:bg-gray-100",
+          "border border-gray-200 hover:border-gray-300",
           "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/20"
         )}
       >
@@ -108,40 +107,29 @@ export function QuickAction({
               "group-hover:scale-110 transform-gpu",
               colors.bg,
               colors.groupHover,
-              "shadow-sm"
             )}
           >
             {React.cloneElement(icon, {
-              className: cn("w-6 h-6 transition-transform duration-200 group-hover:scale-110", 
-                colors.icon, 
-                icon.props.className
-              ),
+              className: cn("w-4 h-4", colors.icon, icon.props.className)
             })}
           </div>
         </div>
-        
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between gap-2">
-            <span className="font-semibold text-gray-900 truncate">{title}</span>
-            {badge && (
-              <span className={cn(
-                "px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap",
-                colors.bg,
-                colors.icon
-              )}>
-                {badge}
-              </span>
-            )}
-          </div>
-          <p className="mt-1 text-sm text-gray-500 line-clamp-2">{description}</p>
+          <h3 className="text-sm font-medium text-gray-900">{title}</h3>
+          <p className="text-xs text-gray-500 truncate">{description}</p>
         </div>
-
-        {IndicatorIcon && (
-          <div className={cn(
-            "flex-shrink-0 ml-2 opacity-0 group-hover:opacity-100 transition-opacity",
-            colors.indicator
+        {badge && (
+          <span className={cn(
+            "px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap",
+            colors.bg,
+            colors.icon
           )}>
-            <IndicatorIcon className="w-5 h-5" />
+            {badge}
+          </span>
+        )}
+        {IndicatorIcon && (
+          <div className={cn("text-gray-400 group-hover:text-gray-600 transition-colors")}>
+            <IndicatorIcon className="w-4 h-4" />
           </div>
         )}
       </motion.button>

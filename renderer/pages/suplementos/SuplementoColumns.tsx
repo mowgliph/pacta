@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
-import { ArrowUpIcon, ArrowDownIcon } from '@radix-ui/react-icons';
+import { IconArrowUp, IconArrowDown } from '@tabler/icons-react';
 
 // Tipos
 export type SuplementoStatus = 'activo' | 'vencido';
@@ -66,9 +66,9 @@ export const useSuplementoColumns = (): ColumnDef<Suplemento>[] => {
             >
               Nombre
               {isSorted === 'asc' ? (
-                <ArrowUpIcon className="h-4 w-4" />
+                <IconArrowUp className="h-4 w-4" />
               ) : isSorted === 'desc' ? (
-                <ArrowDownIcon className="h-4 w-4" />
+                <IconArrowDown className="h-4 w-4" />
               ) : (
                 <span className="h-4 w-4" />
               )}

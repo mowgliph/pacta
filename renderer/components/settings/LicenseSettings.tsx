@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Key, AlertCircle, CheckCircle, Info, Clock } from 'lucide-react';
+import { IconKey, IconAlertCircle, IconCircleCheck, IconInfoCircle, IconClock } from '@tabler/icons-react';
 
 export function LicenseSettings() {
   const [licenseKey, setLicenseKey] = useState('');
@@ -72,7 +72,7 @@ export function LicenseSettings() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5" />
+            <IconKey className="h-5 w-5" />
             Información de la Licencia
           </CardTitle>
           <CardDescription>
@@ -82,7 +82,7 @@ export function LicenseSettings() {
         <CardContent className="space-y-6">
           {showSuccess && (
             <Alert className="bg-green-50 border-green-200">
-              <CheckCircle className="h-4 w-4 text-green-600" />
+              <IconCircleCheck className="h-4 w-4 text-green-600" />
               <AlertTitle>¡Licencia validada con éxito!</AlertTitle>
               <AlertDescription>
                 Tu licencia ha sido activada correctamente.
@@ -92,7 +92,7 @@ export function LicenseSettings() {
 
           {validationError && (
             <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
+              <IconAlertCircle className="h-4 w-4" />
               <AlertTitle>Error</AlertTitle>
               <AlertDescription>{validationError}</AlertDescription>
             </Alert>
@@ -120,7 +120,7 @@ export function LicenseSettings() {
             <div>
               <Label>Válida hasta</Label>
               <p className="mt-1 text-sm flex items-center">
-                <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
+                <IconClock className="h-4 w-4 mr-1 text-muted-foreground" />
                 {formatDate(licenseInfo.expiresAt)}
               </p>
             </div>
@@ -153,7 +153,7 @@ export function LicenseSettings() {
         <CardContent>
           <div className="space-y-4">
             <Alert>
-              <Info className="h-4 w-4" />
+              <IconInfoCircle className="h-4 w-4" />
               <AlertTitle>¿Necesitas una licencia?</AlertTitle>
               <AlertDescription>
                 Contacta a nuestro equipo de ventas en{' '}

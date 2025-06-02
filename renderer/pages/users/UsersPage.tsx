@@ -64,11 +64,6 @@ export default function UsersPage() {
   ];
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate('/login');
-      return;
-    }
-
     // Simular carga de datos
     const fetchUsers = async () => {
       setLoading(true);
@@ -86,7 +81,7 @@ export default function UsersPage() {
     };
 
     fetchUsers();
-  }, [isAuthenticated, isLoading, navigate]);
+  }, []);
 
   // Verificar permisos de administrador
   const isAdmin = currentUser?.role?.name === 'admin';

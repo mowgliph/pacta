@@ -1,5 +1,5 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, HardDrive, Key } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { IconMail, IconDeviceFloppy, IconKey } from '@tabler/icons-react';
 
 interface SettingsTabsProps {
   activeTab: string;
@@ -17,15 +17,15 @@ export function SettingsTabs({ activeTab, onTabChange, children }: SettingsTabsP
     >
       <TabsList className="grid w-full grid-cols-3 max-w-md">
         <TabsTrigger value="email" className="flex items-center gap-2">
-          <Mail className="h-4 w-4" />
+          <IconMail className="h-4 w-4" />
           Correo
         </TabsTrigger>
         <TabsTrigger value="backup" className="flex items-center gap-2">
-          <HardDrive className="h-4 w-4" />
+          <IconDeviceFloppy className="h-4 w-4" />
           Respaldo
         </TabsTrigger>
         <TabsTrigger value="license" className="flex items-center gap-2">
-          <Key className="h-4 w-4" />
+          <IconKey className="h-4 w-4" />
           Licencia
         </TabsTrigger>
       </TabsList>

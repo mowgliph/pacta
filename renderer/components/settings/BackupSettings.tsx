@@ -5,7 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { HardDrive, AlertCircle, CheckCircle, Clock, Download, Upload } from 'lucide-react';
+import { IconDeviceFloppy, IconAlertCircle, IconCircleCheck, IconClock, IconDownload, IconUpload } from '@tabler/icons-react';
 
 export function BackupSettings() {
   const [isBackingUp, setIsBackingUp] = useState(false);
@@ -57,7 +57,7 @@ export function BackupSettings() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <HardDrive className="h-5 w-5" />
+            <IconDeviceFloppy className="h-5 w-5" />
             Respaldo de Datos
           </CardTitle>
           <CardDescription>
@@ -67,7 +67,7 @@ export function BackupSettings() {
         <CardContent className="space-y-6">
           {showSuccess && (
             <Alert className="bg-green-50 border-green-200">
-              <CheckCircle className="h-4 w-4 text-green-600" />
+              <IconCircleCheck className="h-4 w-4 text-green-600" />
               <AlertTitle>¡Operación exitosa!</AlertTitle>
               <AlertDescription>
                 La operación se ha completado correctamente.
@@ -76,7 +76,7 @@ export function BackupSettings() {
           )}
 
           <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
+            <IconAlertCircle className="h-4 w-4" />
             <AlertTitle>Importante</AlertTitle>
             <AlertDescription>
               Realiza copias de seguridad regularmente para evitar pérdida de datos.
@@ -90,7 +90,7 @@ export function BackupSettings() {
                 disabled={isBackingUp}
                 className="flex items-center gap-2"
               >
-                <Download className="h-4 w-4" />
+                <IconDownload className="h-4 w-4" />
                 {isBackingUp ? 'Creando respaldo...' : 'Crear respaldo'}
               </Button>
               
@@ -100,7 +100,7 @@ export function BackupSettings() {
                 disabled={isRestoring || isBackingUp}
                 className="flex items-center gap-2"
               >
-                <Upload className="h-4 w-4" />
+                <IconUpload className="h-4 w-4" />
                 {isRestoring ? 'Restaurando...' : 'Restaurar desde archivo'}
               </Button>
             </div>
@@ -195,7 +195,7 @@ export function BackupSettings() {
               {backupHistory.map((backup) => (
                 <div key={backup.id} className="grid grid-cols-12 gap-4 p-4 items-center border-b last:border-b-0">
                   <div className="col-span-5 flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <IconClock className="h-4 w-4 text-muted-foreground" />
                     {backup.date}
                   </div>
                   <div className="col-span-3">{backup.size}</div>

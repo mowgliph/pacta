@@ -31,7 +31,7 @@ const menu: MenuItem[] = [
   {
     label: 'Estadísticas',
     icon: <IconChartBar className="h-5 w-5" />,
-    href: '/statistics',
+    href: '/reports',
   },
   {
     label: 'Contratos',
@@ -41,7 +41,7 @@ const menu: MenuItem[] = [
   {
     label: 'Usuarios',
     icon: <IconUser className="h-5 w-5" />,
-    href: '/admin/users',
+    href: '/users',
   },
 ];
 

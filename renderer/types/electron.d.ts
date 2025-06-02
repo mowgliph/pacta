@@ -27,6 +27,9 @@ export interface User {
   email: string;
   roleId: string;
   isActive: boolean;
+  avatar?: string;
+  company?: string;
+  phone?: string;
   createdAt: string;
   updatedAt: string;
 }

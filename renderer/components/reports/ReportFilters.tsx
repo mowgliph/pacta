@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, Filter, RotateCcw } from 'lucide-react';
+import { IconCalendar, IconFilter, IconRotate2 } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -69,7 +69,7 @@ export function ReportFilters({
                     !dateRange.from && 'text-muted-foreground'
                   )}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <IconCalendar className="mr-2 h-4 w-4" />
                   {dateRange.from ? (
                     format(dateRange.from, 'PPP', { locale: es })
                   ) : (
@@ -79,16 +79,13 @@ export function ReportFilters({
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
-                  mode="single"
-                  selected={dateRange.from}
-                  onSelect={(date) =>
+                  selectedDate={dateRange.from}
+                  onSelectDate={(date) =>
                     onDateRangeChange({
                       from: date,
                       to: dateRange.to,
                     })
                   }
-                  initialFocus
-                  locale={es}
                 />
               </PopoverContent>
             </Popover>
@@ -108,7 +105,7 @@ export function ReportFilters({
                   )}
                   disabled={!dateRange.from}
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  <IconCalendar className="mr-2 h-4 w-4" />
                   {dateRange.to ? (
                     format(dateRange.to, 'PPP', { locale: es })
                   ) : (
@@ -118,18 +115,12 @@ export function ReportFilters({
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
-                  mode="single"
-                  selected={dateRange.to}
-                  onSelect={(date) =>
+                  selectedDate={dateRange.to}
+                  onSelectDate={(date) =>
                     onDateRangeChange({
                       from: dateRange.from,
                       to: date,
                     })
-                  }
-                  initialFocus
-                  locale={es}
-                  disabled={(date) =>
-                    date < new Date(dateRange.from || 0) || date > new Date()
                   }
                 />
               </PopoverContent>
@@ -143,11 +134,11 @@ export function ReportFilters({
             onClick={onReset}
             className="w-full sm:w-auto"
           >
-            <RotateCcw className="h-4 w-4 mr-2" />
+            <IconRotate2 className="h-4 w-4 mr-2" />
             Restablecer
           </Button>
           <Button className="w-full sm:w-auto">
-            <Filter className="h-4 w-4 mr-2" />
+            <IconFilter className="h-4 w-4 mr-2" />
             Filtrar
           </Button>
         </div>

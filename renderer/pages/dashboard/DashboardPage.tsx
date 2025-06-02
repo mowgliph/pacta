@@ -6,9 +6,10 @@ import {
   IconCirclePlus,
   IconFileText,
   IconFileText as TrendingUp,
-  IconClipboard,
+  IconFileCheck,
   IconSettings,
   IconPlus,
+  IconFileX
 } from "@tabler/icons-react";
 
 import { Alert, AlertTitle, AlertDescription } from "../../components/ui/alert";
@@ -216,17 +217,10 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-8">
         {/* Sección de Estadísticas */}
         <section>
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6">
             <h2 className="text-xl font-semibold text-gray-900">
               Vista General
             </h2>
-            <Button 
-              onClick={() => setShowNewContractModal(true)}
-              className="bg-azul-medio hover:bg-azul-oscuro text-white flex items-center gap-2"
-            >
-              <IconPlus className="w-4 h-4" />
-              Nuevo Contrato
-            </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -264,7 +258,7 @@ export default function DashboardPage() {
                 <DashboardCard
                   title="Próximos a Vencer"
                   count={stats.expiring.toString()}
-                  icon={<TrendingUp className="w-6 h-6 text-orange-500" />}
+                  icon={<IconFileCheck className="w-6 h-6 text-orange-500" />}
                   onClick={handleModal.open.expiring}
                   trend={trends.expiring}
                   loading={statsLoading}
@@ -273,7 +267,7 @@ export default function DashboardPage() {
                 <DashboardCard
                   title="Vencidos"
                   count={stats.expired.toString()}
-                  icon={<TrendingUp className="w-6 h-6 text-red-500" />}
+                  icon={<IconFileX className="w-6 h-6 text-red-500" />}
                   onClick={handleModal.open.expired}
                   trend={trends.expired}
                   loading={statsLoading}
@@ -309,7 +303,7 @@ export default function DashboardPage() {
               icon={<IconChartBar />}
               title="Estadísticas"
               description="Ver estadísticas"
-              onClick={() => navigate("/statistics")}
+              onClick={() => navigate("/reports")}
               colorScheme="primary"
             />
             <QuickAction
@@ -340,12 +334,15 @@ export default function DashboardPage() {
               <div className="divide-y divide-gray-100">
                 <ActivityFeed 
                   activities={data.recentActivity.map(activity => ({
-                    id: Math.random().toString(36).substr(2, 9), // Generar un ID único
-                    type: 'system' as const, // Tipo por defecto
-                    title: activity.title,
-                    description: activity.description,
-                    timestamp: new Date(activity.date),
-                    user: { name: 'Sistema' } // Usuario por defecto
+                    id: activity.id || Math.random().toString(36).substr(2, 9),
+                    type: (activity.type || 'contract') as 'contract' | 'supplement' | 'document' | 'login' | 'system',
+                    title: activity.title || `Contrato ${activity.contractNumber || 'actualizado'}`,
+                    description: activity.description || 'Actividad reciente',
+                    timestamp: activity.updatedAt ? new Date(activity.updatedAt) : (activity.date ? new Date(activity.date) : new Date()),
+                    user: {
+                      name: activity.user?.name || 'Sistema',
+                      avatar: activity.user?.avatar
+                    }
                   }))} 
                 />
               </div>
