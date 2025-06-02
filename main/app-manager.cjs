@@ -32,7 +32,7 @@ AppManager.getInstance = function (eventManager) {
 
 AppManager.prototype.initialize = async function () {
   try {
-    console.info("Iniciando aplicación PACTA...");
+    console.info("Iniciando aplicacion PACTA...");
     if (!app.isReady()) {
       await this.waitForAppReady();
     }
@@ -62,16 +62,16 @@ AppManager.prototype.initialize = async function () {
     this.setupErrorHandler();
     this.setupAutoBackup();
 
-    console.info("Aplicación PACTA inicializada correctamente");
+    console.info("Aplicacion PACTA inicializada correctamente");
   } catch (error) {
     console.error(
-      "Error al inicializar la aplicación:",
+      "Error al inicializar la aplicacion:",
       error,
       error && error.stack
     );
     dialog.showErrorBox(
-      "Error de inicialización",
-      `Ha ocurrido un error al iniciar la aplicación.\n${
+      "Error de inicializacion",
+      `Ha ocurrido un error al iniciar la aplicacion.\n${
         error && error.message ? error.message : String(error)
       }`
     );

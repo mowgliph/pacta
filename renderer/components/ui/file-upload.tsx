@@ -1,7 +1,7 @@
 import type React from "react";
 
 import { useState, useRef } from "react";
-import { UploadIcon, Cross2Icon } from "@radix-ui/react-icons";
+import { IconUpload, IconX } from "@tabler/icons-react";
 import { Button } from "./button";
 import { Label } from "./label";
 
@@ -209,13 +209,13 @@ export function FileUpload({
                 onClick={handleRemoveFile}
                 className="ml-2"
               >
-                <Cross2Icon className="h-4 w-4" />
+                <IconX className="h-4 w-4" />
               </Button>
             </div>
           </div>
         ) : (
           <div className="flex flex-col items-center">
-            <UploadIcon className="h-10 w-10 text-gray-400 mb-2" />
+            <IconUpload className="h-10 w-10 text-gray-400 mb-2" />
             <p className="text-sm text-gray-600 mb-1">
               Arrastra y suelta un archivo aquí, o
             </p>

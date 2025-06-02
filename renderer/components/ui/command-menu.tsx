@@ -2,7 +2,7 @@ import React from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { cn } from "../../lib/utils";
 import { Command as CommandPrimitive } from "cmdk";
-import { ChevronsUpDown, X } from "lucide-react";
+import { IconChevronDown, IconX } from "@tabler/icons-react";
 
 export interface CommandMenuGroup {
   label: string;
@@ -74,7 +74,7 @@ const CommandDialog = React.forwardRef<
       >
         {children}
         <Dialog.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-          <X className="h-4 w-4" />
+          <IconX className="h-4 w-4" />
           <span className="sr-only">Cerrar</span>
         </Dialog.Close>
       </Dialog.Content>
@@ -88,7 +88,7 @@ const CommandInput = React.forwardRef<
   CommandInputProps
 >(({ className, ...props }, ref) => (
   <div className="flex items-center border-b px-3">
-    <ChevronsUpDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+    <IconChevronDown className="mr-2 h-4 w-4 shrink-0 opacity-50" />
     <CommandPrimitive.Input
       ref={ref}
       className={cn(

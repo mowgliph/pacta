@@ -2,13 +2,13 @@ import React from "react";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { cn } from "../../lib/utils";
 import {
-  CheckIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  ExclamationTriangleIcon,
-  InfoCircledIcon,
-  CheckCircledIcon,
-} from "@radix-ui/react-icons";
+  IconCheck,
+  IconChevronDown,
+  IconChevronUp,
+  IconAlertTriangle,
+  IconInfoCircle,
+  IconCircleCheck,
+} from "@tabler/icons-react";
 
 // Interfaz para las props del Select
 interface SelectProps
@@ -79,7 +79,7 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
             id={`${id}-description`}
             className="flex items-center gap-1.5 text-xs text-muted-foreground"
           >
-            <InfoCircledIcon className="h-3.5 w-3.5 flex-shrink-0" />
+            <IconInfoCircle className="h-3.5 w-3.5 flex-shrink-0" />
             {description}
           </p>
         )}
@@ -88,7 +88,7 @@ const Select = React.forwardRef<HTMLButtonElement, SelectProps>(
             id={`${id}-error`}
             className="flex items-center gap-1.5 text-xs text-destructive"
           >
-            <ExclamationTriangleIcon className="h-3.5 w-3.5 flex-shrink-0" />
+            <IconAlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
             {error}
           </p>
         )}
@@ -138,7 +138,7 @@ const SelectTrigger = React.forwardRef<
       )}
       <span className="flex-1 truncate text-left">{children}</span>
       <SelectPrimitive.Icon asChild>
-        <ChevronDownIcon className="h-4 w-4 opacity-70" />
+        <IconChevronDown className="h-4 w-4 opacity-70" />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
@@ -204,7 +204,7 @@ const SelectItem = React.forwardRef<
   >
     <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
       <SelectPrimitive.ItemIndicator>
-        <CheckCircledIcon className="h-4 w-4 text-success" />
+        <IconCircleCheck className="h-4 w-4 text-success" />
       </SelectPrimitive.ItemIndicator>
     </span>
     {icon && <span className="mr-2 text-muted-foreground">{icon}</span>}
@@ -252,7 +252,7 @@ const SelectScrollUpButton = React.forwardRef<
     )}
     {...props}
   >
-    <ChevronUpIcon className="h-4 w-4" />
+    <IconChevronUp className="h-4 w-4" />
   </SelectPrimitive.ScrollUpButton>
 ));
 SelectScrollUpButton.displayName = SelectPrimitive.ScrollUpButton.displayName;
@@ -270,7 +270,7 @@ const SelectScrollDownButton = React.forwardRef<
     )}
     {...props}
   >
-    <ChevronDownIcon className="h-4 w-4" />
+    <IconChevronDown className="h-4 w-4" />
   </SelectPrimitive.ScrollDownButton>
 ));
 SelectScrollDownButton.displayName =

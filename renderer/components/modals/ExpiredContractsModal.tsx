@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileTextIcon, ExternalLinkIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import { IconFileText, IconExternalLink, IconSearch } from "@tabler/icons-react";
 import { Contract } from "@/lib/useContracts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { LoadingSpinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
 interface ExpiredContractsModalProps {
@@ -104,7 +104,7 @@ const ExpiredContractsModal: React.FC<ExpiredContractsModalProps> = ({
 
         {/* Barra de búsqueda */}
         <div className="flex items-center bg-white rounded-lg border border-[#E5E5E5] px-3 py-2 gap-2 mb-4">
-          <MagnifyingGlassIcon className="w-4.5 h-4.5 text-[#757575]" />
+          <IconSearch className="w-4.5 h-4.5 text-[#757575]" />
           <input
             type="text"
             placeholder="Buscar por número, empresa o descripción..."
@@ -119,7 +119,7 @@ const ExpiredContractsModal: React.FC<ExpiredContractsModalProps> = ({
         <div className="max-h-[400px] overflow-y-auto">
           {loading ? (
             <div className="flex justify-center items-center py-8">
-              <Spinner size="lg" />
+              <LoadingSpinner size="lg" />
             </div>
           ) : error ? (
             <div className="text-[#F44336] p-4 bg-[#F44336]/10 rounded-md">
@@ -157,7 +157,7 @@ const ExpiredContractsModal: React.FC<ExpiredContractsModalProps> = ({
                   </div>
                   {contract.description && (
                     <div className="flex items-center gap-2 mt-2 text-sm text-[#757575] line-clamp-1">
-                      <FileTextIcon className="w-5 h-5 text-azul-medio" />
+                      <IconFileText className="w-5 h-5 text-azul-medio" />
                       {contract.description}
                     </div>
                   )}
@@ -182,7 +182,7 @@ const ExpiredContractsModal: React.FC<ExpiredContractsModalProps> = ({
               onClick={navigateToExpiredContracts}
               className="flex items-center gap-2"
             >
-              <ExternalLinkIcon className="w-4 h-4" />
+              <IconExternalLink className="w-4 h-4" />
               Ver todos
             </Button>
             <Button
@@ -190,9 +190,9 @@ const ExpiredContractsModal: React.FC<ExpiredContractsModalProps> = ({
               disabled={isExporting || contracts.length === 0}
             >
               {isExporting ? (
-                <Spinner className="mr-2 h-4 w-4" />
+                <LoadingSpinner className="mr-2 h-4 w-4" />
               ) : (
-                <FileTextIcon className="mr-2 h-4 w-4" />
+                <IconFileText className="mr-2 h-4 w-4" />
               )}
               {isExporting ? 'Exportando...' : 'Exportar a PDF'}
             </Button>

@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { FileTextIcon, BoxIcon } from "@radix-ui/react-icons";
+import { IconFileText, IconBox } from "@tabler/icons-react";
 
 interface ContractDistributionProps {
   clientCount: number;
@@ -25,7 +25,7 @@ export function ContractDistribution({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="rounded-lg bg-blue-50 p-2">
-              <FileTextIcon className="h-5 w-5 text-blue-600" />
+              <IconFileText className="h-5 w-5 text-blue-600" />
             </div>
             <div>
               <p className="text-sm font-medium text-gray-900">Clientes</p>
@@ -49,7 +49,7 @@ export function ContractDistribution({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="rounded-lg bg-green-50 p-2">
-              <BoxIcon className="h-5 w-5 text-green-600" />
+              <IconBox className="h-5 w-5 text-green-600" />
             </div>
             <div>
               <p className="text-sm font-medium text-gray-900">Proveedores</p>

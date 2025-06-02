@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  BellIcon,
-  ExitIcon,
-  EnterIcon,
-  GearIcon,
-  CheckIcon,
-  ExclamationTriangleIcon,
-  UpdateIcon,
-} from "@radix-ui/react-icons";
+  IconBell,
+  IconLogout,
+  IconLogin,
+  IconSettings,
+  IconCheck,
+  IconAlertTriangle,
+  IconRefreshAlert,
+  IconRefresh,
+} from "@tabler/icons-react";
 import { useAuth } from "../../store/auth";
 import { useNavigate } from "react-router-dom";
 import { cn } from "../../lib/utils";
@@ -124,14 +125,14 @@ function useNotifications() {
 const getNotificationIcon = (type?: NotificationType) => {
   switch (type) {
     case "success":
-      return <CheckIcon className="h-4 w-4" />;
+      return <IconCheck className="h-4 w-4" />;
     case "warning":
-      return <ExclamationTriangleIcon className="h-4 w-4 text-yellow-500" />;
+      return <IconAlertTriangle className="h-4 w-4 text-yellow-500" />;
     case "error":
-      return <ExclamationTriangleIcon className="h-4 w-4 text-red-500" />;
+      return <IconAlertTriangle className="h-4 w-4 text-red-500" />;
     case "info":
     default:
-      return <BellIcon className="h-4 w-4" />;
+      return <IconBell className="h-4 w-4" />;
   }
 };
 
@@ -176,7 +177,7 @@ export default function Header() {
                 hasUnread ? `(${unreadCount} sin leer)` : ""
               }`}
             >
-              <BellIcon
+              <IconBell
                 className={cn(
                   "h-5 w-5 text-[#018ABE] transition-transform",
                   hasUnread && "animate-pulse"
@@ -207,9 +208,9 @@ export default function Header() {
                     className="text-xs h-7 px-2 text-[#018ABE] hover:bg-[#E6F4F9]"
                   >
                     {loading ? (
-                      <UpdateIcon className="mr-1 h-3.5 w-3.5 animate-spin" />
+                      <IconRefresh className="mr-1 h-3.5 w-3.5 animate-spin" />
                     ) : (
-                      <CheckIcon className="mr-1 h-3.5 w-3.5" />
+                      <IconCheck className="mr-1 h-3.5 w-3.5" />
                     )}
                     Marcar todo
                   </Button>
@@ -220,7 +221,7 @@ export default function Header() {
             <div className="py-2">
               {error ? (
                 <div className="flex flex-col items-center justify-center py-8 px-6 text-center">
-                  <ExclamationTriangleIcon className="h-10 w-10 text-red-500 mb-3" />
+                  <IconAlertTriangle className="h-10 w-10 text-red-500 mb-3" />
                   <p className="text-sm text-gray-600 mb-2">
                     Error al cargar notificaciones
                   </p>
@@ -235,14 +236,14 @@ export default function Header() {
                 </div>
               ) : loading ? (
                 <div className="flex flex-col items-center justify-center py-12 px-6">
-                  <UpdateIcon className="h-8 w-8 animate-spin text-[#018ABE] mb-3" />
+                  <IconRefreshAlert className="h-8 w-8 animate-spin text-[#018ABE] mb-3" />
                   <p className="text-sm text-gray-600">
                     Cargando notificaciones...
                   </p>
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-                  <BellIcon className="h-10 w-10 text-gray-400 mb-3" />
+                  <IconBell className="h-10 w-10 text-gray-400 mb-3" />
                   <p className="text-sm font-medium text-gray-600">
                     No hay notificaciones
                   </p>
@@ -359,7 +360,7 @@ export default function Header() {
                       className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       role="menuitem"
                     >
-                      <GearIcon className="mr-3 h-4 w-4 text-gray-500" />
+                      <IconSettings className="mr-3 h-4 w-4 text-gray-500" />
                       Mi perfil
                     </button>
                     <button
@@ -367,7 +368,7 @@ export default function Header() {
                       className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       role="menuitem"
                     >
-                      <GearIcon className="mr-3 h-4 w-4 text-gray-500" />
+                      <IconSettings className="mr-3 h-4 w-4 text-gray-500" />
                       Configuración
                     </button>
                     <div className="border-t border-gray-100 my-1"></div>
@@ -376,7 +377,7 @@ export default function Header() {
                       className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                       role="menuitem"
                     >
-                      <ExitIcon className="mr-3 h-4 w-4" />
+                      <IconLogout className="mr-3 h-4 w-4" />
                       Cerrar sesión
                     </button>
                   </div>
@@ -391,7 +392,7 @@ export default function Header() {
                 onClick={() => navigate("/login")}
                 className="text-[#018ABE] border-[#018ABE] hover:bg-[#E6F4F9] hover:text-[#0171a1]"
               >
-                <EnterIcon className="mr-2 h-4 w-4" />
+                <IconLogin className="mr-2 h-4 w-4" />
                 Iniciar sesión
               </Button>
             </div>

@@ -12,10 +12,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
-import { CalendarIcon } from "@radix-ui/react-icons";
+import { IconCalendar } from "@tabler/icons-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { es } from "date-fns/locale";
 
 interface NewContractModalProps {
   isOpen: boolean;
@@ -163,7 +162,7 @@ export function NewContractModal({ isOpen, onClose, onSuccess }: NewContractModa
                       errors.startDate && "border-red-500"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <IconCalendar className="mr-2 h-4 w-4" />
                     {startDate ? format(new Date(startDate), "PPP") : <span>Seleccionar fecha</span>}
                   </Button>
                 </PopoverTrigger>
@@ -193,7 +192,7 @@ export function NewContractModal({ isOpen, onClose, onSuccess }: NewContractModa
                       errors.endDate && "border-red-500"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    <IconCalendar className="mr-2 h-4 w-4" />
                     {endDate ? format(new Date(endDate), "PPP") : <span>Seleccionar fecha</span>}
                   </Button>
                 </PopoverTrigger>

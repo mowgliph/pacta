@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { DownloadIcon, ArrowLeftIcon, UpdateIcon } from '@radix-ui/react-icons';
+import { IconDownload, IconArrowLeft, IconRefresh } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 
 // Esquema de validación con Zod
@@ -150,7 +150,7 @@ export function UserForm({ defaultValues, isSubmitting = false, onSubmit, isEdit
           onClick={() => navigate(-1)}
           disabled={isSubmitting}
         >
-          <ArrowLeftIcon className="w-4 h-4 mr-2" />
+          <IconArrowLeft className="w-4 h-4 mr-2" />
           Cancelar
         </Button>
         <Button 
@@ -160,12 +160,12 @@ export function UserForm({ defaultValues, isSubmitting = false, onSubmit, isEdit
         >
           {isSubmitting ? (
             <>
-              <UpdateIcon className="mr-2 h-4 w-4 animate-spin" />
+              <IconRefresh className="mr-2 h-4 w-4 animate-spin" />
               Guardando...
             </>
           ) : (
             <>
-              <DownloadIcon className="w-4 h-4 mr-2" />
+              <IconDownload className="w-4 h-4 mr-2" />
               {isEditMode ? 'Actualizar Usuario' : 'Crear Usuario'}
             </>
           )}

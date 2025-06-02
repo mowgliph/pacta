@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { useUserColumns, type User } from './UserColumns';
+import { AddUserModal } from '@/components/admin/AddUserModal';
 
 export default function UsersPage() {
   const { isAuthenticated, isLoading, user: currentUser } = useAuth();
@@ -88,7 +89,7 @@ export default function UsersPage() {
   }, [isAuthenticated, isLoading, navigate]);
 
   // Verificar permisos de administrador
-  const isAdmin = currentUser?.role === 'admin';
+  const isAdmin = currentUser?.role?.name === 'admin';
 
   if (isLoading || loading) {
     return (
@@ -107,11 +108,7 @@ export default function UsersPage() {
             Gestiona los usuarios y permisos del sistema
           </p>
         </div>
-        {isAdmin && (
-          <Button onClick={() => navigate('/users/new')}>
-            Nuevo Usuario
-          </Button>
-        )}
+        {isAdmin && <AddUserModal />}
       </div>
       
       <div className="bg-white rounded-lg border shadow-sm">

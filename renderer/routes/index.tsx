@@ -3,8 +3,9 @@ import { Suspense, lazy } from 'react';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { Layout } from '@/components/layout/Layout';
 import { LoadingSpinner } from '@/components/ui/spinner';
+import { RouterInitializer } from '@/components/RouterInitializer';
 
-// Lazy loading para las páginas
+// Lazy loading para las paginas
 const LoginPage = lazy(() => import('@/pages/auth/LoginPage'));
 const DashboardPage = lazy(() => import('@/pages/dashboard/DashboardPage'));
 const ContractsPage = lazy(() => import('@/pages/contracts/ContractsPage'));
@@ -14,6 +15,7 @@ const UsersPage = lazy(() => import('@/pages/users/UsersPage'));
 const ReportsPage = lazy(() => import('@/pages/reports/ReportsPage'));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage'));
 const NotFoundPage = lazy(() => import('@/pages/error/NotFoundPage'));
+const SuplementosPage = lazy(() => import('@/pages/suplementos/SuplementosPage'));
 
 // Páginas de contratos (comentadas hasta que se implementen)
 // const NewContractPage = lazy(() => import('@/pages/contracts/NewContractPage'));
@@ -38,7 +40,12 @@ const PageWrapper = ({ children }: { children: React.ReactNode }) => (
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <Navigate to="/dashboard" replace />,
+    element: (
+      <>
+        <Navigate to="/dashboard" replace />
+        <RouterInitializer />
+      </>
+    ),
   },
   {
     path: '/login',
@@ -66,11 +73,45 @@ export const router = createBrowserRouter([
       },
       {
         path: 'contracts',
-        element: (
-          <PageWrapper>
-            <ContractsPage />
-          </PageWrapper>
-        ),
+        children: [
+          {
+            index: true,
+            element: (
+              <PageWrapper>
+                <ContractsPage />
+              </PageWrapper>
+            ),
+          },
+          {
+            path: ':id/suplementos',
+            children: [
+              {
+                index: true,
+                element: (
+                  <PageWrapper>
+                    <SuplementosPage />
+                  </PageWrapper>
+                ),
+              },
+              {
+                path: 'nuevo',
+                element: (
+                  <PageWrapper>
+                    <div>Nuevo Suplemento</div>
+                  </PageWrapper>
+                ),
+              },
+              {
+                path: ':suplementoId',
+                element: (
+                  <PageWrapper>
+                    <div>Detalle del Suplemento</div>
+                  </PageWrapper>
+                ),
+              },
+            ],
+          },
+        ],
       },
       {
         path: 'suppliers',

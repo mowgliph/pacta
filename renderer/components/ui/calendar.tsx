@@ -2,10 +2,9 @@ import { useState, useMemo } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
-  Calendar as CalendarIcon,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+  IconChevronLeft,
+  IconChevronRight,
+} from '@tabler/icons-react';
 
 interface CalendarProps {
   selectedDate?: Date;
@@ -53,7 +52,7 @@ export function Calendar({ selectedDate, events = [], onSelectDate }: CalendarPr
           aria-label="Mes anterior"
           role="button"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <IconChevronLeft className="w-5 h-5" />
         </button>
         <h2 className="text-lg font-semibold">
           {format(currentMonth, 'MMMM yyyy', { locale: es })}
@@ -64,7 +63,7 @@ export function Calendar({ selectedDate, events = [], onSelectDate }: CalendarPr
           aria-label="Mes siguiente"
           role="button"
         >
-          <ChevronRight className="w-5 h-5" />
+          <IconChevronRight className="w-5 h-5" />
         </button>
       </div>
 

@@ -2,15 +2,13 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import * as Dialog from "@radix-ui/react-dialog";
 import { 
-  Cross2Icon,
-  FileTextIcon, 
-  DownloadIcon, 
-  ExternalLinkIcon, 
-  MagnifyingGlassIcon, 
-  ArchiveIcon 
-} from "@radix-ui/react-icons";
+  IconExternalLink, 
+  IconSearch, 
+  IconArchive, 
+  IconDownload
+} from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { LoadingSpinner } from "@/components/ui/spinner";
 import { format, parseISO, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import { useToast } from "@/components/ui/use-toast";
@@ -214,7 +212,7 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
               {title}
               {loading && (
                 <span className="ml-2 text-sm font-normal text-gray-500">
-                  <Spinner className="inline-block mr-1 w-4 h-4" />
+                  <LoadingSpinner className="inline-block mr-1 w-4 h-4" />
                   Cargando...
                 </span>
               )}
@@ -228,7 +226,7 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
               Lista de contratos archivados con opciones para restaurar, exportar y ver detalles.
             </Dialog.Description>
             <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Buscar contratos..."
@@ -242,7 +240,7 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
           <div className="flex-1 overflow-auto p-4">
             {loading ? (
               <div className="flex justify-center items-center h-32">
-                <Spinner className="w-8 h-8" />
+                <LoadingSpinner className="w-8 h-8" />
               </div>
             ) : error ? (
               <div className="text-red-500 text-center py-8">{error}</div>
@@ -272,7 +270,7 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
                             {formatDate(contract.startDate)} - {formatDate(contract.endDate)}
                           </span>
                           <span className="inline-flex items-center">
-                            <ArchiveIcon className="h-3 w-3 mr-1" />
+                            <IconArchive className="h-3 w-3 mr-1" />
                             Archivado el: {formatDate(contract.updatedAt)}
                           </span>
                         </div>
@@ -286,9 +284,9 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
                             disabled={restoring === contract.id}
                           >
                             {restoring === contract.id ? (
-                              <Spinner className="mr-2 h-4 w-4" />
+                              <LoadingSpinner className="mr-2 h-4 w-4" />
                             ) : (
-                              <ArchiveIcon className="mr-2 h-4 w-4" />
+                              <IconArchive className="mr-2 h-4 w-4" />
                             )}
                             Restaurar
                           </Button>
@@ -298,7 +296,7 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
                           size="sm"
                           onClick={() => navigate(`/contracts/${contract.id}`)}
                         >
-                          <ExternalLinkIcon className="mr-2 h-4 w-4" />
+                          <IconExternalLink className="mr-2 h-4 w-4" />
                           Ver
                         </Button>
                       </div>
@@ -345,9 +343,9 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
                 disabled={filteredContracts.length === 0 || isExporting}
               >
                 {isExporting ? (
-                  <Spinner className="mr-2 h-4 w-4" />
+                  <LoadingSpinner className="mr-2 h-4 w-4" />
                 ) : (
-                  <DownloadIcon className="mr-2 h-4 w-4" />
+                  <IconDownload className="mr-2 h-4 w-4" />
                 )}
                 {isExporting ? "Exportando..." : "Exportar PDF"}
               </Button>

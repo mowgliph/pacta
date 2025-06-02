@@ -2,19 +2,19 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
-  BarChartIcon,
-  PlusCircledIcon,
-  FileTextIcon,
-  BarChartIcon as TrendingUp,
-  ClipboardIcon,
-  GearIcon,
-  PlusIcon,
-} from "@radix-ui/react-icons";
+  IconChartBar,
+  IconCirclePlus,
+  IconFileText,
+  IconFileText as TrendingUp,
+  IconClipboard,
+  IconSettings,
+  IconPlus,
+} from "@tabler/icons-react";
 
 import { Alert, AlertTitle, AlertDescription } from "../../components/ui/alert";
 import DashboardCard from "../../components/ui/DashboardCard";
 import { QuickAction } from "../../components/dashboard/QuickAction";
-import { RecentActivityItem } from "../../components/dashboard/RecentActivityItem";
+import { ActivityFeed } from "../../components/dashboard/ActivityFeed";
 import { useDashboardStats } from "../../lib/useDashboardStats";
 import { useNotification } from "../../lib/useNotification";
 import { useAuth } from "../../store/auth";
@@ -224,7 +224,7 @@ export default function DashboardPage() {
               onClick={() => setShowNewContractModal(true)}
               className="bg-azul-medio hover:bg-azul-oscuro text-white flex items-center gap-2"
             >
-              <PlusIcon className="w-4 h-4" />
+              <IconPlus className="w-4 h-4" />
               Nuevo Contrato
             </Button>
           </div>
@@ -246,7 +246,7 @@ export default function DashboardPage() {
                 <DashboardCard
                   title="Total Contratos"
                   count={stats.total.toString()}
-                  icon={<BarChartIcon className="w-6 h-6 text-primary" />}
+                  icon={<TrendingUp className="w-6 h-6 text-primary" />}
                   onClick={() => handleModal.open.allContracts()}
                   trend={trends.total}
                   loading={statsLoading}
@@ -255,7 +255,7 @@ export default function DashboardPage() {
                 <DashboardCard
                   title="Vigentes"
                   count={stats.active.toString()}
-                  icon={<ClipboardIcon className="w-6 h-6 text-green-600" />}
+                  icon={<TrendingUp className="w-6 h-6 text-green-600" />}
                   onClick={handleModal.open.active}
                   trend={trends.active}
                   loading={statsLoading}
@@ -273,7 +273,7 @@ export default function DashboardPage() {
                 <DashboardCard
                   title="Vencidos"
                   count={stats.expired.toString()}
-                  icon={<FileTextIcon className="w-6 h-6 text-red-500" />}
+                  icon={<TrendingUp className="w-6 h-6 text-red-500" />}
                   onClick={handleModal.open.expired}
                   trend={trends.expired}
                   loading={statsLoading}
@@ -291,7 +291,7 @@ export default function DashboardPage() {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <QuickAction
-              icon={<PlusCircledIcon className="h-5 w-5" />}
+              icon={<IconCirclePlus className="h-5 w-5" />}
               title="Nuevo Contrato"
               description="Crear un nuevo contrato"
               onClick={() => requireAuth(() => setShowNewContractModal(true))}
@@ -299,21 +299,21 @@ export default function DashboardPage() {
               className="transition-all hover:shadow-md hover:-translate-y-0.5"
             />
             <QuickAction
-              icon={<FileTextIcon className="h-5 w-5" />}
+              icon={<IconFileText className="h-5 w-5" />}
               title="Nuevo Suplemento"
               description="Añadir suplemento a contrato"
               onClick={() => handleModal.open.selectContract()}
               colorScheme="success"
             />
             <QuickAction
-              icon={<BarChartIcon />}
+              icon={<IconChartBar />}
               title="Estadísticas"
               description="Ver estadísticas"
               onClick={() => navigate("/statistics")}
               colorScheme="primary"
             />
             <QuickAction
-              icon={<GearIcon />}
+              icon={<IconSettings />}
               title="Configuración"
               description="Ajustes del sistema"
               onClick={() => navigate("/settings")}
@@ -337,14 +337,18 @@ export default function DashboardPage() {
                 </Alert>
               </div>
             ) : data?.recentActivity && data.recentActivity.length > 0 ? (
-              data.recentActivity.map((activity, index) => (
-                <div
-                  key={index}
-                  className="p-4 hover:bg-gray-50 transition-colors"
-                >
-                  <RecentActivityItem {...activity} />
-                </div>
-              ))
+              <div className="divide-y divide-gray-100">
+                <ActivityFeed 
+                  activities={data.recentActivity.map(activity => ({
+                    id: Math.random().toString(36).substr(2, 9), // Generar un ID único
+                    type: 'system' as const, // Tipo por defecto
+                    title: activity.title,
+                    description: activity.description,
+                    timestamp: new Date(activity.date),
+                    user: { name: 'Sistema' } // Usuario por defecto
+                  }))} 
+                />
+              </div>
             ) : (
               <div className="p-6 text-center text-gray-500">
                 No hay actividades recientes

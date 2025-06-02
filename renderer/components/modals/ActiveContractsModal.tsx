@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { DownloadIcon, Cross2Icon , ExternalLinkIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import { IconDownload, IconX, IconExternalLink, IconSearch } from "@tabler/icons-react";
 import { Contract } from "@/lib/useContracts";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { LoadingSpinner } from "@/components/ui/spinner";
 import { useToast } from "@/components/ui/use-toast";
 
 interface ActiveContractsModalProps {
@@ -170,14 +170,14 @@ const ActiveContractsModal: React.FC<ActiveContractsModalProps> = ({
               Lista de contratos vigentes con opciones para ver detalles y exportar
             </Dialog.Description>
             <Dialog.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-              <Cross2Icon className="h-4 w-4" />
+              <IconX className="h-4 w-4" />
               <span className="sr-only">Cerrar</span>
             </Dialog.Close>
           </div>
 
           {/* Barra de búsqueda */}
           <div className="flex items-center bg-white rounded-lg border border-[#E5E5E5] px-3 py-2 gap-2 mb-4">
-            <MagnifyingGlassIcon className="h-4 w-4 text-[#757575]" />
+            <IconSearch className="h-4 w-4 text-[#757575]" />
             <input
               type="text"
               placeholder="Buscar por número, empresa o descripción..."
@@ -192,7 +192,7 @@ const ActiveContractsModal: React.FC<ActiveContractsModalProps> = ({
           <div className="max-h-[400px] overflow-y-auto">
             {loading ? (
               <div className="flex justify-center items-center py-8">
-                <Spinner size="lg" />
+                <LoadingSpinner size="lg" />
               </div>
             ) : error ? (
               <div className="text-[#F44336] p-4 bg-[#F44336]/10 rounded-md">
@@ -273,7 +273,7 @@ const ActiveContractsModal: React.FC<ActiveContractsModalProps> = ({
               onClick={navigateToContracts}
               className="flex items-center gap-2"
             >
-              <ExternalLinkIcon className="h-4 w-4" />
+              <IconExternalLink className="h-4 w-4" />
               Ver todos los contratos
             </Button>
             <Button
@@ -282,9 +282,9 @@ const ActiveContractsModal: React.FC<ActiveContractsModalProps> = ({
               className="flex items-center gap-2"
             >
               {isExporting ? (
-                <Spinner className="w-4 h-4" />
+                <LoadingSpinner size="sm" className="w-4 h-4" />
               ) : (
-                <DownloadIcon className="w-4 h-4" />
+                <IconDownload className="w-4 h-4" />
               )}
               {isExporting ? "Exportando..." : "Exportar PDF"}
             </Button>

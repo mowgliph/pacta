@@ -1,10 +1,10 @@
 import React from "react";
 import { motion } from "framer-motion";
 import {
-  ExclamationTriangleIcon,
-  CheckCircledIcon,
-  InfoCircledIcon,
-} from "@radix-ui/react-icons";
+  IconAlertTriangle,
+  IconCircleCheck,
+  IconInfoCircle,
+} from "@tabler/icons-react";
 
 interface DashboardAlertProps {
   type: "warning" | "success" | "info";
@@ -40,11 +40,11 @@ const alertStyles = {
 const AlertIcon = ({ type }: { type: "warning" | "success" | "info" }) => {
   switch (type) {
     case "warning":
-      return <ExclamationTriangleIcon className="h-5 w-5" />;
+      return <IconAlertTriangle className="h-5 w-5" />;
     case "success":
-      return <CheckCircledIcon className="h-5 w-5" />;
+      return <IconCircleCheck className="h-5 w-5" />;
     case "info":
-      return <InfoCircledIcon className="h-5 w-5" />;
+      return <IconInfoCircle className="h-5 w-5" />;
   }
 };
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { FileTextIcon, TrashIcon, EyeOpenIcon } from "@radix-ui/react-icons";
+import { IconFileText, IconTrash, IconEyePin } from "@tabler/icons-react";
 import { Button } from "./button";
 import { useContextMenu, ContextMenuAction } from "./context-menu";
 
@@ -47,21 +47,21 @@ export const DocumentList: React.FC<DocumentListProps> = ({
             const actions: ContextMenuAction[] = [
               {
                 label: "Descargar",
-                icon: <FileTextIcon className="h-4 w-4" />,
+                icon: <IconFileText className="h-4 w-4" />,
                 onClick: () => onDownload(doc),
               },
             ];
             if (onViewDetails) {
               actions.push({
                 label: "Ver detalles",
-                icon: <EyeOpenIcon className="h-4 w-4" />,
+                icon: <IconEyePin className="h-4 w-4" />,
                 onClick: () => onViewDetails(doc),
               });
             }
             if (onDelete) {
               actions.push({
                 label: "Eliminar",
-                icon: <TrashIcon className="h-4 w-4" />,
+                icon: <IconTrash className="h-4 w-4" />,
                 onClick: () => onDelete(doc),
               });
             }
@@ -78,7 +78,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="flex-shrink-0 w-8 h-8 rounded-md bg-primary/10 flex items-center justify-center text-primary">
-                    <FileTextIcon className="h-4 w-4" />
+                    <IconFileText className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
                     <p 
@@ -106,7 +106,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                     tabIndex={0}
                     aria-label={`Descargar documento: ${doc.originalName || doc.filename}`}
                   >
-                    <FileTextIcon className="h-4 w-4" />
+                    <IconFileText className="h-4 w-4" />
                   </Button>
                   {onViewDetails && (
                     <Button
@@ -120,7 +120,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                       tabIndex={0}
                       aria-label={`Ver detalles de: ${doc.originalName || doc.filename}`}
                     >
-                      <EyeOpenIcon className="h-4 w-4" />
+                      <IconEyePin className="h-4 w-4" />
                     </Button>
                   )}
                   {onDelete && (
@@ -135,7 +135,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                       tabIndex={0}
                       aria-label={`Eliminar documento: ${doc.originalName || doc.filename}`}
                     >
-                      <TrashIcon className="h-4 w-4" />
+                      <IconTrash className="h-4 w-4" />
                     </Button>
                   )}
                   {showDate && (

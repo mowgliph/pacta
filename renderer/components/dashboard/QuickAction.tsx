@@ -1,12 +1,15 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { cn } from "../../lib/utils";
+import { IconArrowRight, IconPlus, IconExternalLink } from "@tabler/icons-react";
 
 interface ColorScheme {
   bg: string;
   hover: string;
   icon: string;
   groupHover: string;
+  border: string;
+  indicator: string;
 }
 
 const COLOR_SCHEMES: Record<string, ColorScheme> = {
@@ -14,20 +17,42 @@ const COLOR_SCHEMES: Record<string, ColorScheme> = {
     bg: "bg-green-50",
     hover: "hover:border-green-500/20",
     icon: "text-green-600",
-    groupHover: "group-hover:bg-green-100",
+    groupHover: "group-hover:bg-green-100/80",
+    border: "border-green-100",
+    indicator: "text-green-500"
   },
   warning: {
     bg: "bg-orange-50",
     hover: "hover:border-orange-500/20",
     icon: "text-orange-600",
-    groupHover: "group-hover:bg-orange-100",
+    groupHover: "group-hover:bg-orange-100/80",
+    border: "border-orange-100",
+    indicator: "text-orange-500"
   },
   primary: {
     bg: "bg-primary/5",
     hover: "hover:border-primary/20",
     icon: "text-primary",
     groupHover: "group-hover:bg-primary/10",
+    border: "border-primary/20",
+    indicator: "text-primary"
   },
+  blue: {
+    bg: "bg-blue-50",
+    hover: "hover:border-blue-500/20",
+    icon: "text-blue-600",
+    groupHover: "group-hover:bg-blue-100/80",
+    border: "border-blue-100",
+    indicator: "text-blue-500"
+  },
+  purple: {
+    bg: "bg-purple-50",
+    hover: "hover:border-purple-500/20",
+    icon: "text-purple-600",
+    groupHover: "group-hover:bg-purple-100/80",
+    border: "border-purple-100",
+    indicator: "text-purple-500"
+  }
 };
 
 interface QuickActionProps {
@@ -35,9 +60,18 @@ interface QuickActionProps {
   title: string;
   description: string;
   onClick: () => void;
-  colorScheme?: "primary" | "success" | "warning";
+  colorScheme?: "primary" | "success" | "warning" | "blue" | "purple";
   className?: string;
+  indicator?: 'arrow' | 'plus' | 'external' | 'none';
+  badge?: string;
 }
+
+const INDICATOR_ICONS = {
+  arrow: IconArrowRight,
+  plus: IconPlus,
+  external: IconExternalLink,
+  none: null
+} as const;
 
 export function QuickAction({
   icon,
@@ -46,36 +80,70 @@ export function QuickAction({
   onClick,
   colorScheme = "primary",
   className = "",
+  indicator = 'arrow',
+  badge,
 }: QuickActionProps) {
   const colors = COLOR_SCHEMES[colorScheme] || COLOR_SCHEMES.primary;
+  const IndicatorIcon = indicator !== 'none' ? INDICATOR_ICONS[indicator] : null;
 
   return (
-    <div className={className}>
+    <div className={cn("relative", className)}>
       <motion.button
-        whileHover={{ scale: 1.02 }}
-        transition={{ duration: 0.2 }}
+        whileHover={{ y: -2 }}
+        whileTap={{ scale: 0.98 }}
+        transition={{ duration: 0.15 }}
         onClick={onClick}
         className={cn(
-          "flex items-center gap-3 p-4 bg-white rounded-xl w-full",
-          "border border-gray-100 hover:shadow-md transition-all group",
-          colors.hover
+          "flex items-center gap-4 p-4 bg-white rounded-xl w-full h-full text-left",
+          "border transition-all group hover:shadow-sm",
+          colors.hover,
+          colors.border,
+          "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/20"
         )}
       >
-        <div
-          className={cn(
-            "w-10 h-10 rounded-lg flex items-center justify-center transition-colors",
-            colors.bg,
-            colors.groupHover
-          )}
-        >
-          {React.cloneElement(icon, {
-            className: cn("w-5 h-5", colors.icon, icon.props.className),
-          })}
+        <div className="flex-shrink-0">
+          <div
+            className={cn(
+              "w-12 h-12 rounded-xl flex items-center justify-center transition-all",
+              "group-hover:scale-110 transform-gpu",
+              colors.bg,
+              colors.groupHover,
+              "shadow-sm"
+            )}
+          >
+            {React.cloneElement(icon, {
+              className: cn("w-6 h-6 transition-transform duration-200 group-hover:scale-110", 
+                colors.icon, 
+                icon.props.className
+              ),
+            })}
+          </div>
         </div>
-        <div className="flex flex-col items-start">
-          <span className="font-medium text-gray-900">{title}</span>
-          <span className="text-sm text-gray-500">{description}</span>
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-semibold text-gray-900 truncate">{title}</span>
+            {badge && (
+              <span className={cn(
+                "px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap",
+                colors.bg,
+                colors.icon
+              )}>
+                {badge}
+              </span>
+            )}
+          </div>
+          <p className="mt-1 text-sm text-gray-500 line-clamp-2">{description}</p>
         </div>
+
+        {IndicatorIcon && (
+          <div className={cn(
+            "flex-shrink-0 ml-2 opacity-0 group-hover:opacity-100 transition-opacity",
+            colors.indicator
+          )}>
+            <IndicatorIcon className="w-5 h-5" />
+          </div>
+        )}
       </motion.button>
     </div>
   );

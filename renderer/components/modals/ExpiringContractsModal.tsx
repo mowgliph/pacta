@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { 
-  FileTextIcon, 
-  EyeOpenIcon, 
-  ExternalLinkIcon, 
-  ExclamationTriangleIcon 
-} from "@radix-ui/react-icons";
+  IconFileText, 
+  IconEye, 
+  IconExternalLink, 
+  IconAlertTriangle 
+} from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 import type { Contract } from "../../lib/useContracts";
 import { toast } from "sonner";
@@ -119,7 +119,7 @@ const ExpiringContractsModal: React.FC<ExpiringContractsModalProps> = ({
           ) : error ? (
             <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg text-sm flex flex-col space-y-2">
               <div className="flex items-center">
-                <ExclamationTriangleIcon className="h-5 w-5 mr-2" />
+                <IconAlertTriangle className="h-5 w-5 mr-2" />
                 <span className="font-medium">Error al cargar los contratos</span>
               </div>
               <p>{error}</p>
@@ -162,7 +162,7 @@ const ExpiringContractsModal: React.FC<ExpiringContractsModalProps> = ({
                         </td>
                         <td className="px-4 py-2">
                           <span className="flex items-center gap-1 text-[#FF9800] font-medium">
-                            <ExclamationTriangleIcon className="h-3.5 w-3.5" />
+                            <IconAlertTriangle className="h-3.5 w-3.5" />
                             {daysRemaining} días
                           </span>
                         </td>
@@ -175,7 +175,7 @@ const ExpiringContractsModal: React.FC<ExpiringContractsModalProps> = ({
                               className="h-8 px-2 text-[#018ABE]"
                               aria-label={`Ver detalle del contrato ${contract.number}`}
                             >
-                              <EyeOpenIcon className="h-4 w-4" />
+                              <IconEye className="h-4 w-4" />
                             </Button>
                             <Button
                               size="sm"
@@ -186,10 +186,10 @@ const ExpiringContractsModal: React.FC<ExpiringContractsModalProps> = ({
                             >
                               {isExporting ? (
                                 <span className="animate-spin">
-                                  <ExclamationTriangleIcon className="w-4 h-4" />
+                                  <IconAlertTriangle className="w-4 h-4" />
                                 </span>
                               ) : (
-                                <FileTextIcon className="w-4 h-4" />
+                                <IconFileText className="w-4 h-4" />
                               )}
                               {isExporting ? 'Exportando...' : 'Exportar a PDF'}
                             </Button>
@@ -241,7 +241,7 @@ const ExpiringContractsModal: React.FC<ExpiringContractsModalProps> = ({
             className="h-10 px-4 flex items-center gap-1"
             aria-label="Exportar contratos próximos a vencer a PDF"
           >
-            <FileTextIcon className="h-4 w-4" />
+            <IconFileText className="h-4 w-4" />
             {isExporting ? "Exportando..." : "Exportar PDF"}
           </Button>
           <Button
@@ -249,7 +249,7 @@ const ExpiringContractsModal: React.FC<ExpiringContractsModalProps> = ({
             className="h-10 px-4 bg-[#FF9800] hover:bg-[#F57C00] text-white flex items-center gap-1"
             aria-label="Ver todos los contratos próximos a vencer"
           >
-            <ExternalLinkIcon className="h-4 w-4" />
+            <IconExternalLink className="h-4 w-4" />
             Ver todos
           </Button>
         </DialogFooter>

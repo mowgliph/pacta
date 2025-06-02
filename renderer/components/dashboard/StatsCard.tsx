@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowUpIcon, ArrowDownIcon } from "@radix-ui/react-icons";
+import { IconArrowUp, IconArrowDown } from "@tabler/icons-react";
 import { cn } from "../../lib/utils";
 
 interface StatsCardProps {
@@ -48,9 +48,9 @@ export function StatsCard({
                 )}
               >
                 {trend.isPositive ? (
-                  <ArrowUpIcon className="mr-1 h-3 w-3" />
+                  <IconArrowUp className="mr-1 h-3 w-3" />
                 ) : (
-                  <ArrowDownIcon className="mr-1 h-3 w-3" />
+                  <IconArrowDown className="mr-1 h-3 w-3" />
                 )}
                 {Math.abs(trend.value)}%
               </span>

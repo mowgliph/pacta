@@ -1,6 +1,8 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { useToast } from '@/components/ui/use-toast';
+
+// Tipo para la funcion de navegacion
+type NavigateFunction = (to: string) => void;
 
 interface UserWithRole {
   id: string;
@@ -39,6 +41,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   hasRole: (roles: UserRole[]) => boolean;
   refreshToken: () => Promise<boolean>;
+  initializeNavigation: (navigate: NavigateFunction) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,7 +50,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [user, setUser] = useState<UserWithRole | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
+  const [navigateFn, setNavigateFn] = useState<NavigateFunction | null>(null);
+
+  // Funcion para inicializar la navegacion
+  const initializeNavigation = useCallback((navigate: NavigateFunction) => {
+    setNavigateFn(() => navigate);
+  }, []);
+
+  // Funcion segura para navegar
+  const safeNavigate = useCallback((to: string) => {
+    if (navigateFn) {
+      navigateFn(to);
+    } else {
+      console.warn('Navegación no disponible. Redirigiendo manualmente.');
+      window.location.href = to;
+    }
+  }, [navigateFn]);
 
   // Verificar si hay un token guardado al cargar la aplicación
   useEffect(() => {
@@ -165,7 +183,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
         
         // Redirigir al dashboard
-        navigate('/admin/dashboard');
+        safeNavigate('/admin/dashboard');
         return true;
       } else {
         throw new Error(response.error?.message || 'Error al iniciar sesión');
@@ -197,7 +215,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('refreshToken');
       
       // Redirigir a la página de dashboard
-      navigate('/dashboard');
+      safeNavigate('/dashboard');
       
       toast({
         title: 'Sesión cerrada',
@@ -222,7 +240,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login, 
         logout, 
         hasRole,
-        refreshToken
+        refreshToken,
+        initializeNavigation // Exponer la función de inicialización
       }}
     >
       {children}

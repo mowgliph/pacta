@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileTextIcon, DownloadIcon, ExternalLinkIcon, MagnifyingGlassIcon } from "@radix-ui/react-icons";
+import { IconFileText, IconDownload, IconExternalLink, IconSearch } from "@tabler/icons-react";
 import { Contract } from "@/lib/useContracts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { LoadingSpinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 
 interface AllContractsModalProps {
@@ -137,7 +137,7 @@ const AllContractsModal: React.FC<AllContractsModalProps> = ({
         {/* Barra de búsqueda */}
         <div className="px-4 py-3 border-b border-gray-100">
           <div className="flex items-center gap-2">
-            <MagnifyingGlassIcon className="w-4 h-4 text-gray-400" />
+            <IconSearch className="w-4 h-4 text-gray-400" />
             <input
               type="text"
               placeholder="Buscar contratos..."
@@ -152,7 +152,7 @@ const AllContractsModal: React.FC<AllContractsModalProps> = ({
         <div className="px-4 py-3">
           {loading ? (
             <div className="flex justify-center">
-              <Spinner />
+              <LoadingSpinner />
             </div>
           ) : error ? (
             <div className="text-red-500 text-center">
@@ -186,7 +186,7 @@ const AllContractsModal: React.FC<AllContractsModalProps> = ({
                       size="sm"
                       onClick={() => viewContractDetail(contract.id)}
                     >
-                      <ExternalLinkIcon className="w-4 h-4 text-gray-400" />
+                      <IconExternalLink className="w-4 h-4 text-gray-400" />
                     </Button>
                   </div>
                 </div>
@@ -231,7 +231,7 @@ const AllContractsModal: React.FC<AllContractsModalProps> = ({
               onClick={handleViewAll}
               className="flex items-center gap-2"
             >
-              <FileTextIcon className="w-5 h-5 text-azul-medio" />
+              <IconFileText className="w-5 h-5 text-azul-medio" />
               Ver todos los contratos
             </Button>
             <Button
@@ -240,9 +240,9 @@ const AllContractsModal: React.FC<AllContractsModalProps> = ({
               className="h-10 px-4 flex items-center gap-1"
             >
               {isExporting ? (
-                <Spinner className="h-4 w-4" />
+                <LoadingSpinner className="h-4 w-4" />
               ) : (
-                <DownloadIcon className="h-4 w-4" />
+                <IconDownload className="h-4 w-4" />
               )}
               {isExporting ? "Exportando..." : "Exportar PDF"}
             </Button>

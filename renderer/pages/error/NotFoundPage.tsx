@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Home } from "lucide-react";
+import { IconAlertTriangle, IconHome } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 
 type NotFoundProps = {
@@ -20,7 +20,7 @@ export default function NotFound({ error }: NotFoundProps) {
         className="flex flex-col items-center bg-white rounded-xl shadow-md p-8 animate-fade-in w-full max-w-md"
       >
         <div className="flex items-center justify-center w-16 h-16 rounded-full bg-[#D6E8EE] mb-4">
-          <AlertTriangle size={32} className="text-[#018ABE]" />
+          <IconAlertTriangle className="w-8 h-8 text-blue-600" />
         </div>
         <h1 className="text-2xl md:text-3xl font-bold text-[#001B48] font-inter mb-2 text-center">
           Página no encontrada
@@ -34,7 +34,7 @@ export default function NotFound({ error }: NotFoundProps) {
           className="bg-[#018ABE] hover:bg-[#02457A] text-white w-full max-w-xs"
           onClick={() => navigate("/dashboard")}
         >
-          <Home className="mr-2 h-4 w-4" />
+          <IconHome className="mr-2 h-4 w-4" />
           Volver al Dashboard
         </Button>
       </div>
