@@ -12,7 +12,9 @@ function registerStatisticsHandlers() {
   const optimizer = new QueryOptimizer();
 
   // Asegurar que existe el directorio de exportación
-  fs.mkdir(EXPORTS_DIR, { recursive: true }).catch(console.error);
+  fs.mkdir(EXPORTS_DIR, { recursive: true }).catch(error => {
+    console.error('[Statistics] Error al crear directorio de exportacion:', error);
+  });
 
   const handlers = {
     // Obtener contratos próximos a vencer
@@ -21,11 +23,11 @@ function registerStatisticsHandlers() {
         const expiringContracts = await optimizer.getContractsExpiringSoon();
         return { success: true, data: expiringContracts };
       } catch (error) {
-        console.error("[Statistics] Error al obtener contratos próximos a vencer:", error);
+        console.error("[Statistics] Error al obtener contratos proximos a vencer:", error);
         return {
           success: false,
           error: {
-            message: error.message || "Error al obtener contratos próximos a vencer",
+            message: error.message || "Error al obtener contratos proximos a vencer",
             code: "EXPIRING_CONTRACTS_ERROR"
           }
         };
@@ -34,24 +36,15 @@ function registerStatisticsHandlers() {
     
     [IPC_CHANNELS.STATISTICS.DASHBOARD]: async () => {
       try {
-        console.log('[Statistics] Obteniendo estadísticas del dashboard...');
         const data = await optimizer.getDashboardStatistics();
-        console.log('[Statistics] Estadísticas obtenidas:', JSON.stringify(data, null, 2));
-        
-        console.log('[Statistics] Obteniendo estadísticas del mes anterior...');
         const lastMonth = await optimizer.getDashboardStatisticsLastMonth();
-        console.log('[Statistics] Estadísticas del mes anterior:', JSON.stringify(lastMonth, null, 2));
-        
-        const result = { success: true, data: { ...data, lastMonth } };
-        console.log('[Statistics] Resultado final:', JSON.stringify(result, null, 2));
-        
-        return result;
+        return { success: true, data: { ...data, lastMonth } };
       } catch (error) {
-        console.error("[Statistics] Error al obtener estadísticas del dashboard:", error);
+        console.error("[Statistics] Error al obtener estadisticas del dashboard:", error);
         return {
           success: false,
           error: {
-            message: error.message || "Error al obtener estadísticas del dashboard",
+            message: error.message || "Error al obtener estadisticas del dashboard",
             code: error.code || "DASHBOARD_ERROR",
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
           },
@@ -64,7 +57,7 @@ function registerStatisticsHandlers() {
         return await optimizer.getContractsStats(filters);
       } catch (error) {
         throw AppError.internal(
-          "Error al obtener estadísticas de contratos",
+          "Error al obtener estadisticas de contratos",
           "CONTRACTS_STATS_ERROR",
           { filters, originalError: error.message }
         );
@@ -74,7 +67,7 @@ function registerStatisticsHandlers() {
     [IPC_CHANNELS.STATISTICS.EXPORT]: async (event, { type, filters }) => {
       if (!type) {
         throw AppError.validation(
-          "Tipo de exportación requerido",
+          "Tipo de exportacion requerido",
           "EXPORT_TYPE_REQUIRED"
         );
       }
@@ -90,7 +83,7 @@ function registerStatisticsHandlers() {
         return { filename, path: filePath, data };
       } catch (error) {
         throw AppError.internal(
-          "Error al exportar estadísticas",
+          "Error al exportar estadisticas",
           "EXPORT_ERROR",
           { type, filters, originalError: error.message }
         );
@@ -102,7 +95,7 @@ function registerStatisticsHandlers() {
         return await optimizer.getContractsByStatus();
       } catch (error) {
         throw AppError.internal(
-          "Error al obtener contratos por estado",
+          "Error al obtener estadisticas de contratos por estado",
           "STATUS_STATS_ERROR",
           { originalError: error.message }
         );

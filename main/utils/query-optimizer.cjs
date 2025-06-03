@@ -1,165 +1,116 @@
 const { prisma } = require("./prisma.cjs");
-const fs = require("fs");
-const path = require("path");
-const PDFDocument = require("pdfkit");
+const { AppError } = require("./error-handler.cjs");
+const { 
+  STATISTICS_QUERIES, 
+  DASHBOARD_QUERIES, 
+  CONTRACT_QUERIES,
+  STATS_QUERIES,
+  LAST_MONTH_QUERIES 
+} = require('./sql-queries.cjs');
 
-// Valores del enum ContractStatus definidos en el esquema de Prisma
-// Estados de contrato definidos como enum en Prisma
-const CONTRACT_STATUS = {
-  ACTIVE: 'ACTIVO',
-  EXPIRING: 'PROXIMO_A_VENCER',
-  EXPIRED: 'VENCIDO',
-  DRAFT: 'BORRADOR'
+// Códigos de error estandarizados
+const ERROR_CODES = {
+  DB_CONNECTION: 'DATABASE_ERROR',
+  INVALID_DATA: 'VALIDATION_ERROR',
+  NOT_FOUND: 'NOT_FOUND',
+  VALIDATION: 'VALIDATION_ERROR',
+  UNKNOWN: 'INTERNAL_SERVER_ERROR'
 };
 
 exports.QueryOptimizer = class QueryOptimizer {
+  /**
+   * Obtiene la fecha actual en formato UTC con la hora establecida a medianoche (00:00:00.000)
+   * @returns {Date} Fecha actual en UTC
+   */
+  getTodayUTC() {
+    const now = new Date();
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  }
+
+  /**
+   * Obtiene la fecha de hoy más 30 días en formato UTC con la hora establecida a un instante antes de medianoche (23:59:59.999)
+   * @returns {Date} Fecha de hoy + 30 días en UTC
+   */
+  getThirtyDaysLaterUTC() {
+    const date = new Date();
+    date.setUTCDate(date.getUTCDate() + 30);
+    date.setUTCHours(23, 59, 59, 999);
+    return date;
+  }
+
+  /**
+   * Maneja los errores de manera estandarizada
+   * @param {Error} error - Error original
+   * @param {string} context - Contexto donde ocurrió el error
+   * @param {string} code - Código de error estandarizado
+   * @param {Object} [metadata] - Metadatos adicionales para el error
+   * @throws {AppError} Error estandarizado
+   */
+  handleError(error, context, code = ERROR_CODES.UNKNOWN, metadata = {}) {
+    const errorMessage = `Error en ${context}: ${error.message}`;
+    const errorContext = `[QueryOptimizer] ${errorMessage}`;
+    
+    // Mapear códigos de error a los métodos correspondientes de AppError
+    const errorMap = {
+      [ERROR_CODES.DB_CONNECTION]: () => 
+        AppError.database(errorContext, code, { ...metadata, originalError: error.message }),
+      [ERROR_CODES.INVALID_DATA]: () =>
+        AppError.validation(errorContext, code, { ...metadata, originalError: error.message }),
+      [ERROR_CODES.NOT_FOUND]: () =>
+        AppError.notFound(errorContext, code, { ...metadata, originalError: error.message }),
+      [ERROR_CODES.VALIDATION]: () =>
+        AppError.validation(errorContext, code, { ...metadata, originalError: error.message }),
+      [ERROR_CODES.UNKNOWN]: () =>
+        AppError.internal(errorContext, code, { ...metadata, originalError: error.message })
+    };
+    
+    const errorHandler = errorMap[code] || errorMap[ERROR_CODES.UNKNOWN];
+    throw errorHandler();
+  }
+
+  /**
+   * Obtiene las estadísticas generales del dashboard
+   * @returns {Promise<Object>} Objeto con las estadísticas del dashboard
+   */
   async getDashboardStatistics() {
-    console.log("[QueryOptimizer] Iniciando getDashboardStatistics");
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const thirtyDaysLater = new Date();
-    thirtyDaysLater.setDate(today.getDate() + 30);
-    thirtyDaysLater.setHours(23, 59, 59, 999);
+    // Usar fechas UTC para consistencia
+    const today = this.getTodayUTC();
+    const thirtyDaysLater = this.getThirtyDaysLaterUTC();
 
     try {
       // Verificar conexión con la base de datos
-      await prisma.$queryRaw`SELECT 1`;
+      try {
+        await prisma.$queryRaw`SELECT 1`;
+      } catch (error) {
+        this.handleError(error, 'verificar conexión con la base de datos', ERROR_CODES.DB_CONNECTION);
+      }
       
-      // Consulta única para obtener todos los contadores necesarios
-      const [
-        totalContracts,
-        activeContracts,
-        expiringContracts,
-        expiredContracts,
-        archivedContracts,
-        clientContracts,
-        supplierContracts,
-        recentActivity
-      ] = await Promise.all([
-        prisma.contract.count({ 
-          where: { isArchived: false } 
-        }),
-        prisma.contract.count({
-          where: {
-            AND: [
-              { status: CONTRACT_STATUS.ACTIVE },
-              { isArchived: false },
-              { endDate: { gte: today } }
-            ]
-          }
-        }),
-        prisma.contract.count({
-          where: {
-            AND: [
-              { status: CONTRACT_STATUS.ACTIVE },
-              { isArchived: false },
-              {
-                endDate: {
-                  gte: today,
-                  lte: thirtyDaysLater
-                }
-              }
-            ]
-          }
-        }),
-        prisma.contract.count({
-          where: {
-            AND: [
-              { status: CONTRACT_STATUS.EXPIRED },
-              { isArchived: false },
-              { endDate: { lt: today } }
-            ]
-          }
-        }),
-        prisma.contract.count({ 
-          where: { isArchived: true } 
-        }),
-        prisma.contract.count({ 
-          where: { 
-            type: "Cliente", 
-            isArchived: false 
-          } 
-        }),
-        prisma.contract.count({ 
-          where: { 
-            type: "Proveedor", 
-            isArchived: false 
-          } 
-        }),
-        prisma.contract.findMany({
-          take: 10,
-          orderBy: { updatedAt: "desc" },
-          select: {
-            id: true,
-            contractNumber: true,
-            updatedAt: true,
-            createdBy: {
-              select: { 
-                name: true 
-              } 
-            },
-          },
-          where: {
-            isArchived: false
-          }
-        })
+      // Obtener estadísticas y actividad reciente en paralelo
+      const [dashboardStats, recentActivity] = await Promise.all([
+        prisma.$queryRawUnsafe(DASHBOARD_QUERIES.GET_DASHBOARD_STATS, today, thirtyDaysLater),
+        prisma.$queryRawUnsafe(DASHBOARD_QUERIES.GET_RECENT_ACTIVITY)
       ]);
 
-      // Si no hay contratos, devolver estructura vacía
-      if (totalContracts === 0) {
-        return {
-          totals: { 
-            total: 0, 
-            active: 0, 
-            expiring: 0, 
-            expired: 0, 
-            archived: 0 
-          },
-          trends: {
-            total: { value: 0, label: "vs mes anterior", positive: true },
-            active: { value: 0, label: "vs mes anterior", positive: true },
-            expiring: { value: 0, label: "próximo mes", positive: false },
-            expired: { value: 0, label: "este mes", positive: false },
-          },
-          distribution: { 
-            client: 0, 
-            supplier: 0 
-          },
-          recentActivity: [],
-        };
-      }
-      // Formatear actividad reciente
-      const formattedRecentActivity = recentActivity.map((contract) => ({
-        id: contract.id,
-        title: `Contrato ${contract.contractNumber}`,
-        description: `Actualizado por ${contract.createdBy?.name || "Usuario desconocido"}`,
-        date: contract.updatedAt.toISOString(),
-        type: "contract",
-        user: {
-          name: contract.createdBy?.name || "Usuario desconocido",
-          avatar: undefined,
-        },
-      }));
-
-      // Validar datos obtenidos
-      const stats = {
-        total: totalContracts,
-        active: activeContracts,
-        expiring: expiringContracts,
-        expired: expiredContracts,
-        archived: archivedContracts,
-        client: clientContracts,
-        supplier: supplierContracts
+      // Extraer los resultados
+      const stats = dashboardStats[0] || {};
+      
+      // Preparar estadísticas actuales
+      const currentStats = {
+        total: Number(stats.total) || 0,
+        active: Number(stats.active) || 0,
+        expiring: Number(stats.expiring) || 0,
+        expired: Number(stats.expired) || 0,
+        client: Number(stats.client) || 0,
+        supplier: Number(stats.supplier) || 0,
+        recentActivity: recentActivity || []
       };
 
-      for (const [key, value] of Object.entries(stats)) {
-        if (typeof value === 'undefined') {
-          throw new Error(`Dato inválido para ${key}: ${value}`);
+      // Validar que todos los campos requeridos estén presentes
+      for (const [key, value] of Object.entries(currentStats)) {
+        if (value === undefined || (Array.isArray(value) && key !== 'recentActivity')) {
+          const error = new Error(`Dato inválido o faltante para: ${key}`);
+          this.handleError(error, 'validar estadísticas del dashboard', ERROR_CODES.INVALID_DATA, { key, value });
         }
-      }
-
-      if (!Array.isArray(formattedRecentActivity)) {
-        throw new Error('Formato de actividad reciente inválido');
       }
 
       // Obtener estadísticas del mes anterior
@@ -167,8 +118,21 @@ exports.QueryOptimizer = class QueryOptimizer {
       try {
         lastMonthStats = await this.getDashboardStatisticsLastMonth();
       } catch (error) {
-        console.error('[Dashboard] Error al obtener estadísticas del mes anterior:', error);
-        lastMonthStats = {}; // Usar objeto vacío para continuar con valores por defecto
+        this.handleError(
+          error, 
+          'obtener estadísticas del mes anterior', 
+          ERROR_CODES.DB_CONNECTION,
+          { action: 'usando valores actuales como respaldo' }
+        );
+        // Usar valores actuales como respaldo para mostrar tendencia plana
+        lastMonthStats = {
+          total: currentStats.total,
+          activeClients: currentStats.client,
+          activeSuppliers: currentStats.supplier,
+          activeContracts: currentStats.active,
+          expiring: currentStats.expiring,
+          expired: currentStats.expired
+        };
       }
 
       // Función auxiliar para calcular tendencias
@@ -186,41 +150,47 @@ exports.QueryOptimizer = class QueryOptimizer {
         };
       };
 
-      // Preparar respuesta
-      const response = {
+      // Preparar el resultado final
+      return {
         totals: {
-          total: stats.total,
-          active: stats.active,
-          expiring: stats.expiring,
-          expired: stats.expired,
-          archived: stats.archived,
+          total: currentStats.total,
+          active: currentStats.active,
+          expiring: currentStats.expiring,
+          expired: currentStats.expired,
+          client: currentStats.client,
+          supplier: currentStats.supplier,
+          recentActivity: currentStats.recentActivity
         },
         trends: {
-          total: calculateTrend(stats.total, lastMonthStats.total),
-          active: calculateTrend(stats.active, lastMonthStats.active),
-          expiring: { 
-            value: stats.expiring, 
-            label: 'próximo mes', 
-            positive: false 
-          },
-          expired: { 
-            value: stats.expired, 
-            label: 'este mes', 
-            positive: false 
-          },
+          total: calculateTrend(currentStats.total, lastMonthStats.total),
+          active: calculateTrend(currentStats.active, lastMonthStats.activeContracts),
+          expiring: calculateTrend(currentStats.expiring, lastMonthStats.expiring),
+          expired: calculateTrend(currentStats.expired, lastMonthStats.expired),
+          client: calculateTrend(currentStats.client, lastMonthStats.activeClients),
+          supplier: calculateTrend(currentStats.supplier, lastMonthStats.activeSuppliers)
         },
         distribution: {
-          client: stats.client,
-          supplier: stats.supplier,
+          client: currentStats.client,
+          supplier: currentStats.supplier
         },
-        recentActivity: formattedRecentActivity,
+        recentActivity: currentStats.recentActivity,
+        lastUpdated: new Date().toISOString()
       };
-
-      return response;
     } catch (error) {
-      console.error('[Dashboard] Error crítico al obtener estadísticas:', error);
-      throw new Error(`Error al generar estadísticas del dashboard: ${error.message}`);
+      this.handleError(error, 'obtener estadísticas del dashboard', ERROR_CODES.UNKNOWN);
     }
+  }
+
+  /**
+   * Obtiene el primer y último día del mes anterior en formato UTC
+   * @returns {Object} Objeto con firstDay y lastDay del mes anterior en UTC
+   */
+  getLastMonthUTCRange() {
+    const now = new Date();
+    const firstDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+    const lastDay = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0, 23, 59, 59, 999));
+    
+    return { firstDay, lastDay };
   }
 
   /**
@@ -229,210 +199,265 @@ exports.QueryOptimizer = class QueryOptimizer {
    */
   async getDashboardStatisticsLastMonth() {
     try {
-      const now = new Date();
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const lastDayOfLastMonth = new Date(firstDayOfMonth);
-      lastDayOfLastMonth.setDate(0); // Último día del mes anterior
-      const firstDayOfLastMonth = new Date(lastDayOfLastMonth.getFullYear(), lastDayOfLastMonth.getMonth(), 1);
+      const { firstDay: firstDayOfLastMonth, lastDay: lastDayOfLastMonth } = this.getLastMonthUTCRange();
       
-      // Obtener datos del mes anterior
+      // Obtener consultas SQL con sus parámetros
+      const activeClientsQuery = LAST_MONTH_QUERIES.GET_ACTIVE_CLIENTS_LAST_MONTH(lastDayOfLastMonth);
+      const activeSuppliersQuery = LAST_MONTH_QUERIES.GET_ACTIVE_SUPPLIERS_LAST_MONTH(lastDayOfLastMonth);
+      const activeContractsQuery = LAST_MONTH_QUERIES.GET_ACTIVE_CONTRACTS_LAST_MONTH(lastDayOfLastMonth);
+      const expiringQuery = LAST_MONTH_QUERIES.GET_EXPIRING_LAST_MONTH(firstDayOfLastMonth, lastDayOfLastMonth);
+      const expiredQuery = LAST_MONTH_QUERIES.GET_EXPIRED_LAST_MONTH(lastDayOfLastMonth);
+
+      // Ejecutar consultas en paralelo
       const [
-        activeClientsLastMonth,
-        activeSuppliersLastMonth,
-        activeContractsLastMonth,
-        expiringLastMonth
+        activeClientsResult,
+        activeSuppliersResult,
+        activeContractsResult,
+        expiringResult,
+        expiredResult
       ] = await Promise.all([
-        // Contar clientes activos al final del mes anterior
-        prisma.contract.count({
-          where: { 
-            type: 'Cliente',
-            isArchived: false,
-            createdAt: { lte: lastDayOfLastMonth }
-          }
-        }),
-        
-        // Contar proveedores activos al final del mes anterior
-        prisma.contract.count({
-          where: { 
-            type: 'Proveedor',
-            isArchived: false,
-            createdAt: { lte: lastDayOfLastMonth }
-          }
-        }),
-        
-        // Contar contratos activos al final del mes anterior
-        prisma.contract.count({
-          where: { 
-            status: 'ACTIVO',
-            isArchived: false,
-            createdAt: { lte: lastDayOfLastMonth },
-            endDate: { 
-              gte: lastDayOfLastMonth
-            }
-          }
-        }),
-        
-        // Contar contratos que vencieron durante el mes anterior
-        prisma.contract.count({
-          where: {
-            status: 'ACTIVO',
-            isArchived: false,
-            endDate: {
-              gte: firstDayOfLastMonth,
-              lte: lastDayOfLastMonth
-            }
-          }
-        })
+        prisma.$queryRawUnsafe(activeClientsQuery.query, ...activeClientsQuery.params),
+        prisma.$queryRawUnsafe(activeSuppliersQuery.query, ...activeSuppliersQuery.params),
+        prisma.$queryRawUnsafe(activeContractsQuery.query, ...activeContractsQuery.params),
+        prisma.$queryRawUnsafe(expiringQuery.query, ...expiringQuery.params),
+        prisma.$queryRawUnsafe(expiredQuery.query, ...expiredQuery.params)
       ]);
 
+      // Extraer los resultados
+      const activeClientsLastMonth = Number(activeClientsResult[0]?.count || 0);
+      const activeSuppliersLastMonth = Number(activeSuppliersResult[0]?.count || 0);
+      const activeContractsLastMonth = Number(activeContractsResult[0]?.count || 0);
+      const expiringLastMonth = Number(expiringResult[0]?.count || 0);
+      const expiredLastMonth = Number(expiredResult[0]?.count || 0);
+
       return {
-        activeClients: activeClientsLastMonth || 0,
-        activeSuppliers: activeSuppliersLastMonth || 0,
-        activeContracts: activeContractsLastMonth || 0,
-        expiring: expiringLastMonth || 0
+        activeClients: activeClientsLastMonth,
+        activeSuppliers: activeSuppliersLastMonth,
+        activeContracts: activeContractsLastMonth,
+        expiring: expiringLastMonth,
+        expired: expiredLastMonth
       };
     } catch (error) {
-      console.error('Error en getDashboardStatisticsLastMonth:', error);
-      return {
-        activeClients: 0,
-        activeSuppliers: 0,
-        activeContracts: 0,
-        expiring: 0
-      };
+      this.handleError(error, 'obtener estadísticas del mes anterior', ERROR_CODES.DB_CONNECTION);
     }
   }
 
-  // Exportación simulada de estadísticas
+  // Exportación de estadísticas
   async exportStatistics(type, filters) {
-    const EXPORTS_DIR = path.resolve(
-      __dirname,
-      "../../data/statistics/exports"
-    );
-    fs.mkdirSync(EXPORTS_DIR, { recursive: true });
-    const exportPath = path.join(
-      EXPORTS_DIR,
-      `estadisticas_${type}_${Date.now()}.pdf`
-    );
-
-    // Obtén los datos reales (puedes ajustar el método según el tipo)
-    const stats = await this.getContractsStats(filters);
-
-    // Crea el PDF
-    const doc = new PDFDocument();
-    doc.pipe(fs.createWriteStream(exportPath));
-
-    // Título
-    doc.fontSize(18).text(`Estadísticas: ${type}`, { align: "center" });
-    doc.moveDown();
-
-    // Escribe los datos principales
-    doc.fontSize(14).text("Por Estado:", { underline: true });
-    stats.byStatus.forEach((row) => {
-      doc.text(`- ${row.status}: ${row._count._all}`);
-    });
-    doc.moveDown();
-
-    doc.fontSize(14).text("Por Tipo:", { underline: true });
-    stats.byType.forEach((row) => {
-      doc.text(`- ${row.type}: ${row._count._all}`);
-    });
-    doc.moveDown();
-
-    doc.fontSize(14).text("Por Mes de Creación:", { underline: true });
-    stats.byMonth.forEach((row) => {
-      doc.text(`- ${row.month}: ${row.count}`);
-    });
-
-    // Finaliza el PDF
-    doc.end();
-
-    return { path: exportPath };
+    try {
+      const exportUtils = require('./export-utils');
+      const stats = await this.getContractsStats(filters);
+      return await exportUtils.exportStatisticsToPdf(type, stats);
+    } catch (error) {
+      this.handleError(error, 'exportar estadísticas', ERROR_CODES.UNKNOWN);
+    }
   }
 
-  // Distribución de contratos por estado
+  /**
+   * Obtiene estadísticas de contratos para exportación
+   * @param {Object} filters - Filtros para la consulta
+   * @returns {Promise<Object>} Estadísticas de contratos
+   */
+  async getContractsStats(filters = {}) {
+    try {
+      // Obtener consultas SQL con sus parámetros
+      const { 
+        query: statusQuery, 
+        params: statusParams 
+      } = STATS_QUERIES.GET_CONTRACTS_BY_STATUS(filters);
+      
+      const { 
+        query: typeQuery, 
+        params: typeParams 
+      } = STATS_QUERIES.GET_CONTRACTS_BY_TYPE(filters);
+      
+      const { 
+        query: monthQuery, 
+        params: monthParams 
+      } = STATS_QUERIES.GET_CONTRACTS_BY_MONTH(filters);
+
+      // Ejecutar consultas en paralelo
+      const [byStatus, byType, byMonth] = await Promise.all([
+        prisma.$queryRawUnsafe(statusQuery, ...statusParams),
+        prisma.$queryRawUnsafe(typeQuery, ...typeParams),
+        prisma.$queryRawUnsafe(monthQuery, ...monthParams)
+      ]);
+
+      return {
+        byStatus,
+        byType,
+        byMonth
+      };
+    } catch (error) {
+      this.handleError(error, 'obtener estadísticas de contratos', ERROR_CODES.DB_CONNECTION, { filters });
+    }
+  }
+
+  /**
+   * Obtiene la distribución de contratos por estado
+   * @returns {Promise<Array>} Lista de estados con conteo de contratos
+   */
   async getContractsByStatus() {
-    return prisma.contract.groupBy({ by: ["status"], _count: { _all: true } });
+    try {
+      return await prisma.$queryRawUnsafe(STATISTICS_QUERIES.GET_CONTRACTS_BY_STATUS);
+    } catch (error) {
+      this.handleError(error, 'obtener distribución por estado', ERROR_CODES.DB_CONNECTION);
+      return [];
+    }
   }
-  // Distribución por tipo
+
+  /**
+   * Obtiene la distribución de contratos por tipo
+   * @returns {Promise<Array>} Lista de tipos con conteo de contratos
+   */
   async getContractsByType() {
-    return prisma.contract.groupBy({ by: ["type"], _count: { _all: true } });
+    try {
+      return await prisma.$queryRawUnsafe(STATISTICS_QUERIES.GET_CONTRACTS_BY_TYPE);
+    } catch (error) {
+      this.handleError(error, 'obtener distribución por tipo', ERROR_CODES.DB_CONNECTION);
+      return [];
+    }
   }
-  // Distribución por moneda
-  async getContractsByCurrency() {
-    return prisma.contract.groupBy({
-      by: ["currency"],
-      _count: { _all: true },
-    });
-  }
-  // Contratos por usuario
+
+  /**
+   * Obtiene la distribución de contratos por usuario
+   * @returns {Promise<Array>} Lista de usuarios con conteo de contratos
+   */
   async getContractsByUser() {
-    return prisma.contract.groupBy({ by: ["ownerId"], _count: { _all: true } });
+    try {
+      return await prisma.$queryRawUnsafe(STATISTICS_QUERIES.GET_CONTRACTS_BY_USER);
+    } catch (error) {
+      this.handleError(error, 'obtener distribución por usuario', ERROR_CODES.DB_CONNECTION);
+      return [];
+    }
   }
-  // Contratos creados por mes
+  /**
+   * Obtiene el conteo de contratos creados por mes
+   * @returns {Promise<Array>} Lista de meses con conteo de contratos
+   */
   async getContractsCreatedByMonth() {
-    return prisma.$queryRawUnsafe(
-      `SELECT strftime('%Y-%m', createdAt) as month, COUNT(*) as count FROM Contract GROUP BY month ORDER BY month`
-    );
+    try {
+      return await prisma.$queryRawUnsafe(STATISTICS_QUERIES.GET_CONTRACTS_BY_MONTH);
+    } catch (error) {
+      this.handleError(error, 'obtener contratos creados por mes', ERROR_CODES.DB_CONNECTION);
+      return [];
+    }
   }
-  // Contratos vencidos por mes
+  /**
+   * Obtiene el conteo de contratos vencidos por mes
+   * @returns {Promise<Array>} Lista de meses con conteo de contratos vencidos
+   */
   async getContractsExpiredByMonth() {
-    return prisma.$queryRawUnsafe(
-      `SELECT strftime('%Y-%m', endDate) as month, COUNT(*) as count FROM Contract WHERE status = 'VENCIDO' GROUP BY month ORDER BY month`
-    );
+    try {
+      return await prisma.$queryRawUnsafe(STATISTICS_QUERIES.GET_EXPIRED_CONTRACTS_BY_MONTH);
+    } catch (error) {
+      this.handleError(error, 'obtener contratos vencidos por mes', ERROR_CODES.DB_CONNECTION);
+      return [];
+    }
   }
-  // Cantidad de suplementos por contrato
+  /**
+   * Obtiene la cantidad de suplementos por contrato
+   * @returns {Promise<Array>} Lista de contratos con conteo de suplementos
+   */
   async getSupplementsCountByContract() {
-    return prisma.supplement.groupBy({
-      by: ["contractId"],
-      _count: { _all: true },
-    });
+    try {
+      return await prisma.$queryRawUnsafe(STATISTICS_QUERIES.GET_SUPPLEMENTS_BY_CONTRACT);
+    } catch (error) {
+      this.handleError(error, 'obtener suplementos por contrato', ERROR_CODES.DB_CONNECTION);
+      return [];
+    }
   }
-  // Contratos próximos a vencer en 30 días
-  async getContractsExpiringSoon() {
+  /**
+   * Obtiene contratos próximos a vencer en los próximos 30 días
+   * @param {Object} options - Opciones de paginación
+   * @param {number} [options.skip=0] - Número de registros a omitir
+   * @param {number} [options.take=10] - Número de registros a devolver
+   * @returns {Promise<{data: Array, total: number}>} Lista de contratos y total de registros
+   */
+  async getContractsExpiringSoon({ skip = 0, take = 10 } = {}) {
     try {
       const now = new Date();
       const soon = new Date();
       soon.setDate(now.getDate() + 30);
       
-      const contracts = await prisma.contract.findMany({
-        where: { 
-          endDate: { 
-            gte: now, 
-            lte: soon 
-          },
-          status: 'ACTIVO',
-          isArchived: false
-        },
-        select: { 
-          id: true, 
-          contractNumber: true, 
-          endDate: true,
-          companyName: true,
-          startDate: true
-        },
-        orderBy: {
-          endDate: 'asc'
-        }
-      });
+      const skipNum = parseInt(skip, 10);
+      const takeNum = Math.min(parseInt(take, 10), 100);
       
-      return contracts || [];
+      const [totalResult, data] = await Promise.all([
+        prisma.$queryRawUnsafe(CONTRACT_QUERIES.COUNT_EXPIRING_CONTRACTS, now, soon),
+        prisma.$queryRawUnsafe(
+          CONTRACT_QUERIES.GET_EXPIRING_CONTRACTS(takeNum, skipNum),
+          now,
+          soon
+        )
+      ]);
+      
+      return { 
+        data, 
+        total: totalResult[0]?.total || 0 
+      };
     } catch (error) {
-      console.error('Error en getContractsExpiringSoon:', error);
-      return [];
+      this.handleError(error, 'obtener contratos próximos a vencer', ERROR_CODES.DB_CONNECTION);
+      return { data: [], total: 0 };
     }
   }
-  // Contratos sin documentos adjuntos
-  async getContractsWithoutDocuments() {
-    return prisma.contract.findMany({
-      where: { documents: { none: {} } },
-      select: { id: true, contractNumber: true },
-    });
+  /**
+   * Obtiene contratos sin documentos adjuntos
+   * @param {Object} options - Opciones de paginación
+   * @param {number} [options.skip=0] - Número de registros a omitir
+   * @param {number} [options.take=10] - Número de registros a devolver
+   * @returns {Promise<{data: Array, total: number}>} Lista de contratos y total de registros
+   */
+  async getContractsWithoutDocuments({ skip = 0, take = 10 } = {}) {
+    try {
+      const skipNum = parseInt(skip, 10);
+      const takeNum = Math.min(parseInt(take, 10), 100);
+      
+      const [totalResult, data] = await Promise.all([
+        prisma.$queryRawUnsafe(CONTRACT_QUERIES.COUNT_CONTRACTS_WITHOUT_DOCS),
+        prisma.$queryRawUnsafe(
+          CONTRACT_QUERIES.GET_CONTRACTS_WITHOUT_DOCS(takeNum, skipNum)
+        )
+      ]);
+      
+      return { 
+        data, 
+        total: totalResult[0]?.total || 0 
+      };
+    } catch (error) {
+      this.handleError(error, 'obtener contratos sin documentos', ERROR_CODES.DB_CONNECTION);
+      return { data: [], total: 0 };
+    }
   }
-  // Usuarios con más actividad
-  async getUsersActivity() {
-    return prisma.historyRecord.groupBy({
-      by: ["userId"],
-      _count: { _all: true },
-    });
+  /**
+   * Obtiene la actividad de los usuarios
+   * @param {Object} options - Opciones de paginación
+   * @param {number} [options.skip=0] - Número de registros a omitir
+   * @param {number} [options.take=10] - Número de registros a devolver
+   * @returns {Promise<{data: Array, total: number}>} Lista de usuarios y total de registros
+   */
+  async getUsersActivity({ skip = 0, take = 10 } = {}) {
+    try {
+      const skipNum = parseInt(skip, 10);
+      const takeNum = Math.min(parseInt(take, 10), 100);
+      
+      // Obtener el total de usuarios con actividad
+      const totalResult = await prisma.$queryRaw`
+        SELECT COUNT(DISTINCT userId) as total FROM HistoryRecord
+      `;
+      
+      // Obtener los datos paginados
+      const data = await prisma.$queryRawUnsafe(
+        STATISTICS_QUERIES.GET_USERS_ACTIVITY(takeNum, skipNum)
+      );
+      
+      return { 
+        data, 
+        total: totalResult[0]?.total || 0 
+      };
+    } catch (error) {
+      this.handleError(error, 'obtener actividad de usuarios', ERROR_CODES.DB_CONNECTION);
+      return { data: [], total: 0 };
+    }
   }
 };

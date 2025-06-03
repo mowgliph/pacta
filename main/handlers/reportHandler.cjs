@@ -4,6 +4,10 @@ const { EventManager } = require("../events/event-manager.cjs");
 const { dialog } = require("electron");
 const fs = require("fs");
 const path = require("path");
+const ExcelJS = require('exceljs');
+const { promisify } = require('util');
+
+const writeFileAsync = promisify(fs.writeFile);
 
 // Inicialización directa para pdfmake (PACTA/Electron)
 const pdfMake = require("pdfmake/build/pdfmake");
@@ -18,33 +22,40 @@ if (!fs.existsSync(REPORT_TEMPLATES_DIR)) {
 }
 
 // Función auxiliar para guardar archivos
-async function saveFile(buffer, extension) {
+async function saveFile(workbook, extension) {
   const defaultPath = path.join(
     process.env.HOME || process.env.USERPROFILE,
     "Desktop",
     `reporte_${Date.now()}.${extension}`
   );
 
-  const filePath = await dialog.showSaveDialog({
+  const result = await dialog.showSaveDialog({
     defaultPath,
     filters: [
       { name: extension.toUpperCase(), extensions: [extension] }
     ]
   });
 
-  if (!filePath.canceled) {
-    try {
-      if (extension === "pdf") {
-        await buffer.getBuffer().then(buf => fs.writeFileSync(filePath.filePath, buf));
-      } else if (extension === "xlsx") {
-        XLSX.writeFile(buffer, filePath.filePath);
-      }
-      return filePath.filePath;
-    } catch (error) {
-      throw AppError.internal("Error al guardar archivo", "FILE_SAVE_ERROR", error);
-    }
+  if (result.canceled || !result.filePath) {
+    return null;
   }
-  return null;
+
+  try {
+    if (extension === "pdf") {
+      const pdfBuffer = await workbook.getBuffer();
+      await writeFileAsync(result.filePath, pdfBuffer);
+    } else if (extension === "xlsx") {
+      await workbook.xlsx.writeFile(result.filePath);
+    }
+    return result.filePath;
+  } catch (error) {
+    console.error('Error al guardar el archivo:', error);
+    throw AppError.internal(
+      `Error al guardar el archivo: ${error.message}`,
+      "FILE_SAVE_ERROR",
+      error
+    );
+  }
 }
 
 function registerReportHandlers() {
@@ -95,24 +106,52 @@ function registerReportHandlers() {
       }
 
       try {
-        // Crear el libro de trabajo
-        const workbook = XLSX.utils.book_new();
-        
-        // Crear y agregar la hoja de trabajo
-        if (template) {
-          const templateData = JSON.parse(template);
-          const worksheet = XLSX.utils.json_to_sheet(data, templateData.options);
-          XLSX.utils.book_append_sheet(workbook, worksheet, templateData.sheetName || "Reporte");
-        } else {
-          const worksheet = XLSX.utils.json_to_sheet(data);
-          XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte");
+        // Crear una nueva instancia de Workbook
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet(template?.sheetName || 'Reporte');
+
+        // Convertir datos a formato de hoja de cálculo
+        if (data.length > 0) {
+          // Obtener encabezados de las claves del primer objeto
+          const headers = Object.keys(data[0]);
+          
+          // Agregar encabezados
+          worksheet.addRow(headers);
+          
+          // Agregar datos
+          data.forEach(item => {
+            const row = headers.map(header => item[header]);
+            worksheet.addRow(row);
+          });
+
+          // Aplicar formato a los encabezados
+          const headerRow = worksheet.getRow(1);
+          headerRow.font = { bold: true };
+          headerRow.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFD3D3D3' }
+          };
         }
+        
+        // Autoajustar columnas
+        worksheet.columns.forEach(column => {
+          let maxLength = 0;
+          column.eachCell({ includeEmpty: true }, cell => {
+            const columnLength = cell.value ? cell.value.toString().length : 10;
+            if (columnLength > maxLength) {
+              maxLength = columnLength;
+            }
+          });
+          column.width = Math.min(Math.max(maxLength + 2, 10), 50);
+        });
         
         // Guardar el archivo
         const filePath = await saveFile(workbook, "xlsx");
         eventManager.emit("report.generated", { type: "excel", filePath });
         return filePath;
       } catch (error) {
+        console.error('Error al generar Excel:', error);
         throw AppError.internal("Error al generar Excel", "EXCEL_GENERATION_ERROR", error);
       }
     },
@@ -208,33 +247,3 @@ function registerReportHandlers() {
 }
 
 module.exports = { registerReportHandlers };
-
-// Función auxiliar para guardar archivos
-async function saveFile(buffer, extension) {
-  const defaultPath = path.join(
-    process.env.HOME || process.env.USERPROFILE,
-    "Desktop",
-    `reporte_${Date.now()}.${extension}`
-  );
-
-  const filePath = await dialog.showSaveDialog({
-    defaultPath,
-    filters: [
-      { name: extension.toUpperCase(), extensions: [extension] }
-    ]
-  });
-
-  if (!filePath.canceled) {
-    try {
-      if (extension === "pdf") {
-        await buffer.getBuffer().then(buf => fs.writeFileSync(filePath.filePath, buf));
-      } else if (extension === "xlsx") {
-        XLSX.writeFile(buffer, filePath.filePath);
-      }
-      return filePath.filePath;
-    } catch (error) {
-      throw AppError.internal("Error al guardar archivo", "FILE_SAVE_ERROR", error);
-    }
-  }
-  return null;
-}
