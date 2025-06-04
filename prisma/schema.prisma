@@ -138,6 +138,13 @@ model Supplement {
   // Metadatos
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
+
+  // Índices para optimización de consultas
+  @@index([contractId])
+  @@index([createdById])
+  @@index([isApproved])
+  @@index([effectiveDate])
+  @@index([legalRepresentativeId])
   
   // Relaciones
   documents           Document[]

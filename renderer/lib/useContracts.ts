@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { PaginationResponse, ApiResponse } from "../types/electron.d";
 
 export interface Contract {
@@ -308,39 +308,51 @@ export function useAllContracts() {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
 
-  useEffect(() => {
-    const fetchAllContracts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchAllContracts = useCallback(async (page = 1, limit = 10) => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const electron = window.electron as any;
-        const response = await electron.contracts.list({
-          isArchived: false,
-        });
+      const electron = window.electron as any;
+      const response = await electron.contracts.list({
+        isArchived: false,
+        page,
+        limit,
+        sortBy: 'createdAt',
+        sortOrder: 'desc'
+      });
 
-        if (response?.success) {
-          setContracts(response.data?.items || []);
-        } else {
-          throw new Error(
-            response?.error?.message || "Error al listar contratos"
-          );
-        }
-      } catch (err) {
-        console.error("Error al cargar los contratos:", err);
-        setError(
-          err instanceof Error ? err.message : "Error al cargar los contratos"
+      if (response?.success) {
+        setContracts(response.data?.items || []);
+        setTotal(response.data?.total || 0);
+      } else {
+        throw new Error(
+          response?.error?.message || "Error al listar contratos"
         );
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchAllContracts();
+    } catch (err) {
+      console.error("Error al cargar los contratos:", err);
+      setError(
+        err instanceof Error ? err.message : "Error al cargar los contratos"
+      );
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  return { contracts, loading, error };
+  useEffect(() => {
+    fetchAllContracts(1, 10); // Obtener solo los primeros 10 contratos más recientes
+  }, [fetchAllContracts]);
+
+  return { 
+    contracts, 
+    loading, 
+    error, 
+    total,
+    refetch: () => fetchAllContracts(1, 10) 
+  };
 }
 
 // Hook para manejar contratos archivados

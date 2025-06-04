@@ -147,33 +147,88 @@ async function main() {
   // Crear contratos de ejemplo
   console.log("Creando contratos...");
   const contracts = [];
+  const today = new Date();
   
-  for (let i = 0; i < 15; i++) {
+  // Crear 5 contratos vencidos
+  for (let i = 0; i < 5; i++) {
     const companyIndex = i % companies.length;
     const repIndex = companyIndex % representatives.length;
     const type = contractTypes[i % contractTypes.length];
     
-    // Generar fechas
-    const today = new Date();
+    // Generar fechas para contratos vencidos (hace 2-6 meses)
     const startDate = new Date(today);
-    startDate.setMonth(today.getMonth() - (i % 12));
+    startDate.setMonth(today.getMonth() - 12); // Comenzó hace 12 meses
+    
+    const endDate = new Date(today);
+    endDate.setMonth(today.getMonth() - 3); // Venció hace 3 meses
+    
+    const contractNumber = `VENC-${startDate.getFullYear()}${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(3, '0')}`; // Añadido mes al número de contrato
+    
+    const contract = await prisma.contract.create({
+      data: {
+        contractNumber,
+        type,
+        companyName: companies[companyIndex].name,
+        legalRepresentativeId: representatives[repIndex].id,
+        startDate,
+        endDate,
+        status: ContractStatus.VENCIDO,
+        isArchived: i % 2 === 0, // Algunos archivar
+        createdById: adminUser.id,
+        ownerId: adminUser.id
+      }
+    });
+    
+    contracts.push(contract);
+  }
+  
+  // Crear 8 contratos próximos a vencer (en los próximos 30 días)
+  for (let i = 0; i < 8; i++) {
+    const companyIndex = (i + 5) % companies.length;
+    const repIndex = companyIndex % representatives.length;
+    const type = contractTypes[(i + 1) % contractTypes.length];
+    
+    // Generar fechas para contratos próximos a vencer
+    const startDate = new Date(today);
+    startDate.setMonth(today.getMonth() - 11); // Comenzó hace 11 meses
+    
+    const endDate = new Date(today);
+    endDate.setDate(today.getDate() + (i * 4)); // Vencen en 0 a 28 días
+    
+    const contractNumber = `PROX-${startDate.getFullYear()}${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(3, '0')}`; // Añadido mes al número de contrato
+    
+    const contract = await prisma.contract.create({
+      data: {
+        contractNumber,
+        type,
+        companyName: companies[companyIndex].name,
+        legalRepresentativeId: representatives[repIndex].id,
+        startDate,
+        endDate,
+        status: ContractStatus.ACTIVO,
+        isArchived: false,
+        createdById: adminUser.id,
+        ownerId: adminUser.id
+      }
+    });
+    
+    contracts.push(contract);
+  }
+  
+  // Crear contratos adicionales activos (no próximos a vencer)
+  for (let i = 0; i < 10; i++) {
+    const companyIndex = (i + 3) % companies.length;
+    const repIndex = companyIndex % representatives.length;
+    const type = contractTypes[i % contractTypes.length];
+    
+    // Generar fechas para contratos activos
+    const startDate = new Date(today);
+    startDate.setMonth(today.getMonth() - (i % 6)); // Comenzaron hace 0-5 meses
     
     const endDate = new Date(startDate);
-    endDate.setFullYear(startDate.getFullYear() + 1 + (i % 3));
+    endDate.setFullYear(startDate.getFullYear() + 1); // Vencen en 1 año desde su inicio
     
-    // Determinar estado basado en fechas
-    let status = ContractStatus.ACTIVO;
-    let isArchived = false;
-    
-    if (endDate < today) {
-      status = ContractStatus.VENCIDO;
-      // Algunos contratos vencidos se archivan
-      if (i % 3 === 0) {
-        isArchived = true;
-      }
-    }
-    
-    const contractNumber = `CONT-${startDate.getFullYear()}-${String(i + 1).padStart(3, '0')}`;
+    const contractNumber = `CONT-${startDate.getFullYear()}${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(i + 1).padStart(3, '0')}`; // Añadido mes al número de contrato
     
     // Crear el contrato
     const contract = await prisma.contract.create({
@@ -184,8 +239,8 @@ async function main() {
         legalRepresentativeId: representatives[repIndex].id,
         startDate,
         endDate,
-        status,
-        isArchived,
+        status: ContractStatus.ACTIVO, // Asegurar que el estado sea ACTIVO
+        isArchived: false, // Asegurar que no esté archivado
         createdById: adminUser.id,
         ownerId: adminUser.id
       }

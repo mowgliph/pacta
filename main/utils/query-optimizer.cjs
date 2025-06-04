@@ -85,9 +85,17 @@ exports.QueryOptimizer = class QueryOptimizer {
         this.handleError(error, 'verificar conexión con la base de datos', ERROR_CODES.DB_CONNECTION);
       }
       
+      // Formatear fechas para SQLite (formato YYYY-MM-DD HH:MM:SS)
+      const formatDateForSQLite = (date) => {
+        return date.toISOString().replace('T', ' ').substring(0, 19);
+      };
+      
+      const todayStr = formatDateForSQLite(today);
+      const thirtyDaysLaterStr = formatDateForSQLite(thirtyDaysLater);
+      
       // Obtener estadísticas y actividad reciente en paralelo
       const [dashboardStats, recentActivity] = await Promise.all([
-        prisma.$queryRawUnsafe(DASHBOARD_QUERIES.GET_DASHBOARD_STATS, today, thirtyDaysLater),
+        prisma.$queryRawUnsafe(DASHBOARD_QUERIES.GET_DASHBOARD_STATS, todayStr, thirtyDaysLaterStr),
         prisma.$queryRawUnsafe(DASHBOARD_QUERIES.GET_RECENT_ACTIVITY)
       ]);
 

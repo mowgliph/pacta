@@ -1,28 +1,33 @@
 import { useEffect, useState, useCallback } from "react";
 import type {
   DashboardStats,
-  UseDashboardStatsReturn,
+  DashboardApiResponse,
+  UseDashboardStatsReturn
 } from "../types/contracts";
+import { dispatchError } from "./error-utils";
 
+// Datos por defecto para el estado inicial
 const defaultStats: DashboardStats = {
   totals: {
     total: 0,
     active: 0,
     expiring: 0,
     expired: 0,
-    archived: 0,
+    client: 0,
+    supplier: 0
   },
   trends: {
     total: { value: 0, label: "vs mes anterior", positive: true },
     active: { value: 0, label: "vs mes anterior", positive: true },
     expiring: { value: 0, label: "próximo mes", positive: false },
-    expired: { value: 0, label: "este mes", positive: false },
+    expired: { value: 0, label: "vs mes anterior", positive: false },
   },
   distribution: {
     client: 0,
     supplier: 0,
   },
   recentActivity: [],
+  lastUpdated: new Date().toISOString(),
 };
 
 // Función auxiliar para calcular el valor de tendencia
@@ -37,100 +42,106 @@ const calculatePercentage = (part: number = 0, total: number = 0): number => {
   return (part / total) * 100 || 0;
 };
 
+// Constantes para los mensajes de log
+const LOG_PREFIX = '[useDashboardStats]';
+
+const checkElectronEnvironment = () => {
+  if (typeof window === 'undefined') {
+    throw new Error('Ejecutando en entorno sin ventana (SSR)');
+  }
+  
+  if (typeof window.electron === 'undefined') {
+    throw new Error('Objeto window.electron no está definido');
+  }
+  
+  if (typeof window.electron.ipcRenderer === 'undefined') {
+    throw new Error('IPC Renderer no está disponible');
+  }
+  
+  return true;
+};
+
 export function useDashboardStats(): UseDashboardStatsReturn {
   const [data, setData] = useState<DashboardStats>(defaultStats);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
   const fetchDashboardStats = useCallback(async () => {
-    console.log('[useDashboardStats] Iniciando fetchDashboardStats');
+    console.log(`${LOG_PREFIX} Iniciando obtención de estadísticas...`);
+    
     try {
       setLoading(true);
       setError(null);
 
-      // Verificar si estamos en un entorno de navegador sin Electron
-      if (typeof window === 'undefined' || typeof window.electron === "undefined" || !window.electron.ipcRenderer) {
-        const errorMsg = 'Electron IPC no está disponible, usando datos por defecto';
-        console.warn(errorMsg);
-        setData(defaultStats);
-        setLoading(false);
-        return;
-      }
-
-      console.log('[useDashboardStats] Solicitando estadísticas al backend...');
+      // Verificar entorno de Electron
+      checkElectronEnvironment();
+      
+      console.log(`${LOG_PREFIX} Solicitando estadísticas al backend...`);
       const response = await window.electron.ipcRenderer.invoke(
         "statistics:dashboard"
       );
       
-      console.log('[useDashboardStats] Respuesta del backend recibida:', response);
+      console.log(`${LOG_PREFIX} Respuesta del backend recibida:`, response);
       
-      // Si la respuesta tiene éxito, extraer los datos
-      if (!response || response.success !== true || !response.data) {
-        const errorMsg = response?.error?.message || 'Error desconocido al cargar las estadísticas';
-        console.error('Error en la respuesta del servidor:', errorMsg);
-        throw new Error(errorMsg);
+      // Validar la respuesta
+      if (!response) {
+        throw new Error('No se recibió respuesta del servidor');
       }
 
-      // Procesar los datos y calcular las tendencias
-      const dashboardData: DashboardStats = {
+      if (!response.success) {
+        throw new Error('Error al obtener las estadísticas');
+      }
+
+      if (!response.data?.data) {
+        throw new Error('La respuesta no contiene datos');
+      }
+
+      const backendData = response.data.data;
+      
+      // Procesar los datos del backend al formato esperado
+      const processedData: DashboardStats = {
         totals: {
-          total: response.data?.totals?.total ?? 0,
-          active: response.data?.totals?.active ?? 0,
-          expiring: response.data?.totals?.expiring ?? 0,
-          expired: response.data?.totals?.expired ?? 0,
-          archived: response.data?.totals?.archived ?? 0,
+          total: backendData.totals?.total ?? 0,
+          active: backendData.totals?.active ?? 0,
+          expiring: backendData.totals?.expiring ?? 0,
+          expired: backendData.totals?.expired ?? 0,
+          client: backendData.totals?.client ?? 0,
+          supplier: backendData.totals?.supplier ?? 0
         },
         trends: {
-          total: {
-            value: calculateTrendValue(
-              response.data?.totals?.total,
-              response.data?.lastMonth?.total
-            ),
-            label: "vs mes anterior",
-            positive: (response.data?.totals?.total ?? 0) >= (response.data?.lastMonth?.total ?? 0),
-          },
-          active: {
-            value: calculateTrendValue(
-              response.data?.totals?.active,
-              response.data?.lastMonth?.active
-            ),
-            label: "vs mes anterior",
-            positive: (response.data?.totals?.active ?? 0) >= (response.data?.lastMonth?.active ?? 0),
-          },
-          expiring: {
-            value: calculatePercentage(
-              response.data?.totals?.expiring,
-              response.data?.totals?.active
-            ),
-            label: "próximo mes",
-            positive: false,
-          },
-          expired: {
-            value: calculatePercentage(
-              response.data?.totals?.expired,
-              response.data?.totals?.total
-            ),
-            label: "este mes",
-            positive: false,
-          },
+          total: backendData.trends?.total || { value: 0, label: "vs mes anterior", positive: true },
+          active: backendData.trends?.active || { value: 0, label: "vs mes anterior", positive: true },
+          expiring: backendData.trends?.expiring || { value: 0, label: "próximo mes", positive: false },
+          expired: backendData.trends?.expired || { value: 0, label: "vs mes anterior", positive: false },
         },
         distribution: {
-          client: response.data?.distribution?.client ?? 0,
-          supplier: response.data?.distribution?.supplier ?? 0,
+          client: backendData.distribution?.client ?? 0,
+          supplier: backendData.distribution?.supplier ?? 0,
         },
-        recentActivity: Array.isArray(response.data?.recentActivity) 
-          ? response.data.recentActivity 
-          : [],
+        recentActivity: backendData.recentActivity || [],
+        lastUpdated: backendData.lastUpdated || new Date().toISOString(),
       };
 
-      setData(dashboardData);
+      console.log(`${LOG_PREFIX} Datos procesados:`, processedData);
+      setData(processedData);
+
     } catch (err) {
-      console.error("Error al cargar estadísticas:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Error desconocido al cargar las estadísticas"
-      );
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido al obtener estadísticas';
+      console.error(`${LOG_PREFIX} Error:`, errorMessage, err);
+      
+      // Usar el manejador de errores centralizado con metadatos válidos
+      dispatchError('dashboard-stats-error', err instanceof Error ? err : new Error(errorMessage), {
+        channel: 'statistics:dashboard',
+        originalError: err,
+        environment: {
+          isElectron: true,
+          hasIpc: true,
+          online: navigator.onLine
+        }
+      });
+      
       // Mantener los datos por defecto en caso de error
+      setError(errorMessage);
       setData(defaultStats);
     } finally {
       setLoading(false);

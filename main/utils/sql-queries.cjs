@@ -6,29 +6,34 @@
 // Consultas de estadísticas
 exports.STATISTICS_QUERIES = {
   // Obtiene contratos creados por mes
+  // Optimización: Usa strftime para SQLite
   GET_CONTRACTS_BY_MONTH: `
     SELECT 
-      DATE_FORMAT(createdAt, '%Y-%m') as month, 
+      strftime('%Y-%m', datetime(createdAt/1000, 'unixepoch')) as month, 
       COUNT(*) as count 
     FROM Contract 
     WHERE isArchived = false
-    GROUP BY DATE_FORMAT(createdAt, '%Y-%m')
+      AND createdAt IS NOT NULL
+    GROUP BY strftime('%Y-%m', datetime(createdAt/1000, 'unixepoch'))
     ORDER BY month ASC
   `,
 
   // Obtiene contratos vencidos por mes
+  // Optimización: Usa strftime para SQLite y filtro de índice
   GET_EXPIRED_CONTRACTS_BY_MONTH: `
     SELECT 
-      DATE_FORMAT(endDate, '%Y-%m') as month, 
+      strftime('%Y-%m', datetime(endDate/1000, 'unixepoch')) as month, 
       COUNT(*) as count 
     FROM Contract 
     WHERE status = 'VENCIDO' 
       AND isArchived = false
-    GROUP BY DATE_FORMAT(endDate, '%Y-%m')
+      AND endDate IS NOT NULL
+    GROUP BY strftime('%Y-%m', datetime(endDate/1000, 'unixepoch'))
     ORDER BY month ASC
   `,
 
   // Obtiene suplementos por contrato
+  // Optimización: Usa INNER JOIN y selección de columnas específicas
   GET_SUPPLEMENTS_BY_CONTRACT: `
     SELECT 
       s.contractId,
@@ -36,8 +41,11 @@ exports.STATISTICS_QUERIES = {
       c.companyName,
       COUNT(s.id) as supplementCount
     FROM Supplement s
-    JOIN Contract c ON s.contractId = c.id
-    WHERE c.isArchived = false
+    INNER JOIN (
+      SELECT id, contractNumber, companyName 
+      FROM Contract 
+      WHERE isArchived = false
+    ) c ON s.contractId = c.id
     GROUP BY s.contractId, c.contractNumber, c.companyName
     ORDER BY supplementCount DESC
   `,
@@ -99,28 +107,44 @@ exports.DASHBOARD_QUERIES = {
   // Obtiene estadísticas generales del dashboard
   GET_DASHBOARD_STATS: `
     SELECT 
-      COUNT(*) as total,
-      SUM(CASE WHEN status = 'ACTIVO' THEN 1 ELSE 0 END) as active,
-      SUM(CASE WHEN status = 'VENCIDO' THEN 1 ELSE 0 END) as expired,
-      SUM(CASE WHEN type = 'Cliente' THEN 1 ELSE 0 END) as client,
-      SUM(CASE WHEN type = 'Proveedor' THEN 1 ELSE 0 END) as supplier,
-      SUM(CASE WHEN endDate BETWEEN ? AND ? AND status = 'ACTIVO' THEN 1 ELSE 0 END) as expiring
+      CAST(COUNT(*) AS INTEGER) as total,
+      CAST(SUM(CASE WHEN status = 'ACTIVO' THEN 1 ELSE 0 END) AS INTEGER) as active,
+      CAST(SUM(CASE WHEN status = 'VENCIDO' THEN 1 ELSE 0 END) AS INTEGER) as expired,
+      CAST(SUM(CASE WHEN type = 'Cliente' AND status = 'ACTIVO' THEN 1 ELSE 0 END) AS INTEGER) as client,
+      CAST(SUM(CASE WHEN type = 'Proveedor' AND status = 'ACTIVO' THEN 1 ELSE 0 END) AS INTEGER) as supplier,
+      CAST(SUM(CASE 
+            WHEN status = 'ACTIVO' AND 
+                 endDate IS NOT NULL AND
+                 datetime(endDate/1000, 'unixepoch') >= ? AND 
+                 datetime(endDate/1000, 'unixepoch') <= ? 
+            THEN 1 
+            ELSE 0 
+          END) AS INTEGER) as expiring
     FROM Contract
     WHERE isArchived = false
+    AND (status IS NOT NULL AND status != '')
   `,
   
   // Obtiene actividad reciente
+  // Optimización: Usa índices compuestos y selección de columnas específicas
   GET_RECENT_ACTIVITY: `
     SELECT 
       c.id,
       c.contractNumber,
-      c.updatedAt,
+      c.companyName,
+      c.type,
+      c.status,
+      datetime(c.updatedAt/1000, 'unixepoch') as updatedAt,
       u.name as createdByName
-    FROM Contract c
+    FROM (
+      SELECT id, contractNumber, companyName, type, status, updatedAt, createdById
+      FROM Contract 
+      WHERE isArchived = false
+      ORDER BY updatedAt DESC
+      LIMIT 10
+    ) c
     JOIN User u ON c.createdById = u.id
-    WHERE c.isArchived = false
     ORDER BY c.updatedAt DESC
-    LIMIT 10
   `
 };
 

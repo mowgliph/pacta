@@ -108,24 +108,26 @@ export default function DashboardPage() {
     error: allContractsError,
   } = useAllContracts();
 
-  // Extraer datos del dashboard
-  const { totals, trends: dashboardTrends, recentActivity } = data || {};
-
-  // Función para manejar valores faltantes
-  const handleMissingData = (key: string, value: any, defaultValue: any) => {
-    if (value === undefined || value === null) {
-      console.error(`[Dashboard] No se pudo obtener el valor para ${key} desde el backend`);
-      return defaultValue;
-    }
-    return value;
+  // Extraer datos del dashboard con valores por defecto
+  const safeData = data || {
+    totals: { total: 0, active: 0, expiring: 0, expired: 0, client: 0, supplier: 0 },
+    trends: {
+      total: { value: 0, label: "vs mes anterior", positive: true },
+      active: { value: 0, label: "vs mes anterior", positive: true },
+      expiring: { value: 0, label: "próximo mes", positive: false },
+      expired: { value: 0, label: "vs mes anterior", positive: false },
+    },
+    distribution: { client: 0, supplier: 0 },
+    recentActivity: [],
+    lastUpdated: new Date().toISOString()
   };
 
-  // Asegurar que los datos existan y tengan el formato correcto
+  // Extraer valores con valores por defecto
   const stats = {
-    total: handleMissingData('total', totals?.total, 0),
-    active: handleMissingData('active', totals?.active, 0),
-    expiring: handleMissingData('expiring', totals?.expiring, 0),
-    expired: handleMissingData('expired', totals?.expired, 0),
+    total: safeData.totals?.total ?? 0,
+    active: safeData.totals?.active ?? 0,
+    expiring: safeData.totals?.expiring ?? 0,
+    expired: safeData.totals?.expired ?? 0,
   };
 
   const defaultTrend = {
@@ -134,37 +136,32 @@ export default function DashboardPage() {
     label: "vs mes anterior",
   };
 
-  const trends = {
-    total: dashboardTrends?.total || (() => {
-      console.error('[Dashboard] No se pudo obtener la tendencia total desde el backend');
-      return { ...defaultTrend };
-    })(),
-    active: dashboardTrends?.active || (() => {
-      console.error('[Dashboard] No se pudo obtener la tendencia de activos desde el backend');
-      return { ...defaultTrend };
-    })(),
-    expiring: dashboardTrends?.expiring || (() => {
-      console.error('[Dashboard] No se pudo obtener la tendencia de por vencer desde el backend');
-      return { ...defaultTrend, positive: false, label: "próximo mes" };
-    })(),
-    expired: dashboardTrends?.expired || (() => {
-      console.error('[Dashboard] No se pudo obtener la tendencia de vencidos desde el backend');
-      return { ...defaultTrend, positive: false, label: "este mes" };
-    })(),
+  // Definir tendencias con manejo de errores
+  const dashboardTrends = {
+    total: safeData.trends?.total || { ...defaultTrend },
+    active: safeData.trends?.active || { ...defaultTrend },
+    expiring: safeData.trends?.expiring || { ...defaultTrend, positive: false, label: "próximo mes" },
+    expired: safeData.trends?.expired || { ...defaultTrend, positive: false, label: "este mes" },
   };
+
+  const recentActivity = safeData.recentActivity ?? [];
+
+  // Registrar datos para depuración
+  console.log('[Dashboard] Stats calculados:', stats);
+  console.log('[Dashboard] Tendencias:', dashboardTrends);
 
   // Registrar error si no hay datos
   useEffect(() => {
     if (!data) {
       console.error('[Dashboard] No se recibieron datos del backend');
-    } else if (!totals || !dashboardTrends) {
+    } else if (!safeData.totals || !safeData.trends) {
       console.error('[Dashboard] Datos incompletos recibidos del backend:', {
-        hasTotals: !!totals,
-        hasTrends: !!dashboardTrends,
-        hasRecentActivity: !!recentActivity
+        hasTotals: !!safeData.totals,
+        hasTrends: !!safeData.trends,
+        hasRecentActivity: !!safeData.recentActivity
       });
     }
-  }, [data, totals, dashboardTrends, recentActivity]);
+  }, [data, safeData]);
 
   // Función auxiliar para validar arrays
   const validateArray = (arr: any[] | null | undefined) =>
@@ -224,7 +221,8 @@ export default function DashboardPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {statsLoading ? (
+            {/* Mostrar mensaje de carga solo si es la carga inicial */}
+            {statsLoading && !data?.totals ? (
               <div className="col-span-full text-gray-500 flex items-center justify-center py-12">
                 <span className="animate-pulse">Cargando estadísticas...</span>
               </div>
@@ -239,37 +237,37 @@ export default function DashboardPage() {
               <>
                 <DashboardCard
                   title="Total Contratos"
-                  count={stats.total.toString()}
+                  count={stats.total || 0}
                   icon={<TrendingUp className="w-6 h-6 text-primary" />}
                   onClick={() => handleModal.open.allContracts()}
-                  trend={trends.total}
+                  trend={dashboardTrends.total}
                   loading={statsLoading}
                   error={error}
                 />
                 <DashboardCard
                   title="Vigentes"
-                  count={stats.active.toString()}
+                  count={stats.active || 0}
                   icon={<TrendingUp className="w-6 h-6 text-green-600" />}
                   onClick={handleModal.open.active}
-                  trend={trends.active}
+                  trend={dashboardTrends.active}
                   loading={statsLoading}
                   error={error}
                 />
                 <DashboardCard
                   title="Próximos a Vencer"
-                  count={stats.expiring.toString()}
+                  count={stats.expiring || 0}
                   icon={<IconFileCheck className="w-6 h-6 text-orange-500" />}
                   onClick={handleModal.open.expiring}
-                  trend={trends.expiring}
+                  trend={dashboardTrends.expiring}
                   loading={statsLoading}
                   error={error}
                 />
                 <DashboardCard
                   title="Vencidos"
-                  count={stats.expired.toString()}
+                  count={stats.expired || 0}
                   icon={<IconFileX className="w-6 h-6 text-red-500" />}
                   onClick={handleModal.open.expired}
-                  trend={trends.expired}
+                  trend={dashboardTrends.expired}
                   loading={statsLoading}
                   error={error}
                 />

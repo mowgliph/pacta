@@ -1,87 +1,107 @@
 import React from "react";
 import { cn } from "../../lib/utils";
-import { motion } from "framer-motion";
+
+type TrendVariant = 'up' | 'down' | 'neutral';
 
 interface DashboardCardProps {
   title: string;
   count: number | string;
-  icon?: React.ReactNode;
-  onClick?: () => void;
-  className?: string;
-  disabled?: boolean;
-  loading?: boolean;
-  error?: string | null;
+  icon: React.ReactNode;
   trend?: {
     value: number;
     label: string;
-    positive: boolean;
+    variant?: TrendVariant;
   };
+  loading?: boolean;
+  error?: string | null;
+  className?: string;
+  onClick?: () => void;
 }
+
+const getTrendColors = (variant: TrendVariant = 'neutral') => {
+  switch (variant) {
+    case 'up':
+      return 'bg-green-100 text-green-800';
+    case 'down':
+      return 'bg-red-100 text-red-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
 
 const DashboardCard = ({
   title,
   count,
   icon,
-  onClick,
-  className,
-  disabled = false,
+  trend,
   loading = false,
   error = null,
-  trend,
+  className,
+  onClick,
 }: DashboardCardProps) => {
-  console.log(`[DashboardCard] ${title} - count:`, count, 'loading:', loading, 'error:', error);
+  const trendVariant: TrendVariant = trend?.variant || 'neutral';
+  const trendColors = getTrendColors(trendVariant);
+  const trendIcon = trendVariant === 'up' ? '↑' : trendVariant === 'down' ? '↓' : '→';
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onClick) {
+      onClick();
+    }
+  };
+
   return (
-    <motion.div
-      whileHover={{ scale: disabled ? 1 : 1.02 }}
-      transition={{ duration: 0.2 }}
-      onClick={disabled ? undefined : onClick}
+    <div
+      onClick={onClick ? handleClick : undefined}
       className={cn(
-        "relative overflow-hidden bg-white rounded-xl p-6",
-        "border border-gray-100 shadow-sm",
-        "hover:shadow-lg transition-all duration-200",
-        disabled && "opacity-60 cursor-not-allowed hover:shadow-none",
+        "bg-white rounded-xl p-6 shadow-sm",
+        "transition-all duration-200 hover:shadow-md",
+        onClick && "cursor-pointer hover:bg-gray-50 active:bg-gray-100",
         className
       )}
-      role={disabled ? undefined : "button"}
-      tabIndex={disabled ? -1 : 0}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          handleClick(e as any);
+        }
+      } : undefined}
     >
-      <div className="flex flex-col space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="min-w-0">
-            <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-            {loading ? (
-              <div className="h-8 w-16 bg-gray-200 rounded animate-pulse mt-1" />
-            ) : error ? (
-              <p className="text-sm text-red-500 mt-1 truncate" title={error}>
-                Error
-              </p>
-            ) : (
-              <p className="text-2xl font-bold text-gray-900 mt-1">{count}</p>
-            )}
-          </div>
-          {icon && (
-            <div className="w-10 h-10 flex items-center justify-center rounded-lg bg-primary/10">
-              {icon}
-            </div>
+      <div className="flex justify-between items-start">
+        <div>
+          <h3 className="text-sm font-medium text-gray-500 mb-2">
+            {title}
+          </h3>
+          {loading ? (
+            <div className="h-12 w-24 bg-gray-100 rounded-lg animate-pulse" />
+          ) : error ? (
+            <p className="text-sm text-red-500">Error al cargar</p>
+          ) : (
+            <p className="text-3xl font-bold text-gray-800">
+              {typeof count === 'number' ? count.toLocaleString() : count}
+            </p>
           )}
         </div>
-
-        {trend && (
-          <div
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-sm",
-              trend.positive
-                ? "bg-green-50 text-green-600"
-                : "bg-red-50 text-red-600"
-            )}
-          >
-            <span>{trend.positive ? "↑" : "↓"}</span>
-            {trend.value}%
-            <span className="text-gray-500 text-xs">{trend.label}</span>
-          </div>
-        )}
+        
+        <div className="p-3 rounded-lg" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}>
+          {React.isValidElement(icon) ? (
+            React.cloneElement(icon as React.ReactElement, {
+              className: 'w-5 h-5 text-blue-500',
+              'aria-hidden': true
+            } as React.HTMLAttributes<SVGElement>)
+          ) : (
+            <span className="text-blue-500">{icon}</span>
+          )}
+        </div>
       </div>
-    </motion.div>
+
+      {trend && !loading && !error && (
+        <div className={cn("inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md mt-4", trendColors)}>
+          <span>{trendIcon} {Math.abs(Math.round(trend.value))}%</span>
+          <span>{trend.label}</span>
+        </div>
+      )}
+    </div>
   );
 };
 
