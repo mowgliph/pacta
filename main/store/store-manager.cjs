@@ -11,21 +11,11 @@ const appStore = new ElectronStore({
 // Inicializar valores por defecto si no existen
 if (!appStore.has("settings")) {
   appStore.set("settings", {
-    theme: "light",
     notificationsEnabled: true,
     notificationDays: 7,
   });
   console.info("Configuración por defecto inicializada");
 }
-
-exports.getTheme = function () {
-  return appStore.get("settings.theme", "light");
-};
-
-exports.setTheme = function (theme) {
-  appStore.set("settings.theme", theme);
-  console.info(`Tema cambiado a: ${theme}`);
-};
 
 exports.getNotificationsEnabled = function () {
   return appStore.get("settings.notificationsEnabled", true);

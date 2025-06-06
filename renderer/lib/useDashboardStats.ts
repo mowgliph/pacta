@@ -1,142 +1,166 @@
-"use client";
-import { useEffect, useState } from "react";
-import type { StatisticsDashboard } from "../types/electron.d";
+import { useEffect, useState, useCallback } from "react";
+import type {
+  DashboardStats,
+  DashboardApiResponse,
+  UseDashboardStatsReturn
+} from "../types/contracts";
+import { dispatchError } from "./error-utils";
 
-const defaultStats: StatisticsDashboard['data'] = {
+// Datos por defecto para el estado inicial
+const defaultStats: DashboardStats = {
   totals: {
     total: 0,
     active: 0,
     expiring: 0,
     expired: 0,
+    client: 0,
+    supplier: 0
+  },
+  trends: {
+    total: { value: 0, label: "vs mes anterior", positive: true },
+    active: { value: 0, label: "vs mes anterior", positive: true },
+    expiring: { value: 0, label: "próximo mes", positive: false },
+    expired: { value: 0, label: "vs mes anterior", positive: false },
   },
   distribution: {
     client: 0,
     supplier: 0,
   },
   recentActivity: [],
+  lastUpdated: new Date().toISOString(),
 };
 
-export function useDashboardStats() {
-  const [data, setData] = useState<StatisticsDashboard['data'] | null>(null);
-  const [loading, setLoading] = useState(true);
+// Función auxiliar para calcular el valor de tendencia
+const calculateTrendValue = (current: number = 0, previous: number = 0): number => {
+  if (!previous) return 0;
+  return ((current - previous) / previous) * 100 || 0;
+};
+
+// Función auxiliar para calcular porcentajes seguros
+const calculatePercentage = (part: number = 0, total: number = 0): number => {
+  if (!total) return 0;
+  return (part / total) * 100 || 0;
+};
+
+// Constantes para los mensajes de log
+const LOG_PREFIX = '[useDashboardStats]';
+
+const checkElectronEnvironment = () => {
+  if (typeof window === 'undefined') {
+    throw new Error('Ejecutando en entorno sin ventana (SSR)');
+  }
+  
+  if (typeof window.electron === 'undefined') {
+    throw new Error('Objeto window.electron no está definido');
+  }
+  
+  if (typeof window.electron.ipcRenderer === 'undefined') {
+    throw new Error('IPC Renderer no está disponible');
+  }
+  
+  return true;
+};
+
+export function useDashboardStats(): UseDashboardStatsReturn {
+  const [data, setData] = useState<DashboardStats>(defaultStats);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const fetchDashboardStats = useCallback(async () => {
+    console.log(`${LOG_PREFIX} Iniciando obtención de estadísticas...`);
+    
+    try {
+      setLoading(true);
+      setError(null);
 
-  useEffect(() => {
-    let mounted = true;
-
-    const fetchDashboardStats = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Verificar si estamos en un entorno Electron
-        if (typeof window.electron === 'undefined' || !window.electron.ipcRenderer) {
-          setData(defaultStats);
-          setLoading(false);
-          return;
-        }
-
-        console.log('Solicitando estadísticas del dashboard...');
-        const response = await window.electron.ipcRenderer.invoke("statistics:dashboard");
-        console.log('Respuesta recibida:', response);
-        const statsResponse = response as StatisticsDashboard;
-        
-        if (!statsResponse?.success) {
-          // Construir mensaje de error con la información disponible
-        const errorMessage = 'No se pudieron cargar las estadísticas del dashboard';
-        const errorDetails = {
-          response: statsResponse,
-          timestamp: new Date().toISOString(),
-          hasData: !!statsResponse.data,
-          dataKeys: statsResponse.data ? Object.keys(statsResponse.data) : [],
-          environment: {
-            isElectron: typeof window.electron !== 'undefined',
-            hasIpc: !!(window.electron?.ipcRenderer),
-            userAgent: navigator.userAgent,
-            online: navigator.onLine,
-            timestamp: new Date().toISOString()
-          }
-        };
-        
-        console.error('❌ Error en la respuesta de estadísticas:', errorDetails);
-        
-        const error = new Error(errorMessage);
-        (error as any).response = statsResponse;
-        (error as any).details = errorDetails;
-        throw error;
-        }
-
-        console.log('Estadísticas cargadas correctamente');
-        setData(statsResponse.data);
-      } catch (err) {
-        if (!mounted) return;
-        
-        const error = err instanceof Error ? err : new Error('Error desconocido al cargar estadísticas');
-        const errorInfo = {
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-          isElectronAvailable: typeof window.electron !== 'undefined',
-          timestamp: new Date().toISOString(),
-          // Incluir información de la respuesta si está disponible
-          ...(error.hasOwnProperty('response') && { response: (error as any).response }),
-          // Incluir detalles adicionales si están disponibles
-          ...(error.hasOwnProperty('details') && { details: (error as any).details })
-        };
-        
-        console.error('❌ Error al cargar estadísticas del dashboard:', errorInfo);
-        
-        setError(`Error: ${error.message}`);
-        
-        // Preparar metadatos para el evento de error
-        const metadata: any = {
-          originalError: error.message,
-          stack: error.stack,
-          timestamp: new Date().toISOString(),
-          environment: {
-            isElectron: typeof window.electron !== 'undefined',
-            hasIpc: !!(window.electron?.ipcRenderer),
-            userAgent: navigator.userAgent,
-            online: navigator.onLine,
-            platform: navigator.platform
-          }
-        };
-        
-        // Añadir detalles adicionales si están disponibles
-        if (error.hasOwnProperty('response')) {
-          metadata.response = (error as any).response;
-        }
-        if (error.hasOwnProperty('details')) {
-          metadata.details = (error as any).details;
-        }
-        
-        // Informar sobre el error con más detalles
-        window.dispatchEvent(new CustomEvent("api-error", {
-          detail: {
-            error: error.message,
-            type: 'statistics-error',
-            metadata: metadata
-          }
-        }));
-        
-        // Usar valores por defecto para permitir que la aplicación continúe
-        console.warn('Usando valores por defecto para las estadísticas del dashboard');
-        setData(defaultStats);
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+      // Verificar entorno de Electron
+      checkElectronEnvironment();
+      
+      console.log(`${LOG_PREFIX} Solicitando estadísticas al backend...`);
+      const response = await window.electron.ipcRenderer.invoke(
+        "statistics:dashboard"
+      );
+      
+      console.log(`${LOG_PREFIX} Respuesta del backend recibida:`, response);
+      
+      // Validar la respuesta
+      if (!response) {
+        throw new Error('No se recibió respuesta del servidor');
       }
-    };
 
-    fetchDashboardStats();
+      if (!response.success) {
+        throw new Error('Error al obtener las estadísticas');
+      }
 
-    return () => {
-      mounted = false;
-    };
+      if (!response.data?.data) {
+        throw new Error('La respuesta no contiene datos');
+      }
+
+      const backendData = response.data.data;
+      
+      // Procesar los datos del backend al formato esperado
+      const processedData: DashboardStats = {
+        totals: {
+          total: backendData.totals?.total ?? 0,
+          active: backendData.totals?.active ?? 0,
+          expiring: backendData.totals?.expiring ?? 0,
+          expired: backendData.totals?.expired ?? 0,
+          client: backendData.totals?.client ?? 0,
+          supplier: backendData.totals?.supplier ?? 0
+        },
+        trends: {
+          total: backendData.trends?.total || { value: 0, label: "vs mes anterior", positive: true },
+          active: backendData.trends?.active || { value: 0, label: "vs mes anterior", positive: true },
+          expiring: backendData.trends?.expiring || { value: 0, label: "próximo mes", positive: false },
+          expired: backendData.trends?.expired || { value: 0, label: "vs mes anterior", positive: false },
+        },
+        distribution: {
+          client: backendData.distribution?.client ?? 0,
+          supplier: backendData.distribution?.supplier ?? 0,
+        },
+        recentActivity: backendData.recentActivity || [],
+        lastUpdated: backendData.lastUpdated || new Date().toISOString(),
+      };
+
+      console.log(`${LOG_PREFIX} Datos procesados:`, processedData);
+      setData(processedData);
+
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido al obtener estadísticas';
+      console.error(`${LOG_PREFIX} Error:`, errorMessage, err);
+      
+      // Usar el manejador de errores centralizado con metadatos válidos
+      dispatchError('dashboard-stats-error', err instanceof Error ? err : new Error(errorMessage), {
+        channel: 'statistics:dashboard',
+        originalError: err,
+        environment: {
+          isElectron: true,
+          hasIpc: true,
+          online: navigator.onLine
+        }
+      });
+      
+      // Mantener los datos por defecto en caso de error
+      setError(errorMessage);
+      setData(defaultStats);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  // Si no hay datos, usar valores por defecto
-  const statsToShow = data || defaultStats;
-  return { data: statsToShow, loading, error };
+  const refreshData = useCallback(() => {
+    console.log('[useDashboardStats] Forzando actualización de datos del dashboard');
+    fetchDashboardStats();
+  }, [fetchDashboardStats]);
+
+  useEffect(() => {
+    fetchDashboardStats();
+  }, [fetchDashboardStats]);
+
+  return { 
+    data, 
+    loading, 
+    error, 
+    refetch: refreshData 
+  };
 }

@@ -1,6 +1,5 @@
-import * as React from "react";
+import React from "react";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
-
 import { cn } from "../../lib/utils";
 
 const Popover = PopoverPrimitive.Root;
@@ -23,9 +22,34 @@ const PopoverContent = React.forwardRef<
         className
       )}
       {...props}
-    />
+      data-testid="popover-content"
+      role="dialog"
+      aria-modal="true"
+    >
+      {props.children}
+    </PopoverPrimitive.Content>
   </PopoverPrimitive.Portal>
 ));
 PopoverContent.displayName = PopoverPrimitive.Content.displayName;
 
 export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor };
+
+// Hook para manejar el enfoque del popover
+export function usePopover() {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [targetElement, setTargetElement] = React.useState<HTMLElement | null>(null);
+
+  const handleKeyDown = React.useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setIsOpen(false);
+    }
+  }, []);
+
+  return {
+    isOpen,
+    setIsOpen,
+    targetElement,
+    setTargetElement,
+    handleKeyDown,
+  };
+}

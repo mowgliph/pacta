@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { FileText, FileSpreadsheet, Download } from "lucide-react";
+import { IconFileText, IconTable } from "@tabler/icons-react";
 import { useReportExport } from "@/lib/useReportExport";
 
 interface ReportExportProps {
@@ -20,12 +20,12 @@ export function ReportExport({ reportType, data, template }: ReportExportProps) 
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => exportToPDF(reportType, data, template)}>
-          <FileText className="mr-2 h-4 w-4" />
+        <DropdownMenuItem onClick={() => exportToPDF(data, template)}>
+          <IconFileText className="mr-2 h-4 w-4" />
           <span>Exportar a PDF</span>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => exportToExcel(reportType, data, template)}>
-          <FileSpreadsheet className="mr-2 h-4 w-4" />
+          <IconTable className="mr-2 h-4 w-4" />
           <span>Exportar a Excel</span>
         </DropdownMenuItem>
       </DropdownMenuContent>

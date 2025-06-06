@@ -1,4 +1,4 @@
-import * as React from "react";
+import React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { cn } from "../../lib/utils";
 
@@ -18,8 +18,29 @@ const TooltipContent = React.forwardRef<
       className
     )}
     {...props}
+    data-testid="tooltip-content"
   />
 ));
 TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider };
+
+// Hook para manejar el enfoque del tooltip
+export function useTooltip() {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [targetElement, setTargetElement] = React.useState<HTMLElement | null>(null);
+
+  const handleKeyDown = React.useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setIsOpen(false);
+    }
+  }, []);
+
+  return {
+    isOpen,
+    setIsOpen,
+    targetElement,
+    setTargetElement,
+    handleKeyDown,
+  };
+}

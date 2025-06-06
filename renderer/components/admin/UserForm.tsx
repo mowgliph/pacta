@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Save, ArrowLeft, Loader2 } from 'lucide-react';
+import { IconDownload, IconArrowLeft, IconRefresh } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 
 // Esquema de validación con Zod
@@ -16,7 +16,7 @@ const userFormSchema = z.object({
   role: z.enum(['admin', 'ra'], {
     required_error: 'Debes seleccionar un rol',
   }),
-  isActive: z.boolean().default(true),
+  isActive: z.boolean(),
   password: z.string().min(6, { message: 'La contraseña debe tener al menos 6 caracteres' }).optional(),
   confirmPassword: z.string().optional(),
 }).refine((data) => !data.password || data.password === data.confirmPassword, {
@@ -24,12 +24,23 @@ const userFormSchema = z.object({
   path: ['confirmPassword'],
 });
 
+// Usamos Omit para hacer que isActive sea opcional en el tipo inferido
+// Definimos el tipo basado en el esquema de validación
 type UserFormValues = z.infer<typeof userFormSchema>;
+
+const defaultValues: UserFormValues = {
+  name: '',
+  email: '',
+  role: 'ra',
+  isActive: true,
+  password: '',
+  confirmPassword: '',
+};
 
 interface UserFormProps {
   defaultValues?: Partial<UserFormValues>;
   isSubmitting?: boolean;
-  onSubmit: (data: UserFormValues) => void;
+  onSubmit: (data: UserFormValues) => void | Promise<void>;
   isEditMode?: boolean;
 }
 
@@ -37,9 +48,9 @@ export function UserForm({ defaultValues, isSubmitting = false, onSubmit, isEdit
   const navigate = useNavigate();
   
   const form = useForm<UserFormValues>({
-    resolver: zodResolver(userFormSchema),
+    resolver: zodResolver(userFormSchema) as any, // Forzamos el tipo para evitar problemas de compatibilidad
     defaultValues: {
-      isActive: true,
+      ...defaultValues,
       ...defaultValues,
     },
   });
@@ -139,7 +150,7 @@ export function UserForm({ defaultValues, isSubmitting = false, onSubmit, isEdit
           onClick={() => navigate(-1)}
           disabled={isSubmitting}
         >
-          <ArrowLeft className="w-4 h-4 mr-2" />
+          <IconArrowLeft className="w-4 h-4 mr-2" />
           Cancelar
         </Button>
         <Button 
@@ -149,12 +160,12 @@ export function UserForm({ defaultValues, isSubmitting = false, onSubmit, isEdit
         >
           {isSubmitting ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <IconRefresh className="mr-2 h-4 w-4 animate-spin" />
               Guardando...
             </>
           ) : (
             <>
-              <Save className="w-4 h-4 mr-2" />
+              <IconDownload className="w-4 h-4 mr-2" />
               {isEditMode ? 'Actualizar Usuario' : 'Crear Usuario'}
             </>
           )}

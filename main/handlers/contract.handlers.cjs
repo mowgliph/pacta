@@ -53,94 +53,89 @@ function registerContractHandlers() {
 
   // Handlers principales
   // Obtener contratos archivados
-const getArchivedContracts = async (filters = {}) => {
-  const { search = '', page = 1, limit = 10 } = filters;
-  const skip = (page - 1) * limit;
-  
-  const where = {
-    status: 'Archivado',
-    OR: search ? [
-      { contractNumber: { contains: search, mode: 'insensitive' } },
-      { companyName: { contains: search, mode: 'insensitive' } },
-      { description: { contains: search, mode: 'insensitive' } }
-    ] : undefined
+  const getArchivedContracts = async (filters = {}) => {
+    const { search = "", page = 1, limit = 10 } = filters;
+    const skip = (page - 1) * limit;
+
+    const where = {
+      isArchived: true,
+      OR: search
+        ? [
+            { contractNumber: { contains: search, mode: "insensitive" } },
+            { companyName: { contains: search, mode: "insensitive" } },
+            { description: { contains: search, mode: "insensitive" } },
+          ]
+        : undefined,
+    };
+
+    const [contracts, total] = await Promise.all([
+      prisma.contract.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { updatedAt: "desc" },
+        include: {
+          owner: { select: { name: true, email: true } },
+          createdBy: { select: { name: true, email: true } },
+        },
+      }),
+      prisma.contract.count({ where }),
+    ]);
+
+    return {
+      contracts,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   };
 
-  const [contracts, total] = await Promise.all([
-    prisma.contract.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: { updatedAt: 'desc' },
-      include: {
-        owner: { select: { name: true, email: true } },
-        createdBy: { select: { name: true, email: true } }
-      }
-    }),
-    prisma.contract.count({ where })
-  ]);
-
-  return {
-    contracts,
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit)
+  // Archivar un contrato
+  const archiveContract = async (contractId) => {
+    const contract = await prisma.contract.findUnique({
+      where: { id: contractId },
+    });
+    if (!contract) throw new Error("Contrato no encontrado");
+    return prisma.contract.update({
+      where: { id: contractId },
+      data: {
+        isArchived: true,
+        updatedAt: new Date(),
+      },
+    });
   };
-};
 
-// Archivar un contrato
-const archiveContract = async (contractId) => {
-  const contract = await prisma.contract.findUnique({
-    where: { id: contractId }
-  });
+  // Restaurar un contrato archivado
+  const restoreContract = async (contractId) => {
+    const contract = await prisma.contract.findUnique({
+      where: { id: contractId },
+    });
+    if (!contract) throw new Error("Contrato no encontrado");
+    return prisma.contract.update({
+      where: { id: contractId },
+      data: {
+        isArchived: false,
+        updatedAt: new Date(),
+      },
+    });
+  };
 
-  if (!contract) {
-    throw new Error('Contrato no encontrado');
-  }
-
-  return prisma.contract.update({
-    where: { id: contractId },
-    data: {
-      status: 'Archivado',
-      updatedAt: new Date()
-    }
-  });
-};
-
-// Restaurar un contrato archivado
-const restoreContract = async (contractId) => {
-  const contract = await prisma.contract.findUnique({
-    where: { id: contractId }
-  });
-
-  if (!contract) {
-    throw new Error('Contrato no encontrado');
-  }
-
-  // Verificar si el contrato está vencido
-  const now = new Date();
-  const isExpired = new Date(contract.endDate) < now;
-  
-  return prisma.contract.update({
-    where: { id: contractId },
-    data: {
-      status: isExpired ? 'Vencido' : 'Vigente',
-      updatedAt: new Date()
-    }
-  });
-};
-
-const handlers = {
-    [IPC_CHANNELS.DATA.CONTRACTS.LIST]: async (event, { page = 1, limit = 10, search = "" }) => {
+  const handlers = {
+    [IPC_CHANNELS.DATA.CONTRACTS.LIST]: async (
+      event,
+      { page = 1, limit = 10, search = "" }
+    ) => {
       try {
         const skip = (page - 1) * limit;
-        const where = search ? {
-          OR: [
-            { name: { contains: search, mode: "insensitive" } },
-            { number: { contains: search, mode: "insensitive" } }
-          ]
-        } : {};
+        const where = search
+          ? {
+              OR: [
+                { name: { contains: search, mode: "insensitive" } },
+                { number: { contains: search, mode: "insensitive" } },
+              ],
+            }
+          : {};
 
         const [contracts, total] = await Promise.all([
           prisma.contract.findMany({
@@ -151,21 +146,25 @@ const handlers = {
             include: {
               client: true,
               provider: true,
-              attachments: true
-            }
+              attachments: true,
+            },
           }),
-          prisma.contract.count({ where })
+          prisma.contract.count({ where }),
         ]);
 
-        console.info("Contratos listados exitosamente", { count: contracts.length, page, total });
+        console.info("Contratos listados exitosamente", {
+          count: contracts.length,
+          page,
+          total,
+        });
         return {
           success: true,
           data: {
             contracts,
             total,
             page,
-            limit
-          }
+            limit,
+          },
         };
       } catch (error) {
         console.error("Error al listar contratos:", error);
@@ -175,7 +174,7 @@ const handlers = {
             contracts: [],
             total: 0,
             page: 1,
-            limit: 10
+            limit: 10,
           },
           error: {
             message: error.message || "Error al listar contratos",
@@ -183,25 +182,28 @@ const handlers = {
             context: {
               operation: "list",
               timestamp: new Date().toISOString(),
-              errorDetails: error.message
-            }
-          }
+              errorDetails: error.message,
+            },
+          },
         };
       }
     },
     // Listar contratos archivados
-    [IPC_CHANNELS.DATA.CONTRACTS.LIST_ARCHIVED]: async (event, filters = {}) => {
+    [IPC_CHANNELS.DATA.CONTRACTS.LIST_ARCHIVED]: async (
+      event,
+      filters = {}
+    ) => {
       try {
         const result = await getArchivedContracts(filters);
         return { success: true, data: result };
       } catch (error) {
-        console.error('Error al listar contratos archivados:', error);
+        console.error("Error al listar contratos archivados:", error);
         return {
           success: false,
           error: {
-            message: error.message || 'Error al listar contratos archivados',
-            code: 'ARCHIVED_CONTRACTS_LIST_ERROR'
-          }
+            message: error.message || "Error al listar contratos archivados",
+            code: "ARCHIVED_CONTRACTS_LIST_ERROR",
+          },
         };
       }
     },
@@ -210,23 +212,23 @@ const handlers = {
     [IPC_CHANNELS.DATA.CONTRACTS.ARCHIVE]: async (event, contractId) => {
       try {
         if (!contractId) {
-          throw new Error('ID de contrato no proporcionado');
+          throw new Error("ID de contrato no proporcionado");
         }
-        
+
         const contract = await archiveContract(contractId);
-        
+
         // Emitir evento de contrato archivado
-        eventManager.emit('contract:archived', contract);
-        
+        eventManager.emit("contract:archived", contract);
+
         return { success: true, data: contract };
       } catch (error) {
-        console.error('Error al archivar contrato:', error);
+        console.error("Error al archivar contrato:", error);
         return {
           success: false,
           error: {
-            message: error.message || 'Error al archivar el contrato',
-            code: 'ARCHIVE_CONTRACT_ERROR'
-          }
+            message: error.message || "Error al archivar el contrato",
+            code: "ARCHIVE_CONTRACT_ERROR",
+          },
         };
       }
     },
@@ -235,71 +237,75 @@ const handlers = {
     [IPC_CHANNELS.DATA.CONTRACTS.RESTORE]: async (event, contractId) => {
       try {
         if (!contractId) {
-          throw new Error('ID de contrato no proporcionado');
+          throw new Error("ID de contrato no proporcionado");
         }
-        
+
         const contract = await restoreContract(contractId);
-        
+
         // Emitir evento de contrato restaurado
-        eventManager.emit('contract:restored', contract);
-        
+        eventManager.emit("contract:restored", contract);
+
         return { success: true, data: contract };
       } catch (error) {
-        console.error('Error al restaurar contrato:', error);
+        console.error("Error al restaurar contrato:", error);
         return {
           success: false,
           error: {
-            message: error.message || 'Error al restaurar el contrato',
-            code: 'RESTORE_CONTRACT_ERROR'
-          }
+            message: error.message || "Error al restaurar el contrato",
+            code: "RESTORE_CONTRACT_ERROR",
+          },
         };
       }
     },
 
     [IPC_CHANNELS.DATA.CONTRACTS.LIST]: async (event, filters = {}) => {
       try {
-        console.log('=== INICIO listar contratos ===');
-        console.log('Filtros recibidos:', JSON.stringify(filters, null, 2));
-        
+        console.log("=== INICIO listar contratos ===");
+        console.log("Filtros recibidos:", JSON.stringify(filters, null, 2));
+
         // Validar que Prisma esté disponible
         if (!prisma || !prisma.contract) {
-          console.error('ERROR: Prisma o el modelo Contract no están disponibles');
-          throw new Error('Error de configuración del servidor');
+          console.error(
+            "ERROR: Prisma o el modelo Contract no están disponibles"
+          );
+          throw new Error("Error de configuración del servidor");
         }
 
         // Validar filtros
-        if (filters && typeof filters !== 'object') {
-          console.error('ERROR: Filtros inválidos:', filters);
-          throw AppError.validation(
-            "Filtros inválidos",
-            "INVALID_FILTERS"
-          );
+        if (filters && typeof filters !== "object") {
+          console.error("ERROR: Filtros inválidos:", filters);
+          throw AppError.validation("Filtros inválidos", "INVALID_FILTERS");
         }
 
         // Construir el objeto where de manera segura
         const where = {};
-        
+
         // Solo agregar los filtros válidos
-        const validFilters = ['type', 'status', 'id', 'number', 'company'];
+        const validFilters = ["type", "status", "id", "number", "company"];
         Object.entries(filters).forEach(([key, value]) => {
           if (validFilters.includes(key) && value !== undefined) {
             // Manejar el caso especial de "Proximo a Vencer"
-            if (key === 'status' && value === 'Proximo a Vencer') {
-              where[key] = 'Proximo a Vencer';
+            if (key === "status" && value === "Proximo a Vencer") {
+              where[key] = "Proximo a Vencer";
             } else {
               where[key] = value;
             }
           }
         });
-        
+
         // Si no hay filtros, devolver un array vacío
         if (Object.keys(where).length === 0) {
-          console.log('No se proporcionaron filtros válidos, devolviendo array vacío');
+          console.log(
+            "No se proporcionaron filtros válidos, devolviendo array vacío"
+          );
           return [];
         }
-        
-        console.log('Consulta a la base de datos con where:', JSON.stringify(where, null, 2));
-        
+
+        console.log(
+          "Consulta a la base de datos con where:",
+          JSON.stringify(where, null, 2)
+        );
+
         // Ejecutar consulta con manejo de errores específico
         let contracts = [];
         try {
@@ -312,24 +318,28 @@ const handlers = {
               },
               createdBy: {
                 select: { name: true, email: true },
-              }
+              },
             },
           });
-          
+
           // Mapear los resultados para mantener la compatibilidad
-          contracts = contracts.map(contract => ({
+          contracts = contracts.map((contract) => ({
             ...contract,
-            user: contract.owner // Mantener compatibilidad con el frontend
+            user: contract.owner, // Mantener compatibilidad con el frontend
           }));
-          
-          console.log(`Consulta exitosa. Se encontraron ${contracts.length} contratos`);
+
+          console.log(
+            `Consulta exitosa. Se encontraron ${contracts.length} contratos`
+          );
         } catch (dbError) {
-          console.error('ERROR en consulta a la base de datos:', dbError);
-          console.error('Stack trace:', dbError.stack);
-          throw new Error(`Error al consultar la base de datos: ${dbError.message}`);
+          console.error("ERROR en consulta a la base de datos:", dbError);
+          console.error("Stack trace:", dbError.stack);
+          throw new Error(
+            `Error al consultar la base de datos: ${dbError.message}`
+          );
         }
-        
-        console.log('=== FIN listar contratos ===');
+
+        console.log("=== FIN listar contratos ===");
         return contracts;
       } catch (error) {
         console.error("Error al listar contratos:", error);
@@ -360,7 +370,9 @@ const handlers = {
           },
         });
 
-        console.info("Contrato creado exitosamente", { contractId: contract.id });
+        console.info("Contrato creado exitosamente", {
+          contractId: contract.id,
+        });
         return contract;
       } catch (error) {
         console.error("Error al crear contrato:", error);

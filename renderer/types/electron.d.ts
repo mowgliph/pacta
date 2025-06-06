@@ -1,4 +1,4 @@
-import { IpcRenderer } from 'electron';
+import { IpcRenderer } from "electron";
 
 // Tipos comunes
 export interface ApiResponse<T = unknown> {
@@ -27,6 +27,9 @@ export interface User {
   email: string;
   roleId: string;
   isActive: boolean;
+  avatar?: string;
+  company?: string;
+  phone?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -138,7 +141,7 @@ export interface LicenseStatus {
 export interface NotificationOptions {
   title: string;
   body: string;
-  variant?: 'default' | 'success' | 'error' | 'warning';
+  variant?: "default" | "success" | "error" | "warning";
   description?: string;
   silent?: boolean;
 }
@@ -162,7 +165,6 @@ export interface FileDialogResult {
   filePath?: string;
 }
 
-
 // Definición de las APIs
 export interface ReportsApi {
   exportPDF: (data: any, template: string) => Promise<ApiResponse<string>>;
@@ -181,25 +183,42 @@ export interface LicenseApi {
 }
 
 export interface AuthApi {
-  login: (credentials: { email: string; password: string }) => Promise<ApiResponse<{ user: User; token: string; refreshToken: string }>>;
+  login: (credentials: {
+    email: string;
+    password: string;
+  }) => Promise<
+    ApiResponse<{ user: User; token: string; refreshToken: string }>
+  >;
   logout: () => Promise<ApiResponse<boolean>>;
   verify: (token: string) => Promise<ApiResponse<{ user: User }>>;
-  refresh: (refreshToken: string) => Promise<ApiResponse<{ user: User; token: string; refreshToken: string }>>;
-  changePassword: (data: { currentPassword: string; newPassword: string }) => Promise<ApiResponse<boolean>>;
+  refresh: (
+    refreshToken: string
+  ) => Promise<
+    ApiResponse<{ user: User; token: string; refreshToken: string }>
+  >;
+  changePassword: (data: {
+    currentPassword: string;
+    newPassword: string;
+  }) => Promise<ApiResponse<boolean>>;
   getProfile: () => Promise<ApiResponse<User>>;
 }
 
 export interface ContractFilters {
-  type?: 'Cliente' | 'Proveedor';
+  type?: "Cliente" | "Proveedor";
   status?: string;
   search?: string;
   // Agregar más filtros según sea necesario
 }
 
 export interface ContractsApi {
-  list: (filters?: ContractFilters) => Promise<ApiResponse<PaginationResponse<Contract>>>;
+  list: (
+    filters?: ContractFilters
+  ) => Promise<ApiResponse<PaginationResponse<Contract>>>;
   create: (data: ContractCreateData) => Promise<ApiResponse<Contract>>;
-  update: (id: string, data: Partial<ContractUpdateData>) => Promise<ApiResponse<Contract>>;
+  update: (
+    id: string,
+    data: Partial<ContractUpdateData>
+  ) => Promise<ApiResponse<Contract>>;
   delete: (id: string) => Promise<ApiResponse<void>>;
   export: (id: string) => Promise<ApiResponse<string>>;
   upload: (file: File) => Promise<ApiResponse<string>>;
@@ -211,8 +230,14 @@ export interface ContractsApi {
 
 export interface SupplementsApi {
   list: (contractId: string) => Promise<ApiResponse<Supplement[]>>;
-  create: (contractId: string, data: Partial<Omit<Supplement, 'id' | 'contractId' | 'createdAt'>>) => Promise<ApiResponse<Supplement>>;
-  update: (id: string, data: Partial<Omit<Supplement, 'id' | 'contractId' | 'createdAt'>>) => Promise<ApiResponse<Supplement>>;
+  create: (
+    contractId: string,
+    data: Partial<Omit<Supplement, "id" | "contractId" | "createdAt">>
+  ) => Promise<ApiResponse<Supplement>>;
+  update: (
+    id: string,
+    data: Partial<Omit<Supplement, "id" | "contractId" | "createdAt">>
+  ) => Promise<ApiResponse<Supplement>>;
   delete: (id: string) => Promise<ApiResponse<void>>;
   export: (id: string) => Promise<ApiResponse<string>>;
   upload: (file: File) => Promise<ApiResponse<string>>;
@@ -229,19 +254,25 @@ export interface DocumentsApi {
 }
 
 export interface UsersApi {
-  list: (filters?: any) => Promise<ApiResponse<{ users: User[]; total: number }>>;
+  list: (
+    filters?: any
+  ) => Promise<ApiResponse<{ users: User[]; total: number }>>;
   create: (userData: any) => Promise<ApiResponse<User>>;
   update: (userData: any) => Promise<ApiResponse<User>>;
   delete: (id: string) => Promise<ApiResponse<boolean>>;
   toggleActive: (id: string) => Promise<ApiResponse<boolean>>;
-  changePassword: (data: { userId: string; currentPassword: string; newPassword: string }) => Promise<ApiResponse<boolean>>;
+  changePassword: (data: {
+    userId: string;
+    currentPassword: string;
+    newPassword: string;
+  }) => Promise<ApiResponse<boolean>>;
   getById: (id: string) => Promise<ApiResponse<UserWithRole>>;
   getUserProfile: () => Promise<ApiResponse<UserWithRole>>;
 }
 
 export interface RolesApi {
   list: () => Promise<ApiResponse<Role[]>>;
-  create: (data: Omit<Role, 'id'>) => Promise<ApiResponse<Role>>;
+  create: (data: Omit<Role, "id">) => Promise<ApiResponse<Role>>;
   update: (data: Role) => Promise<ApiResponse<Role>>;
   delete: (id: string) => Promise<ApiResponse<boolean>>;
 }
@@ -256,6 +287,7 @@ export interface StatisticsApi {
   contractsByUser: () => Promise<ApiResponse<any>>;
   contractsCreatedByMonth: () => Promise<ApiResponse<any>>;
   contractsExpiredByMonth: () => Promise<ApiResponse<any>>;
+  contractsExpiringSoon: () => Promise<ApiResponse<any>>;
   supplementsCountByContract: () => Promise<ApiResponse<any>>;
 }
 
@@ -274,7 +306,7 @@ export interface NotificationsApi {
   show: (options: NotificationOptions) => Promise<ApiResponse<void>>;
   clear: (id: string) => Promise<ApiResponse<void>>;
   markRead: (id: string) => Promise<ApiResponse<void>>;
-  getUnread: () => Promise<ApiResponse<any[]>>;
+  getUnread: (userId: string) => Promise<ApiResponse<any[]>>;
 }
 
 export interface BackupsApi {

@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertCircle, LogIn } from "lucide-react";
+import { IconAlertCircle, IconLogin } from "@tabler/icons-react";
 import { Button } from "./button";
 import {
   Dialog,
@@ -48,7 +48,7 @@ export function AlertModal({
           description:
             description ||
             "Debes iniciar sesión para acceder a esta funcionalidad",
-          icon: <LogIn className="h-6 w-6 text-blue-500" />,
+          icon: <IconLogin className="h-6 w-6 text-blue-500" />,
           actionLabel: "Iniciar sesión",
           onAction: navigateToLogin,
         };
@@ -56,7 +56,7 @@ export function AlertModal({
         return {
           title: title || "Advertencia",
           description: description || "¿Estás seguro de que deseas continuar?",
-          icon: <AlertCircle className="h-6 w-6 text-amber-500" />,
+          icon: <IconAlertCircle className="h-6 w-6 text-amber-500" />,
           actionLabel,
           onAction,
         };
@@ -64,7 +64,7 @@ export function AlertModal({
         return {
           title: title || "Error",
           description: description || "Ha ocurrido un error.",
-          icon: <AlertCircle className="h-6 w-6 text-red-500" />,
+          icon: <IconAlertCircle className="h-6 w-6 text-red-500" />,
           actionLabel,
           onAction,
         };
@@ -72,7 +72,7 @@ export function AlertModal({
         return {
           title: title || "Éxito",
           description: description || "La operación se completó con éxito.",
-          icon: <AlertCircle className="h-6 w-6 text-success" />,
+          icon: <IconAlertCircle className="h-6 w-6 text-success" />,
           actionLabel,
           onAction,
         };
@@ -81,7 +81,7 @@ export function AlertModal({
         return {
           title: title || "Información",
           description: description || "Información importante.",
-          icon: <AlertCircle className="h-6 w-6 text-accent" />,
+          icon: <IconAlertCircle className="h-6 w-6 text-accent" />,
           actionLabel,
           onAction,
         };

@@ -32,42 +32,46 @@ AppManager.getInstance = function (eventManager) {
 
 AppManager.prototype.initialize = async function () {
   try {
-    console.info("Iniciando aplicación PACTA...");
+    console.info("Iniciando aplicacion PACTA...");
     if (!app.isReady()) {
       await this.waitForAppReady();
     }
-    
+
     // Configurar seguridad
     this.securityManager.setupSecurity();
-    
+
+    // Configurar manejadores de eventos
+    if (!this.eventManager) {
+      console.error("[AppManager] EventManager no está disponible");
+      throw new Error(
+        "EventManager no está disponible para inicializar handlers"
+      );
+    }
+
+    console.log(
+      "[AppManager] EventManager está disponible, inicializando handlers..."
+    );
+    const { setupIpcHandlers } = require("./handlers");
+    setupIpcHandlers(null, this.eventManager);
+    console.log("[AppManager] Handlers inicializados");
+
     // Crear ventana principal
     this.mainWindow = await this.windowManager.createMainWindow();
-    
-    // Configurar manejadores de eventos
-    if (this.eventManager) {
-      console.log('[AppManager] EventManager está disponible, inicializando handlers...');
-      const { setupIpcHandlers } = require('./handlers');
-      setupIpcHandlers(this.mainWindow, this.eventManager);
-      console.log('[AppManager] Handlers inicializados');
-    } else {
-      console.error('[AppManager] EventManager no está disponible');
-      throw new Error('EventManager no está disponible para inicializar handlers');
-    }
-    
+
     // Configurar manejadores de errores y respaldo automático
     this.setupErrorHandler();
     this.setupAutoBackup();
-    
-    console.info("Aplicación PACTA inicializada correctamente");
+
+    console.info("Aplicacion PACTA inicializada correctamente");
   } catch (error) {
     console.error(
-      "Error al inicializar la aplicación:",
+      "Error al inicializar la aplicacion:",
       error,
       error && error.stack
     );
     dialog.showErrorBox(
-      "Error de inicialización",
-      `Ha ocurrido un error al iniciar la aplicación.\n${
+      "Error de inicializacion",
+      `Ha ocurrido un error al iniciar la aplicacion.\n${
         error && error.message ? error.message : String(error)
       }`
     );
@@ -88,7 +92,7 @@ AppManager.prototype.setupAppOptions = function () {
       mainWindow.focus();
     }
   });
-  app.setAppUserModelId("com.pacta.app");
+  app.setAppUserModelId("cu.pacta.app");
 };
 
 AppManager.prototype.setupAppEvents = function () {

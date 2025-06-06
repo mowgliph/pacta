@@ -1,37 +1,28 @@
-import { cn } from "../../lib/utils";
+import { cn } from '@/lib/utils';
 
-interface SpinnerProps {
-  size?: "sm" | "md" | "lg" | "xl";
+interface LoadingSpinnerProps {
+  size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
-/**
- * Spinner de carga con diferentes tamaños
- * 
- * @param size - Tamaño del spinner (sm, md, lg, xl)
- * @param className - Clases adicionales de Tailwind
- */
-export function Spinner({ size = "md", className }: SpinnerProps) {
-  // Determinar tamaño del spinner
+export function LoadingSpinner({ size = 'md', className }: LoadingSpinnerProps) {
   const sizeClasses = {
-    sm: "w-4 h-4 border-2",
-    md: "w-6 h-6 border-2",
-    lg: "w-8 h-8 border-3",
-    xl: "w-12 h-12 border-4"
+    sm: 'h-4 w-4 border-2',
+    md: 'h-6 w-6 border-2',
+    lg: 'h-8 w-8 border-2',
   };
 
   return (
-    <div
-      className={cn(
-        "border-solid rounded-full animate-spin",
-        "border-current border-r-transparent",
-        sizeClasses[size],
-        className
-      )}
-      role="status"
-      aria-label="Cargando..."
-    >
-      <span className="sr-only">Cargando...</span>
+    <div className={cn('inline-block', className)}>
+      <div
+        className={cn(
+          'animate-spin rounded-full border-t-2 border-primary border-t-transparent',
+          sizeClasses[size]
+        )}
+        role="status"
+      >
+        <span className="sr-only">Cargando...</span>
+      </div>
     </div>
   );
-} 
+}

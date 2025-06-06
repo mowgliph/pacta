@@ -1,4 +1,10 @@
-import { Clock, FileText, FileCheck, FileWarning, FileX } from 'lucide-react';
+import { 
+  IconClock,
+  IconFileText,
+  IconCircleCheck,
+  IconAlertTriangle,
+  IconCircleX
+} from '@tabler/icons-react';
 
 interface ActivityItem {
   id: string;
@@ -19,11 +25,12 @@ interface ActivityFeedProps {
 }
 
 const activityIcons = {
-  contract: FileText,
-  supplement: FileCheck,
-  document: FileText,
-  login: Clock,
-  system: FileWarning,
+  contract: IconFileText,
+  supplement: IconCircleCheck,
+  document: IconFileText,
+  login: IconClock,
+  system: IconAlertTriangle,
+  error: IconCircleX,
 };
 
 export function ActivityFeed({ activities, maxItems = 5, className }: ActivityFeedProps) {
@@ -58,7 +65,7 @@ export function ActivityFeed({ activities, maxItems = 5, className }: ActivityFe
         </div>
         <div className="divide-y divide-gray-100">
           {displayedActivities.map((activity) => {
-            const Icon = activityIcons[activity.type] || FileText;
+            const Icon = activityIcons[activity.type] || IconFileText;
             return (
               <div key={activity.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
                 <div className="flex items-start">

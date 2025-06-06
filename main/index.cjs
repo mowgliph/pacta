@@ -1,34 +1,6 @@
-const { app, nativeTheme, ipcMain } = require("electron");
+const { app } = require("electron");
 const { AppManager } = require("./app-manager.cjs");
 const { EventManager } = require("./events/event-manager.cjs");
-const { registerAppHandlers } = require("./handlers/app.handlers.cjs");
-const { registerBackupHandlers } = require("./handlers/backup.handlers.cjs");
-const { registerThemeHandlers } = require("./handlers/theme.handlers.cjs");
-const { registerAuthHandlers } = require("./handlers/auth.handlers.cjs");
-const {
-  registerContractHandlers,
-} = require("./handlers/contract.handlers.cjs");
-const {
-  registerDocumentHandlers,
-} = require("./handlers/document.handlers.cjs");
-const { registerUserHandlers } = require("./handlers/user.handlers.cjs");
-const { registerSystemHandlers } = require("./handlers/system.handlers.cjs");
-const {
-  registerNotificationHandlers,
-} = require("./handlers/notification.handlers.cjs");
-const { registerRoleHandlers } = require("./handlers/role.handlers.cjs");
-const {
-  registerSupplementHandlers,
-} = require("./handlers/supplement.handlers.cjs");
-const {
-  registerStatisticsHandlers,
-} = require("./handlers/statistics.handlers.cjs");
-const {
-  registerSecurityHandlers,
-} = require("./handlers/security.handlers.cjs");
-const { registerStoreHandlers } = require("./handlers/store.handlers.cjs");
-const { registerValidationHandlers } = require("./handlers/validation.handlers.cjs");
-const { registerReportHandlers } = require("./handlers/reportHandler.cjs");
 const { initPrisma } = require("./utils/prisma.cjs");
 const { autoUpdater } = require("electron-updater");
 
@@ -38,11 +10,11 @@ const { autoUpdater } = require("electron-updater");
  */
 async function main() {
   try {
-    // Prevenir múltiples instancias de la aplicación
+    // Prevenir multiples instancias de la aplicacion
     const gotTheLock = app.requestSingleInstanceLock();
     if (!gotTheLock) {
       console.info(
-        "Otra instancia ya está en ejecución. Cerrando esta instancia."
+        "Otra instancia ya esta en ejecucion. Cerrando esta instancia."
       );
       app.quit();
       return;
@@ -50,7 +22,7 @@ async function main() {
 
     // Configurar el manejo de segundas instancias
     app.on("second-instance", (_event, commandLine, _workingDirectory) => {
-      console.info("Se detectó un intento de abrir una segunda instancia", {
+      console.info("Se detecto un intento de abrir una segunda instancia", {
         commandLine,
       });
       const appManager = AppManager.getInstance();
@@ -69,7 +41,7 @@ async function main() {
             parsedUrl.protocol === "http:" && parsedUrl.hostname === "localhost"
           )
         ) {
-          console.warn("Navegación bloqueada a URL externa:", navigationUrl);
+          console.warn("Navegacion bloqueada a URL externa:", navigationUrl);
           event.preventDefault();
         }
       });
@@ -88,8 +60,8 @@ async function main() {
 
     const eventManager = new EventManager();
     const appManager = new AppManager(eventManager);
-    
-    // Inicializar la aplicación (los manejadores se registrarán durante la inicialización)
+
+    // Inicializar la aplicacion (los manejadores se registrarán durante la inicialización)
     await appManager.initialize();
 
     autoUpdater.on("update-available", () => {
@@ -98,7 +70,7 @@ async function main() {
     autoUpdater.checkForUpdatesAndNotify();
   } catch (error) {
     console.error(
-      "Error crítico al iniciar la aplicación:",
+      "Error critico al iniciar la aplicacion:",
       error,
       error && error.stack
     );
@@ -108,7 +80,7 @@ async function main() {
 
 // Configurar manejo global de excepciones no capturadas
 process.on("uncaughtException", (error) => {
-  console.error("Error crítico no capturado:", error);
+  console.error("Error critico no capturado:", error);
   process.exit(1);
 });
 
@@ -116,7 +88,7 @@ process.on("unhandledRejection", (reason) => {
   console.error("Promesa rechazada no manejada:", reason);
 });
 
-// Iniciar la aplicación
+// Iniciar la aplicacion
 main().catch((error) => {
   console.error("Error no capturado en el punto de entrada:", error);
   app.exit(1);
