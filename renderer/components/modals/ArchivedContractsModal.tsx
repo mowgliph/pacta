@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { FileText, Download, ExternalLink, Search, Archive } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Cross2Icon } from "@radix-ui/react-icons";
-import { cn } from "@/lib/utils";
+import { 
+  IconExternalLink, 
+  IconSearch, 
+  IconArchive, 
+  IconDownload
+} from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import { LoadingSpinner } from "@/components/ui/spinner";
 import { format, parseISO, isValid } from "date-fns";
 import { es } from "date-fns/locale";
 import { useToast } from "@/components/ui/use-toast";
@@ -16,7 +19,6 @@ interface ArchivedContractsModalProps {
   onClose: () => void;
   title?: string;
   contracts: ArchivedContract[];
-  onExportPDF: (contracts: ArchivedContract[]) => Promise<void>;
   onRestoreContract?: (contractId: string) => Promise<void>;
   loading?: boolean;
   error?: string | null;
@@ -33,7 +35,6 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
   onClose,
   title = "Contratos Archivados",
   contracts: initialContracts,
-  onExportPDF,
   onRestoreContract,
 }) => {
   const navigate = useNavigate();
@@ -43,7 +44,7 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [exporting, setExporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [restoring, setRestoring] = useState<string | null>(null);
 
   // Usar los contratos pasados como prop
@@ -97,35 +98,67 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
   }, [search]);
 
   // Manejar exportación a PDF
-  const handleExportPDF = async (): Promise<void> => {
+  const handleExportPDF = useCallback(async () => {
     if (filteredContracts.length === 0) {
       toast({
-        title: "No hay contratos para exportar",
-        description: "No se encontraron contratos archivados para exportar.",
+        title: "No hay contratos",
+        description: "No hay contratos para exportar con los filtros actuales",
         variant: "destructive",
       });
       return;
     }
-
+    
     try {
-      setExporting(true);
-      await onExportPDF(filteredContracts);
+      setIsExporting(true);
+      
+      // Obtener la ruta del archivo usando el canal IPC
+      const result = await window.electron.ipcRenderer.invoke(
+        "dialog:save-file",
+        {
+          title: "Exportar contratos archivados como PDF",
+          defaultPath: `Contratos_Archivados_${new Date().toISOString().slice(0, 10)}.pdf`,
+          filters: [{ name: "PDF", extensions: ["pdf"] }],
+        }
+      );
+
+      if (!result?.success || !result?.filePath) {
+        return; // Usuario canceló el diálogo
+      }
+
+      // Exportar contratos usando el canal de reportes
+      const exportResult = await window.electron.ipcRenderer.invoke(
+        "export:pdf",
+        {
+          data: filteredContracts,
+          template: "contracts-archived",
+          filePath: result.filePath,
+        }
+      );
+
+      if (!exportResult?.success) {
+        throw new Error(exportResult?.error?.message || "Error al exportar los contratos");
+      }
+      
+      // Mostrar notificación de éxito
       toast({
         title: "Exportación exitosa",
-        description: `Se exportaron ${filteredContracts.length} contratos correctamente`,
+        description: `Se exportaron ${filteredContracts.length} contratos archivados correctamente`,
         variant: "default",
       });
     } catch (error) {
-      console.error("Error al exportar PDF:", error);
+      console.error("Error al exportar contratos archivados:", error);
+      // Mostrar notificación de error
       toast({
         title: "Error al exportar",
-        description: `No se pudo exportar el archivo: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        description: `No se pudieron exportar los contratos: ${
+          error instanceof Error ? error.message : "Error desconocido"
+        }`,
         variant: "destructive",
       });
     } finally {
-      setExporting(false);
+      setIsExporting(false);
     }
-  };
+  }, [filteredContracts, toast]);
 
   // Manejar restauración de contrato
   const handleRestoreContract = async (contractId: string): Promise<void> => {
@@ -169,25 +202,31 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
     <Dialog.Root open={isOpen} onOpenChange={onClose}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl bg-white rounded-lg shadow-lg z-50 max-h-[90vh] flex flex-col">
-          <div className="flex items-center justify-between p-4 border-b">
-            <Dialog.Title className="text-xl font-semibold text-gray-900 flex items-center gap-2">
-              <Archive className="w-5 h-5" />
+        <Dialog.Content
+          className="fixed left-[50%] top-[50%] z-50 grid w-full max-w-4xl translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg"
+          aria-labelledby="archived-contracts-title"
+          aria-describedby="archived-contracts-description"
+        >
+          <div className="flex flex-col space-y-1.5">
+            <Dialog.Title id="archived-contracts-title" className="text-xl font-semibold text-gray-900 mb-2">
               {title}
+              {loading && (
+                <span className="ml-2 text-sm font-normal text-gray-500">
+                  <LoadingSpinner className="inline-block mr-1 w-4 h-4" />
+                  Cargando...
+                </span>
+              )}
+              {error && (
+                <span className="ml-2 text-sm font-normal text-red-500">
+                  {error}
+                </span>
+              )}
             </Dialog.Title>
-            <Dialog.Close asChild>
-              <button
-                className="text-gray-400 hover:text-gray-500"
-                aria-label="Cerrar"
-              >
-                <Cross2Icon className="h-5 w-5" />
-              </button>
-            </Dialog.Close>
-          </div>
-
-          <div className="p-4 border-b">
+            <Dialog.Description id="archived-contracts-description" className="text-sm text-gray-500 mb-4">
+              Lista de contratos archivados con opciones para restaurar, exportar y ver detalles.
+            </Dialog.Description>
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Buscar contratos..."
@@ -201,7 +240,7 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
           <div className="flex-1 overflow-auto p-4">
             {loading ? (
               <div className="flex justify-center items-center h-32">
-                <Spinner className="w-8 h-8" />
+                <LoadingSpinner className="w-8 h-8" />
               </div>
             ) : error ? (
               <div className="text-red-500 text-center py-8">{error}</div>
@@ -231,7 +270,7 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
                             {formatDate(contract.startDate)} - {formatDate(contract.endDate)}
                           </span>
                           <span className="inline-flex items-center">
-                            <Archive className="h-3 w-3 mr-1" />
+                            <IconArchive className="h-3 w-3 mr-1" />
                             Archivado el: {formatDate(contract.updatedAt)}
                           </span>
                         </div>
@@ -245,9 +284,9 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
                             disabled={restoring === contract.id}
                           >
                             {restoring === contract.id ? (
-                              <Spinner className="mr-2 h-4 w-4" />
+                              <LoadingSpinner className="mr-2 h-4 w-4" />
                             ) : (
-                              <Archive className="mr-2 h-4 w-4" />
+                              <IconArchive className="mr-2 h-4 w-4" />
                             )}
                             Restaurar
                           </Button>
@@ -257,7 +296,7 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
                           size="sm"
                           onClick={() => navigate(`/contracts/${contract.id}`)}
                         >
-                          <ExternalLink className="mr-2 h-4 w-4" />
+                          <IconExternalLink className="mr-2 h-4 w-4" />
                           Ver
                         </Button>
                       </div>
@@ -301,14 +340,14 @@ const ArchivedContractsModal: React.FC<ArchivedContractsModalProps> = ({
               <Button
                 variant="outline"
                 onClick={handleExportPDF}
-                disabled={filteredContracts.length === 0 || exporting}
+                disabled={filteredContracts.length === 0 || isExporting}
               >
-                {exporting ? (
-                  <Spinner className="mr-2 h-4 w-4" />
+                {isExporting ? (
+                  <LoadingSpinner className="mr-2 h-4 w-4" />
                 ) : (
-                  <Download className="mr-2 h-4 w-4" />
+                  <IconDownload className="mr-2 h-4 w-4" />
                 )}
-                Exportar PDF
+                {isExporting ? "Exportando..." : "Exportar PDF"}
               </Button>
               <Button onClick={onClose}>Cerrar</Button>
             </div>

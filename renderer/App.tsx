@@ -1,71 +1,32 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ClientRootLayout } from "./components/ui/ClientRootLayout";
-import { useThemeStore } from "./store/theme";
-import { useEffect } from "react";
-import { AuthProvider } from "./contexts/AuthContext";
-import { ToastProviderCustom } from "./components/ui/use-toast";
-import { ErrorBoundary } from "./components/ui/ErrorBoundary";
-import Dashboard from "./app/dashboard/page";
-import Login from "./app/login/page";
-import Users from "./app/admin/users/page";
-import Settings from "./app/admin/settings/page";
-import Statistics from "./app/statistics/page";
-import Contracts from "./app/contracts/page";
-import NotFound from "./app/not-found/page";
+import { RouterProvider } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { ToastProviderCustom } from '@/components/ui/use-toast';
+import { router } from '@/routes';
 
 // Componente que envuelve la aplicación con los proveedores necesarios
 function AppProviders({ children }: { children: React.ReactNode }) {
   return (
-    <BrowserRouter>
+    <ErrorBoundary>
       <ToastProviderCustom>
         <AuthProvider>
-          {children}
+          <AnimatePresence mode="wait" initial={false}>
+            {children}
+          </AnimatePresence>
         </AuthProvider>
       </ToastProviderCustom>
-    </BrowserRouter>
-  );
-}
-
-// Componente principal de la aplicación
-function AppContent() {
-  const initTheme = useThemeStore((state) => state.init);
-
-  useEffect(() => {
-    initTheme().catch(console.error);
-  }, [initTheme]);
-
-  return (
-    <ClientRootLayout>
-      <Routes>
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/admin/users" element={<Users />} />
-        <Route path="/settings" element={<Settings />} />
-        <Route path="/statistics" element={<Statistics />} />
-        <Route path="/contracts" element={<Contracts />} />
-        
-        {/* Ruta para errores 404 */}
-        <Route 
-          path="*" 
-          element={
-            <ErrorBoundary>
-              <NotFound />
-            </ErrorBoundary>
-          } 
-        />
-      </Routes>
-    </ClientRootLayout>
+    </ErrorBoundary>
   );
 }
 
 // Componente principal exportado
-const App = () => {
+function App() {
   return (
     <AppProviders>
-      <AppContent />
+      <RouterProvider router={router} />
     </AppProviders>
   );
-};
+}
 
 export default App;

@@ -1,6 +1,8 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/components/ui/use-toast';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
+import { toast } from 'sonner';
+
+// Tipo para la funcion de navegacion
+type NavigateFunction = (to: string) => void;
 
 interface UserWithRole {
   id: string;
@@ -39,28 +41,68 @@ interface AuthContextType {
   logout: () => Promise<void>;
   hasRole: (roles: UserRole[]) => boolean;
   refreshToken: () => Promise<boolean>;
+  initializeNavigation: (navigate: NavigateFunction) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { toast } = useToast();
-  const [user, setUser] = useState<UserWithRole | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
+  const [authState, setAuthState] = useState<{
+    user: UserWithRole | null;
+    isLoading: boolean;
+  }>({
+    user: null,
+    isLoading: true
+  });
+  
+  const { user, isLoading } = authState;
+  const [navigateFn, setNavigateFn] = useState<NavigateFunction | null>(null);
+  
+  // Función segura para actualizar el estado de autenticación
+  const updateAuthState = useCallback((updates: Partial<typeof authState>) => {
+    setAuthState(prev => ({
+      ...prev,
+      ...updates
+    }));
+  }, []);
+  
+
+
+  // Funcion para inicializar la navegacion
+  const initializeNavigation = useCallback((navigate: NavigateFunction) => {
+    setNavigateFn(() => navigate);
+  }, []);
+  
+  // Función para establecer el estado de carga
+  const setLoading = useCallback((isLoading: boolean) => {
+    updateAuthState({ isLoading });
+  }, [updateAuthState]);
+
+  // Funcion segura para navegar
+  const safeNavigate = useCallback((to: string) => {
+    if (navigateFn) {
+      navigateFn(to);
+    } else {
+      console.warn('Navegación no disponible. Redirigiendo manualmente.');
+      window.location.href = to;
+    }
+  }, [navigateFn]);
 
   // Verificar si hay un token guardado al cargar la aplicación
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('token');
+        const storedRefreshToken = localStorage.getItem('refreshToken');
+        
         if (!token) {
-          setIsLoading(false);
+          setLoading(false);
           return;
         }
 
-        const verifyToken = async (token: string): Promise<boolean> => {
+        const verifyToken = async (token: string | null): Promise<boolean> => {
           try {
+            if (!token) return false;
             const response = await window.electron.auth.verify(token);
             
             if (response?.success && response.data?.user) {
@@ -73,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 return false;
               }
               
-              setUser(user);
+              updateAuthState({ user });
               return true;
             }
             return false;
@@ -83,25 +125,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         };
 
+        // Primero intentar verificar el token
         const verified = await verifyToken(token);
-        if (!verified) {
-          // Intentar refrescar el token si la verificación falla
+        
+        if (!verified && storedRefreshToken) {
+          // Si la verificación falla, intentar refrescar el token
           const refreshed = await refreshToken();
           if (!refreshed) {
+            // Si no se pudo refrescar, limpiar todo
             localStorage.removeItem('token');
             localStorage.removeItem('refreshToken');
+            updateAuthState({ user: null });
           }
+        } else if (!verified) {
+          // Si no hay refresh token, limpiar
+          localStorage.removeItem('token');
+          updateAuthState({ user: null });
         }
       } catch (error) {
         console.error('Error al verificar autenticación:', error);
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
+        updateAuthState({ user: null });
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
     checkAuth();
+    
+    // Verificar autenticación periódicamente
+    const interval = setInterval(checkAuth, 5 * 60 * 1000); // Verificar cada 5 minutos
+    
+    return () => clearInterval(interval);
   }, []);
 
   const refreshToken = async (): Promise<boolean> => {
@@ -126,7 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('refreshToken', newRefreshToken);
         
         // Usar el usuario de la respuesta de refresh
-        setUser(userWithRole);
+        updateAuthState({ user: userWithRole });
         return true;
       }
       return false;
@@ -138,7 +194,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (credentials: LoginCredentials): Promise<boolean> => {
     try {
-      setIsLoading(true);
+      setLoading(true);
       const response = await window.electron.auth.login(credentials);
       
       if (response.success && response.data) {
@@ -155,17 +211,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('refreshToken', refreshToken);
         
         // Actualizar el estado del usuario con los datos del login
-        setUser(userWithRole);
+        updateAuthState({ user: userWithRole });
           
-        // Mostrar notificación
-        toast({
-          title: '¡Bienvenido!',
-          description: `Has iniciado sesión como ${userWithRole.name}`,
-          variant: 'default',
+        // Mostrar notificación de bienvenida
+        toast.success(`¡Bienvenido ${userWithRole.name}!`, {
+          description: 'Has iniciado sesión correctamente',
+          position: 'top-right',
+          duration: 4000,
         });
         
         // Redirigir al dashboard
-        navigate('/admin/dashboard');
+        safeNavigate('/dashboard');
         return true;
       } else {
         throw new Error(response.error?.message || 'Error al iniciar sesión');
@@ -173,15 +229,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
       
-      toast({
-        title: 'Error',
+      toast.error('Error al iniciar sesión', {
         description: error instanceof Error ? error.message : 'Credenciales inválidas. Por favor, inténtalo de nuevo.',
-        variant: 'destructive',
+        position: 'top-right',
+        duration: 4000,
       });
       
       return false;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -192,17 +248,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Error al cerrar sesión:', error);
     } finally {
       // Limpiar estado local
-      setUser(null);
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
+      updateAuthState({ user: null, isLoading: false });
       
-      // Redirigir a la página de dashboard
-      navigate('/dashboard');
+      // Redirigir al login
+      safeNavigate('/login');
       
-      toast({
-        title: 'Sesión cerrada',
+      toast.success('Sesión cerrada', {
         description: 'Has cerrado sesión correctamente.',
-        variant: 'default',
+        position: 'top-right',
+        duration: 3000,
       });
     }
   };
@@ -222,7 +278,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login, 
         logout, 
         hasRole,
-        refreshToken
+        refreshToken,
+        initializeNavigation // Exponer la función de inicialización
       }}
     >
       {children}
