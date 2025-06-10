@@ -16,8 +16,8 @@ import { Alert, AlertTitle, AlertDescription } from "../../components/ui/alert";
 import DashboardCard from "../../components/ui/DashboardCard";
 import { QuickAction } from "../../components/dashboard/QuickAction";
 import { ActivityFeed } from "../../components/dashboard/ActivityFeed";
-import { useDashboardStats } from "../../lib/useDashboardStats";
-import { useNotification } from "../../lib/useNotification";
+import { useDashboardStats } from "../../hooks/useDashboardStats";
+import { useNotification } from "../../hooks/useNotification";
 import { useAuth } from "../../store/auth";
 import { AuthModal } from "../../components/modals/AuthModal";
 
@@ -26,7 +26,7 @@ import {
   useExpiredContracts,
   useAllContracts,
   useActiveContracts,
-} from "../../lib/useContracts";
+} from "../../hooks/useContracts";
 
 import ActiveContractsModal from "../../components/modals/ActiveContractsModal";
 import ExpiringContractsModal from "../../components/modals/ExpiringContractsModal";

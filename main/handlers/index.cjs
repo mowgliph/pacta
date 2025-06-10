@@ -8,6 +8,7 @@ const { registerRoleHandlers } = require("./role.handlers.cjs");
 const { registerSupplementHandlers } = require("./supplement.handlers.cjs");
 const { registerStatisticsHandlers } = require("./statistics.handlers.cjs");
 const { registerLicenseHandlers } = require("./license.handlers.cjs");
+const { registerLegalRepresentativeHandlers } = require("./legal-representative.handlers.cjs");
 
 // Bandera para evitar múltiples inicializaciones
 let handlersInitialized = false;
@@ -36,6 +37,7 @@ function setupIpcHandlers(mainWindow, eventManager) {
   registerSupplementHandlers();
   registerStatisticsHandlers();
   registerLicenseHandlers();
+  registerLegalRepresentativeHandlers();
   
   // Inicializar los manejadores IPC una sola vez
   if (eventManager && typeof eventManager.initializeHandlers === 'function') {

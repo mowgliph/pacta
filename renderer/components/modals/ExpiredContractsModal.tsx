@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IconFileText, IconExternalLink, IconSearch } from "@tabler/icons-react";
-import { Contract } from "@/lib/useContracts";
+import { Contract } from "@/hooks/useContracts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/spinner";

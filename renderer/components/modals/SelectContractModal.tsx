@@ -4,7 +4,7 @@ import { IconSearch } from "@tabler/icons-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { useContracts } from "@/lib/useContracts";
+import { useContracts } from "@/hooks/useContracts";
 import {
   Dialog,
   DialogContent,

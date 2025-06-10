@@ -1,6 +1,6 @@
 
 import { useCallback } from "react";
-import type { FileDialogOptions } from "../types/electron.d";
+import type { FileDialogOptions } from "../types/electron";
 
 /**
  * Hook para usar diálogos de archivos de Electron

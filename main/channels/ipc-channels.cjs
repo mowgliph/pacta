@@ -48,6 +48,17 @@ const IPC_CHANNELS = {
   },
   
   DATA: {
+    // Canales para representantes legales
+    LEGAL_REPRESENTATIVES: {
+      LIST: "legal-representatives:list",
+      CREATE: "legal-representatives:create",
+      UPDATE: "legal-representatives:update",
+      GET: "legal-representatives:get",
+      DELETE: "legal-representatives:delete",
+      SEARCH: "legal-representatives:search",
+    },
+    
+    // Canales para contratos
     CONTRACTS: {
       LIST: "contracts:list",
       CREATE: "contracts:create",
@@ -115,21 +126,6 @@ const IPC_CHANNELS = {
       UPDATE_AVAILABLE: "app:update-available",
       RESTART: "app:restart",
     },
-  },
-  STATISTICS: {
-    DASHBOARD: "statistics:dashboard",
-    CONTRACTS: "statistics:contracts",
-    EXPORT: "statistics:export",
-    CONTRACTS_BY_STATUS: "statistics:contracts-by-status",
-    CONTRACTS_BY_TYPE: "statistics:contracts-by-type",
-    CONTRACTS_BY_CURRENCY: "statistics:contracts-by-currency",
-    CONTRACTS_BY_USER: "statistics:contracts-by-user",
-    CONTRACTS_CREATED_BY_MONTH: "statistics:contracts-created-by-month",
-    CONTRACTS_EXPIRED_BY_MONTH: "statistics:contracts-expired-by-month",
-    SUPPLEMENTS_COUNT_BY_CONTRACT: "statistics:supplements-count-by-contract",
-    CONTRACTS_EXPIRING_SOON: "statistics:contracts-expiring-soon",
-    CONTRACTS_WITHOUT_DOCUMENTS: "statistics:contracts-without-documents",
-    USERS_ACTIVITY: "statistics:users-activity",
   },
   SECURITY: {
     VALIDATE_FILE: "security:validate-file",

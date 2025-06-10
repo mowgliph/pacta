@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Contract } from "./useContracts";
-import { handleIpcResponse, type IpcResponse } from "./handleIpcResponse";
+import { handleIpcResponse, type IpcResponse } from "../lib/handleIpcResponse";
 
 /**
  * Hook para obtener los contratos próximos a vencer

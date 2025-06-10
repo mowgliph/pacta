@@ -4,7 +4,7 @@ import type {
   DashboardApiResponse,
   UseDashboardStatsReturn
 } from "../types/contracts";
-import { dispatchError } from "./error-utils";
+import { dispatchError } from "../lib/error-utils";
 
 // Datos por defecto para el estado inicial
 const defaultStats: DashboardStats = {

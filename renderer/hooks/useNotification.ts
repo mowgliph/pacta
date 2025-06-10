@@ -1,7 +1,7 @@
 "use client";
 import { useCallback } from "react";
 import { useAuth } from "@/store/auth";
-import type { NotificationOptions } from "../types/electron.d";
+import type { NotificationOptions } from "../types/electron";
 
 export const useNotification = () => {
   const { user } = useAuth();

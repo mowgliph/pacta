@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import type { ApiResponse, IpcRenderer, User } from "../types/electron.d";
+import type { ApiResponse, IpcRenderer, User } from "../types/electron";
 
 export function getIpcRenderer(): IpcRenderer | null {
   if (typeof window !== "undefined" && window.electron?.ipcRenderer) {

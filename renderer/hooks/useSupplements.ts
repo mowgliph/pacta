@@ -1,13 +1,13 @@
 import { useState, useCallback, useRef, useEffect } from "react";
-import { useFileDialog } from "@/lib/useFileDialog";
-import { useNotification } from "@/lib/useNotification";
+import { useFileDialog } from "@/hooks/useFileDialog";
+import { useNotification } from "@/hooks/useNotification";
 import type { 
   Supplement, 
   SupplementsApi, 
   IpcRenderer,
   ApiResponse
-} from "../types/electron.d";
-import { errorMessages, notificationMessages } from "./errorMessages";
+} from "../types/electron";
+import { errorMessages, notificationMessages } from "../lib/errorMessages";
 
 // Helper para obtener el renderer de IPC de manera segura
 const getIpcRenderer = (): IpcRenderer | null => {

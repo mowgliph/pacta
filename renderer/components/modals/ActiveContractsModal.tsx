@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { IconDownload, IconX, IconExternalLink, IconSearch } from "@tabler/icons-react";
-import { Contract } from "@/lib/useContracts";
+import { Contract } from "@/hooks/useContracts";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Button } from "@/components/ui/button";
 import { LoadingSpinner } from "@/components/ui/spinner";

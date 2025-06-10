@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { PaginationResponse, ApiResponse } from "../types/electron.d";
+import { PaginationResponse, ApiResponse } from "../types/electron";
 
 export interface Contract {
   id: string;

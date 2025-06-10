@@ -8,7 +8,7 @@ import {
   IconAlertTriangle 
 } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
-import type { Contract } from "../../lib/useContracts";
+import type { Contract } from "../../hooks/useContracts";
 import { toast } from "sonner";
 
 interface ExpiringContractsModalProps {

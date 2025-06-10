@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { useReportTemplates } from "@/lib/useReportTemplates";
+import { useReportTemplates } from "@/hooks/useReportTemplates";
 import { useState } from "react";
 
 interface ReportTemplateProps {
