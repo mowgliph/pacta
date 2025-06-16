@@ -1,3 +1,8 @@
+# Certificado de firma pacta
+CSC_LINK=file:./PACTA_CodeSigning.pfx
+CSC_KEY_PASSWORD=TuContraseñaSegura123!
+CSC_FOR_PACKAGE=1
+
 # URL de conexión a la base de datos SQLite (usada por Prisma)
 # Asegúrate de que la ruta sea correcta para tu sistema.
 DATABASE_URL="file:./db/pacta.db"
