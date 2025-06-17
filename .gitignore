@@ -48,3 +48,4 @@ pnpm-lock.yaml
 *.tsbuildinfo
 next-env.d.ts
 dist
+package-lock.json
